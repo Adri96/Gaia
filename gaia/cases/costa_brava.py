@@ -1,0 +1,366 @@
+"""
+Gaia v0.1 — Costa Brava Holm Oak Forest deforestation case.
+
+Mediterranean forest ecosystem with 11 agents spanning the full web of
+biological and physical dependencies: from the mycorrhizal underground
+network to apex raptors and the coastal tourism economy.
+
+Scientific context:
+    Mediterranean forests operate under fundamentally different constraints
+    than temperate ones. Summer drought is the defining limiting factor;
+    regeneration is slower; fire risk creates positive feedback loops once
+    canopy cover is lost. The safe extraction threshold (25%) is lower than
+    a temperate forest (30%) for these reasons.
+
+    The mycorrhizal network is modeled as a KEYSTONE agent — it is the
+    underground infrastructure that conditions tree regeneration, soil
+    nutrient cycling, and water acquisition. Its collapse cascades into
+    every other biological agent.
+
+    Carbon & Climate uses an exponential (not logistic) damage function
+    because CO₂ release does not stabilize: unlike biological populations,
+    atmospheric carbon accumulates continuously and has no "plateau."
+
+Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
+
+    | Parameter                     | Value         | Unit    | Source        | Confidence |
+    |-------------------------------|---------------|---------|---------------|------------|
+    | total_units                   | configurable  | trees   | Placeholder   | Low        |
+    | safe_threshold_ratio          | 0.25          | ratio   | User spec      | Medium     |
+    | unit_value                    | 60.0 €/tree   | €/tree  | User spec      | Medium     |
+    | Canopy Trees weight           | 0.12          | ratio   | User spec      | Medium     |
+    | Understory & Matorral weight  | 0.08          | ratio   | User spec      | Medium     |
+    | Mycorrhizal Fungi weight      | 0.13          | ratio   | User spec      | Medium     |
+    | Soil Microbiome weight        | 0.10          | ratio   | User spec      | Medium     |
+    | Pollinators & Insects weight  | 0.10          | ratio   | User spec      | Medium     |
+    | Forest Birds weight           | 0.08          | ratio   | User spec      | Medium     |
+    | Forest Mammals weight         | 0.07          | ratio   | User spec      | Medium     |
+    | Raptors & Apex Predators wt   | 0.04          | ratio   | User spec      | Medium     |
+    | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
+    | Carbon & Climate weight       | 0.10          | ratio   | User spec      | Medium     |
+    | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
+    | Canopy Trees monetary_rate    | 2,500,000 €   | €       | Calibrated     | Low        |
+    | Understory monetary_rate      | 1,875,000 €   | €       | Calibrated     | Low        |
+    | Mycorrhizal monetary_rate     | 3,077,000 €   | €       | Calibrated     | Low        |
+    | Soil Microbiome monetary_rate | 3,500,000 €   | €       | Calibrated     | Low        |
+    | Pollinators monetary_rate     | 3,500,000 €   | €       | Calibrated     | Low        |
+    | Forest Birds monetary_rate    | 2,500,000 €   | €       | Calibrated     | Low        |
+    | Forest Mammals monetary_rate  | 2,571,000 €   | €       | Calibrated     | Low        |
+    | Raptors monetary_rate         | 3,000,000 €   | €       | Calibrated     | Low        |
+    | Watershed monetary_rate       | 4,167,000 €   | €       | Calibrated     | Low        |
+    | Carbon & Climate monetary_rate| 4,500,000 €   | €       | Calibrated     | Low        |
+    | Human Communities monetary_rate| 8,333,000 €  | €       | Calibrated     | Low        |
+    | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
+    | exponential base (carbon)     | 2.0           | –       | Placeholder   | Low        |
+    | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
+
+Monetary rate calibration:
+    Rates are set so that sum(weight × rate) ≈ €3,500,000 (total effective max externality).
+    This ensures:
+        externality < revenue at safe threshold (25%):
+            logistic_damage(0.25) ≈ 0.10 → 0.10 × €3.5M ≈ €350k < €375k revenue (6,250 trees × €60)
+        externality > revenue at 50% depletion:
+            logistic_damage(0.50) ≈ 0.76 → 0.76 × €3.5M ≈ €2.66M >> €300k revenue (5,000 trees × €60)
+
+    Full destruction (10,000 trees @ €60 = €600k revenue) imposes ≈€3.5M in externalities.
+    Ratio: 5.8× — every euro of timber revenue costs society ~€5.80. [User spec ✓]
+
+Dependency weights sum: 0.12+0.08+0.13+0.10+0.10+0.08+0.07+0.04+0.12+0.10+0.06 = 1.00 ✓
+
+CLI usage:
+    python -m gaia.cases.costa_brava
+    python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000
+"""
+
+import argparse
+import sys
+
+from gaia.damage import exponential_damage, logistic_damage
+from gaia.models import Agent, Ecosystem, Resource
+from gaia.report import format_report
+from gaia.simulation import run_extraction
+
+# Shared steepness for all logistic agents.
+# 12.0 gives a clear S-curve with an observable knee at the threshold.
+# [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
+_STEEPNESS: float = 12.0
+
+
+def build_costa_brava_ecosystem(
+    total_trees: int = 10_000,
+    safe_threshold_ratio: float = 0.25,
+    tree_value: float = 60.0,
+) -> Ecosystem:
+    """
+    Build the Costa Brava Holm Oak Forest ecosystem with 11 agents.
+
+    The ecosystem spans the full dependency web: underground mycorrhizal network,
+    soil microbiome, understory vegetation, pollinators, birds, mammals, raptors,
+    watershed, carbon cycle, and local human communities.
+
+    Args:
+        total_trees: Total number of trees in the forest. [PLACEHOLDER]
+        safe_threshold_ratio: Fraction extractable before ecosystem stress accelerates.
+            Default 0.25 — lower than temperate forests due to Mediterranean drought
+            stress, slower regeneration, and fire feedback loops. [User spec, Medium]
+        tree_value: Revenue per tree in euros. Default 60.0 — holm oak is less
+            commercially valuable than northern timber species. Cork harvest would
+            use a different economic model (no felling). [User spec, Medium]
+
+    Returns:
+        A fully configured Ecosystem ready for simulation.
+    """
+    resource = Resource(
+        name="Costa Brava Holm Oak Forest",
+        total_units=total_trees,
+        safe_threshold_ratio=safe_threshold_ratio,
+        unit_value=tree_value,
+    )
+
+    t = safe_threshold_ratio  # shorthand for threshold argument
+
+    agents = [
+        # ── Underground infrastructure ──────────────────────────────────────
+        Agent(
+            name="Mycorrhizal Fungi",
+            dependency_weight=0.13,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=3_077_000.0,
+            # Effective max: 0.13 × €3,077k = €400k [User spec]
+            # KEYSTONE AGENT. Ectomycorrhizal fungi form obligate symbioses with
+            # oak and pine roots. No living roots → no fungi. Network fragmentation
+            # collapses nutrient and water transport for all remaining trees.
+            # Fungal community rebuilding takes decades. [User spec, Medium]
+            description="Keystone underground network — nutrient/water transport, cascades to all tree regeneration",
+        ),
+        Agent(
+            name="Soil Microbiome",
+            dependency_weight=0.10,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=3_500_000.0,
+            # Effective max: 0.10 × €3,500k = €350k [User spec]
+            # Biocrusts (lichens, bryophytes, cyanobacteria) fix nitrogen.
+            # Exposed soil under Mediterranean sun → UV damage → erosion →
+            # carbon release → desertification. Soil formation: centuries.
+            # Effectively irreversible on human timescales. [User spec, Medium]
+            description="Soil microbiome and biocrusts — nitrogen fixation, carbon storage, erosion prevention",
+        ),
+        # ── Vegetation ──────────────────────────────────────────────────────
+        Agent(
+            name="Canopy Trees",
+            dependency_weight=0.12,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=2_500_000.0,
+            # Effective max: 0.12 × €2,500k = €300k [User spec]
+            # Remaining trees depend on forest microclimate — shade, humidity,
+            # wind protection, mycorrhizal connectivity. Self-reinforcing collapse:
+            # isolated trees face drought stress, bark beetle attacks, reduced
+            # regeneration. Die-off accelerates past the threshold. [User spec, Medium]
+            description="Remaining canopy trees — self-reinforcing decline from microclimate loss and network fragmentation",
+        ),
+        Agent(
+            name="Understory & Matorral",
+            dependency_weight=0.08,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=1_875_000.0,
+            # Effective max: 0.08 × €1,875k = €150k [User spec]
+            # Kermes oak, lentisk, strawberry tree, cistus, rosemary, thyme,
+            # lavender. Shade-dependent species die off as canopy opens.
+            # Pioneer shrubs (cistus) may expand temporarily but overall
+            # diversity collapses. Soil erosion begins. [User spec, Medium]
+            description="Understory shrubs and aromatic plants — microclimate collapse and biodiversity loss",
+        ),
+        # ── Invertebrates ───────────────────────────────────────────────────
+        Agent(
+            name="Pollinators & Insects",
+            dependency_weight=0.10,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=3_500_000.0,
+            # Effective max: 0.10 × €3,500k = €350k [User spec]
+            # KEYSTONE FUNCTIONAL GROUP. ~150,000 insect species in Mediterranean
+            # basin. Floral diversity collapse → pollinator crash → cascading
+            # failure of wild plant reproduction AND surrounding agricultural crops.
+            # Base of the animal food web. [User spec, Medium]
+            description="Keystone pollination services — base of animal food web, agricultural crop dependency",
+        ),
+        # ── Vertebrates ─────────────────────────────────────────────────────
+        Agent(
+            name="Forest Birds",
+            dependency_weight=0.08,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=2_500_000.0,
+            # Effective max: 0.08 × €2,500k = €200k [User spec]
+            # 534 species in Mediterranean basin. Critical stopover habitat for
+            # Europe-Africa migratory flyway — local damage has range-wide impact.
+            # Seed dispersal and insect control services lost.
+            # Birding tourism significant on Costa Brava. [User spec, Medium]
+            description="Nesting and migratory stopover habitat — seed dispersal, insect control, ecotourism",
+        ),
+        Agent(
+            name="Forest Mammals",
+            dependency_weight=0.07,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=2_571_000.0,
+            # Effective max: 0.07 × €2,571k = €180k [User spec]
+            # Wild boar, roe deer, rabbits, foxes, genets, pine martens.
+            # Habitat loss → displacement into agricultural/urban areas →
+            # crop damage, car accidents, human-wildlife conflict.
+            # Predator-prey balance lost. [User spec, Medium]
+            description="Habitat displacement — predator-prey disruption, human-wildlife conflict, crop damage",
+        ),
+        Agent(
+            name="Raptors & Apex Predators",
+            dependency_weight=0.04,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=3_000_000.0,
+            # Effective max: 0.04 × €3,000k = €120k [User spec]
+            # Catalonia hosts all 4 European vulture species plus golden eagle
+            # (trencalòs = bearded vulture). Extreme K-strategy: small populations,
+            # slow reproduction → threshold collapse is rapid and hard to reverse.
+            # Vulture loss → carcass accumulation → disease risk.
+            # Trophic cascade: apex loss → herbivore explosion → overgrazing. [User spec, Medium]
+            description="Apex trophic control — carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+        ),
+        # ── Physical systems ────────────────────────────────────────────────
+        Agent(
+            name="Watershed & Water Cycle",
+            dependency_weight=0.12,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=4_167_000.0,
+            # Effective max: 0.12 × €4,167k = €500k [User spec]
+            # CRITICAL in Mediterranean climate where water is the limiting factor.
+            # Forest roots → aquifer recharge. Canopy → rainfall interception and
+            # evapotranspiration regulation. Deforested slopes → winter flash floods,
+            # summer drought amplification. Coastal Costa Brava tourism depends on
+            # forest watershed for water supply. [User spec, Medium]
+            description="Aquifer recharge, flood control, drought buffering — Costa Brava water and tourism supply",
+        ),
+        Agent(
+            name="Carbon & Climate",
+            dependency_weight=0.10,
+            # Exponential (not logistic) — CO₂ release does not plateau.
+            # Unlike biological populations, atmospheric carbon accumulates
+            # continuously. Mediterranean identified as major climate hotspot.
+            # Fire risk increases non-linearly as microclimate dries. [User spec]
+            damage_function=exponential_damage(threshold=t, base=2.0),
+            monetary_rate=4_500_000.0,
+            # Effective max: 0.10 × €4,500k = €450k [User spec]
+            # Carbon release (biomass + soil) + lost future sequestration capacity
+            # + local temperature increase + fire risk amplification. [User spec, Medium]
+            description="CO₂ release, lost sequestration, fire risk amplification — exponential accumulation, no plateau",
+        ),
+        # ── Human systems ───────────────────────────────────────────────────
+        Agent(
+            name="Human Communities",
+            dependency_weight=0.06,
+            damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
+            monetary_rate=8_333_000.0,
+            # Effective max: 0.06 × €8,333k = €500k [User spec]
+            # Water quality, wildfire protection (forest as firebreak), recreation
+            # and tourism (Costa Brava economy is tourism-dependent), non-timber
+            # products (cork, mushrooms, honey, aromatic herbs), cultural value,
+            # property values. Fire damage + tourism loss + water treatment +
+            # health costs + property devaluation. [User spec, Medium]
+            description="Water, fire protection, tourism economy, traditional livelihoods — Costa Brava coastal dependency",
+        ),
+    ]
+
+    return Ecosystem(
+        name="Costa Brava Holm Oak Forest",
+        resource=resource,
+        agents=agents,
+    )
+
+
+def run_costa_brava(
+    total_trees: int = 10_000,
+    safe_threshold_ratio: float = 0.25,
+    trees_cut: int = 4_000,
+    tree_value: float = 60.0,
+) -> str:
+    """
+    Run the Costa Brava Forest deforestation simulation and return the report.
+
+    Default trees_cut=4,000 — cutting 40% of the forest (well past the 25%
+    safe threshold) to illustrate the externality crossover point.
+
+    Args:
+        total_trees: Total number of trees in the forest.
+        safe_threshold_ratio: Safe extraction threshold ratio.
+        trees_cut: Number of trees to cut (extract).
+        tree_value: Revenue per tree in euros.
+
+    Returns:
+        Formatted text report string.
+    """
+    ecosystem = build_costa_brava_ecosystem(
+        total_trees=total_trees,
+        safe_threshold_ratio=safe_threshold_ratio,
+        tree_value=tree_value,
+    )
+    result = run_extraction(ecosystem, trees_cut)
+    return format_report(result)
+
+
+def _parse_args(argv: list = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Gaia v0.1 — Costa Brava Holm Oak Forest externality simulation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Examples:\n"
+            "  # At safe threshold (25%):\n"
+            "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 2500\n\n"
+            "  # Past threshold (40% extraction):\n"
+            "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000\n\n"
+            "  # Heavy extraction (60%):\n"
+            "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 6000\n"
+        ),
+    )
+    parser.add_argument(
+        "--trees",
+        type=int,
+        default=10_000,
+        metavar="N",
+        help="Total number of trees in the forest (default: 10000)",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.25,
+        metavar="RATIO",
+        help="Safe extraction threshold ratio, 0.0 < threshold < 1.0 (default: 0.25)",
+    )
+    parser.add_argument(
+        "--cut",
+        type=int,
+        default=4_000,
+        metavar="N",
+        help="Number of trees to cut (default: 4000)",
+    )
+    parser.add_argument(
+        "--tree-value",
+        type=float,
+        default=60.0,
+        metavar="EUROS",
+        help="Revenue per tree in euros (default: 60.0)",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list = None) -> None:
+    args = _parse_args(argv)
+    try:
+        report = run_costa_brava(
+            total_trees=args.trees,
+            safe_threshold_ratio=args.threshold,
+            trees_cut=args.cut,
+            tree_value=args.tree_value,
+        )
+        print(report)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
