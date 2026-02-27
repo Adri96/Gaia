@@ -44,7 +44,9 @@ Gaia/
 │   ├── report.py              # Plain-text report formatter
 │   └── cases/
 │       ├── __init__.py
-│       └── forest.py          # Preconfigured Oak Valley Forest case (CLI + API)
+│       ├── forest.py          # Oak Valley Forest — temperate deforestation (CLI + API)
+│       ├── costa_brava.py     # Costa Brava Holm Oak Forest — Mediterranean deforestation (CLI + API)
+│       └── posidonia.py       # Costa Brava Posidonia Meadow — marine seagrass destruction (CLI + API)
 ├── tests/
 │   ├── __init__.py
 │   ├── test_damage.py         # Mathematical property tests for all damage functions
@@ -65,7 +67,9 @@ Gaia/
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/simulation.py` | `run_extraction(ecosystem, units)` — the simulation loop |
 | `gaia/report.py` | `format_report(result)` — human-readable output |
-| `gaia/cases/forest.py` | Ready-to-run Oak Valley Forest case with four agents |
+| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents |
+| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents |
+| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents |
 
 ---
 
@@ -159,6 +163,52 @@ report = run_forest(
 )
 print(report)
 ```
+
+### CLI — Costa Brava Holm Oak Forest
+
+A Mediterranean forest ecosystem with **11 agents** spanning the full biological web: the underground mycorrhizal network (the invisible foundation everything else depends on), understory shrubs and aromatic plants, pollinators, birds, mammals, apex raptors (all four European vulture species nest in Catalonia), the watershed, carbon cycle, and the Costa Brava's coastal tourism economy.
+
+What makes this case different from the generic forest: the safe threshold is **25%** instead of 30% — Mediterranean forests are more fragile. Summer drought is the defining constraint, regeneration is slower, and fire risk creates positive feedback loops once canopy cover is lost. The mycorrhizal fungi carry the highest dependency weight (0.13) because they are the underground infrastructure that conditions tree regeneration, soil nutrient cycling, and water access for all remaining trees.
+
+```bash
+# At the safe threshold — where damage begins accelerating
+python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 2500
+
+# Past the threshold (40% extraction)
+python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000
+
+# Heavy extraction (60%)
+python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 6000
+
+# Default run (40% extraction)
+python -m gaia.cases.costa_brava
+```
+
+At 40% extraction: €240,000 in timber revenue vs **€1,980,000 in annual social costs**. Ecosystem health: 42.5%.
+
+### CLI — Costa Brava Posidonia Meadow
+
+*Posidonia oceanica* is a seagrass that forms the foundation of Mediterranean coastal ecosystems. It absorbs **15× more CO₂ per hectare than the Amazon rainforest**, stores carbon in its sediment matte for millennia, filters bathing water, nurseries fish (the Medes Islands MPA proved fish biomass reaches 80× higher inside protected meadows), and physically protects Costa Brava beaches from erosion through wave attenuation and leaf-litter cushions. It grows at 1–6 cm per year — any significant destruction is effectively irreversible on a human timescale.
+
+This case has **11 agents**: the meadow itself, coralligenous reefs and red coral (centuries-old biogenic habitats), epiphytic algae, marine invertebrates, fish populations, marine megafauna (dolphins, sea turtles), seabirds including the Mediterranean-endemic Audouin's gull, coastal protection, water quality, blue carbon, and human communities whose tourism economy depends on all of the above.
+
+**The marine economics are inverted from the forest case.** Private revenue from Posidonia destruction (coastal development, marina construction, trawling permits) is a **one-time gain**. Ecosystem service losses are **annual recurring costs** — every year the meadow is gone, the losses compound. The report flags this explicitly: at 40% destruction, the one-time revenue of €5M is fully offset by annual ecosystem losses within **1.3 years**, after which society loses ~€4M every year, indefinitely.
+
+```bash
+# At the safe threshold (20% = 1,000 ha destroyed)
+python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 1000
+
+# Past the threshold (40% = 2,000 ha, representative of a major marina project)
+python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 2000
+
+# Heavy destruction (60% = 3,000 ha, catastrophic loss)
+python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 3000
+
+# Default run (40% destruction)
+python -m gaia.cases.posidonia
+```
+
+At 40% destruction: €5,000,000 one-time revenue vs **€3,973,869/year** in recurring social costs. The one-time gain is erased in 1.3 years. Ecosystem health: 32%.
 
 ---
 
@@ -310,7 +360,10 @@ All three satisfy these invariants:
 - Step-by-step extraction simulation with per-agent cost breakdown
 - Ecosystem Health Index (0.0–1.0)
 - Plain-text externality report
-- Oak Valley Forest case with four calibrated agents
+- Three ready-to-run cases:
+  - **Oak Valley Forest** — temperate forest, 4 agents, generic baseline
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, scientifically grounded
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, inverted economics (annual recurring losses vs one-time gain)
 - 196 tests, all passing
 
 **What's coming (v0.2+):**
