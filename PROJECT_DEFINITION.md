@@ -132,6 +132,24 @@ For Gaia, the principle is this: **extraction does not just remove a resource �
 
 ---
 
+## Verification & Scientific Validation Strategy
+
+Gaia's credibility depends entirely on the quality of its inputs. A perfectly engineered simulation with arbitrary parameters is just a fancy opinion. Every parameter must be traceable to a source, and the scientific model itself must withstand scrutiny from domain experts.
+
+### The Core Principle
+
+**Every parameter must be traceable to a source.** Where does the safe threshold come from? What study? What dataset? What's the confidence interval? If a number cannot be justified, it must be explicitly marked as a placeholder and flagged in the output.
+
+### Two-Track Validation
+
+Gaia requires validation on two separate tracks that must not be confused:
+
+**Track 1 — Scientific validation.** Are the foundations correct? Are we oversimplifying anything dangerously? Is there a principle we're missing? Are the damage curve shapes ecologically defensible? This is reviewed by ecologists and environmental scientists who can judge whether the _model structure_ reflects how ecosystems actually behave.
+
+**Track 2 — Data calibration.** Are the specific numbers right? Is 30% a defensible safe extraction threshold for a temperate deciduous forest? What's the monetary value of carbon sequestration per hectare per year in this region? What data sources back these numbers? This is reviewed by domain experts with access to field data, published studies, and regional ecological assessments.
+
+---
+
 ## Mathematical Framework
 
 These are the modeling decisions we make to turn the scientific foundations into computable outputs. They are not laws of nature — they are tools we chose because they best serve the goal of making externalities visible and actionable. **If a mathematical choice proves inadequate, it can be replaced. The science above cannot.**
