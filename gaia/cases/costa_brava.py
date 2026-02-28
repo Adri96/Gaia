@@ -70,15 +70,17 @@ Dependency weights sum: 0.12+0.08+0.13+0.10+0.10+0.08+0.07+0.04+0.12+0.10+0.06 =
 CLI usage:
     python -m gaia.cases.costa_brava
     python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000
+    python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000 --mode restore
 """
 
 import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, Resource
-from gaia.report import format_report
-from gaia.simulation import run_extraction
+from gaia.models import Agent, Ecosystem, RestorationCost, Resource
+from gaia.recovery import logistic_recovery
+from gaia.report import format_report, format_restoration_report
+from gaia.simulation import run_extraction, run_restoration
 
 # Shared steepness for all logistic agents.
 # 12.0 gives a clear S-curve with an observable knee at the threshold.
@@ -302,18 +304,72 @@ def run_costa_brava(
     return format_report(result)
 
 
+def run_costa_brava_restoration(
+    total_trees: int = 10_000,
+    safe_threshold_ratio: float = 0.25,
+    trees_to_restore: int = 4_000,
+    tree_value: float = 60.0,
+    planting_cost_per_tree: float = 80.0,
+    annual_maintenance_per_tree: float = 15.0,
+    maintenance_years: int = 15,
+) -> str:
+    """
+    Run the Costa Brava Forest restoration simulation and return the report.
+
+    Mediterranean forest restoration is harder and slower than temperate forest:
+    - Holm oak (Quercus ilex) is slow-growing (max 0.5 m/yr)
+    - Summer drought requires irrigation during establishment (3-5 years)
+    - Mycorrhizal network must re-establish before full ecosystem function
+    - Default maintenance: 15 years (vs 10 for temperate) — reflects higher
+      establishment difficulty
+
+    Higher planting cost (€80/tree default vs €50 for temperate) accounts for:
+    - Mediterranean drought-hardy saplings (more expensive nursery stock)
+    - Irrigation infrastructure and summer watering during establishment
+    - Fire-break management and controlled burns to reduce fuel load
+
+    Args:
+        total_trees: Total carrying capacity of the forest.
+        safe_threshold_ratio: Safe extraction threshold ratio.
+        trees_to_restore: Number of trees to replant (restore).
+        tree_value: Revenue per tree in euros (used for prevention_advantage).
+        planting_cost_per_tree: Direct cost per tree planted (Mediterranean premium).
+        annual_maintenance_per_tree: Annual maintenance cost per tree.
+        maintenance_years: Number of years of maintenance required.
+
+    Returns:
+        Formatted text restoration report string.
+    """
+    ecosystem = build_costa_brava_ecosystem(
+        total_trees=total_trees,
+        safe_threshold_ratio=safe_threshold_ratio,
+        tree_value=tree_value,
+    )
+    cost = RestorationCost(
+        planting_cost_per_unit=planting_cost_per_tree,
+        annual_maintenance_per_unit=annual_maintenance_per_tree,
+        maintenance_years=maintenance_years,
+    )
+    recovery_fns = [
+        logistic_recovery(threshold=safe_threshold_ratio)
+        for _ in ecosystem.agents
+    ]
+    result = run_restoration(ecosystem, trees_to_restore, cost, recovery_fns)
+    return format_restoration_report(result)
+
+
 def _parse_args(argv: list = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Gaia v0.1 — Costa Brava Holm Oak Forest externality simulation",
+        description="Gaia v0.2 — Costa Brava Holm Oak Forest externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  # At safe threshold (25%):\n"
+            "  # Extraction — at safe threshold (25%):\n"
             "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 2500\n\n"
-            "  # Past threshold (40% extraction):\n"
+            "  # Extraction — past threshold (40%):\n"
             "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000\n\n"
-            "  # Heavy extraction (60%):\n"
-            "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 6000\n"
+            "  # Restoration mode:\n"
+            "  python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --cut 4000 --mode restore\n"
         ),
     )
     parser.add_argument(
@@ -335,7 +391,7 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         type=int,
         default=4_000,
         metavar="N",
-        help="Number of trees to cut (default: 4000)",
+        help="Number of trees to cut/restore (default: 4000)",
     )
     parser.add_argument(
         "--tree-value",
@@ -344,18 +400,56 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         metavar="EUROS",
         help="Revenue per tree in euros (default: 60.0)",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["extract", "restore"],
+        default="extract",
+        help="Simulation mode: 'extract' (default) or 'restore'",
+    )
+    parser.add_argument(
+        "--planting-cost",
+        type=float,
+        default=80.0,
+        metavar="EUROS",
+        help="[restore mode] Planting cost per tree in euros (default: 80.0)",
+    )
+    parser.add_argument(
+        "--maintenance-cost",
+        type=float,
+        default=15.0,
+        metavar="EUROS",
+        help="[restore mode] Annual maintenance cost per tree in euros (default: 15.0)",
+    )
+    parser.add_argument(
+        "--maintenance-years",
+        type=int,
+        default=15,
+        metavar="N",
+        help="[restore mode] Number of maintenance years (default: 15)",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
     try:
-        report = run_costa_brava(
-            total_trees=args.trees,
-            safe_threshold_ratio=args.threshold,
-            trees_cut=args.cut,
-            tree_value=args.tree_value,
-        )
+        if args.mode == "restore":
+            report = run_costa_brava_restoration(
+                total_trees=args.trees,
+                safe_threshold_ratio=args.threshold,
+                trees_to_restore=args.cut,
+                tree_value=args.tree_value,
+                planting_cost_per_tree=args.planting_cost,
+                annual_maintenance_per_tree=args.maintenance_cost,
+                maintenance_years=args.maintenance_years,
+            )
+        else:
+            report = run_costa_brava(
+                total_trees=args.trees,
+                safe_threshold_ratio=args.threshold,
+                trees_cut=args.cut,
+                tree_value=args.tree_value,
+            )
         print(report)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)

@@ -389,25 +389,63 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 
 ## Roadmap
 
-- [x] Define core abstractions and data model
+### ✅ v0.1 — Foundation (complete)
+
+- [x] Define core abstractions and data model (`Resource`, `Agent`, `Ecosystem`, `SimulationResult`, `SimulationStep`)
 - [x] Define scientific foundations (thermodynamics, trophic cascades, carrying capacity, resilience, succession, nutrient cycles, coevolution)
 - [x] Define mathematical framework (dual-lens, monetary convergence, simulation methodology)
-- [ ] Implement non-linear damage functions (logistic, exponential, piecewise)
-- [ ] Implement trophic cascade amplification (damage multipliers by trophic level)
-- [ ] Implement carrying capacity (K) and R/K-strategy population dynamics
-- [ ] Implement recovery functions with entropy asymmetry
-- [ ] Implement succession-based maturation curves (pioneer → intermediate → climax)
-- [ ] Implement keystone species criticality weights with uncertainty bounds
-- [ ] Implement resilience zones and threshold uncertainty flagging
-- [ ] Implement double carbon externality (release + lost absorption capacity)
-- [ ] Build simulation engine with extraction and restoration modes
-- [ ] Implement forest deforestation/reforestation case with calibrated parameters
-- [ ] Add Cython-optimized simulation loop
-- [ ] Externality report generation with per-agent breakdown
-- [ ] Restoration investment report with NPV, ROI, payback period
-- [ ] Prevention-vs-restoration comparison output
-- [ ] Generalize framework for additional resource types (water, fisheries, soil, air)
-- [ ] Pluggable monetary conversion models (region-specific, time-discounted)
+- [x] Implement non-linear damage functions: logistic, exponential, piecewise — each validated against 6 scientific invariants (boundary conditions, monotonicity, output range, nonlinearity, convexity, threshold shift)
+- [x] Implement keystone species criticality weights (dependency_weight per agent, sums to 1.0, validated)
+- [x] Build simulation engine — extraction mode: step-by-step propagation through agent network, per-step costs, cumulative costs, ecosystem health index
+- [x] Implement input validation with clear error messages
+- [x] Externality report generation with per-agent breakdown (format_report)
+- [x] Implement Oak Valley Forest case (4 agents, logistic damage, calibrated parameters)
+- [x] Implement Costa Brava Holm Oak Forest case (11 agents: mycorrhizal network, soil microbiome, canopy trees, understory, pollinators, forest birds, mammals, raptors, watershed, carbon/climate with exponential damage, human communities)
+- [x] Implement Costa Brava Posidonia Meadow case (11 marine agents: seagrass, coralligenous reef, epiphytes, invertebrates, fish, megafauna, seabirds, coastal protection, water quality, blue carbon with exponential damage, human communities) — with marine economics inversion (one-time revenue vs annual recurring externality)
+- [x] Full test suite: 276 tests covering all damage functions, models, validation, simulation, and all three case scenarios
+- [x] CLI for all three cases with configurable parameters
+
+### ✅ v0.2 — Restoration Mode (complete)
+
+- [x] Implement recovery functions with entropy asymmetry: `logistic_recovery` (inflection at 0.60, steepness 7.0 — shallower and slower than logistic damage at steepness 12.0) and `linear_recovery` (slope ≤ 1.0 encodes entropy cost; `f(1.0) = slope`, not 1.0)
+- [x] Add `RestorationCost` dataclass (planting + annual maintenance × years)
+- [x] Add `RestorationStep` and `RestorationResult` dataclasses
+- [x] Extend simulation engine with `run_restoration()` — recovery ratio propagation, per-agent service value recovery, cumulative service value tracking, prevention advantage computation
+- [x] Restoration report generation (`format_restoration_report`) with cost breakdown, per-agent recovered service values, net restoration value, and prevention advantage ratio
+- [x] Add `--mode restore` CLI flag to all three cases
+- [x] Implement `run_forest_restoration()`, `run_costa_brava_restoration()`, `run_posidonia_restoration()` convenience functions with ecologically-calibrated default costs
+- [x] Prevention advantage ratios validated against ecological reality:
+  - Oak Valley Forest: **2.50×** (temperate, faster recovery)
+  - Costa Brava Holm Oak: **6.08×** (Mediterranean drought stress, mycorrhizal network delays)
+  - Costa Brava Posidonia: **81.00×** (1-6 cm/year growth, specialist diving restoration at €200k/ha vs €2.5k/ha one-time revenue)
+
+### 🔲 v0.3 — Trophic Cascades & Population Dynamics
+
+- [ ] Implement trophic cascade amplification (damage multipliers by trophic level — each level operates on ~10% of energy from below, so damage to primary producers amplifies up the chain)
+- [ ] Implement R/K-strategy population dynamics with carrying capacity (K): logistic growth model `Nt = Nt₋₁ · (1 + r · (K − Nt₋₁)/K)` — R-strategists rebound fast but overshoot; K-strategists (hardwoods, apex predators) recover slowly and are threshold-sensitive
+- [ ] Model predator-prey oscillation and competitive exclusion dynamics between agents
+- [ ] Agent interaction matrix — keystone species collapse cascades to dependent agents; restore keystone first to unblock cascade reversal
+
+### 🔲 v0.4 — Succession & Maturation Curves
+
+- [ ] Implement succession-based maturation curves (pioneer → intermediate → climax): ecosystem services near-zero in pioneer phase, accelerating through intermediate, plateauing at climax — replaces the current logistic recovery approximation
+- [ ] Maturation delay: replanted unit provides zero service until pioneer phase establishes (configurable delay per ecosystem type)
+- [ ] Implement double carbon externality: CO₂ released (biomass + soil) + lost future absorption during the maturation window (decades of sequestration foregone)
+- [ ] Implement resilience zones and threshold uncertainty flagging — zone of uncertainty around the safe extraction threshold where resilience may or may not hold; flag when model confidence degrades
+
+### 🔲 v0.5 — NPV & Time-Horizon Analysis
+
+- [ ] Restoration investment report with NPV (net present value over configurable time horizon), ROI, and payback period — enables fair comparison of one-time private revenue against recurring annual externality losses (critical for the Posidonia marine inversion case where single-year snapshot is misleading)
+- [ ] Prevention-vs-restoration comparison with full maturation damage gap (externality cost during recovery window, not just direct restoration cost)
+- [ ] Pluggable monetary conversion models (region-specific valuation, time-discounted shadow prices, EU ETS carbon pricing)
+- [ ] Discount rate sensitivity analysis (how prevention advantage changes with different social discount rates)
+
+### 🔲 v0.6 — Performance & Generalization
+
+- [ ] Add Cython-optimized simulation loop (drop-in replacement, same API)
+- [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
+- [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates
+- [ ] Pluggable case template system — structured template for adding new ecosystems without writing Python
 
 ---
 

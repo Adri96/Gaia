@@ -95,15 +95,17 @@ Dependency weights sum: 0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.09+0.08 =
 CLI usage:
     python -m gaia.cases.posidonia
     python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 1500
+    python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 1500 --mode restore
 """
 
 import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, Resource
-from gaia.report import format_report
-from gaia.simulation import run_extraction
+from gaia.models import Agent, Ecosystem, RestorationCost, Resource
+from gaia.recovery import logistic_recovery
+from gaia.report import format_report, format_restoration_report
+from gaia.simulation import run_extraction, run_restoration
 
 # Shared steepness for all logistic agents.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
@@ -360,18 +362,84 @@ def run_posidonia(
     return format_report(result) + _ANNUAL_NOTE
 
 
+def run_posidonia_restoration(
+    total_hectares: int = 5_000,
+    safe_threshold_ratio: float = 0.20,
+    hectares_to_restore: int = 2_000,
+    revenue_per_hectare: float = 2_500.0,
+    planting_cost_per_hectare: float = 50_000.0,
+    annual_maintenance_per_hectare: float = 5_000.0,
+    maintenance_years: int = 30,
+) -> str:
+    """
+    Run the Costa Brava Posidonia Meadow restoration simulation and return the report.
+
+    Posidonia restoration is among the most expensive and uncertain ecological
+    restoration efforts known. The prevention advantage ratio is extremely high
+    because:
+    - Posidonia grows at 1-6 cm/year horizontal expansion rate
+    - Transplanting requires specialist diving teams
+    - Establishment takes 5-10 years before any ecosystem service recovery
+    - Survival rates in transplanting projects: 30-60%
+    - The logistic recovery inflection at 60% restoration means services only
+      meaningfully recover after most of the meadow is re-established
+
+    Default costs (per hectare):
+        Planting: €50,000/ha — specialist diving, substrate preparation,
+                  donor material collection, monitoring
+        Maintenance: €5,000/ha/year for 30 years — storm damage repair,
+                     invasive species control, turbidity monitoring
+        Total: €50,000 + (€5,000 × 30) = €200,000/ha
+
+    For comparison: one-time destruction revenue is €2,500/ha.
+    Prevention advantage ≈ (€2,500 + €200,000) / €2,500 ≈ 81×
+
+    NOTE: The logistic recovery function here models ecosystem SERVICE recovery,
+    not meadow area recovery. Even with 100% area replanted, services ramp up
+    slowly as the meadow matures.
+
+    Args:
+        total_hectares: Total carrying capacity of the Posidonia meadow.
+        safe_threshold_ratio: Safe destruction threshold ratio.
+        hectares_to_restore: Hectares of meadow to actively restore.
+        revenue_per_hectare: One-time private revenue per hectare (for prevention_advantage).
+        planting_cost_per_hectare: Specialist diving and transplanting cost per hectare.
+        annual_maintenance_per_hectare: Annual monitoring and repair cost per hectare.
+        maintenance_years: Years of active maintenance before self-sustaining.
+
+    Returns:
+        Formatted text restoration report string with marine economics note appended.
+    """
+    ecosystem = build_posidonia_ecosystem(
+        total_hectares=total_hectares,
+        safe_threshold_ratio=safe_threshold_ratio,
+        revenue_per_hectare=revenue_per_hectare,
+    )
+    cost = RestorationCost(
+        planting_cost_per_unit=planting_cost_per_hectare,
+        annual_maintenance_per_unit=annual_maintenance_per_hectare,
+        maintenance_years=maintenance_years,
+    )
+    recovery_fns = [
+        logistic_recovery(threshold=safe_threshold_ratio)
+        for _ in ecosystem.agents
+    ]
+    result = run_restoration(ecosystem, hectares_to_restore, cost, recovery_fns)
+    return format_restoration_report(result) + _ANNUAL_NOTE
+
+
 def _parse_args(argv: list = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Gaia v0.1 — Costa Brava Posidonia Meadow externality simulation",
+        description="Gaia v0.2 — Costa Brava Posidonia Meadow externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  # At safe threshold (20% = 1,000 ha):\n"
+            "  # Extraction — at safe threshold (20% = 1,000 ha):\n"
             "  python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 1000\n\n"
-            "  # Past threshold (40% = 2,000 ha, major coastal development):\n"
+            "  # Extraction — past threshold (40% = 2,000 ha):\n"
             "  python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 2000\n\n"
-            "  # Heavy destruction (60% = 3,000 ha, catastrophic loss):\n"
-            "  python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 3000\n"
+            "  # Restoration mode:\n"
+            "  python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --destroy 2000 --mode restore\n"
         ),
     )
     parser.add_argument(
@@ -393,7 +461,7 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         type=int,
         default=2_000,
         metavar="N",
-        help="Hectares of Posidonia to destroy (default: 2000)",
+        help="Hectares of Posidonia to destroy/restore (default: 2000)",
     )
     parser.add_argument(
         "--revenue",
@@ -402,18 +470,56 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         metavar="EUROS",
         help="One-time revenue per hectare destroyed in euros (default: 2500.0)",
     )
+    parser.add_argument(
+        "--mode",
+        choices=["extract", "restore"],
+        default="extract",
+        help="Simulation mode: 'extract' (default) or 'restore'",
+    )
+    parser.add_argument(
+        "--planting-cost",
+        type=float,
+        default=50_000.0,
+        metavar="EUROS",
+        help="[restore mode] Planting/transplanting cost per hectare in euros (default: 50000.0)",
+    )
+    parser.add_argument(
+        "--maintenance-cost",
+        type=float,
+        default=5_000.0,
+        metavar="EUROS",
+        help="[restore mode] Annual maintenance cost per hectare in euros (default: 5000.0)",
+    )
+    parser.add_argument(
+        "--maintenance-years",
+        type=int,
+        default=30,
+        metavar="N",
+        help="[restore mode] Number of maintenance years (default: 30)",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
     try:
-        report = run_posidonia(
-            total_hectares=args.hectares,
-            safe_threshold_ratio=args.threshold,
-            hectares_destroyed=args.destroy,
-            revenue_per_hectare=args.revenue,
-        )
+        if args.mode == "restore":
+            report = run_posidonia_restoration(
+                total_hectares=args.hectares,
+                safe_threshold_ratio=args.threshold,
+                hectares_to_restore=args.destroy,
+                revenue_per_hectare=args.revenue,
+                planting_cost_per_hectare=args.planting_cost,
+                annual_maintenance_per_hectare=args.maintenance_cost,
+                maintenance_years=args.maintenance_years,
+            )
+        else:
+            report = run_posidonia(
+                total_hectares=args.hectares,
+                safe_threshold_ratio=args.threshold,
+                hectares_destroyed=args.destroy,
+                revenue_per_hectare=args.revenue,
+            )
         print(report)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
