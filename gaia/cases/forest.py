@@ -37,7 +37,7 @@ import argparse
 import sys
 
 from gaia.damage import logistic_damage
-from gaia.models import Agent, Ecosystem, RestorationCost, Resource
+from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -88,6 +88,8 @@ def build_forest_ecosystem(
             #   externality < revenue at safe threshold (30%), and
             #   externality > revenue at 50% depletion.
             description="Health costs, water treatment, lost recreation",
+            # v0.3: External beneficiary — not in trophic chain
+            trophic_level=-1,
         ),
         Agent(
             name="Animal Populations",
@@ -99,6 +101,8 @@ def build_forest_ecosystem(
             # Effective max: 0.30 × €1,167k = €350k
             # [PLACEHOLDER — habitat, biodiversity, species loss valuation]
             description="Habitat loss, population decline, species loss",
+            # v0.3: Primary consumer — herbivores, omnivores
+            trophic_level=1,
         ),
         Agent(
             name="Vegetation & Flora",
@@ -110,6 +114,8 @@ def build_forest_ecosystem(
             # Effective max: 0.15 × €1,000k = €150k
             # [PLACEHOLDER — soil erosion, pollination network disruption]
             description="Soil erosion, pollination network disruption",
+            # v0.3: Producer — the forest vegetation itself
+            trophic_level=0,
         ),
         Agent(
             name="General Biosphere",
@@ -121,6 +127,20 @@ def build_forest_ecosystem(
             # Effective max: 0.35 × €1,571k = €550k
             # [PLACEHOLDER — carbon release, watershed, climate impact]
             description="Carbon release, watershed degradation, climate impact",
+            # v0.3: Abiotic service — not in trophic chain
+            trophic_level=-1,
+        ),
+    ]
+
+    # v0.3: Minimal interaction edges for the simple forest case
+    interactions = [
+        InteractionEdge(
+            "Vegetation & Flora", "Animal Populations", 0.20, "dependency",
+            "Vegetation loss reduces food and habitat for animals",
+        ),
+        InteractionEdge(
+            "Animal Populations", "Human Communities", 0.10, "dependency",
+            "Wildlife decline reduces ecosystem health indicators",
         ),
     ]
 
@@ -128,6 +148,7 @@ def build_forest_ecosystem(
         name="Oak Valley Forest",
         resource=resource,
         agents=agents,
+        interactions=interactions,
     )
 
 

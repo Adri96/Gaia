@@ -77,7 +77,7 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, RestorationCost, Resource
+from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -128,24 +128,20 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_077_000.0,
-            # Effective max: 0.13 × €3,077k = €400k [User spec]
-            # KEYSTONE AGENT. Ectomycorrhizal fungi form obligate symbioses with
-            # oak and pine roots. No living roots → no fungi. Network fragmentation
-            # collapses nutrient and water transport for all remaining trees.
-            # Fungal community rebuilding takes decades. [User spec, Medium]
             description="Keystone underground network — nutrient/water transport, cascades to all tree regeneration",
+            # v0.3: Producer-level, KEYSTONE agent
+            trophic_level=0,
+            is_keystone=True,
+            keystone_threshold=0.3,
         ),
         Agent(
             name="Soil Microbiome",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_500_000.0,
-            # Effective max: 0.10 × €3,500k = €350k [User spec]
-            # Biocrusts (lichens, bryophytes, cyanobacteria) fix nitrogen.
-            # Exposed soil under Mediterranean sun → UV damage → erosion →
-            # carbon release → desertification. Soil formation: centuries.
-            # Effectively irreversible on human timescales. [User spec, Medium]
             description="Soil microbiome and biocrusts — nitrogen fixation, carbon storage, erosion prevention",
+            # v0.3: Abiotic process agent
+            trophic_level=-1,
         ),
         # ── Vegetation ──────────────────────────────────────────────────────
         Agent(
@@ -153,24 +149,18 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=2_500_000.0,
-            # Effective max: 0.12 × €2,500k = €300k [User spec]
-            # Remaining trees depend on forest microclimate — shade, humidity,
-            # wind protection, mycorrhizal connectivity. Self-reinforcing collapse:
-            # isolated trees face drought stress, bark beetle attacks, reduced
-            # regeneration. Die-off accelerates past the threshold. [User spec, Medium]
             description="Remaining canopy trees — self-reinforcing decline from microclimate loss and network fragmentation",
+            # v0.3: Producer — the resource itself
+            trophic_level=0,
         ),
         Agent(
             name="Understory & Matorral",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=1_875_000.0,
-            # Effective max: 0.08 × €1,875k = €150k [User spec]
-            # Kermes oak, lentisk, strawberry tree, cistus, rosemary, thyme,
-            # lavender. Shade-dependent species die off as canopy opens.
-            # Pioneer shrubs (cistus) may expand temporarily but overall
-            # diversity collapses. Soil erosion begins. [User spec, Medium]
             description="Understory shrubs and aromatic plants — microclimate collapse and biodiversity loss",
+            # v0.3: Secondary producer
+            trophic_level=0,
         ),
         # ── Invertebrates ───────────────────────────────────────────────────
         Agent(
@@ -178,12 +168,11 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_500_000.0,
-            # Effective max: 0.10 × €3,500k = €350k [User spec]
-            # KEYSTONE FUNCTIONAL GROUP. ~150,000 insect species in Mediterranean
-            # basin. Floral diversity collapse → pollinator crash → cascading
-            # failure of wild plant reproduction AND surrounding agricultural crops.
-            # Base of the animal food web. [User spec, Medium]
             description="Keystone pollination services — base of animal food web, agricultural crop dependency",
+            # v0.3: Primary consumer, KEYSTONE functional group
+            trophic_level=1,
+            is_keystone=True,
+            keystone_threshold=0.4,
         ),
         # ── Vertebrates ─────────────────────────────────────────────────────
         Agent(
@@ -191,37 +180,27 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=2_500_000.0,
-            # Effective max: 0.08 × €2,500k = €200k [User spec]
-            # 534 species in Mediterranean basin. Critical stopover habitat for
-            # Europe-Africa migratory flyway — local damage has range-wide impact.
-            # Seed dispersal and insect control services lost.
-            # Birding tourism significant on Costa Brava. [User spec, Medium]
             description="Nesting and migratory stopover habitat — seed dispersal, insect control, ecotourism",
+            # v0.3: Primary consumer (insects + seeds)
+            trophic_level=1,
         ),
         Agent(
             name="Forest Mammals",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=2_571_000.0,
-            # Effective max: 0.07 × €2,571k = €180k [User spec]
-            # Wild boar, roe deer, rabbits, foxes, genets, pine martens.
-            # Habitat loss → displacement into agricultural/urban areas →
-            # crop damage, car accidents, human-wildlife conflict.
-            # Predator-prey balance lost. [User spec, Medium]
             description="Habitat displacement — predator-prey disruption, human-wildlife conflict, crop damage",
+            # v0.3: Primary consumer — herbivores and omnivores
+            trophic_level=1,
         ),
         Agent(
             name="Raptors & Apex Predators",
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_000_000.0,
-            # Effective max: 0.04 × €3,000k = €120k [User spec]
-            # Catalonia hosts all 4 European vulture species plus golden eagle
-            # (trencalòs = bearded vulture). Extreme K-strategy: small populations,
-            # slow reproduction → threshold collapse is rapid and hard to reverse.
-            # Vulture loss → carcass accumulation → disease risk.
-            # Trophic cascade: apex loss → herbivore explosion → overgrazing. [User spec, Medium]
             description="Apex trophic control — carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+            # v0.3: Tertiary consumer — apex predator
+            trophic_level=3,
         ),
         # ── Physical systems ────────────────────────────────────────────────
         Agent(
@@ -229,27 +208,18 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=4_167_000.0,
-            # Effective max: 0.12 × €4,167k = €500k [User spec]
-            # CRITICAL in Mediterranean climate where water is the limiting factor.
-            # Forest roots → aquifer recharge. Canopy → rainfall interception and
-            # evapotranspiration regulation. Deforested slopes → winter flash floods,
-            # summer drought amplification. Coastal Costa Brava tourism depends on
-            # forest watershed for water supply. [User spec, Medium]
             description="Aquifer recharge, flood control, drought buffering — Costa Brava water and tourism supply",
+            # v0.3: Abiotic process
+            trophic_level=-1,
         ),
         Agent(
             name="Carbon & Climate",
             dependency_weight=0.10,
-            # Exponential (not logistic) — CO₂ release does not plateau.
-            # Unlike biological populations, atmospheric carbon accumulates
-            # continuously. Mediterranean identified as major climate hotspot.
-            # Fire risk increases non-linearly as microclimate dries. [User spec]
             damage_function=exponential_damage(threshold=t, base=2.0),
             monetary_rate=4_500_000.0,
-            # Effective max: 0.10 × €4,500k = €450k [User spec]
-            # Carbon release (biomass + soil) + lost future sequestration capacity
-            # + local temperature increase + fire risk amplification. [User spec, Medium]
             description="CO₂ release, lost sequestration, fire risk amplification — exponential accumulation, no plateau",
+            # v0.3: Abiotic process
+            trophic_level=-1,
         ),
         # ── Human systems ───────────────────────────────────────────────────
         Agent(
@@ -257,20 +227,70 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.06,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=8_333_000.0,
-            # Effective max: 0.06 × €8,333k = €500k [User spec]
-            # Water quality, wildfire protection (forest as firebreak), recreation
-            # and tourism (Costa Brava economy is tourism-dependent), non-timber
-            # products (cork, mushrooms, honey, aromatic herbs), cultural value,
-            # property values. Fire damage + tourism loss + water treatment +
-            # health costs + property devaluation. [User spec, Medium]
             description="Water, fire protection, tourism economy, traditional livelihoods — Costa Brava coastal dependency",
+            # v0.3: External beneficiary
+            trophic_level=-1,
         ),
+    ]
+
+    # v0.3: Full trophic web with 17 interaction edges
+    interactions = [
+        # Mycorrhizal network is the backbone — its collapse cascades everywhere
+        InteractionEdge("Mycorrhizal Fungi", "Canopy Trees", 0.35, "keystone",
+            "Mycorrhizal collapse cuts nutrient/water supply to remaining trees"),
+        InteractionEdge("Mycorrhizal Fungi", "Understory & Matorral", 0.25, "dependency",
+            "Understory plants lose mycorrhizal nutrient access"),
+        InteractionEdge("Mycorrhizal Fungi", "Soil Microbiome", 0.30, "dependency",
+            "Mycorrhizal network supports bacterial communities and nutrient cycling"),
+
+        # Pollinator collapse hits vegetation reproduction
+        InteractionEdge("Pollinators & Insects", "Understory & Matorral", 0.30, "keystone",
+            "Pollinator loss collapses plant reproduction"),
+        InteractionEdge("Pollinators & Insects", "Forest Birds", 0.20, "trophic",
+            "Insect decline reduces food for insectivorous birds"),
+
+        # Canopy loss affects microclimate-dependent agents
+        InteractionEdge("Canopy Trees", "Understory & Matorral", 0.25, "dependency",
+            "Canopy loss removes shade \u2192 understory heat/drought stress"),
+        InteractionEdge("Canopy Trees", "Soil Microbiome", 0.20, "dependency",
+            "Canopy loss exposes soil to UV and drying \u2192 biocrust collapse"),
+        InteractionEdge("Canopy Trees", "Watershed & Water Cycle", 0.30, "dependency",
+            "Root loss reduces water infiltration and aquifer recharge"),
+
+        # Prey-predator chain
+        InteractionEdge("Forest Mammals", "Raptors & Apex Predators", 0.30, "trophic",
+            "Prey decline starves apex predators"),
+        InteractionEdge("Forest Birds", "Raptors & Apex Predators", 0.20, "trophic",
+            "Bird decline reduces prey for raptors"),
+
+        # Vegetation → herbivore dependency
+        InteractionEdge("Understory & Matorral", "Forest Mammals", 0.25, "dependency",
+            "Vegetation loss reduces food and cover for herbivores"),
+        InteractionEdge("Understory & Matorral", "Pollinators & Insects", 0.20, "dependency",
+            "Understory flowering loss reduces pollinator food sources"),
+
+        # Soil → everything
+        InteractionEdge("Soil Microbiome", "Canopy Trees", 0.15, "dependency",
+            "Soil health decline reduces tree nutrient availability"),
+        InteractionEdge("Soil Microbiome", "Watershed & Water Cycle", 0.20, "dependency",
+            "Soil degradation reduces water retention capacity"),
+
+        # Carbon depends on living biomass
+        InteractionEdge("Canopy Trees", "Carbon & Climate", 0.35, "dependency",
+            "Tree loss directly reduces carbon sequestration capacity"),
+
+        # Human communities depend on multiple services
+        InteractionEdge("Watershed & Water Cycle", "Human Communities", 0.25, "dependency",
+            "Water quality decline affects human health and tourism"),
+        InteractionEdge("Carbon & Climate", "Human Communities", 0.10, "dependency",
+            "Climate regulation loss increases fire risk and heat stress"),
     ]
 
     return Ecosystem(
         name="Costa Brava Holm Oak Forest",
         resource=resource,
         agents=agents,
+        interactions=interactions,
     )
 
 

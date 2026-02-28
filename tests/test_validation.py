@@ -7,7 +7,7 @@ passes cleanly on valid inputs. Validation failures must never silently default.
 
 import pytest
 from gaia.damage import logistic_damage
-from gaia.models import Agent, Ecosystem, Resource
+from gaia.models import Agent, Ecosystem, InteractionEdge, Resource
 from gaia.validation import (
     validate_damage_function,
     validate_ecosystem,
@@ -203,3 +203,107 @@ def test_reject_damage_function_wrong_at_zero():
 
     with pytest.raises(ValueError, match="0.0"):
         validate_damage_function(starts_at_half, name="starts_at_half")
+
+
+# ── v0.3: Trophic level validation ───────────────────────────────────────────
+
+def test_reject_invalid_trophic_level():
+    """trophic_level=5 must be rejected."""
+    agent = Agent(
+        name="A",
+        dependency_weight=1.0,
+        damage_function=logistic_damage(threshold=0.3),
+        monetary_rate=1.0,
+        description="",
+        trophic_level=5,
+    )
+    eco = Ecosystem(name="E", resource=_resource(), agents=[agent])
+    with pytest.raises(ValueError, match="trophic_level"):
+        validate_ecosystem(eco)
+
+
+def test_reject_invalid_keystone_threshold():
+    """Keystone agent with threshold=0.0 must be rejected."""
+    agent = Agent(
+        name="A",
+        dependency_weight=1.0,
+        damage_function=logistic_damage(threshold=0.3),
+        monetary_rate=1.0,
+        description="",
+        is_keystone=True,
+        keystone_threshold=0.0,
+    )
+    eco = Ecosystem(name="E", resource=_resource(), agents=[agent])
+    with pytest.raises(ValueError, match="keystone_threshold"):
+        validate_ecosystem(eco)
+
+
+# ── v0.3: Interaction edge validation ─────────────────────────────────────────
+
+def test_reject_edge_self_loop():
+    """An edge with source == target must be rejected."""
+    edge = InteractionEdge("Agent", "Agent", 0.3, "dependency", "self")
+    eco = Ecosystem(
+        name="E",
+        resource=_resource(),
+        agents=[_agent(1.0)],
+        interactions=[edge],
+    )
+    with pytest.raises(ValueError, match="self-loop"):
+        validate_ecosystem(eco)
+
+
+def test_reject_edge_missing_source():
+    """Edge with a source not in the ecosystem must be rejected."""
+    edge = InteractionEdge("NonExistent", "Agent", 0.3, "dependency", "x")
+    eco = Ecosystem(
+        name="E",
+        resource=_resource(),
+        agents=[_agent(1.0)],
+        interactions=[edge],
+    )
+    with pytest.raises(ValueError, match="source"):
+        validate_ecosystem(eco)
+
+
+def test_reject_edge_bad_strength():
+    """Edge with strength=0 must be rejected."""
+    agents = [_agent(0.5), _agent(0.5)]
+    agents[0] = Agent(
+        name="A", dependency_weight=0.5,
+        damage_function=logistic_damage(0.3),
+        monetary_rate=1.0, description="",
+    )
+    agents[1] = Agent(
+        name="B", dependency_weight=0.5,
+        damage_function=logistic_damage(0.3),
+        monetary_rate=1.0, description="",
+    )
+    edge = InteractionEdge("A", "B", 0.0, "dependency", "bad")
+    eco = Ecosystem(
+        name="E",
+        resource=_resource(),
+        agents=agents,
+        interactions=[edge],
+    )
+    with pytest.raises(ValueError, match="strength"):
+        validate_ecosystem(eco)
+
+
+def test_reject_edge_bad_interaction_type():
+    """Edge with invalid interaction_type must be rejected."""
+    agents = [
+        Agent(name="A", dependency_weight=0.5,
+              damage_function=logistic_damage(0.3),
+              monetary_rate=1.0, description=""),
+        Agent(name="B", dependency_weight=0.5,
+              damage_function=logistic_damage(0.3),
+              monetary_rate=1.0, description=""),
+    ]
+    edge = InteractionEdge("A", "B", 0.3, "invalid_type", "bad")
+    eco = Ecosystem(
+        name="E", resource=_resource(), agents=agents,
+        interactions=[edge],
+    )
+    with pytest.raises(ValueError, match="interaction_type"):
+        validate_ecosystem(eco)

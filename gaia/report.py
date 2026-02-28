@@ -1,11 +1,13 @@
 """
-Gaia v0.1/v0.2 — Text report generation.
+Gaia v0.3 — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
 
 v0.1: format_report()           — externality report from run_extraction()
 v0.2: format_restoration_report() — restoration report from run_restoration()
+v0.3: Cascade breakdown (direct vs propagated damage, trophic amplification,
+      keystone threshold warnings) added to externality report.
 """
 
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
@@ -46,8 +48,15 @@ def format_report(result: SimulationResult) -> str:
     # agent_costs[i] is the total cost at the final depletion level
     if result.steps:
         final_agent_costs: list = result.steps[-1].agent_costs
+        final_direct_damages: list = result.steps[-1].agent_direct_damages
+        final_cascade_damages: list = result.steps[-1].agent_cascade_damages
     else:
         final_agent_costs = [0.0] * len(agents)
+        final_direct_damages = []
+        final_cascade_damages = []
+
+    # v0.3: Check if cascade data is present (non-empty direct_damages list)
+    has_cascade_data: bool = len(final_direct_damages) > 0
 
     lines: list = []
 
@@ -95,7 +104,56 @@ def format_report(result: SimulationResult) -> str:
         )
         lines.append(f"    \u2192 {agent.description}")
 
+        # v0.3: Cascade breakdown (only when cascade data is present)
+        if has_cascade_data and i < len(final_cascade_damages):
+            direct_dmg: float = final_direct_damages[i]
+            cascade_dmg: float = final_cascade_damages[i]
+            weight: float = agent.dependency_weight
+            rate: float = agent.monetary_rate
+            direct_cost: float = direct_dmg * weight * rate
+            cascade_cost: float = cascade_dmg * weight * rate
+
+            if cascade_dmg > 1e-6:
+                lines.append(
+                    f"    \u2192 Direct: \u20ac{direct_cost:,.0f} | "
+                    f"Cascade: \u20ac{cascade_cost:,.0f}"
+                )
+
+            # Show trophic amplification for consumers
+            if agent.trophic_level >= 1:
+                # Compute the raw amplification factor (not capped damage)
+                amp: float = (1.0 / 0.15) ** (agent.trophic_level * 0.25)
+                level_names = {
+                    1: "primary consumer",
+                    2: "secondary consumer",
+                    3: "tertiary consumer",
+                }
+                level_name = level_names.get(agent.trophic_level, "consumer")
+                lines.append(
+                    f"    \u2192 Trophic amplification: {amp:.1f}\u00d7 ({level_name})"
+                )
+
     lines.append("")
+
+    # v0.3: Keystone threshold crossings
+    if has_cascade_data:
+        # Collect all keystone crossings across all steps
+        keystone_crossings: dict = {}  # agent_name -> first step number
+        for s in result.steps:
+            for kname in s.keystone_triggered:
+                if kname not in keystone_crossings:
+                    keystone_crossings[kname] = s.step
+        if keystone_crossings:
+            lines.append(
+                f"  \u2500\u2500 Keystone Threshold Crossings \u2500" + "\u2500" * 31
+            )
+            for kname, kstep in sorted(keystone_crossings.items(), key=lambda x: x[1]):
+                depletion_at_cross: float = kstep / resource.total_units
+                lines.append(
+                    f"  \u26a0 {kname}: crossed at step {kstep:,} "
+                    f"({depletion_at_cross:.0%} depletion)"
+                )
+            lines.append("")
 
     # Totals
     lines.append(

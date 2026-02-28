@@ -7,7 +7,7 @@ properties are correctly computed, and that fields have the expected types.
 
 import pytest
 from gaia.damage import logistic_damage
-from gaia.models import Agent, Ecosystem, Resource, SimulationStep
+from gaia.models import Agent, Ecosystem, InteractionEdge, Resource, SimulationStep
 
 
 # ── Resource ───────────────────────────────────────────────────────────────────
@@ -151,3 +151,96 @@ def test_simulation_step_fields():
     assert isinstance(step.ecosystem_health, float)
     assert len(step.agent_damages) == 2
     assert len(step.agent_costs) == 2
+
+
+# ── v0.3: InteractionEdge ─────────────────────────────────────────────────────
+
+def test_interaction_edge_creation():
+    """InteractionEdge can be created with valid parameters."""
+    edge = InteractionEdge(
+        source="A",
+        target="B",
+        strength=0.3,
+        interaction_type="dependency",
+        description="A affects B",
+    )
+    assert edge.source == "A"
+    assert edge.target == "B"
+    assert edge.strength == 0.3
+    assert edge.interaction_type == "dependency"
+
+
+# ── v0.3: Agent trophic defaults ──────────────────────────────────────────────
+
+def test_agent_trophic_defaults():
+    """Agent has correct trophic defaults for backward compatibility."""
+    fn = logistic_damage(threshold=0.3)
+    agent = Agent(
+        name="A",
+        dependency_weight=1.0,
+        damage_function=fn,
+        monetary_rate=1.0,
+        description="",
+    )
+    assert agent.trophic_level == -1
+    assert agent.is_keystone is False
+    assert agent.keystone_threshold == 0.3
+
+
+def test_agent_trophic_custom_values():
+    """Agent trophic fields can be set to custom values."""
+    fn = logistic_damage(threshold=0.3)
+    agent = Agent(
+        name="K",
+        dependency_weight=1.0,
+        damage_function=fn,
+        monetary_rate=1.0,
+        description="",
+        trophic_level=2,
+        is_keystone=True,
+        keystone_threshold=0.4,
+    )
+    assert agent.trophic_level == 2
+    assert agent.is_keystone is True
+    assert agent.keystone_threshold == 0.4
+
+
+# ── v0.3: Ecosystem interactions ──────────────────────────────────────────────
+
+def test_ecosystem_interactions_default_empty():
+    """Ecosystem.interactions defaults to empty list."""
+    eco = _make_ecosystem(2)
+    assert eco.interactions == []
+
+
+def test_ecosystem_with_interactions():
+    """Ecosystem accepts interaction edges."""
+    eco = _make_ecosystem(2)
+    edge = InteractionEdge("Agent 0", "Agent 1", 0.3, "dependency", "test")
+    eco2 = Ecosystem(
+        name="E",
+        resource=eco.resource,
+        agents=eco.agents,
+        interactions=[edge],
+    )
+    assert len(eco2.interactions) == 1
+
+
+# ── v0.3: SimulationStep cascade fields ───────────────────────────────────────
+
+def test_simulation_step_cascade_defaults():
+    """SimulationStep cascade fields default to empty lists."""
+    step = SimulationStep(
+        step=1,
+        units_extracted=1,
+        depletion_ratio=0.001,
+        agent_damages=[0.01],
+        agent_costs=[100.0],
+        marginal_cost=100.0,
+        cumulative_cost=100.0,
+        private_revenue=100.0,
+        ecosystem_health=0.99,
+    )
+    assert step.agent_direct_damages == []
+    assert step.agent_cascade_damages == []
+    assert step.keystone_triggered == []

@@ -311,3 +311,56 @@ def test_posidonia_report_contains_all_agents():
         assert agent_name in report, (
             f"Agent '{agent_name}' should appear in the report"
         )
+
+
+# ── v0.3: Cascade-specific tests ─────────────────────────────────────────────
+
+def test_posidonia_has_interactions():
+    """Posidonia ecosystem has 16 interaction edges."""
+    eco = build_posidonia_ecosystem()
+    assert len(eco.interactions) == 16, (
+        f"Expected 16 interaction edges, got {len(eco.interactions)}"
+    )
+
+
+def test_posidonia_has_keystone():
+    """Posidonia Meadow is the keystone agent."""
+    eco = build_posidonia_ecosystem()
+    keystones = [a.name for a in eco.agents if a.is_keystone]
+    assert "Posidonia Meadow" in keystones
+    assert len(keystones) == 1
+
+
+def test_posidonia_keystone_cascade_at_heavy_extraction():
+    """At 60% destruction, Posidonia keystone threshold should be crossed."""
+    eco = build_posidonia_ecosystem(
+        total_hectares=TOTAL_HECTARES,
+        safe_threshold_ratio=THRESHOLD,
+    )
+    result = run_extraction(eco, 3_000)  # 60%
+    all_triggered = set()
+    for step in result.steps:
+        for name in step.keystone_triggered:
+            all_triggered.add(name)
+    assert "Posidonia Meadow" in all_triggered, (
+        "Posidonia Meadow keystone should be triggered at 60% destruction"
+    )
+
+
+def test_posidonia_cascade_increases_coastal_protection_cost():
+    """
+    Posidonia→Coastal Protection edge means coastal protection cost includes
+    cascade damage beyond direct resource depletion.
+    """
+    eco = build_posidonia_ecosystem(
+        total_hectares=TOTAL_HECTARES,
+        safe_threshold_ratio=THRESHOLD,
+    )
+    result = run_extraction(eco, 2_500)
+    final_step = result.steps[-1]
+    # Find Coastal Protection agent index
+    cp_idx = next(i for i, a in enumerate(eco.agents) if a.name == "Coastal Protection")
+    cascade_dmg = final_step.agent_cascade_damages[cp_idx]
+    assert cascade_dmg > 0, (
+        f"Coastal Protection should have non-zero cascade damage, got {cascade_dmg:.6f}"
+    )

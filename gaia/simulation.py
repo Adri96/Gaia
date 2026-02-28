@@ -1,5 +1,5 @@
 """
-Gaia v0.2 — Simulation engine.
+Gaia v0.3 — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return
@@ -13,6 +13,7 @@ All code in this module is Cython-compatible:
     - No third-party dependencies
 
 v0.2: Added run_restoration() — the inverse of run_extraction().
+v0.3: Two-phase loops with trophic amplification and interaction propagation.
 """
 
 from typing import List
@@ -26,6 +27,7 @@ from gaia.models import (
     SimulationResult,
     SimulationStep,
 )
+from gaia.propagation import compute_trophic_amplification, propagate_interactions
 from gaia.recovery import RecoveryFunc
 from gaia.validation import validate_ecosystem, validate_extraction
 
@@ -34,18 +36,24 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     """
     Simulate extracting `units_to_extract` units from the ecosystem.
 
-    At each step, the current depletion ratio is computed and each agent's
-    damage function is evaluated to get the TOTAL externality cost at that
-    depletion level. Marginal cost per step is the difference from the
-    previous step's total.
+    v0.3 algorithm (per step):
+        Phase 1 — Direct damage with trophic amplification:
+            depletion_ratio  = units_extracted / total_units
+            raw_damage[i]    = agent[i].damage_function(depletion_ratio)
+            direct_damage[i] = trophic_amplification(raw_damage[i], trophic_level[i])
 
-    Algorithm (per step):
-        depletion_ratio  = units_extracted / total_units
-        damage[i]        = agent[i].damage_function(depletion_ratio)
-        cost[i]          = damage[i] * agent[i].dependency_weight * agent[i].monetary_rate
-        total_cost       = sum(cost[i] for all i)
-        marginal_cost    = total_cost - total_cost_at_previous_step
-        ecosystem_health = 1.0 - sum(agent[i].dependency_weight * damage[i] for all i)
+        Phase 2 — Interaction propagation (single pass):
+            Apply keystone effects, then propagate damage through edges.
+            effective_damage[i] = direct_damage[i] + cascade_damage[i]
+
+        Phase 3 — Cost computation:
+            cost[i]          = effective_damage[i] * weight[i] * rate[i]
+            total_cost       = sum(cost[i])
+            marginal_cost    = total_cost - previous_total_cost
+            ecosystem_health = 1.0 - sum(weight[i] * effective_damage[i])
+
+    When ecosystem.interactions is empty and all trophic_levels are -1,
+    this reduces to the v0.2 algorithm exactly.
 
     Args:
         ecosystem: The Ecosystem to simulate against.
@@ -80,26 +88,70 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             final_ecosystem_health=1.0,
         )
 
+    # v0.3: Pre-extract interaction metadata for the loop
+    agent_names: list = [a.name for a in agents]
+    agent_trophic_levels: list = [a.trophic_level for a in agents]
+    agent_is_keystone: list = [a.is_keystone for a in agents]
+    agent_keystone_thresholds: list = [a.keystone_threshold for a in agents]
+
+    interactions: list = ecosystem.interactions
+    edge_sources: list = [e.source for e in interactions]
+    edge_targets: list = [e.target for e in interactions]
+    edge_strengths: list = [e.strength for e in interactions]
+
+    # Short-circuit flags: skip v0.3 phases when not needed
+    has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
+    has_interactions: bool = len(interactions) > 0
+
     previous_total_cost: float = 0.0
 
     for step in range(1, units_to_extract + 1):
         units_extracted: int = step
         depletion_ratio: float = units_extracted / total_units
 
-        # Evaluate each agent's damage at the current depletion level
-        agent_damages: list = []
+        # Phase 1: Direct damage with trophic amplification
+        direct_damages: list = []
+        for i in range(n_agents):
+            raw_damage: float = agents[i].damage_function(depletion_ratio)
+            if has_trophic:
+                amplified: float = compute_trophic_amplification(
+                    raw_damage, agent_trophic_levels[i]
+                )
+                direct_damages.append(amplified)
+            else:
+                direct_damages.append(raw_damage)
+
+        # Phase 2: Interaction propagation
+        if has_interactions:
+            effective_damages, cascade_damages, keystone_triggered = (
+                propagate_interactions(
+                    agent_names=agent_names,
+                    direct_damages=direct_damages,
+                    edge_sources=edge_sources,
+                    edge_targets=edge_targets,
+                    edge_strengths=edge_strengths,
+                    agent_is_keystone=agent_is_keystone,
+                    agent_keystone_thresholds=agent_keystone_thresholds,
+                )
+            )
+        else:
+            effective_damages = direct_damages
+            cascade_damages = [0.0] * n_agents
+            keystone_triggered = []
+
+        # Phase 3: Compute costs from effective damages
         agent_costs: list = []
         step_total_cost: float = 0.0
         health_sum: float = 0.0
 
-        agent: Agent
-        for agent in agents:
-            damage: float = agent.damage_function(depletion_ratio)
-            cost: float = damage * agent.dependency_weight * agent.monetary_rate
-            agent_damages.append(damage)
+        for i in range(n_agents):
+            cost: float = (
+                effective_damages[i] * agents[i].dependency_weight
+                * agents[i].monetary_rate
+            )
             agent_costs.append(cost)
             step_total_cost += cost
-            health_sum += agent.dependency_weight * damage
+            health_sum += agents[i].dependency_weight * effective_damages[i]
 
         marginal_cost: float = step_total_cost - previous_total_cost
         ecosystem_health: float = 1.0 - health_sum
@@ -115,12 +167,15 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             step=step,
             units_extracted=units_extracted,
             depletion_ratio=depletion_ratio,
-            agent_damages=agent_damages,
+            agent_damages=effective_damages,
             agent_costs=agent_costs,
             marginal_cost=marginal_cost,
             cumulative_cost=step_total_cost,
             private_revenue=private_revenue,
             ecosystem_health=ecosystem_health,
+            agent_direct_damages=direct_damages,
+            agent_cascade_damages=cascade_damages,
+            keystone_triggered=keystone_triggered,
         ))
 
         previous_total_cost = step_total_cost
@@ -154,26 +209,8 @@ def run_restoration(
     recovered ecosystem service value at that ratio. Marginal value per step is
     the difference from the previous step's total.
 
-    Algorithm (per step):
-        recovery_ratio       = units_restored / units_to_restore
-        recovery[i]          = recovery_function[i](recovery_ratio)
-        service_value[i]     = recovery[i] * agent[i].dependency_weight * agent[i].monetary_rate
-        total_service        = sum(service_value[i] for all i)
-        marginal_value       = total_service - total_service_at_previous_step
-        restoration_cost_so_far = step * restoration_cost.total_cost_per_unit
-        ecosystem_health     = sum(agent[i].dependency_weight * recovery[i] for all i)
-
-    Prevention advantage:
-        The ratio of (foregone_revenue + restoration_cost) to foregone_revenue.
-        foregone_revenue = units_to_restore * ecosystem.resource.unit_value
-        prevention_advantage = (foregone_revenue + total_restoration_cost) / foregone_revenue
-
-        A ratio of 2.0 means: "it would have been 2× cheaper to never cut those
-        trees than to cut them and restore them." This does NOT include the
-        externality costs that accumulated during the period the ecosystem was
-        degraded — adding those would make the advantage even larger.
-        Full NPV analysis (with time-discounting and accumulated externalities
-        during recovery) is a v0.5 feature.
+    v0.3: Recovery cascades propagate at reduced strength (0.5×) reflecting
+    entropy asymmetry — recovery cascades are weaker than damage cascades.
 
     Args:
         ecosystem: The Ecosystem to restore.
@@ -209,6 +246,20 @@ def run_restoration(
     agents: list = ecosystem.agents
     cost_per_unit: float = restoration_cost.total_cost_per_unit
 
+    # v0.3: Pre-extract interaction metadata
+    agent_names: list = [a.name for a in agents]
+    agent_trophic_levels: list = [a.trophic_level for a in agents]
+    agent_is_keystone: list = [a.is_keystone for a in agents]
+    agent_keystone_thresholds: list = [a.keystone_threshold for a in agents]
+
+    interactions: list = ecosystem.interactions
+    edge_sources: list = [e.source for e in interactions]
+    edge_targets: list = [e.target for e in interactions]
+    edge_strengths: list = [e.strength for e in interactions]
+
+    has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
+    has_interactions: bool = len(interactions) > 0
+
     steps: list = []
     previous_total_service: float = 0.0
 
@@ -217,22 +268,47 @@ def run_restoration(
         # Recovery ratio: fraction of the destroyed resource that has been replanted
         recovery_ratio: float = units_restored / units_to_restore
 
-        agent_recoveries: list = []
+        # Phase 1: Direct recovery with trophic amplification
+        direct_recoveries: list = []
+        for i in range(n_agents):
+            recovery_fn: RecoveryFunc = recovery_functions[i]
+            raw_recovery: float = recovery_fn(recovery_ratio)
+            if has_trophic:
+                amplified: float = compute_trophic_amplification(
+                    raw_recovery, agent_trophic_levels[i]
+                )
+                direct_recoveries.append(amplified)
+            else:
+                direct_recoveries.append(raw_recovery)
+
+        # Phase 2: Interaction propagation (recovery mode — 0.5× cascade strength)
+        if has_interactions:
+            effective_recoveries, _cascade, _keystone = propagate_interactions(
+                agent_names=agent_names,
+                direct_damages=direct_recoveries,
+                edge_sources=edge_sources,
+                edge_targets=edge_targets,
+                edge_strengths=edge_strengths,
+                agent_is_keystone=agent_is_keystone,
+                agent_keystone_thresholds=agent_keystone_thresholds,
+                recovery_mode=True,
+            )
+        else:
+            effective_recoveries = direct_recoveries
+
+        # Phase 3: Compute service values from effective recoveries
         agent_service_values: list = []
         step_total_service: float = 0.0
         health_sum: float = 0.0
 
-        agent: Agent
-        for i, agent in enumerate(agents):
-            recovery_fn: RecoveryFunc = recovery_functions[i]
-            recovered: float = recovery_fn(recovery_ratio)
+        for i in range(n_agents):
             service_value: float = (
-                recovered * agent.dependency_weight * agent.monetary_rate
+                effective_recoveries[i] * agents[i].dependency_weight
+                * agents[i].monetary_rate
             )
-            agent_recoveries.append(recovered)
             agent_service_values.append(service_value)
             step_total_service += service_value
-            health_sum += agent.dependency_weight * recovered
+            health_sum += agents[i].dependency_weight * effective_recoveries[i]
 
         marginal_value: float = step_total_service - previous_total_service
         ecosystem_health: float = health_sum
@@ -247,7 +323,7 @@ def run_restoration(
             step=step,
             units_restored=units_restored,
             recovery_ratio=recovery_ratio,
-            agent_recoveries=agent_recoveries,
+            agent_recoveries=effective_recoveries,
             agent_service_values=agent_service_values,
             marginal_service_value=marginal_value,
             cumulative_service_value=step_total_service,
