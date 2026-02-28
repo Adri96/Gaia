@@ -37,23 +37,28 @@ The damage functions are not arbitrary — they encode these principles mathemat
 Gaia/
 ├── gaia/                      # Core library
 │   ├── __init__.py
-│   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult
+│   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult, RestorationResult
 │   ├── damage.py              # Damage function library (logistic, exponential, piecewise)
+│   ├── recovery.py            # Recovery function library (logistic_recovery, linear_recovery)
 │   ├── validation.py          # Input validation with scientific constraints
-│   ├── simulation.py          # Simulation engine
-│   ├── report.py              # Plain-text report formatter
+│   ├── simulation.py          # Simulation engine (extraction + restoration modes)
+│   ├── report.py              # Plain-text report formatter (externality + restoration reports)
 │   └── cases/
 │       ├── __init__.py
-│       ├── forest.py          # Oak Valley Forest — temperate deforestation (CLI + API)
-│       ├── costa_brava.py     # Costa Brava Holm Oak Forest — Mediterranean deforestation (CLI + API)
-│       └── posidonia.py       # Costa Brava Posidonia Meadow — marine seagrass destruction (CLI + API)
+│       ├── forest.py          # Oak Valley Forest — temperate deforestation/restoration (CLI + API)
+│       ├── costa_brava.py     # Costa Brava Holm Oak Forest — Mediterranean deforestation/restoration (CLI + API)
+│       └── posidonia.py       # Costa Brava Posidonia Meadow — marine seagrass destruction/restoration (CLI + API)
 ├── tests/
 │   ├── __init__.py
 │   ├── test_damage.py         # Mathematical property tests for all damage functions
 │   ├── test_models.py         # Data model unit tests
 │   ├── test_validation.py     # Validation logic tests
 │   ├── test_simulation.py     # Simulation engine tests
-│   └── test_forest.py         # End-to-end forest case tests
+│   ├── test_forest.py         # End-to-end Oak Valley Forest case tests
+│   ├── test_costa_brava.py    # End-to-end Costa Brava forest case tests
+│   ├── test_posidonia.py      # End-to-end Posidonia marine case tests
+│   ├── test_recovery.py       # Mathematical property tests for all recovery functions
+│   └── test_restoration.py    # Restoration engine correctness and economic claim tests
 ├── PROJECT_DEFINITION.md      # Scientific foundations and architecture vision
 ├── ROADMAP.md                 # Version roadmap and verification strategy
 └── V01_SPEC.md                # Detailed v0.1 specification
@@ -63,10 +68,11 @@ Gaia/
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
-| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — the simulation loop |
-| `gaia/report.py` | `format_report(result)` — human-readable output |
+| `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
+| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop; `run_restoration(ecosystem, units, cost, fns)` — restoration loop |
+| `gaia/report.py` | `format_report(result)` — externality report; `format_restoration_report(result)` — restoration investment report |
 | `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents |
 | `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents |
 | `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents |
@@ -121,7 +127,49 @@ Sample output:
 
 Cutting 5,000 trees yields €500,000 in private revenue — but imposes over €907,000 in social costs. The net social cost is **-€407,648**: a net loss for society.
 
-### Python API
+#### Restoration mode
+
+```bash
+# Restore 5,000 trees (default costs: €50 planting + €10/yr × 10 yr = €150/tree)
+python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000 --mode restore
+
+# Custom restoration costs
+python -m gaia.cases.forest --cut 5000 --mode restore \
+  --planting-cost 60.0 --maintenance-cost 12.0 --maintenance-years 10
+```
+
+Sample restoration output:
+
+```
+═══════════════════════════════════════════════════════════════
+  GAIA — Restoration Report: Oak Valley Forest
+═══════════════════════════════════════════════════════════════
+  Resource:                        10,000 units  (Oak Valley Forest)
+  Units Restored:                   5,000
+  Restoration Coverage:             50.0%  of total capacity
+  Final Ecosystem Health:          100.0%
+  ── Restoration Costs ───────────────────────────────────────────
+  Planting cost/unit:                           50.00€
+  Maintenance/unit/year:                        10.00€
+  Maintenance years:                               10
+  Total cost/unit:                             150.00€
+  TOTAL RESTORATION COST:                      750,000.00€
+  ── Recovered Ecosystem Services ────────────────────────────────
+  Human Communities:                           150,000.00€
+  Animal Populations:                          350,100.00€
+  Vegetation & Flora:                          150,000.00€
+  General Biosphere:                           549,850.00€
+  TOTAL RECOVERED VALUE:                     1,199,950.00€
+  ───────────────────────────────────────────────────────────────
+  NET RESTORATION VALUE:                       449,950.00€
+  ── Prevention vs Restoration ───────────────────────────────────
+  Prevention is 2.50× cheaper than destroy‑then‑restore.
+═══════════════════════════════════════════════════════════════
+```
+
+Replanting 5,000 trees costs €750,000 but recovers €1.2M in ecosystem services — a net gain of €450,000. And prevention (not cutting in the first place) is **2.50× cheaper** than cutting and then restoring.
+
+### Python API — Extraction
 
 ```python
 from gaia.cases.forest import build_forest_ecosystem
@@ -150,7 +198,7 @@ for step in result.steps:
 print(format_report(result))
 ```
 
-### Convenience wrapper
+### Convenience wrapper — Extraction
 
 ```python
 from gaia.cases.forest import run_forest
@@ -160,6 +208,50 @@ report = run_forest(
     safe_threshold_ratio=0.3,
     trees_cut=5_000,
     tree_value=100.0,
+)
+print(report)
+```
+
+### Python API — Restoration
+
+```python
+from gaia.cases.forest import build_forest_ecosystem
+from gaia.models import RestorationCost
+from gaia.recovery import logistic_recovery
+from gaia.simulation import run_restoration
+from gaia.report import format_restoration_report
+
+ecosystem = build_forest_ecosystem(total_trees=10_000, safe_threshold_ratio=0.3)
+cost = RestorationCost(
+    planting_cost_per_unit=50.0,
+    annual_maintenance_per_unit=10.0,
+    maintenance_years=10,
+)
+# One recovery function per agent (same order as ecosystem.agents)
+recovery_fns = [logistic_recovery(threshold=0.3) for _ in ecosystem.agents]
+result = run_restoration(ecosystem, units_to_restore=5_000, restoration_cost=cost,
+                         recovery_functions=recovery_fns)
+
+print(f"Restoration cost:   €{result.total_restoration_cost:,.2f}")
+print(f"Recovered value:    €{result.total_recovered_value:,.2f}")
+print(f"Net value:          €{result.net_restoration_value:,.2f}")
+print(f"Prevention advantage: {result.prevention_advantage:.2f}×")
+
+print(format_restoration_report(result))
+```
+
+### Convenience wrapper — Restoration
+
+```python
+from gaia.cases.forest import run_forest_restoration
+
+report = run_forest_restoration(
+    total_trees=10_000,
+    safe_threshold_ratio=0.3,
+    trees_to_restore=5_000,
+    planting_cost_per_tree=50.0,
+    annual_maintenance_per_tree=10.0,
+    maintenance_years=10,
 )
 print(report)
 ```
@@ -186,6 +278,16 @@ python -m gaia.cases.costa_brava
 
 At 40% extraction: €240,000 in timber revenue vs **€1,980,000 in annual social costs**. Ecosystem health: 42.5%.
 
+#### Restoration mode
+
+```bash
+# Restore 4,000 trees (default costs: €80 planting + €15/yr × 15 yr = €305/tree)
+# Mediterranean premium: drought-hardy saplings, irrigation, fire management
+python -m gaia.cases.costa_brava --cut 4000 --mode restore
+```
+
+Mediterranean forest restoration is harder than temperate: holm oak grows at max 0.5 m/yr, summer drought requires irrigation during establishment, and the mycorrhizal network must re-establish before full ecosystem function returns. Prevention advantage: **6.08×** — every euro saved by not cutting saves six in future restoration costs.
+
 ### CLI — Costa Brava Posidonia Meadow
 
 *Posidonia oceanica* is a seagrass that forms the foundation of Mediterranean coastal ecosystems. It absorbs **15× more CO₂ per hectare than the Amazon rainforest**, stores carbon in its sediment matte for millennia, filters bathing water, nurseries fish (the Medes Islands MPA proved fish biomass reaches 80× higher inside protected meadows), and physically protects Costa Brava beaches from erosion through wave attenuation and leaf-litter cushions. It grows at 1–6 cm per year — any significant destruction is effectively irreversible on a human timescale.
@@ -210,6 +312,16 @@ python -m gaia.cases.posidonia
 
 At 40% destruction: €5,000,000 one-time revenue vs **€3,973,869/year** in recurring social costs. The one-time gain is erased in 1.3 years. Ecosystem health: 32%.
 
+#### Restoration mode
+
+```bash
+# Restore 2,000 ha (default costs: €50,000 planting + €5,000/yr × 30 yr = €200,000/ha)
+# Specialist diving teams, substrate preparation, decades of monitoring
+python -m gaia.cases.posidonia --destroy 2000 --mode restore
+```
+
+Posidonia restoration is among the most expensive ecological interventions known. The default cost of **€200,000/ha** reflects specialist diving teams, substrate preparation, donor material collection, and 30 years of active monitoring — because Posidonia grows at only 1–6 cm/year. Prevention advantage: **81.00×** — the cost of not destroying 2,000 ha of Posidonia (€5M foregone revenue) is 81 times cheaper than destroying it and trying to restore it (€400M in restoration costs).
+
 ---
 
 ## Running the Tests
@@ -229,11 +341,13 @@ pytest tests/test_forest.py -v
 pytest -k "monotonicity" -v
 ```
 
-The test suite has 196 tests covering:
+The test suite has **276 tests** covering:
 
 - **Mathematical invariants** — all damage functions are tested for boundary conditions (`f(0)≈0`, `f(1)≈1`), monotonicity, output range, non-linearity at the threshold, and convexity in the post-threshold zone. These run across 3 function types × 5 threshold values.
-- **Ecological plausibility** — the forest case verifies the economic story: externality < revenue at safe extraction, externality > revenue past the threshold.
-- **Simulation correctness** — marginal cost accumulation, health index calculation, step counting.
+- **Recovery invariants** — all recovery functions are tested for the same boundary conditions plus the entropy asymmetry invariant: recovery must be slower than equivalent damage at every point.
+- **Ecological plausibility** — all three case scenarios verify their economic story: externality < revenue at safe extraction, externality > revenue past the threshold (or the marine inversion equivalent for Posidonia).
+- **Restoration engine** — cost accumulation, service value monotonicity, prevention advantage arithmetic, validation (rejects over-planting, wrong number of recovery functions).
+- **Simulation correctness** — marginal cost accumulation, health index calculation, step counting, both extraction and restoration modes.
 - **Validation** — invalid inputs are rejected with clear error messages.
 
 ---
@@ -353,29 +467,32 @@ All three satisfy these invariants:
 
 ---
 
-## Current Status (v0.1)
+## Current Status (v0.2)
 
 **What works:**
-- Damage function library with three function types, all scientifically validated
+- Damage function library: logistic, exponential, piecewise — all validated against 6 scientific invariants
+- Recovery function library: `logistic_recovery` (entropy asymmetry encoded — slower S-curve than damage), `linear_recovery` (slope < 1.0 encodes irreversibility)
 - Step-by-step extraction simulation with per-agent cost breakdown
+- Step-by-step restoration simulation with per-agent service value recovery
 - Ecosystem Health Index (0.0–1.0)
-- Plain-text externality report
-- Three ready-to-run cases:
-  - **Oak Valley Forest** — temperate forest, 4 agents, generic baseline
-  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, scientifically grounded
-  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, inverted economics (annual recurring losses vs one-time gain)
-- 196 tests, all passing
+- Plain-text externality report and restoration investment report
+- Prevention advantage ratio — quantifies how much cheaper preservation is vs. destroy-then-restore
+- Three ready-to-run cases, both extraction and restoration modes:
+  - **Oak Valley Forest** — temperate forest, 4 agents; prevention advantage **2.50×**
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents; prevention advantage **6.08×**
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, inverted economics (annual recurring losses vs one-time gain); prevention advantage **81.00×**
+- 276 tests, all passing
 
-**What's coming (v0.2+):**
-- Restoration simulation (inverse of extraction)
-- Entropy asymmetry modeling (restoration is slower and costlier than destruction)
+**What's coming (v0.3+):**
+- Trophic cascade amplification (damage multipliers by trophic level)
+- R/K-strategy population dynamics with carrying capacity
 - Succession-based maturation curves (pioneer → intermediate → climax)
 - Double carbon externality (release + lost absorption capacity)
-- Trophic cascade amplification (damage multipliers by trophic level)
 - Resilience zones and threshold uncertainty flagging
-- Restoration investment report with NPV, ROI, and payback period
+- Physical substrate model and derived carrying capacity (v0.5)
+- NPV / time-horizon analysis for multi-year investment decisions (v0.6)
 
-See `ROADMAP.md` for the full plan.
+See `PROJECT_DEFINITION.md` for the full roadmap.
 
 ---
 

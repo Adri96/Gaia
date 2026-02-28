@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Gaia is a Python library for simulating and quantifying externalities in economic activities — the hidden costs that private actors impose on society, ecosystems, and the environment when extracting or exploiting shared resources, and the hidden *value* generated when those resources are preserved or restored.
+Gaia is a Python library for simulating and quantifying externalities in economic activities — the hidden costs that private actors impose on society, ecosystems, and the environment when extracting or exploiting shared resources, and the hidden _value_ generated when those resources are preserved or restored.
 
 The core thesis is simple: **profits are privatized, but externalities are socialized.** Gaia exists to make those externalities visible, measurable, and expressible in monetary terms — in both directions. It computes the **cost of destruction** and the **value of restoration**, giving decision-makers a complete picture of the true economics at play.
 
@@ -128,7 +128,7 @@ When one species evolves or changes, it changes the conditions for every species
 
 The most dramatic example: early photosynthetic bacteria transformed Earth's atmosphere from CO₂-rich to oxygen-rich, which was toxic to most existing life — but enabled the emergence of all aerobic life that exists today. Those pioneering organisms created the conditions for everything that followed, and are now largely extinct.
 
-For Gaia, the principle is this: **extraction does not just remove a resource — it changes the conditions for everything that depended on that resource, which changes the conditions for everything that depended on *them*, and so on.** The damage propagates through the network of ecological relationships. This is why a step-by-step simulation that propagates consequences through agents is not a convenience — it is a scientific necessity. Static calculations cannot capture coevolutionary cascades.
+For Gaia, the principle is this: **extraction does not just remove a resource — it changes the conditions for everything that depended on that resource, which changes the conditions for everything that depended on _them_, and so on.** The damage propagates through the network of ecological relationships. This is why a step-by-step simulation that propagates consequences through agents is not a convenience — it is a scientific necessity. Static calculations cannot capture coevolutionary cascades.
 
 ---
 
@@ -138,7 +138,7 @@ These are the modeling decisions we make to turn the scientific foundations into
 
 ### 11. Dual-Lens Symmetry — Every Cost Is Also an Investment Opportunity
 
-This is a mathematical property of the model, not a guarantee from nature. If removing one unit of resource past the safe extraction threshold imposes €X in externality costs, then our model computes that restoring that unit *recovers* €X in ecosystem services (subject to the entropy asymmetry from Foundation #2 — the recovery is slower and costlier than the destruction).
+This is a mathematical property of the model, not a guarantee from nature. If removing one unit of resource past the safe extraction threshold imposes €X in externality costs, then our model computes that restoring that unit _recovers_ €X in ecosystem services (subject to the entropy asymmetry from Foundation #2 — the recovery is slower and costlier than the destruction).
 
 In reality, some ecosystem damage is irreversible — species go extinct, soil erodes past recovery, tipping points are crossed with no return (see Foundation #7 on resilience). The dual-lens symmetry is a useful approximation that holds within bounds, and Gaia should flag when those bounds are likely exceeded.
 
@@ -162,7 +162,7 @@ The aggregation into a single Ecosystem Health Index (0.0–1.0) and a total mon
 
 ### 13. Simulation Over Calculation
 
-Externalities are path-dependent. The cost of cutting the 3,001st tree depends on the state of the ecosystem *after* the first 3,000 were cut. A static formula cannot capture this — only a step-by-step simulation can.
+Externalities are path-dependent. The cost of cutting the 3,001st tree depends on the state of the ecosystem _after_ the first 3,000 were cut. A static formula cannot capture this — only a step-by-step simulation can.
 
 This is a methodological choice about how to compute quantities that depend on sequence and accumulation. Gaia simulates extraction (and restoration) as a sequence of discrete events, propagating consequences through the agent network at each step. This captures cascading effects, threshold crossings, and the compounding nature of ecosystem degradation that a closed-form equation would miss.
 
@@ -200,14 +200,15 @@ Gaia makes both sides of this equation computable.
 
 The initial implementation models a forest ecosystem with the following agents:
 
-| Agent Type | What They Depend On | Example Damage | Example Recovery |
-|---|---|---|---|
-| **Human Communities** | Air quality, water, recreation, livelihood | Health costs, lost income | Restored livelihoods, cleaner water |
-| **Animal Populations** | Habitat, food, breeding grounds | Population decline, species loss | Habitat recovery, population rebound |
-| **Vegetation & Flora** | Canopy, microclimate, soil stability | Soil erosion, secondary die-off | Soil stabilization, pollination return |
-| **General Biosphere** | Carbon sequestration, water cycle, climate | Carbon release, watershed damage | Carbon capture, watershed restoration |
+| Agent Type             | What They Depend On                        | Example Damage                   | Example Recovery                       |
+| ---------------------- | ------------------------------------------ | -------------------------------- | -------------------------------------- |
+| **Human Communities**  | Air quality, water, recreation, livelihood | Health costs, lost income        | Restored livelihoods, cleaner water    |
+| **Animal Populations** | Habitat, food, breeding grounds            | Population decline, species loss | Habitat recovery, population rebound   |
+| **Vegetation & Flora** | Canopy, microclimate, soil stability       | Soil erosion, secondary die-off  | Soil stabilization, pollination return |
+| **General Biosphere**  | Carbon sequestration, water cycle, climate | Carbon release, watershed damage | Carbon capture, watershed restoration  |
 
 Each agent has:
+
 - A **dependency weight** on the resource (how much they rely on it).
 - A **damage function** that maps resource depletion to agent-specific harm (non-linear, with a knee at the safe threshold).
 - A **recovery function** that maps restoration progress to recovered services (slower than damage, reflecting entropy asymmetry).
@@ -377,7 +378,7 @@ gaia/
 
 ## Philosophy
 
-Gaia is a **measurement tool with a dual lens**. It quantifies the cost of destruction *and* the value of restoration. It produces numbers, not moral judgments.
+Gaia is a **measurement tool with a dual lens**. It quantifies the cost of destruction _and_ the value of restoration. It produces numbers, not moral judgments.
 
 But the numbers tell a clear story: intact ecosystems generate enormous economic value that is currently invisible. Destroying them creates private profit at social cost. Restoring them creates social value at private cost — but the investment case is often compelling when the true numbers are visible.
 
@@ -415,9 +416,9 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] Add `--mode restore` CLI flag to all three cases
 - [x] Implement `run_forest_restoration()`, `run_costa_brava_restoration()`, `run_posidonia_restoration()` convenience functions with ecologically-calibrated default costs
 - [x] Prevention advantage ratios validated against ecological reality:
-  - Oak Valley Forest: **2.50×** (temperate, faster recovery)
-  - Costa Brava Holm Oak: **6.08×** (Mediterranean drought stress, mycorrhizal network delays)
-  - Costa Brava Posidonia: **81.00×** (1-6 cm/year growth, specialist diving restoration at €200k/ha vs €2.5k/ha one-time revenue)
+    - Oak Valley Forest: **2.50×** (temperate, faster recovery)
+    - Costa Brava Holm Oak: **6.08×** (Mediterranean drought stress, mycorrhizal network delays)
+    - Costa Brava Posidonia: **81.00×** (1-6 cm/year growth, specialist diving restoration at €200k/ha vs €2.5k/ha one-time revenue)
 
 ### 🔲 v0.3 — Trophic Cascades & Population Dynamics
 
@@ -451,12 +452,31 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [ ] Pluggable monetary conversion models (region-specific valuation, time-discounted shadow prices, EU ETS carbon pricing)
 - [ ] Discount rate sensitivity analysis (how prevention advantage changes with different social discount rates)
 
-### 🔲 v0.7 — Performance & Generalization
+### 🔲 v0.7 — Endogenous Pricing (Equilibrium-Derived Monetary Values)
 
-- [ ] Add Cython-optimized simulation loop (drop-in replacement, same API)
-- [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
-- [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates
-- [ ] Pluggable case template system — structured template for adding new ecosystems without writing Python
+- Replace static monetary_rate per agent with derived prices that emerge from the interaction matrix and ecosystem state — prices are no longer manually calibrated but computed from ecological structure
+- Implement the value system: for each agent i, solve value_i = base_anchor_i × scarcity(health_i) × Σⱼ(edge_strength_ji × value_j) — a system of N equations in N unknowns where prices reflect both scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices)
+  Scarcity function: scarcity(health) = 1 / health^α where α controls price elasticity — as an agent's health drops toward zero, its price rises sharply (scarce → expensive); α is configurable per ecosystem and validated against economic literature on ecosystem service valuation
+- Demand aggregation from the v0.3 interaction matrix: agents with many high-strength incoming edges (i.e. many dependents) automatically receive higher prices — keystone species emerge as the most valuable agents without manual weighting, purely from network centrality
+- Anchor points: the system produces relative prices; absolute €-values require at least one external price anchor per ecosystem. Candidate anchors: EU ETS carbon price (for Carbon & Climate agent), regional water treatment costs (for Watershed agent), tourism revenue data (for Human Communities agent). Only 1–2 anchors needed; all other prices float relative to them.
+- Solve the price system at each simulation step — prices are dynamic, changing as the ecosystem degrades. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce. This matches economic reality: we don't value ecosystem services until they're degraded.
+  Matrix formulation: the value system is a linear system (at fixed ecosystem state) solvable as V = (I − S·W)⁻¹ · A where V is the value vector, S is the diagonal scarcity matrix, W is the edge-strength matrix (transposed interaction matrix), and A is the anchor vector. This is an eigenvalue-adjacent problem — well-conditioned when interaction strengths are < 1.0.
+- Validate convergence: the system must have a unique positive solution (guaranteed when the spectral radius of S·W < 1, which holds when individual edge strengths are < 1.0 and the interaction graph is not too dense)
+- Backward compatibility: when no anchors are provided, fall back to static monetary_rate (v0.1–v0.6 behavior). Endogenous pricing is opt-in.
+- Price decomposition in reports: show per-agent price as base_anchor × scarcity_multiplier × demand_multiplier so the user can see WHY a service is priced the way it is — which component dominates (is it scarce? is it depended upon? or both?)
+- Calibrate anchor points for all three existing cases:
+    - Oak Valley Forest: carbon anchor (EU ETS ~€80/tonne), water treatment anchor (~€2.50/m³)
+    - Costa Brava Holm Oak: carbon anchor + regional fire management costs + cork/mushroom market prices
+    - Costa Brava Posidonia: carbon anchor + Costa Brava tourism revenue per km of beach + artisanal fishing revenue per boat
+
+- Sensitivity analysis: show how total externality changes when anchor prices shift ±20% — demonstrates which anchor dominates the result and where better data would most improve accuracy
+
+### 🔲 v0.8 — Performance & Generalization
+
+- Add Cython-optimized simulation loop (drop-in replacement, same API) — critical now that v0.7 adds a matrix solve per simulation step
+- Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
+- Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates
+- Pluggable case template system — structured template for adding new ecosystems without writing Python
 
 ---
 
