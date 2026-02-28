@@ -433,14 +433,25 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [ ] Implement double carbon externality: CO₂ released (biomass + soil) + lost future absorption during the maturation window (decades of sequestration foregone)
 - [ ] Implement resilience zones and threshold uncertainty flagging — zone of uncertainty around the safe extraction threshold where resilience may or may not hold; flag when model confidence degrades
 
-### 🔲 v0.5 — NPV & Time-Horizon Analysis
+### 🔲 v0.5 — Physical Substrate & Derived Carrying Capacity
+
+- [ ] Add `Substrate` dataclass — physical characteristics of the land or sea that constrain what can grow there: land (area_ha, slope_degrees, soil_depth_cm, soil_organic_matter_pct, climate_zone) / sea (area_ha, depth_range_m, light_penetration_m, substrate_type, water_clarity_ntu)
+- [ ] Derive carrying capacity K from substrate parameters rather than accepting it as a bare number — e.g. for Mediterranean forest: `K = area_ha × f(slope, soil_depth, climate_zone)` yields trees/ha at climax; for Posidonia: `K = area_ha × f(depth, light, substrate)` yields viable ha of meadow
+- [ ] Track **current K** vs **historical (climax) K** — severe degradation reduces the substrate itself (soil erosion, seabed compaction), meaning `current K < historical K` even before any replanting begins
+- [ ] Expose the **degradation debt**: `historical_K − current_K` — the carrying capacity that has been permanently lost and must be recovered through substrate restoration before biological restoration can proceed
+- [ ] Add `SubstrateRestorationCost` — the additional cost of recovering substrate capacity before biological units can be planted (soil remediation, erosion control, seabed preparation); substrate restoration is a prerequisite to biological restoration in severely degraded sites
+- [ ] Update `run_restoration()` to enforce the constraint `units_to_restore ≤ current_K` — you cannot plant more than the land can currently sustain, even if the historical K was higher
+- [ ] Update restoration reports to show: current K, historical K, degradation debt, and whether substrate restoration is required before biological restoration is viable
+- [ ] Calibrate substrate parameters for all three existing cases: Oak Valley Forest (temperate loam, ~600 trees/ha at climax), Costa Brava Holm Oak (thin Mediterranean soil, ~300 trees/ha at climax, fire-degraded patches lower), Costa Brava Posidonia (sandy/rocky substrate, light-limited to ~15m depth)
+
+### 🔲 v0.6 — NPV & Time-Horizon Analysis
 
 - [ ] Restoration investment report with NPV (net present value over configurable time horizon), ROI, and payback period — enables fair comparison of one-time private revenue against recurring annual externality losses (critical for the Posidonia marine inversion case where single-year snapshot is misleading)
 - [ ] Prevention-vs-restoration comparison with full maturation damage gap (externality cost during recovery window, not just direct restoration cost)
 - [ ] Pluggable monetary conversion models (region-specific valuation, time-discounted shadow prices, EU ETS carbon pricing)
 - [ ] Discount rate sensitivity analysis (how prevention advantage changes with different social discount rates)
 
-### 🔲 v0.6 — Performance & Generalization
+### 🔲 v0.7 — Performance & Generalization
 
 - [ ] Add Cython-optimized simulation loop (drop-in replacement, same API)
 - [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
