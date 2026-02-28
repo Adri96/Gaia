@@ -9,7 +9,7 @@ and mathematical invariants defined in the spec. They use simple ecosystems
 import math
 import pytest
 from gaia.damage import logistic_damage, piecewise_damage
-from gaia.models import Agent, Ecosystem, Resource, SimulationResult
+from gaia.models import Agent, Ecosystem, InteractionEdge, Resource, SimulationResult
 from gaia.simulation import run_extraction
 
 
@@ -421,3 +421,72 @@ def test_threshold_near_one_simulation():
         f"With threshold=0.99, cost at 50% depletion should be small, "
         f"got {cost_at_50_pct:.2f}"
     )
+
+
+# ── v0.3 cascade integration tests ───────────────────────────────────────────
+
+def test_no_interactions_identical_to_v02():
+    """
+    With no interactions and trophic_level=-1 for all agents, simulation
+    output is identical to v0.2 (no cascade fields populated beyond defaults).
+    """
+    eco = _make_simple_ecosystem(total_units=100)
+    result = run_extraction(eco, 50)
+    # All agents have trophic_level=-1, ecosystem has no interactions
+    for step in result.steps:
+        # direct_damages should equal agent_damages (effective = direct, no cascade)
+        for i in range(len(step.agent_direct_damages)):
+            assert abs(step.agent_direct_damages[i] - step.agent_damages[i]) < 1e-9
+        # cascade should be all zeros
+        for c in step.agent_cascade_damages:
+            assert abs(c) < 1e-9
+
+
+def test_cascade_increases_total_externality():
+    """Adding interaction edges should increase total externality cost."""
+    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=50.0)
+    agents = [
+        Agent(name="A", dependency_weight=0.5,
+              damage_function=logistic_damage(threshold=0.3),
+              monetary_rate=100_000.0, description=""),
+        Agent(name="B", dependency_weight=0.5,
+              damage_function=logistic_damage(threshold=0.3),
+              monetary_rate=100_000.0, description=""),
+    ]
+    eco_plain = Ecosystem(name="E", resource=resource, agents=agents)
+    eco_cascade = Ecosystem(
+        name="E", resource=resource, agents=agents,
+        interactions=[InteractionEdge("A", "B", 0.3, "dependency", "test")],
+    )
+
+    result_plain = run_extraction(eco_plain, 80)
+    result_cascade = run_extraction(eco_cascade, 80)
+
+    assert result_cascade.total_externality_cost > result_plain.total_externality_cost, (
+        f"Cascade externality ({result_cascade.total_externality_cost:.2f}) "
+        f"should exceed plain ({result_plain.total_externality_cost:.2f})"
+    )
+
+
+def test_effective_damage_geq_direct_damage():
+    """Effective damage (post-cascade) is always >= direct damage."""
+    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0)
+    agents = [
+        Agent(name="A", dependency_weight=0.5,
+              damage_function=logistic_damage(threshold=0.3),
+              monetary_rate=100_000.0, description=""),
+        Agent(name="B", dependency_weight=0.5,
+              damage_function=logistic_damage(threshold=0.3),
+              monetary_rate=100_000.0, description=""),
+    ]
+    eco = Ecosystem(
+        name="E", resource=resource, agents=agents,
+        interactions=[InteractionEdge("A", "B", 0.3, "dependency", "test")],
+    )
+    result = run_extraction(eco, 100)
+    for step in result.steps:
+        for i in range(len(step.agent_damages)):
+            assert step.agent_damages[i] >= step.agent_direct_damages[i] - 1e-9, (
+                f"Step {step.step}, agent {i}: effective ({step.agent_damages[i]:.6f}) "
+                f"< direct ({step.agent_direct_damages[i]:.6f})"
+            )

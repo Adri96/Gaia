@@ -275,3 +275,71 @@ def test_costa_brava_report_contains_all_agents():
         assert agent_name in report, (
             f"Agent '{agent_name}' should appear in the report"
         )
+
+
+# ── v0.3: Cascade-specific tests ─────────────────────────────────────────────
+
+def test_costa_brava_has_interactions():
+    """Costa Brava ecosystem has interaction edges."""
+    eco = build_costa_brava_ecosystem()
+    assert len(eco.interactions) == 17, (
+        f"Expected 17 interaction edges, got {len(eco.interactions)}"
+    )
+
+
+def test_costa_brava_has_keystones():
+    """Costa Brava has Mycorrhizal Fungi and Pollinators as keystones."""
+    eco = build_costa_brava_ecosystem()
+    keystones = [a.name for a in eco.agents if a.is_keystone]
+    assert "Mycorrhizal Fungi" in keystones
+    assert "Pollinators & Insects" in keystones
+    assert len(keystones) == 2
+
+
+def test_costa_brava_keystone_triggers_at_heavy_extraction():
+    """At 50% extraction, keystone thresholds should be crossed."""
+    eco = build_costa_brava_ecosystem(
+        total_trees=TOTAL_TREES, safe_threshold_ratio=THRESHOLD,
+    )
+    result = run_extraction(eco, 5_000)
+    # Collect all keystone crossings
+    all_triggered = set()
+    for step in result.steps:
+        for name in step.keystone_triggered:
+            all_triggered.add(name)
+    # At 50% depletion with threshold 0.25, keystones should have been triggered
+    assert len(all_triggered) > 0, (
+        "At 50% extraction, at least one keystone should be triggered"
+    )
+
+
+def test_costa_brava_cascade_increases_total_cost():
+    """
+    Cascade effects increase total externality compared to independent agents.
+
+    We verify by checking that total externality with v0.3 cascades is at least
+    as large as what independent agents would produce (since cascades only add
+    damage, never remove it).
+    """
+    eco = build_costa_brava_ecosystem(
+        total_trees=TOTAL_TREES, safe_threshold_ratio=THRESHOLD,
+    )
+    result = run_extraction(eco, 5_000)
+    # At least some agents should have non-zero cascade damage
+    final_step = result.steps[-1]
+    total_cascade = sum(final_step.agent_cascade_damages)
+    assert total_cascade > 0, (
+        f"At 50% extraction, total cascade damage should be > 0, got {total_cascade:.6f}"
+    )
+
+
+def test_costa_brava_keystone_warning_in_report():
+    """Report should show keystone threshold crossing warnings."""
+    report = run_costa_brava(
+        total_trees=TOTAL_TREES,
+        safe_threshold_ratio=THRESHOLD,
+        trees_cut=5_000,
+    )
+    assert "Keystone Threshold" in report, (
+        "Report should contain keystone threshold crossing section"
+    )

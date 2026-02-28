@@ -1,2 +1,2 @@
 # Gaia — Externality Computation Framework
-# v0.1: Forest deforestation externality simulation
+# v0.3: Trophic cascades & agent interactions

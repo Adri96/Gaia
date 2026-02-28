@@ -1,14 +1,16 @@
 """
-Gaia v0.2 — Core data models.
+Gaia v0.3 — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
 All models are Cython-compatible.
 
 v0.2 additions: RestorationCost, RestorationStep, RestorationResult
+v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
+                SimulationStep cascade fields
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, List
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
@@ -65,6 +67,34 @@ class Agent:
     monetary_rate: float
     description: str
 
+    # v0.3: Trophic cascade fields (defaults preserve v0.1/v0.2 behavior)
+    trophic_level: int = -1             # -1=abiotic, 0=producer, 1-3=consumers
+    is_keystone: bool = False           # if True, collapse amplifies outgoing edges
+    keystone_threshold: float = 0.3     # health below this triggers keystone cascade
+
+
+@dataclass
+class InteractionEdge:
+    """
+    A directed dependency between two agents.
+
+    "When agent source is damaged, agent target suffers additional damage."
+
+    Attributes:
+        source: Name of the agent whose damage propagates.
+        target: Name of the agent that receives the propagated damage.
+        strength: How much of source's damage transfers to target (0.0 to 1.0).
+        interaction_type: Category of interaction — one of:
+            "dependency", "trophic", "keystone", "competition".
+        description: Human-readable explanation of the interaction.
+    """
+
+    source: str
+    target: str
+    strength: float
+    interaction_type: str
+    description: str
+
 
 @dataclass
 class Ecosystem:
@@ -81,6 +111,9 @@ class Ecosystem:
     name: str
     resource: Resource
     agents: list  # List[Agent] — typed as list for Cython compat
+
+    # v0.3: Agent interaction edges (empty list preserves v0.1/v0.2 behavior)
+    interactions: list = field(default_factory=list)  # List[InteractionEdge]
 
 
 @dataclass
@@ -103,12 +136,17 @@ class SimulationStep:
     step: int
     units_extracted: int
     depletion_ratio: float
-    agent_damages: list   # List[float]
+    agent_damages: list   # List[float] — effective (post-propagation) damage ratios
     agent_costs: list     # List[float]
     marginal_cost: float
     cumulative_cost: float
     private_revenue: float
     ecosystem_health: float
+
+    # v0.3: Cascade breakdown fields (empty lists preserve v0.1/v0.2 behavior)
+    agent_direct_damages: list = field(default_factory=list)    # pre-propagation damage ratios
+    agent_cascade_damages: list = field(default_factory=list)   # additional damage from interactions
+    keystone_triggered: list = field(default_factory=list)      # agent names whose keystone threshold crossed
 
 
 @dataclass

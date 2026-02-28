@@ -1,11 +1,20 @@
 """
-Gaia v0.1 — Input validation.
+Gaia v0.3 — Input validation.
 
 Validation functions raise descriptive ValueError on bad inputs.
 They never silently default — bad input must be caught early.
+
+v0.3: Added validation for trophic levels, keystone thresholds,
+      and interaction edges.
 """
 
-from gaia.models import Resource, Ecosystem, DamageFunc
+from gaia.models import Resource, Ecosystem, DamageFunc, InteractionEdge
+
+# Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
+_VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
+
+# Valid interaction types
+_VALID_INTERACTION_TYPES = {"dependency", "trophic", "keystone", "competition"}
 
 # Tolerance for floating-point comparisons
 _WEIGHT_SUM_TOLERANCE: float = 1e-6
@@ -68,6 +77,25 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
             f"Agent dependency_weights must sum to 1.0, "
             f"got {weight_sum:.6f} (tolerance: {_WEIGHT_SUM_TOLERANCE})"
         )
+
+    # v0.3: Validate trophic levels and keystone thresholds
+    for agent in ecosystem.agents:
+        if agent.trophic_level not in _VALID_TROPHIC_LEVELS:
+            raise ValueError(
+                f"Agent '{agent.name}' trophic_level must be one of "
+                f"{sorted(_VALID_TROPHIC_LEVELS)}, got {agent.trophic_level}"
+            )
+        if agent.is_keystone:
+            if not (0.0 < agent.keystone_threshold < 1.0):
+                raise ValueError(
+                    f"Agent '{agent.name}' keystone_threshold must be in (0.0, 1.0), "
+                    f"got {agent.keystone_threshold}"
+                )
+
+    # v0.3: Validate interaction edges
+    agent_names = {a.name for a in ecosystem.agents}
+    for edge in ecosystem.interactions:
+        _validate_interaction_edge(edge, agent_names)
 
 
 def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
@@ -138,3 +166,38 @@ def validate_damage_function(fn: DamageFunc, name: str = "damage_function") -> N
                 f"f({x:.4f})={val:.6f} < f({(i-1)/n:.4f})={prev:.6f}"
             )
         prev = val
+
+
+def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
+    """
+    Validate a single InteractionEdge against the ecosystem's agent names.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if edge.source not in agent_names:
+        raise ValueError(
+            f"InteractionEdge source '{edge.source}' is not an agent in the ecosystem. "
+            f"Available agents: {sorted(agent_names)}"
+        )
+    if edge.target not in agent_names:
+        raise ValueError(
+            f"InteractionEdge target '{edge.target}' is not an agent in the ecosystem. "
+            f"Available agents: {sorted(agent_names)}"
+        )
+    if edge.source == edge.target:
+        raise ValueError(
+            f"InteractionEdge cannot be a self-loop: "
+            f"source and target are both '{edge.source}'"
+        )
+    if not (0.0 < edge.strength <= 1.0):
+        raise ValueError(
+            f"InteractionEdge '{edge.source}' → '{edge.target}' strength "
+            f"must be in (0.0, 1.0], got {edge.strength}"
+        )
+    if edge.interaction_type not in _VALID_INTERACTION_TYPES:
+        raise ValueError(
+            f"InteractionEdge '{edge.source}' → '{edge.target}' interaction_type "
+            f"must be one of {sorted(_VALID_INTERACTION_TYPES)}, "
+            f"got '{edge.interaction_type}'"
+        )

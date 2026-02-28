@@ -102,7 +102,7 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, RestorationCost, Resource
+from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -164,13 +164,11 @@ def build_posidonia_ecosystem(
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=8_000_000.0,
-            # Effective max (annual): 0.10 × €8,000k = €800k/yr [User spec]
-            # Remaining meadow depends on network connectivity for vegetative
-            # reproduction (rhizome growth: 1-6 cm/yr). Fragmentation → reduced
-            # sediment trapping → increased turbidity → light reduction → further
-            # die-off. Self-reinforcing collapse. Recovery after bomb damage in
-            # Villefranche: 40+ years, still incomplete. [User spec, Medium]
             description="Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
+            # v0.3: Producer, KEYSTONE foundation species
+            trophic_level=0,
+            is_keystone=True,
+            keystone_threshold=0.3,
         ),
         # ── Biogenic habitat builders ───────────────────────────────────────
         Agent(
@@ -178,14 +176,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=6_000_000.0,
-            # Effective max (annual): 0.10 × €6,000k = €600k/yr [User spec]
-            # KEYSTONE HABITAT BUILDER. Coralligenous formations (coralline algae
-            # biogenic reefs) take centuries to form. Red coral (Corallium rubrum)
-            # grows 0.2-0.6 mm/yr basal diameter; 98% of Costa Brava colonies are
-            # juvenile due to historical overharvesting. Posidonia loss → sedimentation
-            # → suffocation. Dive tourism at Medes Islands = 70% of GDP for some
-            # villages. Irreplaceable on human timescales. [User spec, Medium]
             description="Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
+            # v0.3: Producer (biogenic)
+            trophic_level=0,
         ),
         # ── Primary producers ───────────────────────────────────────────────
         Agent(
@@ -193,12 +186,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_571_000.0,
-            # Effective max (annual): 0.07 × €3,571k ≈ €250k/yr [User spec]
-            # 400+ plant/algae species grow on Posidonia leaves. Loss of substrate
-            # → epiphyte collapse. Nutrient imbalance from lost filtration → algal
-            # blooms (eutrophication) replace diverse community with monoculture.
-            # Oxygen production and food web foundation degraded. [User spec, Medium]
             description="Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
+            # v0.3: Producer
+            trophic_level=0,
         ),
         # ── Invertebrates ───────────────────────────────────────────────────
         Agent(
@@ -206,13 +196,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.09,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_889_000.0,
-            # Effective max (annual): 0.09 × €3,889k ≈ €350k/yr [User spec]
-            # Sea urchins, starfish, sponges, nudibranchs, octopuses, lobsters,
-            # sea cucumbers, mussels. Sponges filter enormous water volumes.
-            # Risk: sea urchin population explosion without predators → overgrazing
-            # → algal/barren desert ("urchin barrens"). Lobster and octopus lose
-            # shelter; fisheries collapse. [User spec, Medium]
             description="Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
+            # v0.3: Primary consumer
+            trophic_level=1,
         ),
         # ── Fish ────────────────────────────────────────────────────────────
         Agent(
@@ -220,15 +206,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.14,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=5_000_000.0,
-            # Effective max (annual): 0.14 × €5,000k = €700k/yr [User spec]
-            # HIGHEST LIVING AGENT WEIGHT. Posidonia meadows = critical nursery
-            # for juvenile fish. Species: grouper (Epinephelus marginatus — Medes
-            # Islands flagship), sea bass, gilthead bream, dentex, scorpionfish,
-            # red mullet, sardine, seahorses. Medes Islands MPA proved: fish
-            # biomass 80× higher inside reserve than outside. Loss of nursery →
-            # recruitment failure → population collapse. 24 artisanal boats at
-            # L'Estartit depend on the Medes buffer zone. [User spec, Medium]
             description="Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
+            # v0.3: Secondary consumer
+            trophic_level=2,
         ),
         # ── Megafauna ───────────────────────────────────────────────────────
         Agent(
@@ -236,13 +216,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=5_000_000.0,
-            # Effective max (annual): 0.04 × €5,000k = €200k/yr [User spec]
-            # Bottlenose dolphins, loggerhead sea turtles (Caretta caretta), Risso's
-            # dolphins, occasional fin whales. Mediterranean monk seal: functionally
-            # extinct in western Mediterranean. Extreme K-strategy: slow reproduction,
-            # threshold-sensitive. Fish crash → dolphin displacement or starvation.
-            # [User spec, Medium]
             description="Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
+            # v0.3: Tertiary consumer — apex marine predator
+            trophic_level=3,
         ),
         # ── Seabirds ────────────────────────────────────────────────────────
         Agent(
@@ -250,12 +226,9 @@ def build_posidonia_ecosystem(
             dependency_weight=0.05,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=3_600_000.0,
-            # Effective max (annual): 0.05 × €3,600k = €180k/yr [User spec]
-            # 189 species in Montgrí-Medes Natural Park alone. Key species:
-            # Audouin's gull (breeds Mediterranean only — globally vulnerable),
-            # European shag, yellow-legged gull, peregrine falcon, Bonelli's eagle.
-            # Fish depletion → breeding failure → colony abandonment. [User spec, Medium]
             description="Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
+            # v0.3: Secondary consumer (fish-dependent)
+            trophic_level=2,
         ),
         # ── Physical ecosystem services ─────────────────────────────────────
         Agent(
@@ -263,46 +236,28 @@ def build_posidonia_ecosystem(
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=6_923_000.0,
-            # Effective max (annual): 0.13 × €6,923k ≈ €900k/yr [User spec]
-            # HIGHEST WEIGHT PHYSICAL AGENT. Posidonia meadows attenuate wave energy
-            # before it reaches shore. Leaf litter forms beach cushions up to 4m high.
-            # Root/rhizome mats stabilize seabed. 1 km of Posidonia produces 125 kg/m
-            # of beach-protecting litter/year. Without it: accelerated erosion, storm
-            # damage, need for artificial replenishment (which itself destroys more
-            # Posidonia — death spiral). Costa Brava has dozens of beaches that depend
-            # on this. Wave attenuation has a density threshold — sparse meadow provides
-            # almost no protection. [User spec, Medium]
             description="Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
+            # v0.3: Abiotic service
+            trophic_level=-1,
         ),
         Agent(
             name="Water Quality",
             dependency_weight=0.11,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=5_909_000.0,
-            # Effective max (annual): 0.11 × €5,909k ≈ €650k/yr [User spec]
-            # Posidonia absorbs nutrients, traps particles, reduces pathogenic bacteria,
-            # sequesters heavy metals and radioactive contaminants in rhizomes. Virtuous
-            # cycle when healthy → vicious when degraded. Italian studies: bioremediation
-            # = 34-40% of total Posidonia service value. Bathing quality decline →
-            # beach closures → tourism devastation. [User spec, Medium]
             description="Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
+            # v0.3: Abiotic service
+            trophic_level=-1,
         ),
         # ── Carbon ──────────────────────────────────────────────────────────
         Agent(
             name="Blue Carbon",
             dependency_weight=0.09,
-            # Exponential (not logistic) — CO₂ release does not plateau.
-            # Posidonia absorbs 15× more CO₂/ha than Amazon rainforest.
-            # Carbon stored in sediment matte for millennia; decomposition
-            # accelerates once exposed. Double externality: release + lost
-            # future sequestration. [User spec]
             damage_function=exponential_damage(threshold=t, base=2.0),
             monetary_rate=5_556_000.0,
-            # Effective max (annual): 0.09 × €5,556k ≈ €500k/yr [User spec]
-            # Social cost of carbon release, lost sequestration, EU ETS exposure.
-            # Conservative — real values may be much higher as carbon markets mature.
-            # Mediterranean blue carbon: 100-1,500M €/yr basin-wide. [User spec, Medium]
-            description="Blue carbon — 15× Amazon CO₂ rate, millennia of stored matte carbon, exponential release",
+            description="Blue carbon — 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
+            # v0.3: Abiotic service
+            trophic_level=-1,
         ),
         # ── Human systems ───────────────────────────────────────────────────
         Agent(
@@ -310,21 +265,68 @@ def build_posidonia_ecosystem(
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             monetary_rate=8_750_000.0,
-            # Effective max (annual): 0.08 × €8,750k = €700k/yr [User spec]
-            # Dive tourism (Medes Islands = 70% of GDP for some villages). Beach
-            # tourism (Costa Brava = one of Europe's top destinations). Artisanal
-            # fishing (24 boats at L'Estartit). Snorkeling, glass-bottom boats,
-            # eco-tourism. Tourism = 79% of Mediterranean blue economy jobs.
-            # Tourism has a perception threshold — once beaches visibly degrade
-            # or water quality drops, visitors leave fast. [User spec, Medium]
             description="Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
+            # v0.3: External beneficiary
+            trophic_level=-1,
         ),
+    ]
+
+    # v0.3: Full marine trophic web with 16 interaction edges
+    interactions = [
+        # Posidonia keystone cascade — foundation collapse cascades everywhere
+        InteractionEdge("Posidonia Meadow", "Coralligenous & Red Coral", 0.30, "keystone",
+            "Posidonia loss \u2192 sedimentation \u2192 coralligenous suffocation"),
+        InteractionEdge("Posidonia Meadow", "Epiphytes & Algae", 0.35, "keystone",
+            "Substrate loss collapses epiphytic community"),
+        InteractionEdge("Posidonia Meadow", "Coastal Protection", 0.40, "keystone",
+            "Meadow loss directly removes wave attenuation and beach protection"),
+        InteractionEdge("Posidonia Meadow", "Water Quality", 0.30, "dependency",
+            "Lost filtration capacity \u2192 turbidity and eutrophication"),
+
+        # Coralligenous provides habitat for invertebrates and fish
+        InteractionEdge("Coralligenous & Red Coral", "Marine Invertebrates", 0.25, "dependency",
+            "Reef habitat loss displaces invertebrate communities"),
+        InteractionEdge("Coralligenous & Red Coral", "Fish Populations", 0.20, "dependency",
+            "Reef nursery loss reduces fish recruitment"),
+
+        # Epiphytes are base of the food web
+        InteractionEdge("Epiphytes & Algae", "Marine Invertebrates", 0.20, "trophic",
+            "Primary productivity loss reduces grazer food supply"),
+
+        # Trophic chain: invertebrates → fish → megafauna/seabirds
+        InteractionEdge("Marine Invertebrates", "Fish Populations", 0.25, "trophic",
+            "Invertebrate decline reduces fish food supply"),
+        InteractionEdge("Fish Populations", "Marine Megafauna", 0.35, "trophic",
+            "Fish decline starves apex marine predators"),
+        InteractionEdge("Fish Populations", "Seabirds", 0.30, "trophic",
+            "Fish decline causes breeding failure in seabird colonies"),
+
+        # Physical services linked to living biomass
+        InteractionEdge("Posidonia Meadow", "Blue Carbon", 0.35, "dependency",
+            "Meadow loss releases millennia of stored matte carbon"),
+
+        # Invertebrate filtration supports water quality
+        InteractionEdge("Marine Invertebrates", "Water Quality", 0.15, "dependency",
+            "Filter feeder loss reduces water purification capacity"),
+
+        # Water quality feeds back to coralligenous
+        InteractionEdge("Water Quality", "Coralligenous & Red Coral", 0.15, "dependency",
+            "Degraded water quality stresses sensitive coral formations"),
+
+        # Human communities depend on multiple services
+        InteractionEdge("Coastal Protection", "Human Communities", 0.25, "dependency",
+            "Beach erosion destroys tourism infrastructure and economy"),
+        InteractionEdge("Fish Populations", "Human Communities", 0.20, "dependency",
+            "Fish decline collapses artisanal fishing economy"),
+        InteractionEdge("Water Quality", "Human Communities", 0.15, "dependency",
+            "Degraded water quality triggers beach closures and tourism loss"),
     ]
 
     return Ecosystem(
         name="Costa Brava Posidonia Meadow",
         resource=resource,
         agents=agents,
+        interactions=interactions,
     )
 
 
