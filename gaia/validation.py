@@ -1,14 +1,23 @@
 """
-Gaia v0.3 — Input validation.
+Gaia v0.4 — Input validation.
 
 Validation functions raise descriptive ValueError on bad inputs.
 They never silently default — bad input must be caught early.
 
 v0.3: Added validation for trophic levels, keystone thresholds,
       and interaction edges.
+v0.4: Added validation for SuccessionCurve, CarbonProfile, ResilienceConfig.
 """
 
-from gaia.models import Resource, Ecosystem, DamageFunc, InteractionEdge
+from gaia.models import (
+    CarbonProfile,
+    DamageFunc,
+    Ecosystem,
+    InteractionEdge,
+    ResilienceConfig,
+    Resource,
+    SuccessionCurve,
+)
 
 # Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
 _VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
@@ -44,6 +53,12 @@ def validate_resource(resource: Resource) -> None:
         raise ValueError(
             f"Resource.unit_value must be >= 0.0, got {resource.unit_value}"
         )
+
+    # v0.4: Validate optional carbon profile and resilience config
+    if resource.carbon_profile is not None:
+        validate_carbon_profile(resource.carbon_profile)
+    if resource.resilience is not None:
+        validate_resilience_config(resource.resilience)
 
 
 def validate_ecosystem(ecosystem: Ecosystem) -> None:
@@ -96,6 +111,14 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
     agent_names = {a.name for a in ecosystem.agents}
     for edge in ecosystem.interactions:
         _validate_interaction_edge(edge, agent_names)
+
+    # v0.4: Validate agent-specific succession curves
+    for agent in ecosystem.agents:
+        if agent.succession_curve is not None:
+            validate_succession_curve(
+                agent.succession_curve,
+                name=f"Agent '{agent.name}' succession_curve",
+            )
 
 
 def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
@@ -200,4 +223,144 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
             f"InteractionEdge '{edge.source}' → '{edge.target}' interaction_type "
             f"must be one of {sorted(_VALID_INTERACTION_TYPES)}, "
             f"got '{edge.interaction_type}'"
+        )
+
+
+# ── v0.4: New validation functions ─────────────────────────────────────────────
+
+
+def validate_succession_curve(
+    curve: SuccessionCurve,
+    name: str = "SuccessionCurve",
+) -> None:
+    """
+    Validate a SuccessionCurve dataclass.
+
+    Checks:
+        - Phase years are ordered: pioneer_end < intermediate_end < climax_approach
+        - Service values in [0.0, 1.0) and ordered: pioneer < intermediate
+        - Maturation delay >= 0
+        - All year values > 0
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if curve.maturation_delay < 0.0:
+        raise ValueError(
+            f"{name}: maturation_delay must be >= 0.0, got {curve.maturation_delay}"
+        )
+    if curve.pioneer_end_year <= 0.0:
+        raise ValueError(
+            f"{name}: pioneer_end_year must be > 0.0, got {curve.pioneer_end_year}"
+        )
+    if curve.intermediate_end_year <= curve.pioneer_end_year:
+        raise ValueError(
+            f"{name}: intermediate_end_year ({curve.intermediate_end_year}) "
+            f"must be > pioneer_end_year ({curve.pioneer_end_year})"
+        )
+    if curve.climax_approach_year <= curve.intermediate_end_year:
+        raise ValueError(
+            f"{name}: climax_approach_year ({curve.climax_approach_year}) "
+            f"must be > intermediate_end_year ({curve.intermediate_end_year})"
+        )
+    if not (0.0 <= curve.pioneer_service < 1.0):
+        raise ValueError(
+            f"{name}: pioneer_service must be in [0.0, 1.0), "
+            f"got {curve.pioneer_service}"
+        )
+    if not (0.0 <= curve.intermediate_service < 1.0):
+        raise ValueError(
+            f"{name}: intermediate_service must be in [0.0, 1.0), "
+            f"got {curve.intermediate_service}"
+        )
+    if curve.intermediate_service <= curve.pioneer_service:
+        raise ValueError(
+            f"{name}: intermediate_service ({curve.intermediate_service}) "
+            f"must be > pioneer_service ({curve.pioneer_service})"
+        )
+
+
+def validate_carbon_profile(
+    profile: CarbonProfile,
+    name: str = "CarbonProfile",
+) -> None:
+    """
+    Validate a CarbonProfile dataclass.
+
+    Checks:
+        - All tonnage values >= 0
+        - soil_release_fraction in [0.0, 1.0]
+        - carbon_price_per_tonne >= 0
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if profile.stored_carbon_tonnes < 0.0:
+        raise ValueError(
+            f"{name}: stored_carbon_tonnes must be >= 0.0, "
+            f"got {profile.stored_carbon_tonnes}"
+        )
+    if profile.annual_absorption_tonnes < 0.0:
+        raise ValueError(
+            f"{name}: annual_absorption_tonnes must be >= 0.0, "
+            f"got {profile.annual_absorption_tonnes}"
+        )
+    if profile.soil_carbon_tonnes < 0.0:
+        raise ValueError(
+            f"{name}: soil_carbon_tonnes must be >= 0.0, "
+            f"got {profile.soil_carbon_tonnes}"
+        )
+    if not (0.0 <= profile.soil_release_fraction <= 1.0):
+        raise ValueError(
+            f"{name}: soil_release_fraction must be in [0.0, 1.0], "
+            f"got {profile.soil_release_fraction}"
+        )
+    if profile.carbon_price_per_tonne < 0.0:
+        raise ValueError(
+            f"{name}: carbon_price_per_tonne must be >= 0.0, "
+            f"got {profile.carbon_price_per_tonne}"
+        )
+
+
+def validate_resilience_config(
+    config: ResilienceConfig,
+    name: str = "ResilienceConfig",
+) -> None:
+    """
+    Validate a ResilienceConfig dataclass.
+
+    Checks:
+        - warning_zone_width > 0
+        - Confidence values in [0.0, 1.0] and descending: green > yellow > red
+        - irreversibility_flag_ratio in (0.0, 1.0]
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if config.warning_zone_width <= 0.0:
+        raise ValueError(
+            f"{name}: warning_zone_width must be > 0.0, "
+            f"got {config.warning_zone_width}"
+        )
+    for field_name, val in [
+        ("confidence_green", config.confidence_green),
+        ("confidence_yellow", config.confidence_yellow),
+        ("confidence_red", config.confidence_red),
+    ]:
+        if not (0.0 <= val <= 1.0):
+            raise ValueError(
+                f"{name}: {field_name} must be in [0.0, 1.0], got {val}"
+            )
+    if not (config.confidence_green > config.confidence_yellow > config.confidence_red):
+        raise ValueError(
+            f"{name}: confidence values must be descending "
+            f"(green > yellow > red), got "
+            f"green={config.confidence_green}, "
+            f"yellow={config.confidence_yellow}, "
+            f"red={config.confidence_red}"
+        )
+    if not (0.0 < config.irreversibility_flag_ratio <= 1.0):
+        raise ValueError(
+            f"{name}: irreversibility_flag_ratio must be in (0.0, 1.0], "
+            f"got {config.irreversibility_flag_ratio}"
         )

@@ -1,5 +1,5 @@
 """
-Gaia v0.3 — Text report generation.
+Gaia v0.4 — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
@@ -8,9 +8,13 @@ v0.1: format_report()           — externality report from run_extraction()
 v0.2: format_restoration_report() — restoration report from run_restoration()
 v0.3: Cascade breakdown (direct vs propagated damage, trophic amplification,
       keystone threshold warnings) added to externality report.
+v0.4: Resilience Assessment, Carbon Accounting sections in extraction report;
+      Maturation Timeline, Carbon Recovery sections in restoration report.
 """
 
+from gaia.carbon import compute_carbon_cost, compute_carbon_payback_period
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
+from gaia.resilience import compute_confidence_band
 
 # Report width (characters)
 _WIDTH: int = 63
@@ -168,6 +172,105 @@ def format_report(result: SimulationResult) -> str:
     lines.append(
         f"  {net_label:<40} {net:>14,.2f}\u20ac"
     )
+
+    # v0.4: Resilience Assessment
+    if result.steps and result.steps[-1].resilience_zone != "green":
+        lines.append("")
+        lines.append(f"  \u2500\u2500 Resilience Assessment \u2500" + "\u2500" * 38)
+        final_step = result.steps[-1]
+        zone_label = final_step.resilience_zone.upper()
+        zone_symbol = {
+            "green": "\u2705", "yellow": "\u26a0", "red": "\u26a0\u26a0"
+        }.get(final_step.resilience_zone, "")
+        zone_desc = {
+            "green": "Ecosystem likely resilient",
+            "yellow": "Resilience uncertain",
+            "red": "Resilience likely compromised",
+        }.get(final_step.resilience_zone, "")
+        lines.append(
+            f"  Current zone:          {zone_symbol} {zone_label} \u2014 {zone_desc}"
+        )
+        lines.append(
+            f"  Model confidence:      {final_step.model_confidence:.0%}"
+        )
+
+        # Zone transitions
+        transitions: list = []
+        prev_zone: str = "green"
+        for s in result.steps:
+            if s.resilience_zone != prev_zone:
+                depl_pct = s.depletion_ratio * 100
+                transitions.append(
+                    f"{prev_zone.title()} \u2192 {s.resilience_zone.title()} "
+                    f"at step {s.step:,} ({depl_pct:.0f}% depletion)"
+                )
+                prev_zone = s.resilience_zone
+        if transitions:
+            lines.append(f"  Zone transitions:")
+            for t in transitions:
+                lines.append(f"    {t}")
+
+        # Irreversibility warning
+        if final_step.irreversibility_warning:
+            irrev_step = None
+            for s in result.steps:
+                if s.irreversibility_warning:
+                    irrev_step = s.step
+                    break
+            if irrev_step is not None:
+                depl_pct = irrev_step / resource.total_units * 100
+                lines.append("")
+                lines.append(
+                    f"  \u26a0 IRREVERSIBILITY WARNING at step {irrev_step:,} "
+                    f"({depl_pct:.0f}% depletion)"
+                )
+                lines.append(
+                    f"    Ecosystem damage may be partially irreversible."
+                )
+
+    # v0.4: Carbon Accounting
+    if resource.carbon_profile is not None and result.total_units_extracted > 0:
+        lines.append("")
+        lines.append(f"  \u2500\u2500 Carbon Accounting \u2500" + "\u2500" * 42)
+        carbon = compute_carbon_cost(
+            resource.carbon_profile,
+            result.total_units_extracted,
+            remaining_years=80.0,  # default estimate
+        )
+        lines.append(
+            f"  {'Carbon released (biomass+soil):':<40} "
+            f"{carbon['release_tonnes']:>10,.0f} t CO\u2082"
+        )
+        lines.append(
+            f"  {'Future absorption foregone:':<40} "
+            f"{carbon['foregone_tonnes_per_year']:>10,.1f} t CO\u2082/yr"
+        )
+        lines.append(
+            f"  {'Carbon externality (release):':<40} "
+            f"{carbon['release_cost']:>14,.2f}\u20ac"
+        )
+        lines.append(
+            f"  {'Carbon externality (foregone):':<40} "
+            f"{carbon['foregone_cost_per_year']:>14,.2f}\u20ac/yr"
+        )
+
+    # v0.4: Confidence band on total externality
+    if result.steps and resource.resilience is not None:
+        final_confidence = result.steps[-1].model_confidence
+        if final_confidence < 1.0:
+            lower, upper = compute_confidence_band(
+                result.total_externality_cost, final_confidence
+            )
+            lines.append("")
+            lines.append(f"  \u2500\u2500 Externality with Confidence Band \u2500" + "\u2500" * 28)
+            lines.append(
+                f"  {'Total Externality:':<40} {result.total_externality_cost:>14,.2f}\u20ac"
+            )
+            lines.append(
+                f"  Confidence band ({final_confidence:.0%}):"
+                f"        {lower:>12,.2f}\u20ac \u2014 {upper:>12,.2f}\u20ac"
+            )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
@@ -283,6 +386,56 @@ def format_restoration_report(result: RestorationResult) -> str:
         f"  (Foregone revenue + restoration cost) / foregone revenue = "
         f"{result.prevention_advantage:.2f}"
     )
+
+    # v0.4: Maturation Timeline
+    if result.maturation_timeline:
+        lines.append("")
+        lines.append(f"  \u2500\u2500 Maturation Timeline \u2500" + "\u2500" * 40)
+        lines.append(
+            f"  {'Years to first services:':<40} "
+            f"{result.years_to_pioneer:>10.0f} years"
+        )
+        lines.append(
+            f"  {'Years to 50% service recovery:':<40} "
+            f"{result.years_to_50pct:>10.0f} years"
+        )
+        lines.append(
+            f"  {'Years to 90% service recovery:':<40} "
+            f"{result.years_to_90pct:>10.0f} years"
+        )
+
+        lines.append("")
+        lines.append(f"  \u2500\u2500 Maturation Gap \u2500" + "\u2500" * 45)
+        lines.append(
+            f"  {'Lost services during maturation:':<40} "
+            f"{result.total_maturation_gap:>14,.2f}\u20ac"
+        )
+        lines.append(
+            f"  (accumulated externality while waiting for succession)"
+        )
+        lines.append("")
+        lines.append(
+            f"  This cost is IN ADDITION to restoration costs."
+        )
+        lines.append(
+            f"  True prevention advantage: restoration_cost + maturation_gap"
+        )
+
+    # v0.4: Carbon Recovery
+    if (result.maturation_timeline
+            and ecosystem.resource.carbon_profile is not None):
+        lines.append("")
+        lines.append(f"  \u2500\u2500 Carbon Recovery \u2500" + "\u2500" * 44)
+        final_mat = result.maturation_timeline[-1]
+        co2_label = "Cumulative CO\u2082 absorbed:"
+        lines.append(
+            f"  {co2_label:<40} "
+            f"{final_mat.cumulative_carbon_absorbed:>10,.0f} t CO\u2082"
+        )
+        lines.append(
+            f"  {'Over':<5} {len(result.maturation_timeline)} years of maturation"
+        )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)

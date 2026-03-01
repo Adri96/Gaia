@@ -1,5 +1,5 @@
 """
-Gaia v0.3 — Core data models.
+Gaia v0.4 — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
@@ -8,13 +8,134 @@ All models are Cython-compatible.
 v0.2 additions: RestorationCost, RestorationStep, RestorationResult
 v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
                 SimulationStep cascade fields
+v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep,
+                RestorationConfig; Resource + carbon/resilience; Agent + succession;
+                SimulationStep + resilience fields; RestorationResult + maturation
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
 DamageFunc = Callable[[float], float]
+
+
+# ── v0.4: Succession, Carbon & Resilience models ──────────────────────────────
+
+
+@dataclass
+class SuccessionCurve:
+    """Three-phase succession maturation curve.
+
+    Maps years since restoration to service capacity (0.0 to 1.0).
+    Encodes the ecological reality that restoration follows
+    pioneer → intermediate → climax phases (Foundation F8).
+
+    Attributes:
+        pioneer_end_year: When pioneer phase ends (Y₁).
+        intermediate_end_year: When intermediate phase ends (Y₂).
+        climax_approach_year: When services reach ~95% of climax (Y₃).
+        pioneer_service: Max service fraction during pioneer (e.g. 0.05).
+        intermediate_service: Max service fraction during intermediate (e.g. 0.40).
+        maturation_delay: Years of zero service at the start (dead zone).
+    """
+
+    pioneer_end_year: float
+    intermediate_end_year: float
+    climax_approach_year: float
+    pioneer_service: float
+    intermediate_service: float
+    maturation_delay: float
+
+
+@dataclass
+class CarbonProfile:
+    """Carbon accounting parameters for a resource unit.
+
+    Attributes:
+        stored_carbon_tonnes: Tonnes CO₂ stored per unit (tree or hectare).
+        annual_absorption_tonnes: Tonnes CO₂ absorbed per unit per year at climax.
+        soil_carbon_tonnes: Tonnes CO₂ stored in soil beneath each unit.
+        soil_release_fraction: Fraction of soil carbon released on extraction (0.0–1.0).
+        carbon_price_per_tonne: € per tonne CO₂ (default: EU ETS price).
+    """
+
+    stored_carbon_tonnes: float
+    annual_absorption_tonnes: float
+    soil_carbon_tonnes: float
+    soil_release_fraction: float
+    carbon_price_per_tonne: float
+
+
+@dataclass
+class ResilienceConfig:
+    """Resilience zone configuration for uncertainty flagging.
+
+    Three zones around the safe threshold acknowledge that we don't
+    know exactly where the tipping point is (Foundation F7).
+
+    Attributes:
+        warning_zone_width: Fraction of total resource — yellow zone starts
+            at threshold + width.
+        confidence_green: Model confidence in the green zone (0.0–1.0).
+        confidence_yellow: Model confidence in the yellow zone (0.0–1.0).
+        confidence_red: Model confidence in the red zone (0.0–1.0).
+        irreversibility_flag_ratio: Depletion ratio above which
+            irreversibility warning is triggered.
+    """
+
+    warning_zone_width: float = 0.10
+    confidence_green: float = 0.90
+    confidence_yellow: float = 0.60
+    confidence_red: float = 0.30
+    irreversibility_flag_ratio: float = 0.50
+
+
+@dataclass
+class MaturationStep:
+    """One year of the maturation timeline.
+
+    Produced by the maturation pass of time-aware restoration.
+
+    Attributes:
+        year: Year since restoration began.
+        succession_phase: "delay", "pioneer", "intermediate", or "climax".
+        service_fraction: 0.0 to 1.0 — fraction of max recovered services delivered.
+        annual_service_value: € — actual service value delivered this year.
+        cumulative_service_value: € — total services from year 0 to this year.
+        annual_carbon_absorbed: Tonnes CO₂ absorbed this year.
+        cumulative_carbon_absorbed: Tonnes CO₂ total absorbed so far.
+    """
+
+    year: int
+    succession_phase: str
+    service_fraction: float
+    annual_service_value: float
+    cumulative_service_value: float
+    annual_carbon_absorbed: float
+    cumulative_carbon_absorbed: float
+
+
+@dataclass
+class RestorationConfig:
+    """Configuration for time-aware restoration simulation.
+
+    Attributes:
+        units_to_restore: Number of units to replant.
+        planting_schedule: "immediate" or "phased".
+        planting_years: If phased, how many years to spread planting over.
+        time_horizon_years: How many years to simulate post-restoration.
+        succession_curve: Ecosystem-level default succession curve.
+    """
+
+    units_to_restore: int
+    planting_schedule: str
+    planting_years: int
+    time_horizon_years: int
+    succession_curve: SuccessionCurve
+
+
+# ── Core models ────────────────────────────────────────────────────────────────
 
 
 @dataclass
@@ -28,6 +149,8 @@ class Resource:
         safe_threshold_ratio: Fraction of total_units that can be safely extracted
                               before damage accelerates sharply. Must be in (0.0, 1.0).
         unit_value: Revenue per unit extracted, in euros. e.g. 100.0 €/tree.
+        carbon_profile: Optional carbon accounting parameters (v0.4).
+        resilience: Optional resilience zone configuration (v0.4).
 
     Derived:
         safe_threshold_units: Absolute number of units at the safe threshold.
@@ -37,6 +160,10 @@ class Resource:
     total_units: int
     safe_threshold_ratio: float
     unit_value: float
+
+    # v0.4: Carbon and resilience (None → no carbon/resilience accounting)
+    carbon_profile: Optional[CarbonProfile] = None
+    resilience: Optional[ResilienceConfig] = None
 
     @property
     def safe_threshold_units(self) -> int:
@@ -71,6 +198,9 @@ class Agent:
     trophic_level: int = -1             # -1=abiotic, 0=producer, 1-3=consumers
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
     keystone_threshold: float = 0.3     # health below this triggers keystone cascade
+
+    # v0.4: Agent-specific succession curve (None → use ecosystem default)
+    succession_curve: Optional[SuccessionCurve] = None
 
 
 @dataclass
@@ -147,6 +277,11 @@ class SimulationStep:
     agent_direct_damages: list = field(default_factory=list)    # pre-propagation damage ratios
     agent_cascade_damages: list = field(default_factory=list)   # additional damage from interactions
     keystone_triggered: list = field(default_factory=list)      # agent names whose keystone threshold crossed
+
+    # v0.4: Resilience zone fields (defaults preserve v0.3 behavior)
+    resilience_zone: str = "green"            # "green", "yellow", or "red"
+    model_confidence: float = 1.0             # 0.0–1.0
+    irreversibility_warning: bool = False     # True if depletion > irreversibility_flag_ratio
 
 
 @dataclass
@@ -269,6 +404,11 @@ class RestorationResult:
             [NOTE: this is a simplified ratio without time-discounting.
              Full NPV analysis is a v0.5 feature.]
         final_ecosystem_health: Ecosystem health after all restoration.
+        maturation_timeline: Year-by-year service recovery (v0.4, empty if no succession).
+        years_to_pioneer: Years until services first become non-zero (v0.4).
+        years_to_50pct: Years until 50% of recoverable services are delivered (v0.4).
+        years_to_90pct: Years until 90% of recoverable services are delivered (v0.4).
+        total_maturation_gap: € accumulated externality during maturation (v0.4).
     """
 
     ecosystem: Ecosystem
@@ -280,3 +420,10 @@ class RestorationResult:
     net_restoration_value: float
     prevention_advantage: float
     final_ecosystem_health: float
+
+    # v0.4: Maturation timeline fields (defaults preserve v0.3 behavior)
+    maturation_timeline: list = field(default_factory=list)  # List[MaturationStep]
+    years_to_pioneer: float = 0.0
+    years_to_50pct: float = 0.0
+    years_to_90pct: float = 0.0
+    total_maturation_gap: float = 0.0

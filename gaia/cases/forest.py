@@ -1,5 +1,5 @@
 """
-Gaia v0.1/v0.2 — Preconfigured Oak Valley Forest deforestation and restoration case.
+Gaia v0.4 — Preconfigured Oak Valley Forest deforestation and restoration case.
 
 Provides a ready-to-run forest ecosystem with four agents, all using logistic
 damage functions calibrated around the safe extraction threshold.
@@ -31,16 +31,57 @@ Dependency weight sum: 0.20 + 0.30 + 0.15 + 0.35 = 1.00
 CLI usage:
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000 --mode restore
+    python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000 --mode restore --time-horizon 60
 """
 
 import argparse
 import sys
 
 from gaia.damage import logistic_damage
-from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
+from gaia.models import (
+    Agent,
+    CarbonProfile,
+    Ecosystem,
+    InteractionEdge,
+    ResilienceConfig,
+    RestorationCost,
+    Resource,
+    SuccessionCurve,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+
+# v0.4: Oak Valley Forest succession curve
+# [PLACEHOLDER — pending calibration against temperate oak succession studies]
+_FOREST_SUCCESSION = SuccessionCurve(
+    pioneer_end_year=8.0,
+    intermediate_end_year=25.0,
+    climax_approach_year=60.0,
+    pioneer_service=0.05,
+    intermediate_service=0.35,
+    maturation_delay=2.0,
+)
+
+# v0.4: Oak Valley carbon profile (per tree)
+# [PLACEHOLDER — pending calibration against IPCC forest carbon data]
+_FOREST_CARBON = CarbonProfile(
+    stored_carbon_tonnes=0.8,
+    annual_absorption_tonnes=0.022,
+    soil_carbon_tonnes=0.3,
+    soil_release_fraction=0.25,
+    carbon_price_per_tonne=80.0,
+)
+
+# v0.4: Oak Valley resilience configuration
+_FOREST_RESILIENCE = ResilienceConfig(
+    warning_zone_width=0.10,
+    confidence_green=0.90,
+    confidence_yellow=0.60,
+    confidence_red=0.30,
+    irreversibility_flag_ratio=0.60,
+)
 
 
 def build_forest_ecosystem(
@@ -64,6 +105,8 @@ def build_forest_ecosystem(
         total_units=total_trees,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=tree_value,
+        carbon_profile=_FOREST_CARBON,
+        resilience=_FOREST_RESILIENCE,
     )
 
     # Logistic damage functions centered at the safe extraction threshold.
@@ -187,6 +230,7 @@ def run_forest_restoration(
     planting_cost_per_tree: float = 50.0,
     annual_maintenance_per_tree: float = 10.0,
     maintenance_years: int = 10,
+    time_horizon_years: int = 0,
 ) -> str:
     """
     Run the Oak Valley Forest restoration simulation and return the report.
@@ -194,6 +238,9 @@ def run_forest_restoration(
     Models replanting from a degraded state. Default restores 5,000 trees —
     half the forest — using logistic recovery functions (slower than logistic
     damage, encoding the entropy asymmetry of destruction vs. restoration).
+
+    v0.4: When time_horizon_years > 0, produces maturation timeline using
+    the Oak Valley succession curve.
 
     Args:
         total_trees: Total carrying capacity of the forest.
@@ -203,6 +250,7 @@ def run_forest_restoration(
         planting_cost_per_tree: Direct cost per tree planted.
         annual_maintenance_per_tree: Annual maintenance cost per tree.
         maintenance_years: Number of years of maintenance required.
+        time_horizon_years: Years to simulate maturation (0 = skip, v0.4).
 
     Returns:
         Formatted text restoration report string.
@@ -221,7 +269,11 @@ def run_forest_restoration(
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
     ]
-    result = run_restoration(ecosystem, trees_to_restore, cost, recovery_fns)
+    result = run_restoration(
+        ecosystem, trees_to_restore, cost, recovery_fns,
+        succession_curve=_FOREST_SUCCESSION if time_horizon_years > 0 else None,
+        time_horizon_years=time_horizon_years,
+    )
     return format_restoration_report(result)
 
 
@@ -292,6 +344,13 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         metavar="N",
         help="[restore mode] Number of maintenance years (default: 10)",
     )
+    parser.add_argument(
+        "--time-horizon",
+        type=int,
+        default=0,
+        metavar="YEARS",
+        help="[restore mode] Years of maturation to simulate, v0.4 (default: 0=skip)",
+    )
     return parser.parse_args(argv)
 
 
@@ -307,6 +366,7 @@ def main(argv: list = None) -> None:
                 planting_cost_per_tree=args.planting_cost,
                 annual_maintenance_per_tree=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
+                time_horizon_years=args.time_horizon,
             )
         else:
             report = run_forest(

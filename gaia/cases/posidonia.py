@@ -102,10 +102,52 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
+from gaia.models import (
+    Agent,
+    CarbonProfile,
+    Ecosystem,
+    InteractionEdge,
+    ResilienceConfig,
+    RestorationCost,
+    Resource,
+    SuccessionCurve,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# v0.4: Posidonia succession curve
+# Extremely slow — 1-6 cm/year horizontal growth, decades to re-establish.
+# [PLACEHOLDER — pending calibration against Mediterranean seagrass studies]
+_POSIDONIA_SUCCESSION = SuccessionCurve(
+    pioneer_end_year=20.0,
+    intermediate_end_year=50.0,
+    climax_approach_year=120.0,
+    pioneer_service=0.02,
+    intermediate_service=0.25,
+    maturation_delay=5.0,
+)
+
+# v0.4: Posidonia carbon profile (per hectare)
+# Blue carbon — 15× Amazon CO₂ rate, millennia of stored matte carbon.
+# [PLACEHOLDER — pending calibration against IPCC Blue Carbon data]
+_POSIDONIA_CARBON = CarbonProfile(
+    stored_carbon_tonnes=130.0,
+    annual_absorption_tonnes=5.9,
+    soil_carbon_tonnes=2600.0,
+    soil_release_fraction=0.05,
+    carbon_price_per_tonne=80.0,
+)
+
+# v0.4: Posidonia resilience configuration
+# Widest warning zone — Posidonia is most fragile.
+_POSIDONIA_RESILIENCE = ResilienceConfig(
+    warning_zone_width=0.15,
+    confidence_green=0.90,
+    confidence_yellow=0.60,
+    confidence_red=0.30,
+    irreversibility_flag_ratio=0.40,
+)
 
 # Shared steepness for all logistic agents.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
@@ -153,6 +195,8 @@ def build_posidonia_ecosystem(
         total_units=total_hectares,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=revenue_per_hectare,
+        carbon_profile=_POSIDONIA_CARBON,
+        resilience=_POSIDONIA_RESILIENCE,
     )
 
     t = safe_threshold_ratio  # shorthand
@@ -372,45 +416,26 @@ def run_posidonia_restoration(
     planting_cost_per_hectare: float = 50_000.0,
     annual_maintenance_per_hectare: float = 5_000.0,
     maintenance_years: int = 30,
+    time_horizon_years: int = 0,
 ) -> str:
     """
     Run the Costa Brava Posidonia Meadow restoration simulation and return the report.
 
-    Posidonia restoration is among the most expensive and uncertain ecological
-    restoration efforts known. The prevention advantage ratio is extremely high
-    because:
-    - Posidonia grows at 1-6 cm/year horizontal expansion rate
-    - Transplanting requires specialist diving teams
-    - Establishment takes 5-10 years before any ecosystem service recovery
-    - Survival rates in transplanting projects: 30-60%
-    - The logistic recovery inflection at 60% restoration means services only
-      meaningfully recover after most of the meadow is re-established
-
-    Default costs (per hectare):
-        Planting: €50,000/ha — specialist diving, substrate preparation,
-                  donor material collection, monitoring
-        Maintenance: €5,000/ha/year for 30 years — storm damage repair,
-                     invasive species control, turbidity monitoring
-        Total: €50,000 + (€5,000 × 30) = €200,000/ha
-
-    For comparison: one-time destruction revenue is €2,500/ha.
-    Prevention advantage ≈ (€2,500 + €200,000) / €2,500 ≈ 81×
-
-    NOTE: The logistic recovery function here models ecosystem SERVICE recovery,
-    not meadow area recovery. Even with 100% area replanted, services ramp up
-    slowly as the meadow matures.
+    v0.4: When time_horizon_years > 0, produces maturation timeline using
+    the Posidonia succession curve (slowest of all ecosystems).
 
     Args:
         total_hectares: Total carrying capacity of the Posidonia meadow.
         safe_threshold_ratio: Safe destruction threshold ratio.
         hectares_to_restore: Hectares of meadow to actively restore.
-        revenue_per_hectare: One-time private revenue per hectare (for prevention_advantage).
-        planting_cost_per_hectare: Specialist diving and transplanting cost per hectare.
-        annual_maintenance_per_hectare: Annual monitoring and repair cost per hectare.
-        maintenance_years: Years of active maintenance before self-sustaining.
+        revenue_per_hectare: One-time private revenue per hectare.
+        planting_cost_per_hectare: Specialist diving cost per hectare.
+        annual_maintenance_per_hectare: Annual monitoring cost per hectare.
+        maintenance_years: Years of active maintenance required.
+        time_horizon_years: Years to simulate maturation (0 = skip, v0.4).
 
     Returns:
-        Formatted text restoration report string with marine economics note appended.
+        Formatted text restoration report string with marine economics note.
     """
     ecosystem = build_posidonia_ecosystem(
         total_hectares=total_hectares,
@@ -426,7 +451,11 @@ def run_posidonia_restoration(
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
     ]
-    result = run_restoration(ecosystem, hectares_to_restore, cost, recovery_fns)
+    result = run_restoration(
+        ecosystem, hectares_to_restore, cost, recovery_fns,
+        succession_curve=_POSIDONIA_SUCCESSION if time_horizon_years > 0 else None,
+        time_horizon_years=time_horizon_years,
+    )
     return format_restoration_report(result) + _ANNUAL_NOTE
 
 
@@ -499,6 +528,13 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         metavar="N",
         help="[restore mode] Number of maintenance years (default: 30)",
     )
+    parser.add_argument(
+        "--time-horizon",
+        type=int,
+        default=0,
+        metavar="YEARS",
+        help="[restore mode] Years of maturation to simulate, v0.4 (default: 0=skip)",
+    )
     return parser.parse_args(argv)
 
 
@@ -514,6 +550,7 @@ def main(argv: list = None) -> None:
                 planting_cost_per_hectare=args.planting_cost,
                 annual_maintenance_per_hectare=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
+                time_horizon_years=args.time_horizon,
             )
         else:
             report = run_posidonia(

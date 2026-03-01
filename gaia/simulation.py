@@ -1,5 +1,5 @@
 """
-Gaia v0.3 — Simulation engine.
+Gaia v0.4 — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return
@@ -14,9 +14,10 @@ All code in this module is Cython-compatible:
 
 v0.2: Added run_restoration() — the inverse of run_extraction().
 v0.3: Two-phase loops with trophic amplification and interaction propagation.
+v0.4: Resilience zone tagging in extraction, maturation pass in restoration.
 """
 
-from typing import List
+from typing import List, Optional
 
 from gaia.models import (
     Agent,
@@ -26,9 +27,16 @@ from gaia.models import (
     RestorationStep,
     SimulationResult,
     SimulationStep,
+    SuccessionCurve,
 )
 from gaia.propagation import compute_trophic_amplification, propagate_interactions
 from gaia.recovery import RecoveryFunc
+from gaia.resilience import compute_resilience_zone
+from gaia.succession import (
+    compute_maturation_gap,
+    compute_maturation_timeline,
+    find_years_to_threshold,
+)
 from gaia.validation import validate_ecosystem, validate_extraction
 
 
@@ -51,6 +59,10 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             total_cost       = sum(cost[i])
             marginal_cost    = total_cost - previous_total_cost
             ecosystem_health = 1.0 - sum(weight[i] * effective_damage[i])
+
+    v0.4 additions:
+        Phase 4 — Resilience zone tagging:
+            If resource.resilience is configured, compute zone/confidence/warning.
 
     When ecosystem.interactions is empty and all trophic_levels are -1,
     this reduces to the v0.2 algorithm exactly.
@@ -99,9 +111,10 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     edge_targets: list = [e.target for e in interactions]
     edge_strengths: list = [e.strength for e in interactions]
 
-    # Short-circuit flags: skip v0.3 phases when not needed
+    # Short-circuit flags: skip phases when not needed
     has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
     has_interactions: bool = len(interactions) > 0
+    has_resilience: bool = resource.resilience is not None
 
     previous_total_cost: float = 0.0
 
@@ -163,6 +176,20 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
         private_revenue: float = units_extracted * unit_value
 
+        # Phase 4: Resilience zone tagging (v0.4)
+        step_zone: str = "green"
+        step_confidence: float = 1.0
+        step_irreversibility: bool = False
+        if has_resilience:
+            remaining_frac: float = 1.0 - depletion_ratio
+            step_zone, step_confidence, step_irreversibility = (
+                compute_resilience_zone(
+                    remaining_frac,
+                    resource.safe_threshold_ratio,
+                    resource.resilience,
+                )
+            )
+
         steps.append(SimulationStep(
             step=step,
             units_extracted=units_extracted,
@@ -176,6 +203,9 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             agent_direct_damages=direct_damages,
             agent_cascade_damages=cascade_damages,
             keystone_triggered=keystone_triggered,
+            resilience_zone=step_zone,
+            model_confidence=step_confidence,
+            irreversibility_warning=step_irreversibility,
         ))
 
         previous_total_cost = step_total_cost
@@ -200,6 +230,8 @@ def run_restoration(
     units_to_restore: int,
     restoration_cost: RestorationCost,
     recovery_functions: list,
+    succession_curve: Optional[SuccessionCurve] = None,
+    time_horizon_years: int = 0,
 ) -> RestorationResult:
     """
     Simulate restoring `units_to_restore` units to the ecosystem.
@@ -212,12 +244,16 @@ def run_restoration(
     v0.3: Recovery cascades propagate at reduced strength (0.5×) reflecting
     entropy asymmetry — recovery cascades are weaker than damage cascades.
 
+    v0.4: Optional succession_curve + time_horizon_years for maturation pass.
+
     Args:
         ecosystem: The Ecosystem to restore.
         units_to_restore: Number of units to replant (>= 1, <= total_units).
         restoration_cost: RestorationCost parameters (planting + maintenance).
         recovery_functions: List of RecoveryFunc, one per agent, in the same
             order as ecosystem.agents. Each maps recovery_ratio → recovered_ratio.
+        succession_curve: Optional SuccessionCurve for maturation pass (v0.4).
+        time_horizon_years: Years to simulate post-restoration (v0.4, 0 = skip).
 
     Returns:
         RestorationResult with all steps recorded.
@@ -346,6 +382,29 @@ def run_restoration(
     else:
         prevention_advantage = 1.0
 
+    # v0.4: Maturation pass — produce year-by-year timeline if succession curve provided
+    maturation_timeline: list = []
+    years_to_pioneer: float = 0.0
+    years_to_50pct: float = 0.0
+    years_to_90pct: float = 0.0
+    total_maturation_gap: float = 0.0
+
+    if succession_curve is not None and time_horizon_years > 0:
+        maturation_timeline = compute_maturation_timeline(
+            succession_curve=succession_curve,
+            max_recovered_value=total_recovered,
+            time_horizon_years=time_horizon_years,
+            units_restored=units_to_restore,
+            carbon_profile=ecosystem.resource.carbon_profile,
+        )
+        total_maturation_gap = compute_maturation_gap(
+            maturation_timeline, total_recovered
+        )
+        # Compute milestone years
+        years_to_pioneer = find_years_to_threshold(succession_curve, 0.001)
+        years_to_50pct = find_years_to_threshold(succession_curve, 0.50)
+        years_to_90pct = find_years_to_threshold(succession_curve, 0.90)
+
     return RestorationResult(
         ecosystem=ecosystem,
         restoration_cost=restoration_cost,
@@ -356,4 +415,9 @@ def run_restoration(
         net_restoration_value=total_recovered - total_cost,
         prevention_advantage=prevention_advantage,
         final_ecosystem_health=final_step.ecosystem_health,
+        maturation_timeline=maturation_timeline,
+        years_to_pioneer=years_to_pioneer,
+        years_to_50pct=years_to_50pct,
+        years_to_90pct=years_to_90pct,
+        total_maturation_gap=total_maturation_gap,
     )

@@ -77,10 +77,50 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
-from gaia.models import Agent, Ecosystem, InteractionEdge, RestorationCost, Resource
+from gaia.models import (
+    Agent,
+    CarbonProfile,
+    Ecosystem,
+    InteractionEdge,
+    ResilienceConfig,
+    RestorationCost,
+    Resource,
+    SuccessionCurve,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# v0.4: Costa Brava Mediterranean succession curve
+# Slower than temperate forest due to drought stress and fire risk.
+# [PLACEHOLDER — pending calibration against Mediterranean oak succession data]
+_CB_SUCCESSION = SuccessionCurve(
+    pioneer_end_year=12.0,
+    intermediate_end_year=35.0,
+    climax_approach_year=80.0,
+    pioneer_service=0.03,
+    intermediate_service=0.30,
+    maturation_delay=3.0,
+)
+
+# v0.4: Costa Brava carbon profile (per tree)
+# [PLACEHOLDER — pending calibration against Mediterranean carbon data]
+_CB_CARBON = CarbonProfile(
+    stored_carbon_tonnes=0.5,
+    annual_absorption_tonnes=0.018,
+    soil_carbon_tonnes=0.35,
+    soil_release_fraction=0.25,
+    carbon_price_per_tonne=80.0,
+)
+
+# v0.4: Costa Brava resilience configuration
+_CB_RESILIENCE = ResilienceConfig(
+    warning_zone_width=0.12,
+    confidence_green=0.90,
+    confidence_yellow=0.60,
+    confidence_red=0.30,
+    irreversibility_flag_ratio=0.50,
+)
 
 # Shared steepness for all logistic agents.
 # 12.0 gives a clear S-curve with an observable knee at the threshold.
@@ -117,6 +157,8 @@ def build_costa_brava_ecosystem(
         total_units=total_trees,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=tree_value,
+        carbon_profile=_CB_CARBON,
+        resilience=_CB_RESILIENCE,
     )
 
     t = safe_threshold_ratio  # shorthand for threshold argument
@@ -332,30 +374,23 @@ def run_costa_brava_restoration(
     planting_cost_per_tree: float = 80.0,
     annual_maintenance_per_tree: float = 15.0,
     maintenance_years: int = 15,
+    time_horizon_years: int = 0,
 ) -> str:
     """
     Run the Costa Brava Forest restoration simulation and return the report.
 
-    Mediterranean forest restoration is harder and slower than temperate forest:
-    - Holm oak (Quercus ilex) is slow-growing (max 0.5 m/yr)
-    - Summer drought requires irrigation during establishment (3-5 years)
-    - Mycorrhizal network must re-establish before full ecosystem function
-    - Default maintenance: 15 years (vs 10 for temperate) — reflects higher
-      establishment difficulty
-
-    Higher planting cost (€80/tree default vs €50 for temperate) accounts for:
-    - Mediterranean drought-hardy saplings (more expensive nursery stock)
-    - Irrigation infrastructure and summer watering during establishment
-    - Fire-break management and controlled burns to reduce fuel load
+    v0.4: When time_horizon_years > 0, produces maturation timeline using
+    the Costa Brava succession curve.
 
     Args:
         total_trees: Total carrying capacity of the forest.
         safe_threshold_ratio: Safe extraction threshold ratio.
         trees_to_restore: Number of trees to replant (restore).
-        tree_value: Revenue per tree in euros (used for prevention_advantage).
-        planting_cost_per_tree: Direct cost per tree planted (Mediterranean premium).
+        tree_value: Revenue per tree in euros.
+        planting_cost_per_tree: Direct cost per tree planted.
         annual_maintenance_per_tree: Annual maintenance cost per tree.
         maintenance_years: Number of years of maintenance required.
+        time_horizon_years: Years to simulate maturation (0 = skip, v0.4).
 
     Returns:
         Formatted text restoration report string.
@@ -374,7 +409,11 @@ def run_costa_brava_restoration(
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
     ]
-    result = run_restoration(ecosystem, trees_to_restore, cost, recovery_fns)
+    result = run_restoration(
+        ecosystem, trees_to_restore, cost, recovery_fns,
+        succession_curve=_CB_SUCCESSION if time_horizon_years > 0 else None,
+        time_horizon_years=time_horizon_years,
+    )
     return format_restoration_report(result)
 
 
@@ -447,6 +486,13 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         metavar="N",
         help="[restore mode] Number of maintenance years (default: 15)",
     )
+    parser.add_argument(
+        "--time-horizon",
+        type=int,
+        default=0,
+        metavar="YEARS",
+        help="[restore mode] Years of maturation to simulate, v0.4 (default: 0=skip)",
+    )
     return parser.parse_args(argv)
 
 
@@ -462,6 +508,7 @@ def main(argv: list = None) -> None:
                 planting_cost_per_tree=args.planting_cost,
                 annual_maintenance_per_tree=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
+                time_horizon_years=args.time_horizon,
             )
         else:
             report = run_costa_brava(
