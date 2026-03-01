@@ -496,6 +496,17 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates
 - Pluggable case template system — structured template for adding new ecosystems without writing Python
 
+### 🔲 v0.8.1 — I/O flexibility
+
+- Review the input params of the program. Make sure they make sense (for instance, should we have a "cut" parameter if mode === "restoration"?)
+- Give the option to get the output of the program in a JSON with a specific, predictable structure that can be exported to other places
+
+### 🔲 v1.0 — UI (very big effort)
+
+- Add a UI that allows users to set the model's parameters and see the output from the JSON visually (what would happen to this ecosystem if I do X?)
+- Create a set of common images in isometric 3D view thanks to SVG (trees, plants, common animals, common fishes, mountains)
+- We will show the ecosystem start and end after the actions applied by the user in a isometric square with out isometric SVGs. We will be able to know the end state thanks to the output JSON
+
 ---
 
 ## License
