@@ -421,7 +421,7 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] Implement Oak Valley Forest case (4 agents, logistic damage, calibrated parameters)
 - [x] Implement Costa Brava Holm Oak Forest case (11 agents: mycorrhizal network, soil microbiome, canopy trees, understory, pollinators, forest birds, mammals, raptors, watershed, carbon/climate with exponential damage, human communities)
 - [x] Implement Costa Brava Posidonia Meadow case (11 marine agents: seagrass, coralligenous reef, epiphytes, invertebrates, fish, megafauna, seabirds, coastal protection, water quality, blue carbon with exponential damage, human communities) — with marine economics inversion (one-time revenue vs annual recurring externality)
-- [x] Full test suite: 276 tests covering all damage functions, models, validation, simulation, and all three case scenarios
+- [x] Full test suite: 375 tests covering all damage functions, models, validation, simulation, all three case scenarios, succession curves, carbon accounting, resilience zones, and end-to-end maturation integration
 - [x] CLI for all three cases with configurable parameters
 
 ### ✅ v0.2 — Restoration Mode (complete)
@@ -438,19 +438,35 @@ The goal is to make externalities impossible to ignore and restoration impossibl
     - Costa Brava Holm Oak: **6.08×** (Mediterranean drought stress, mycorrhizal network delays)
     - Costa Brava Posidonia: **81.00×** (1-6 cm/year growth, specialist diving restoration at €200k/ha vs €2.5k/ha one-time revenue)
 
-### 🔲 v0.3 — Trophic Cascades & Population Dynamics
+### ✅ v0.3 — Trophic Cascades & Interaction Networks (complete)
 
-- [ ] Implement trophic cascade amplification (damage multipliers by trophic level — each level operates on ~10% of energy from below, so damage to primary producers amplifies up the chain)
-- [ ] Implement R/K-strategy population dynamics with carrying capacity (K): logistic growth model `Nt = Nt₋₁ · (1 + r · (K − Nt₋₁)/K)` — R-strategists rebound fast but overshoot; K-strategists (hardwoods, apex predators) recover slowly and are threshold-sensitive
-- [ ] Model predator-prey oscillation and competitive exclusion dynamics between agents
-- [ ] Agent interaction matrix — keystone species collapse cascades to dependent agents; restore keystone first to unblock cascade reversal
+- [x] Implement trophic cascade amplification (damage multipliers by trophic level — primary consumers, secondary consumers, apex predators each amplify damage from lower levels)
+- [x] Agent interaction matrix via `InteractionEdge` — directional edges between agents with interaction type (`trophic`, `mutualistic`, `competitive`) and strength
+- [x] `propagation.py` module — `propagate_damage()` computes effective damage as direct damage plus cascading indirect damage through the interaction network
+- [x] Trophic levels assigned per agent (1=producer, 2=primary consumer, etc.) with level-based amplification
+- [x] Keystone species mechanics — agents with `is_keystone=True` and `keystone_threshold` trigger cascade amplification when their health drops below threshold
+- [x] Extended `SimulationStep` to track both `direct_damage` and `cascaded_damage` per agent per step
+- [x] Updated all three case files with interaction edges reflecting real ecological relationships
+- [x] Reports show cascade breakdown: direct vs cascaded costs, trophic amplification factors
 
-### 🔲 v0.4 — Succession & Maturation Curves
+### ✅ v0.4 — Succession, Maturation Curves & Resilience Zones (complete)
 
-- [ ] Implement succession-based maturation curves (pioneer → intermediate → climax): ecosystem services near-zero in pioneer phase, accelerating through intermediate, plateauing at climax — replaces the current logistic recovery approximation
-- [ ] Maturation delay: replanted unit provides zero service until pioneer phase establishes (configurable delay per ecosystem type)
-- [ ] Implement double carbon externality: CO₂ released (biomass + soil) + lost future absorption during the maturation window (decades of sequestration foregone)
-- [ ] Implement resilience zones and threshold uncertainty flagging — zone of uncertainty around the safe extraction threshold where resilience may or may not hold; flag when model confidence degrades
+- [x] Implement succession-based maturation curves (pioneer → intermediate → climax): three-phase model with configurable phase durations and service fractions — `SuccessionCurve` dataclass, `succession.py` module with `succession_service()`, `get_succession_phase()`, `compute_maturation_timeline()`, `compute_maturation_gap()`, `find_years_to_threshold()`
+- [x] Maturation delay: configurable dead period at restoration start where replanted units provide zero ecosystem services (per-ecosystem: 2yr forest, 3yr Mediterranean, 5yr Posidonia)
+- [x] Implement double carbon externality: `carbon.py` module with `compute_carbon_release()` (biomass + soil fraction), `compute_absorption_foregone()`, `compute_carbon_cost()`, `compute_annual_absorption()`, `compute_carbon_payback_period()` — monetized at configurable carbon price per tonne
+- [x] Implement resilience zones: `resilience.py` module with `compute_resilience_zone()` (green/yellow/red classification), confidence interpolation, `compute_confidence_band()`, irreversibility warnings — flags when model confidence degrades past configured thresholds
+- [x] Extended `models.py` with 5 new dataclasses: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`
+- [x] Extended `Resource` (carbon_profile, resilience), `Agent` (succession_curve), `SimulationStep` (resilience_zone, model_confidence, irreversibility_warning), `RestorationResult` (maturation_timeline, years_to_pioneer/50pct/90pct, total_maturation_gap)
+- [x] Extended `simulation.py`: Phase 4 resilience zone tagging in `run_extraction`, optional maturation pass in `run_restoration`
+- [x] Extended `report.py`: Resilience Assessment section, Carbon Accounting section, Confidence Band section (extraction); Maturation Timeline, Maturation Gap, Carbon Recovery sections (restoration)
+- [x] Extended `validation.py`: `validate_succession_curve`, `validate_carbon_profile`, `validate_resilience_config`
+- [x] All three case files updated with ecosystem-specific parameters:
+    - Oak Valley Forest: 8/25/60yr succession, 0.8 tCO₂/tree, 10% warning zone
+    - Costa Brava: 12/35/80yr succession, 0.5 tCO₂/tree, 12% warning zone
+    - Posidonia: 20/50/120yr succession, 130 tCO₂/ha + 2600 tCO₂ soil, 15% warning zone
+- [x] `--time-horizon` CLI flag added to all three cases
+- [x] 375 tests pass (320 existing + 55 new across 4 test files: test_succession.py, test_carbon.py, test_resilience.py, test_maturation.py)
+- [x] Full backward compatibility — all v0.4 features are opt-in via Optional fields defaulting to None
 
 ### 🔲 v0.5 — Physical Substrate & Derived Carrying Capacity
 

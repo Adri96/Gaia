@@ -37,9 +37,14 @@ The damage functions are not arbitrary — they encode these principles mathemat
 Gaia/
 ├── gaia/                      # Core library
 │   ├── __init__.py
-│   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult, RestorationResult
+│   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult, RestorationResult,
+│   │                          #   SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep (v0.4)
 │   ├── damage.py              # Damage function library (logistic, exponential, piecewise)
 │   ├── recovery.py            # Recovery function library (logistic_recovery, linear_recovery)
+│   ├── propagation.py         # Trophic cascade amplification and interaction propagation (v0.3)
+│   ├── succession.py          # Succession curve evaluation and maturation timeline (v0.4)
+│   ├── carbon.py              # Double carbon externality: release + foregone absorption (v0.4)
+│   ├── resilience.py          # Resilience zones, confidence interpolation, confidence bands (v0.4)
 │   ├── validation.py          # Input validation with scientific constraints
 │   ├── simulation.py          # Simulation engine (extraction + restoration modes)
 │   ├── report.py              # Plain-text report formatter (externality + restoration reports)
@@ -58,24 +63,33 @@ Gaia/
 │   ├── test_costa_brava.py    # End-to-end Costa Brava forest case tests
 │   ├── test_posidonia.py      # End-to-end Posidonia marine case tests
 │   ├── test_recovery.py       # Mathematical property tests for all recovery functions
-│   └── test_restoration.py    # Restoration engine correctness and economic claim tests
+│   ├── test_restoration.py    # Restoration engine correctness and economic claim tests
+│   ├── test_succession.py     # Succession curve evaluation, maturation timeline, maturation gap (v0.4)
+│   ├── test_carbon.py         # Carbon release, double externality, payback period (v0.4)
+│   ├── test_resilience.py     # Resilience zone computation, confidence interpolation (v0.4)
+│   └── test_maturation.py     # End-to-end integration tests for v0.4 maturation + resilience
 ├── PROJECT_DEFINITION.md      # Scientific foundations and architecture vision
 ├── ROADMAP.md                 # Version roadmap and verification strategy
-└── V01_SPEC.md                # Detailed v0.1 specification
+├── V01_SPEC.md                # Detailed v0.1 specification
+└── V04_SPEC.md                # Detailed v0.4 specification
 ```
 
 ### Key modules
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, plus v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
-| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop; `run_restoration(ecosystem, units, cost, fns)` — restoration loop |
-| `gaia/report.py` | `format_report(result)` — externality report; `format_restoration_report(result)` — restoration investment report |
-| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents |
-| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents |
-| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents |
+| `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |
+| `gaia/succession.py` | Succession curve evaluation (pioneer → intermediate → climax), maturation timeline, maturation gap (v0.4) |
+| `gaia/carbon.py` | Double carbon externality: release + foregone absorption, monetized cost, payback period (v0.4) |
+| `gaia/resilience.py` | Resilience zone computation (green/yellow/red), confidence interpolation, confidence bands (v0.4) |
+| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with optional maturation pass |
+| `gaia/report.py` | `format_report(result)` — externality report with resilience assessment, carbon accounting, and confidence bands; `format_restoration_report(result)` — restoration report with maturation timeline, maturation gap, and carbon recovery |
+| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession |
+| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession |
+| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession |
 
 ---
 
@@ -102,30 +116,50 @@ python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000
 python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000 --tree-value 100.0
 ```
 
-Sample output:
+Sample output (v0.4 — with resilience assessment, carbon accounting, and confidence band):
 
 ```
 ═══════════════════════════════════════════════════════════════
   GAIA — Externality Report: Oak Valley Forest
 ═══════════════════════════════════════════════════════════════
-  Resource:              10,000 units  (Oak Valley Forest)
-  Safe Threshold:         3,000 units  (30.0%)
-  Units Extracted:        5,000
-  Depletion:              50.0%
-  Ecosystem Health:       24.4%
+  Resource:               1,000 units  (Oak Valley Forest)
+  Safe Threshold:           300 units  (30.0%)
+  Units Extracted:          700
+  Depletion:              70.0%
+  Ecosystem Health:        1.4%
   ── Private Gains ─────────────────────────────────────────────
-  Revenue:                                     500,000.00€
+  Revenue:                                      70,000.00€
   ── Externalized Costs ────────────────────────────────────────
-  Human Communities:                           113,460.80€
-  Animal Populations:                          264,817.51€
-  Vegetation & Flora:                          113,460.80€
-  General Biosphere:                           415,909.48€
-  TOTAL EXTERNALITY:                           907,648.60€
-  NET SOCIAL COST:                            -407,648.60€
+  Human Communities:                           150,000.00€
+    → Direct: €145,854 | Cascade: €4,146
+  Animal Populations:                          350,100.00€
+    → Trophic amplification: 1.6× (primary consumer)
+  Vegetation & Flora:                          145,854.36€
+  General Biosphere:                           534,653.46€
+  TOTAL EXTERNALITY:                         1,180,607.82€
+  NET SOCIAL COST:                          -1,110,607.82€
+
+  ── Resilience Assessment ───────────────────────────────────────
+  Current zone:          ⚠⚠ RED — Resilience likely compromised
+  Model confidence:      43%
+  Zone transitions:
+    Green → Yellow at step 201 (20% depletion)
+    Yellow → Red at step 300 (30% depletion)
+  ⚠ IRREVERSIBILITY WARNING at step 601 (60% depletion)
+
+  ── Carbon Accounting ───────────────────────────────────────────
+  Carbon released (biomass+soil):                 612 t CO₂
+  Future absorption foregone:                    15.4 t CO₂/yr
+  Carbon externality (release):                 49,000.00€
+  Carbon externality (foregone):                 1,232.00€/yr
+
+  ── Externality with Confidence Band ─────────────────────────────
+  Total Externality:                         1,180,607.82€
+  Confidence band (43%):          505,974.78€ — 1,855,240.85€
 ═══════════════════════════════════════════════════════════════
 ```
 
-Cutting 5,000 trees yields €500,000 in private revenue — but imposes over €907,000 in social costs. The net social cost is **-€407,648**: a net loss for society.
+The report now includes **resilience zones** (green/yellow/red), **carbon accounting** (release + foregone absorption), and **confidence bands** that widen as model confidence degrades.
 
 #### Restoration mode
 
@@ -133,41 +167,49 @@ Cutting 5,000 trees yields €500,000 in private revenue — but imposes over �
 # Restore 5,000 trees (default costs: €50 planting + €10/yr × 10 yr = €150/tree)
 python -m gaia.cases.forest --trees 10000 --threshold 0.3 --cut 5000 --mode restore
 
+# With maturation timeline (v0.4): simulate 60 years of succession
+python -m gaia.cases.forest --cut 500 --mode restore --time-horizon 60
+
 # Custom restoration costs
 python -m gaia.cases.forest --cut 5000 --mode restore \
   --planting-cost 60.0 --maintenance-cost 12.0 --maintenance-years 10
 ```
 
-Sample restoration output:
+Sample restoration output (v0.4 — with maturation timeline, maturation gap, and carbon recovery):
 
 ```
 ═══════════════════════════════════════════════════════════════
   GAIA — Restoration Report: Oak Valley Forest
 ═══════════════════════════════════════════════════════════════
-  Resource:                        10,000 units  (Oak Valley Forest)
-  Units Restored:                   5,000
+  Resource:                         1,000 units  (Oak Valley Forest)
+  Units Restored:                     500
   Restoration Coverage:             50.0%  of total capacity
   Final Ecosystem Health:          100.0%
   ── Restoration Costs ───────────────────────────────────────────
-  Planting cost/unit:                           50.00€
-  Maintenance/unit/year:                        10.00€
-  Maintenance years:                               10
-  Total cost/unit:                             150.00€
-  TOTAL RESTORATION COST:                      750,000.00€
+  TOTAL RESTORATION COST:                       75,000.00€
   ── Recovered Ecosystem Services ────────────────────────────────
-  Human Communities:                           150,000.00€
-  Animal Populations:                          350,100.00€
-  Vegetation & Flora:                          150,000.00€
-  General Biosphere:                           549,850.00€
   TOTAL RECOVERED VALUE:                     1,199,950.00€
-  ───────────────────────────────────────────────────────────────
-  NET RESTORATION VALUE:                       449,950.00€
+  NET RESTORATION VALUE:                     1,124,950.00€
   ── Prevention vs Restoration ───────────────────────────────────
   Prevention is 2.50× cheaper than destroy‑then‑restore.
+
+  ── Maturation Timeline ─────────────────────────────────────────
+  Years to first services:                          2 years
+  Years to 50% service recovery:                   31 years
+  Years to 90% service recovery:                   48 years
+
+  ── Maturation Gap ──────────────────────────────────────────────
+  Lost services during maturation:          36,581,553.26€
+  (accumulated externality while waiting for succession)
+  This cost is IN ADDITION to restoration costs.
+
+  ── Carbon Recovery ─────────────────────────────────────────────
+  Cumulative CO₂ absorbed:                        325 t CO₂
+  Over  60 years of maturation
 ═══════════════════════════════════════════════════════════════
 ```
 
-Replanting 5,000 trees costs €750,000 but recovers €1.2M in ecosystem services — a net gain of €450,000. And prevention (not cutting in the first place) is **2.50× cheaper** than cutting and then restoring.
+The restoration report now reveals the **hidden temporal cost**: while the direct planting costs €75,000, the ecosystem loses **€36.6M in services** during the decades it takes for the succession to reach maturity. The `--time-horizon` flag enables this time-aware analysis.
 
 ### Python API — Extraction
 
@@ -341,14 +383,18 @@ pytest tests/test_forest.py -v
 pytest -k "monotonicity" -v
 ```
 
-The test suite has **276 tests** covering:
+The test suite has **375 tests** covering:
 
 - **Mathematical invariants** — all damage functions are tested for boundary conditions (`f(0)≈0`, `f(1)≈1`), monotonicity, output range, non-linearity at the threshold, and convexity in the post-threshold zone. These run across 3 function types × 5 threshold values.
 - **Recovery invariants** — all recovery functions are tested for the same boundary conditions plus the entropy asymmetry invariant: recovery must be slower than equivalent damage at every point.
 - **Ecological plausibility** — all three case scenarios verify their economic story: externality < revenue at safe extraction, externality > revenue past the threshold (or the marine inversion equivalent for Posidonia).
 - **Restoration engine** — cost accumulation, service value monotonicity, prevention advantage arithmetic, validation (rejects over-planting, wrong number of recovery functions).
 - **Simulation correctness** — marginal cost accumulation, health index calculation, step counting, both extraction and restoration modes.
-- **Validation** — invalid inputs are rejected with clear error messages.
+- **Succession curves (v0.4)** — monotonicity, continuity at phase boundaries, bounded output [0,1], phase identification (delay/pioneer/intermediate/climax), maturation timeline length, cumulative service monotonicity, maturation gap positivity, cross-ecosystem comparisons.
+- **Carbon accounting (v0.4)** — release includes biomass+soil fraction, scales linearly with units, double externality (release+foregone) exceeds release-only, payback period comparisons, annual absorption scaling.
+- **Resilience zones (v0.4)** — zone identification (green/yellow/red), confidence monotonically decreasing, continuous at boundaries, irreversibility warning triggers, wider warning zone comparisons, confidence band symmetry and widening.
+- **Maturation integration (v0.4)** — end-to-end tests through `run_extraction` and `run_restoration`: resilience tagging in extraction, maturation timeline in restoration, backward compatibility when v0.4 features are not configured.
+- **Validation** — invalid inputs are rejected with clear error messages (including new v0.4 validators for SuccessionCurve, CarbonProfile, ResilienceConfig).
 
 ---
 
@@ -467,7 +513,7 @@ All three satisfy these invariants:
 
 ---
 
-## Current Status (v0.2)
+## Current Status (v0.4)
 
 **What works:**
 - Damage function library: logistic, exponential, piecewise — all validated against 6 scientific invariants
@@ -477,20 +523,22 @@ All three satisfy these invariants:
 - Ecosystem Health Index (0.0–1.0)
 - Plain-text externality report and restoration investment report
 - Prevention advantage ratio — quantifies how much cheaper preservation is vs. destroy-then-restore
+- **v0.3: Trophic cascade amplification** — damage propagates through the interaction network; trophic levels amplify impact; keystone species collapse triggers cascading damage
+- **v0.4: Succession-based maturation curves** — ecosystem services return through pioneer → intermediate → climax phases with configurable maturation delay
+- **v0.4: Double carbon externality** — CO₂ released from extraction + future absorption capacity permanently lost; monetized at configurable carbon price
+- **v0.4: Resilience zones** — three-zone system (green/yellow/red) around the safe threshold with interpolated model confidence and irreversibility warnings
+- **v0.4: Confidence bands** — externality estimates widen as model confidence degrades, reflecting real epistemic uncertainty
+- **v0.4: Maturation timeline** — year-by-year service recovery, carbon absorption, maturation gap (lost services during succession)
 - Three ready-to-run cases, both extraction and restoration modes:
-  - **Oak Valley Forest** — temperate forest, 4 agents; prevention advantage **2.50×**
-  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents; prevention advantage **6.08×**
-  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, inverted economics (annual recurring losses vs one-time gain); prevention advantage **81.00×**
-- 276 tests, all passing
+  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession; prevention advantage **2.50×**
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession; prevention advantage **6.08×**
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, inverted economics; prevention advantage **81.00×**
+- 375 tests, all passing
 
-**What's coming (v0.3+):**
-- Trophic cascade amplification (damage multipliers by trophic level)
-- R/K-strategy population dynamics with carrying capacity
-- Succession-based maturation curves (pioneer → intermediate → climax)
-- Double carbon externality (release + lost absorption capacity)
-- Resilience zones and threshold uncertainty flagging
+**What's coming (v0.5+):**
 - Physical substrate model and derived carrying capacity (v0.5)
 - NPV / time-horizon analysis for multi-year investment decisions (v0.6)
+- Endogenous pricing — prices derived from interaction network + scarcity (v0.7)
 
 See `PROJECT_DEFINITION.md` for the full roadmap.
 
