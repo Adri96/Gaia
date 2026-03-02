@@ -18,6 +18,38 @@ The same model runs in reverse: Gaia can compute the social return on a reforest
 
 ---
 
+## What Goes In, What Comes Out
+
+**Input:** An `Ecosystem` — a natural resource (forest, seagrass meadow, watershed) described by its size, a safe extraction threshold, and a list of agents (communities, species, carbon cycle, tourism) that depend on it. Each agent has a damage function encoding how it responds to depletion, and a monetary rate expressing the social cost at full damage.
+
+**Output (Extraction mode):** A step-by-step simulation of resource extraction that produces:
+- Total externality cost (the bill society pays for the extraction)
+- Per-agent cost breakdown (which agents are harmed, by how much)
+- Ecosystem health index (0.0 = collapsed, 1.0 = pristine)
+- Net social cost (externality minus private revenue)
+- Resilience zone trajectory (green/yellow/red) with irreversibility warnings
+- Carbon accounting (CO2 released + future absorption foregone)
+- Substrate degradation trajectory (soil/matte lost, carrying capacity reduced)
+
+**Output (Restoration mode):** A step-by-step simulation of replanting/restoration that produces:
+- Total restoration cost and recovered ecosystem service value
+- Prevention advantage ratio (how many times cheaper it is to not destroy vs. destroy-then-restore)
+- Maturation timeline (years to 50%, 90% service recovery through ecological succession)
+- Maturation gap (services lost during the decades the ecosystem takes to mature)
+- Substrate restoration ceiling (maximum recovery possible given permanent substrate loss)
+
+```
+Example: Cut 5,000 trees from a 10,000-tree forest
+
+  Revenue:      €500,000
+  Externality:  €1,180,607
+  Net cost:     -€680,607   (society loses €680K)
+  Health:       1.4%
+  PA:           2.50x       (prevention is 2.5x cheaper than restoration)
+```
+
+---
+
 ## Scientific Foundations
 
 Gaia is grounded in established science, not invented mechanics. The key principles:
