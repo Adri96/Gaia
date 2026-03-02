@@ -38,16 +38,68 @@ The same model runs in reverse: Gaia can compute the social return on a reforest
 - Maturation gap (services lost during the decades the ecosystem takes to mature)
 - Substrate restoration ceiling (maximum recovery possible given permanent substrate loss)
 
+This is how the complete output of running `python -m gaia.cases.forest --trees 1000 --cut 500 --mode restore --time-horizon 60` looks in Gaia:
 ```
-Example: Cut 5,000 trees from a 10,000-tree forest
+═══════════════════════════════════════════════════════════════
+  GAIA — Restoration Report: Oak Valley Forest
+═══════════════════════════════════════════════════════════════
 
-  Revenue:      €500,000
-  Externality:  €1,180,607
-  Net cost:     -€680,607   (society loses €680K)
-  Health:       1.4%
-  PA:           2.50x       (prevention is 2.5x cheaper than restoration)
+  Resource:                         1,000 units  (Oak Valley Forest)
+  Units Restored:                     500
+  Restoration Coverage:             50.0%  of total capacity
+  Final Ecosystem Health:          100.0%
+
+  ── Restoration Costs ───────────────────────────────────────────
+  Planting cost/unit:                           50.00€
+  Maintenance/unit/year:                        10.00€
+  Maintenance years:                               10
+  Total cost/unit:                             150.00€
+  TOTAL RESTORATION COST:                       75,000.00€
+
+  ── Recovered Ecosystem Services ────────────────────────────────
+  Human Communities:                           150,000.00€
+    → Health costs, water treatment, lost recreation
+  Animal Populations:                          350,100.00€
+    → Habitat loss, population decline, species loss
+  Vegetation & Flora:                          150,000.00€
+    → Soil erosion, pollination network disruption
+  General Biosphere:                           549,850.00€
+    → Carbon release, watershed degradation, climate impact
+
+  TOTAL RECOVERED VALUE:                     1,199,950.00€
+  ───────────────────────────────────────────────────────────────
+  NET RESTORATION VALUE:                     1,124,950.00€
+
+  ── Prevention vs Restoration ───────────────────────────────────
+  Prevention is 2.50× cheaper than destroy‑then‑restore.
+  (Foregone revenue + restoration cost) / foregone revenue = 2.50
+
+  ── Maturation Timeline ─────────────────────────────────────────
+  Years to first services:                          2 years
+  Years to 50% service recovery:                   31 years
+  Years to 90% service recovery:                   48 years
+
+  ── Maturation Gap ──────────────────────────────────────────────
+  Lost services during maturation:          36,581,553.26€
+  (accumulated externality while waiting for succession)
+
+  This cost is IN ADDITION to restoration costs.
+  True prevention advantage: restoration_cost + maturation_gap
+
+  ── Carbon Recovery ─────────────────────────────────────────────
+  Cumulative CO₂ absorbed:                        325 t CO₂
+  Over  60 years of maturation
+
+  ── Substrate Restoration Ceiling ──────────────────────────────
+  Max recoverable services:                     100.0% of pristine
+  Biological restoration capped at substrate ceiling.
+  Substrate recovery time:                          5 years
+
+  ── Prevention Advantage (with substrate) ──────────────────────
+  Biological only:                               2.50×
+  Including substrate loss:                      2.51×
+  ═══════════════════════════════════════════════════════════════
 ```
-
 ---
 
 ## Scientific Foundations
