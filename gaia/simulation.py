@@ -239,7 +239,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         # Extraction spans ≤1 year; t_frac = fraction of year elapsed at this step.
         # discount_factor ≈ 1.0 for short extractions (as intended).
         step_discount_factor: float = 1.0
-        step_npv_externality: float = marginal_cost
+        step_npv_externality: float = 0.0
         step_carbon_price: float = 0.0
         if has_discount:
             t_frac: float = step / units_to_extract

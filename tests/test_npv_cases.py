@@ -326,6 +326,7 @@ def test_backward_compat_simstep_defaults():
     )
     agents = [
         Agent("A", 0.5, logistic_damage(threshold=0.3), 100_000.0, "A"),
+        Agent("B", 0.5, logistic_damage(threshold=0.3), 100_000.0, "B"),
     ]
     eco = Ecosystem("No Discount Eco", resource=resource, agents=agents)
     result = run_extraction(eco, 300)
