@@ -110,6 +110,7 @@ from gaia.models import (
     ResilienceConfig,
     RestorationCost,
     Resource,
+    SubstrateProfile,
     SuccessionCurve,
 )
 from gaia.recovery import logistic_recovery
@@ -147,6 +148,22 @@ _POSIDONIA_RESILIENCE = ResilienceConfig(
     confidence_yellow=0.60,
     confidence_red=0.30,
     irreversibility_flag_ratio=0.40,
+)
+
+# v0.5: Posidonia substrate profile
+# Marine matte — sediment stability and water clarity constrain capacity.
+# Logistic capacity function: light-limited S-curve (Kd attenuation).
+# [PLACEHOLDER — pending calibration against EMODnet and IFREMER data]
+_POSIDONIA_SUBSTRATE = SubstrateProfile(
+    substrate_type="marine_matte",
+    water_clarity_kd=0.06,           # m⁻¹ — pristine light attenuation coefficient
+    sediment_stability=0.85,         # 0-1 scale — pristine matte integrity
+    erosion_rate_unprotected=5.0,    # arbitrary units/yr — matte degradation rate
+    erosion_rate_protected=0.0,      # no erosion under intact meadow
+    formation_rate=1.0,              # mm/yr — Posidonia matte accretion
+    capacity_function="logistic",
+    erosion_alpha=3.0,               # steeper nonlinearity for marine systems
+    confidence="low-medium",
 )
 
 # Shared steepness for all logistic agents.
@@ -197,6 +214,7 @@ def build_posidonia_ecosystem(
         unit_value=revenue_per_hectare,
         carbon_profile=_POSIDONIA_CARBON,
         resilience=_POSIDONIA_RESILIENCE,
+        substrate=_POSIDONIA_SUBSTRATE,
     )
 
     t = safe_threshold_ratio  # shorthand

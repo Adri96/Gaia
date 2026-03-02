@@ -1,5 +1,5 @@
 """
-Gaia v0.4 — Simulation engine.
+Gaia v0.5 — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return
@@ -15,6 +15,7 @@ All code in this module is Cython-compatible:
 v0.2: Added run_restoration() — the inverse of run_extraction().
 v0.3: Two-phase loops with trophic amplification and interaction propagation.
 v0.4: Resilience zone tagging in extraction, maturation pass in restoration.
+v0.5: Phase 3.5 substrate degradation in extraction, substrate ceiling in restoration.
 """
 
 from typing import List, Optional
@@ -27,11 +28,18 @@ from gaia.models import (
     RestorationStep,
     SimulationResult,
     SimulationStep,
+    SubstrateState,
     SuccessionCurve,
 )
 from gaia.propagation import compute_trophic_amplification, propagate_interactions
 from gaia.recovery import RecoveryFunc
 from gaia.resilience import compute_resilience_zone
+from gaia.substrate import (
+    compute_capacity_fraction,
+    compute_substrate_recovery_years,
+    create_substrate_state,
+    degrade_substrate,
+)
 from gaia.succession import (
     compute_maturation_gap,
     compute_maturation_timeline,
@@ -116,6 +124,15 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     has_interactions: bool = len(interactions) > 0
     has_resilience: bool = resource.resilience is not None
 
+    # v0.5: Initialize substrate state if profile is configured
+    has_substrate: bool = resource.substrate is not None
+    substrate_state: Optional[SubstrateState] = None
+    time_per_step: float = 0.0
+    if has_substrate:
+        substrate_state = create_substrate_state(resource.substrate)
+        # Default: total extraction takes ~1 year
+        time_per_step = 1.0 / units_to_extract if units_to_extract > 0 else 0.0
+
     previous_total_cost: float = 0.0
 
     for step in range(1, units_to_extract + 1):
@@ -176,6 +193,18 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
         private_revenue: float = units_extracted * unit_value
 
+        # Phase 3.5: Substrate degradation (v0.5)
+        step_substrate_erosion: float = 0.0
+        step_effective_k: int = total_units
+        step_k_fraction: float = 1.0
+        if has_substrate and substrate_state is not None:
+            vegetation_cover: float = (total_units - units_extracted) / total_units
+            step_substrate_erosion = degrade_substrate(
+                substrate_state, vegetation_cover, years=time_per_step
+            )
+            step_k_fraction = compute_capacity_fraction(substrate_state)
+            step_effective_k = int(total_units * step_k_fraction)
+
         # Phase 4: Resilience zone tagging (v0.4)
         step_zone: str = "green"
         step_confidence: float = 1.0
@@ -206,6 +235,9 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             resilience_zone=step_zone,
             model_confidence=step_confidence,
             irreversibility_warning=step_irreversibility,
+            substrate_erosion=step_substrate_erosion,
+            effective_k=step_effective_k,
+            k_fraction=step_k_fraction,
         ))
 
         previous_total_cost = step_total_cost
@@ -382,6 +414,39 @@ def run_restoration(
     else:
         prevention_advantage = 1.0
 
+    # v0.5: Substrate ceiling and enhanced prevention advantage
+    substrate_ceiling: float = 1.0
+    substrate_recovery_yrs: float = 0.0
+    prevention_advantage_with_substrate: float = prevention_advantage
+    if ecosystem.resource.substrate is not None:
+        sub_state: SubstrateState = create_substrate_state(ecosystem.resource.substrate)
+        # Simulate substrate degradation from the extraction that preceded this restoration
+        # Approximate: units_to_restore were extracted, so degrade substrate accordingly
+        if ecosystem.resource.total_units > 0:
+            cover_after_extraction: float = (
+                (ecosystem.resource.total_units - units_to_restore)
+                / ecosystem.resource.total_units
+            )
+            # Apply degradation over an estimated extraction period (~1 year)
+            degrade_substrate(sub_state, cover_after_extraction, years=1.0)
+            substrate_ceiling = compute_capacity_fraction(sub_state)
+            substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
+
+            # Enhanced prevention advantage including permanent capacity loss
+            # NPV of permanent loss = annual service value lost * years_to_recover
+            # (simplified: no discounting in v0.5)
+            if substrate_ceiling < 1.0 and foregone_revenue > 0.0:
+                permanent_loss_fraction: float = 1.0 - substrate_ceiling
+                # Annual service value at full capacity (use total_recovered as proxy)
+                annual_lost_value: float = total_recovered * permanent_loss_fraction
+                # Cap at 50 years for NPV calculation (avoid infinite values)
+                npv_years: float = min(substrate_recovery_yrs, 50.0)
+                permanent_loss_npv: float = annual_lost_value * npv_years
+                prevention_advantage_with_substrate = (
+                    (foregone_revenue + total_cost + permanent_loss_npv)
+                    / foregone_revenue
+                )
+
     # v0.4: Maturation pass — produce year-by-year timeline if succession curve provided
     maturation_timeline: list = []
     years_to_pioneer: float = 0.0
@@ -420,4 +485,7 @@ def run_restoration(
         years_to_50pct=years_to_50pct,
         years_to_90pct=years_to_90pct,
         total_maturation_gap=total_maturation_gap,
+        substrate_ceiling=substrate_ceiling,
+        substrate_recovery_years=substrate_recovery_yrs,
+        prevention_advantage_with_substrate=prevention_advantage_with_substrate,
     )

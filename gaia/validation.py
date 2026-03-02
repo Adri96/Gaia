@@ -1,5 +1,5 @@
 """
-Gaia v0.4 — Input validation.
+Gaia v0.5 — Input validation.
 
 Validation functions raise descriptive ValueError on bad inputs.
 They never silently default — bad input must be caught early.
@@ -7,6 +7,7 @@ They never silently default — bad input must be caught early.
 v0.3: Added validation for trophic levels, keystone thresholds,
       and interaction edges.
 v0.4: Added validation for SuccessionCurve, CarbonProfile, ResilienceConfig.
+v0.5: Added validation for SubstrateProfile.
 """
 
 from gaia.models import (
@@ -16,6 +17,7 @@ from gaia.models import (
     InteractionEdge,
     ResilienceConfig,
     Resource,
+    SubstrateProfile,
     SuccessionCurve,
 )
 
@@ -59,6 +61,10 @@ def validate_resource(resource: Resource) -> None:
         validate_carbon_profile(resource.carbon_profile)
     if resource.resilience is not None:
         validate_resilience_config(resource.resilience)
+
+    # v0.5: Validate optional substrate profile
+    if resource.substrate is not None:
+        validate_substrate_profile(resource.substrate)
 
 
 def validate_ecosystem(ecosystem: Ecosystem) -> None:
@@ -363,4 +369,114 @@ def validate_resilience_config(
         raise ValueError(
             f"{name}: irreversibility_flag_ratio must be in (0.0, 1.0], "
             f"got {config.irreversibility_flag_ratio}"
+        )
+
+
+# ── v0.5: Substrate validation ───────────────────────────────────────────────
+
+# Valid capacity function types
+_VALID_CAPACITY_FUNCTIONS = {"linear", "threshold", "logistic"}
+
+# Valid confidence levels
+_VALID_CONFIDENCE_LEVELS = {"low", "low-medium", "medium", "medium-high", "high"}
+
+
+def validate_substrate_profile(
+    profile: SubstrateProfile,
+    name: str = "SubstrateProfile",
+) -> None:
+    """
+    Validate a SubstrateProfile dataclass.
+
+    Checks:
+        - At least one constraint property is set
+        - Erosion rates >= 0
+        - Formation rate >= 0
+        - capacity_function is valid
+        - confidence is valid
+        - For threshold function: critical_minimum >= 0
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    # At least one constraint property must be set
+    has_constraint: bool = (
+        profile.soil_depth_cm is not None
+        or profile.water_clarity_kd is not None
+        or profile.sediment_stability is not None
+    )
+    if not has_constraint:
+        raise ValueError(
+            f"{name}: at least one constraint property must be set "
+            f"(soil_depth_cm, water_clarity_kd, or sediment_stability)"
+        )
+
+    # Validate constraint property values when set
+    if profile.soil_depth_cm is not None and profile.soil_depth_cm < 0.0:
+        raise ValueError(
+            f"{name}: soil_depth_cm must be >= 0.0, got {profile.soil_depth_cm}"
+        )
+    if profile.water_availability_mm_yr is not None and profile.water_availability_mm_yr < 0.0:
+        raise ValueError(
+            f"{name}: water_availability_mm_yr must be >= 0.0, "
+            f"got {profile.water_availability_mm_yr}"
+        )
+    if profile.water_clarity_kd is not None and profile.water_clarity_kd < 0.0:
+        raise ValueError(
+            f"{name}: water_clarity_kd must be >= 0.0, got {profile.water_clarity_kd}"
+        )
+    if profile.sediment_stability is not None:
+        if not (0.0 <= profile.sediment_stability <= 1.0):
+            raise ValueError(
+                f"{name}: sediment_stability must be in [0.0, 1.0], "
+                f"got {profile.sediment_stability}"
+            )
+
+    # Erosion and formation rates
+    if profile.erosion_rate_unprotected < 0.0:
+        raise ValueError(
+            f"{name}: erosion_rate_unprotected must be >= 0.0, "
+            f"got {profile.erosion_rate_unprotected}"
+        )
+    if profile.erosion_rate_protected < 0.0:
+        raise ValueError(
+            f"{name}: erosion_rate_protected must be >= 0.0, "
+            f"got {profile.erosion_rate_protected}"
+        )
+    if profile.formation_rate < 0.0:
+        raise ValueError(
+            f"{name}: formation_rate must be >= 0.0, got {profile.formation_rate}"
+        )
+
+    # Capacity function
+    if profile.capacity_function not in _VALID_CAPACITY_FUNCTIONS:
+        raise ValueError(
+            f"{name}: capacity_function must be one of "
+            f"{sorted(_VALID_CAPACITY_FUNCTIONS)}, got '{profile.capacity_function}'"
+        )
+
+    # Threshold-specific validation
+    if profile.capacity_function == "threshold":
+        if profile.critical_minimum < 0.0:
+            raise ValueError(
+                f"{name}: critical_minimum must be >= 0.0, "
+                f"got {profile.critical_minimum}"
+            )
+        if not (0.0 <= profile.residual_fraction <= 1.0):
+            raise ValueError(
+                f"{name}: residual_fraction must be in [0.0, 1.0], "
+                f"got {profile.residual_fraction}"
+            )
+
+    # Erosion alpha
+    if profile.erosion_alpha <= 0.0:
+        raise ValueError(
+            f"{name}: erosion_alpha must be > 0.0, got {profile.erosion_alpha}"
+        )
+
+    # Confidence
+    if profile.confidence not in _VALID_CONFIDENCE_LEVELS:
+        raise ValueError(
+            f"{name}: confidence must be one of "
+            f"{sorted(_VALID_CONFIDENCE_LEVELS)}, got '{profile.confidence}'"
         )

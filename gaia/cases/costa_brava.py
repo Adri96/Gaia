@@ -85,6 +85,7 @@ from gaia.models import (
     ResilienceConfig,
     RestorationCost,
     Resource,
+    SubstrateProfile,
     SuccessionCurve,
 )
 from gaia.recovery import logistic_recovery
@@ -120,6 +121,24 @@ _CB_RESILIENCE = ResilienceConfig(
     confidence_yellow=0.60,
     confidence_red=0.30,
     irreversibility_flag_ratio=0.50,
+)
+
+# v0.5: Costa Brava Holm Oak substrate profile
+# Mediterranean soil — thin, high erosion under drought, very slow formation.
+# Threshold capacity function: below ~8cm soil, holm oak cannot regenerate.
+# [PLACEHOLDER — pending calibration against Mediterranean soil surveys]
+_HOLM_OAK_SUBSTRATE = SubstrateProfile(
+    substrate_type="terrestrial_soil",
+    soil_depth_cm=30.0,
+    water_availability_mm_yr=550.0,
+    erosion_rate_unprotected=25.0,   # t/ha/yr — high for degraded Mediterranean
+    erosion_rate_protected=1.0,      # t/ha/yr — some erosion even under cover
+    formation_rate=0.4,              # t/ha/yr — ~0.03 mm/yr, very slow
+    capacity_function="threshold",
+    erosion_alpha=2.0,
+    critical_minimum=8.0,            # cm — below this, holm oak can't regenerate
+    residual_fraction=0.05,          # near-zero capacity below critical minimum
+    confidence="medium",
 )
 
 # Shared steepness for all logistic agents.
@@ -159,6 +178,7 @@ def build_costa_brava_ecosystem(
         unit_value=tree_value,
         carbon_profile=_CB_CARBON,
         resilience=_CB_RESILIENCE,
+        substrate=_HOLM_OAK_SUBSTRATE,
     )
 
     t = safe_threshold_ratio  # shorthand for threshold argument

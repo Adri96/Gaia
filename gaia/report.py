@@ -1,5 +1,5 @@
 """
-Gaia v0.4 — Text report generation.
+Gaia v0.5 — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
@@ -10,11 +10,14 @@ v0.3: Cascade breakdown (direct vs propagated damage, trophic amplification,
       keystone threshold warnings) added to externality report.
 v0.4: Resilience Assessment, Carbon Accounting sections in extraction report;
       Maturation Timeline, Carbon Recovery sections in restoration report.
+v0.5: Substrate Impact Assessment in extraction report;
+      Substrate Restoration Ceiling in restoration report.
 """
 
 from gaia.carbon import compute_carbon_cost, compute_carbon_payback_period
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
 from gaia.resilience import compute_confidence_band
+from gaia.substrate import compute_substrate_recovery_years, create_substrate_state
 
 # Report width (characters)
 _WIDTH: int = 63
@@ -271,6 +274,66 @@ def format_report(result: SimulationResult) -> str:
                 f"        {lower:>12,.2f}\u20ac \u2014 {upper:>12,.2f}\u20ac"
             )
 
+    # v0.5: Substrate Impact Assessment
+    if resource.substrate is not None and result.steps:
+        final_step = result.steps[-1]
+        if final_step.k_fraction < 1.0:
+            lines.append("")
+            lines.append(
+                f"  \u2500\u2500 Substrate Impact Assessment \u2500" + "\u2500" * 31
+            )
+            sub = resource.substrate
+            lines.append(
+                f"  {'Substrate type:':<40} {sub.substrate_type}"
+            )
+            if sub.soil_depth_cm is not None:
+                # Compute soil lost from substrate erosion trajectory
+                soil_lost_pct: float = (1.0 - final_step.k_fraction) * 100
+                lines.append(
+                    f"  {'Pristine soil depth:':<40} {sub.soil_depth_cm:>10.1f} cm"
+                )
+                lines.append(
+                    f"  {'Capacity lost:':<40} {soil_lost_pct:>10.1f}%"
+                )
+            if sub.sediment_stability is not None:
+                stability_lost_pct: float = (1.0 - final_step.k_fraction) * 100
+                lines.append(
+                    f"  {'Pristine stability:':<40} {sub.sediment_stability:>10.2f}"
+                )
+                lines.append(
+                    f"  {'Capacity lost:':<40} {stability_lost_pct:>10.1f}%"
+                )
+            lines.append("")
+            lines.append(
+                f"  {'Pristine K:':<40} {resource.total_units:>10,} units"
+            )
+            lines.append(
+                f"  {'Current K:':<40} {final_step.effective_k:>10,} units"
+            )
+            capacity_lost: int = resource.total_units - final_step.effective_k
+            lines.append(
+                f"  {'Capacity lost permanently:':<40} {capacity_lost:>10,} units"
+            )
+
+            # Recovery timeline
+            sub_state = create_substrate_state(sub)
+            # Approximate current state from k_fraction
+            if sub.soil_depth_cm is not None:
+                sub_state.current_soil_depth_cm = sub.soil_depth_cm * final_step.k_fraction
+            if sub.sediment_stability is not None:
+                sub_state.current_sediment_stability = (
+                    sub.sediment_stability * final_step.k_fraction
+                )
+            recovery_years: float = compute_substrate_recovery_years(sub_state)
+            if recovery_years < float("inf"):
+                lines.append(
+                    f"  {'Years to pristine substrate:':<40} {recovery_years:>10,.0f} years"
+                )
+            else:
+                lines.append(
+                    f"  {'Years to pristine substrate:':<40} {'N/A':>10}"
+                )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
@@ -435,6 +498,46 @@ def format_restoration_report(result: RestorationResult) -> str:
         lines.append(
             f"  {'Over':<5} {len(result.maturation_timeline)} years of maturation"
         )
+
+    # v0.5: Substrate Restoration Ceiling
+    if resource.substrate is not None and result.substrate_ceiling < 1.0:
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Substrate Restoration Ceiling \u2500" + "\u2500" * 29
+        )
+        ceiling_pct: float = result.substrate_ceiling * 100
+        lines.append(
+            f"  {'Max recoverable services:':<40} {ceiling_pct:>10.1f}% of pristine"
+        )
+        lines.append(
+            f"  Biological restoration capped at substrate ceiling."
+        )
+        if result.substrate_recovery_years > 0:
+            if result.substrate_recovery_years < float("inf"):
+                lines.append(
+                    f"  {'Substrate recovery time:':<40} "
+                    f"{result.substrate_recovery_years:>10,.0f} years"
+                )
+            else:
+                lines.append(
+                    f"  {'Substrate recovery time:':<40} {'N/A':>10}"
+                )
+
+        # Enhanced prevention advantage
+        if result.prevention_advantage_with_substrate > result.prevention_advantage:
+            lines.append("")
+            lines.append(
+                f"  \u2500\u2500 Prevention Advantage (with substrate) \u2500"
+                + "\u2500" * 21
+            )
+            lines.append(
+                f"  {'Biological only:':<40} "
+                f"{result.prevention_advantage:>10.2f}\u00d7"
+            )
+            lines.append(
+                f"  {'Including substrate loss:':<40} "
+                f"{result.prevention_advantage_with_substrate:>10.2f}\u00d7"
+            )
 
     lines.append(f"  {_DOUBLE_LINE}")
 

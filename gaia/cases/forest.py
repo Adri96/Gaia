@@ -46,6 +46,7 @@ from gaia.models import (
     ResilienceConfig,
     RestorationCost,
     Resource,
+    SubstrateProfile,
     SuccessionCurve,
 )
 from gaia.recovery import logistic_recovery
@@ -83,6 +84,21 @@ _FOREST_RESILIENCE = ResilienceConfig(
     irreversibility_flag_ratio=0.60,
 )
 
+# v0.5: Oak Valley Forest substrate profile
+# Temperate forest soil — deep, moderate erosion, slow formation.
+# [PLACEHOLDER — pending calibration against regional soil survey data]
+_OAK_VALLEY_SUBSTRATE = SubstrateProfile(
+    substrate_type="terrestrial_soil",
+    soil_depth_cm=45.0,
+    water_availability_mm_yr=800.0,
+    erosion_rate_unprotected=15.0,   # t/ha/yr — moderate for temperate forest
+    erosion_rate_protected=0.5,      # t/ha/yr — minimal under full canopy
+    formation_rate=0.8,              # t/ha/yr — ~0.06 mm/yr
+    capacity_function="linear",
+    erosion_alpha=2.0,
+    confidence="medium",
+)
+
 
 def build_forest_ecosystem(
     total_trees: int = 10_000,
@@ -107,6 +123,7 @@ def build_forest_ecosystem(
         unit_value=tree_value,
         carbon_profile=_FOREST_CARBON,
         resilience=_FOREST_RESILIENCE,
+        substrate=_OAK_VALLEY_SUBSTRATE,
     )
 
     # Logistic damage functions centered at the safe extraction threshold.

@@ -1,5 +1,5 @@
 """
-Gaia v0.4 — Core data models.
+Gaia v0.5 — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
@@ -11,6 +11,8 @@ v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
 v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep,
                 RestorationConfig; Resource + carbon/resilience; Agent + succession;
                 SimulationStep + resilience fields; RestorationResult + maturation
+v0.5 additions: SubstrateProfile, SubstrateState; Resource + substrate;
+                SimulationStep + substrate fields; RestorationResult + substrate ceiling
 """
 
 from dataclasses import dataclass, field
@@ -18,6 +20,87 @@ from typing import Callable, List, Optional
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
 DamageFunc = Callable[[float], float]
+
+
+# ── v0.5: Physical Substrate models ───────────────────────────────────────────
+
+
+@dataclass
+class SubstrateProfile:
+    """Physical substrate properties that constrain carrying capacity.
+
+    Each property is a measurable geophysical quantity with units.
+    The substrate profile is ecosystem-specific — terrestrial and marine
+    profiles use different properties.
+
+    Attributes:
+        substrate_type: Type of substrate — "terrestrial_soil", "marine_sediment",
+            or "marine_matte".
+        soil_depth_cm: Terrestrial: productive soil depth in cm.
+        water_availability_mm_yr: Terrestrial: effective annual precipitation in mm/yr.
+        water_clarity_kd: Marine: diffuse attenuation coefficient in m^-1.
+        sediment_stability: Marine: 0.0 (mobile) to 1.0 (rock/consolidated matte).
+        erosion_rate_unprotected: Erosion rate when vegetation removed (t/ha/yr or mm/yr).
+        erosion_rate_protected: Erosion rate under intact vegetation (t/ha/yr or mm/yr).
+        formation_rate: New substrate formation rate (t/ha/yr or mm/yr).
+        capacity_function: How substrate maps to carrying capacity fraction —
+            "linear", "threshold", or "logistic".
+        erosion_alpha: Exponent for nonlinear erosion interpolation.
+            2.0 for terrestrial (gradual transition), 3.0 for marine (steep transition).
+        critical_minimum: For threshold capacity function — substrate value below which
+            K drops to near-zero (e.g. 8.0 cm for holm oak on limestone).
+        residual_fraction: For threshold capacity function — fraction of K remaining
+            below critical minimum (e.g. 0.05 for minimal pioneer colonization).
+        confidence: Data confidence level — "low", "low-medium", "medium",
+            "medium-high", or "high".
+    """
+
+    substrate_type: str
+    soil_depth_cm: Optional[float] = None
+    water_availability_mm_yr: Optional[float] = None
+    water_clarity_kd: Optional[float] = None
+    sediment_stability: Optional[float] = None
+    erosion_rate_unprotected: float = 0.0
+    erosion_rate_protected: float = 0.0
+    formation_rate: float = 0.0
+    capacity_function: str = "linear"
+    erosion_alpha: float = 2.0
+    critical_minimum: float = 0.0
+    residual_fraction: float = 0.05
+    confidence: str = "medium"
+
+
+@dataclass
+class SubstrateState:
+    """Current state of the physical substrate.
+
+    Tracks how substrate has degraded from its pristine condition
+    and computes the derived carrying capacity fraction.
+
+    Created and managed by the simulation engine — not stored on Resource.
+    Resource holds only the immutable SubstrateProfile.
+
+    Attributes:
+        profile: The SubstrateProfile defining physical properties and rates.
+        current_soil_depth_cm: Current soil depth (terrestrial).
+        current_water_clarity_kd: Current water clarity (marine).
+        current_sediment_stability: Current sediment stability (marine).
+        pristine_soil_depth_cm: Original soil depth before any degradation.
+        pristine_water_clarity_kd: Original water clarity.
+        pristine_sediment_stability: Original sediment stability.
+        capacity_fraction: Derived carrying capacity as fraction of pristine (0.0 to 1.0).
+        years_to_recover: Estimated years for substrate to return to pristine.
+    """
+
+    profile: SubstrateProfile
+    current_soil_depth_cm: Optional[float] = None
+    current_water_clarity_kd: Optional[float] = None
+    current_sediment_stability: Optional[float] = None
+    pristine_soil_depth_cm: Optional[float] = None
+    pristine_water_clarity_kd: Optional[float] = None
+    pristine_sediment_stability: Optional[float] = None
+    capacity_fraction: float = 1.0
+    years_to_recover: float = 0.0
 
 
 # ── v0.4: Succession, Carbon & Resilience models ──────────────────────────────
@@ -165,6 +248,9 @@ class Resource:
     carbon_profile: Optional[CarbonProfile] = None
     resilience: Optional[ResilienceConfig] = None
 
+    # v0.5: Physical substrate (None → fixed K, backward compatible)
+    substrate: Optional[SubstrateProfile] = None
+
     @property
     def safe_threshold_units(self) -> int:
         """Absolute number of units that can be extracted at the safe threshold."""
@@ -282,6 +368,11 @@ class SimulationStep:
     resilience_zone: str = "green"            # "green", "yellow", or "red"
     model_confidence: float = 1.0             # 0.0–1.0
     irreversibility_warning: bool = False     # True if depletion > irreversibility_flag_ratio
+
+    # v0.5: Substrate degradation fields (defaults preserve v0.4 behavior)
+    substrate_erosion: float = 0.0            # Erosion applied this step (mm or equivalent)
+    effective_k: int = 0                      # Current effective carrying capacity
+    k_fraction: float = 1.0                   # effective_k / total_units
 
 
 @dataclass
@@ -427,3 +518,9 @@ class RestorationResult:
     years_to_50pct: float = 0.0
     years_to_90pct: float = 0.0
     total_maturation_gap: float = 0.0
+
+    # v0.5: Substrate-constrained restoration fields (defaults preserve v0.4 behavior)
+    substrate_ceiling: float = 1.0              # Max recoverable fraction (K_current/K_pristine)
+    substrate_recovery_years: float = 0.0       # Years for substrate to return to pristine
+    substrate_recovery_cost: float = 0.0        # Cost of substrate stabilization
+    prevention_advantage_with_substrate: float = 0.0  # PA including permanent capacity loss

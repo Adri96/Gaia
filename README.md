@@ -38,13 +38,15 @@ Gaia/
 ├── gaia/                      # Core library
 │   ├── __init__.py
 │   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult, RestorationResult,
-│   │                          #   SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep (v0.4)
+│   │                          #   SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep (v0.4),
+│   │                          #   SubstrateProfile, SubstrateState (v0.5)
 │   ├── damage.py              # Damage function library (logistic, exponential, piecewise)
 │   ├── recovery.py            # Recovery function library (logistic_recovery, linear_recovery)
 │   ├── propagation.py         # Trophic cascade amplification and interaction propagation (v0.3)
 │   ├── succession.py          # Succession curve evaluation and maturation timeline (v0.4)
 │   ├── carbon.py              # Double carbon externality: release + foregone absorption (v0.4)
 │   ├── resilience.py          # Resilience zones, confidence interpolation, confidence bands (v0.4)
+│   ├── substrate.py           # Physical substrate: capacity functions, degradation, recovery (v0.5)
 │   ├── validation.py          # Input validation with scientific constraints
 │   ├── simulation.py          # Simulation engine (extraction + restoration modes)
 │   ├── report.py              # Plain-text report formatter (externality + restoration reports)
@@ -67,29 +69,33 @@ Gaia/
 │   ├── test_succession.py     # Succession curve evaluation, maturation timeline, maturation gap (v0.4)
 │   ├── test_carbon.py         # Carbon release, double externality, payback period (v0.4)
 │   ├── test_resilience.py     # Resilience zone computation, confidence interpolation (v0.4)
-│   └── test_maturation.py     # End-to-end integration tests for v0.4 maturation + resilience
+│   ├── test_maturation.py     # End-to-end integration tests for v0.4 maturation + resilience
+│   ├── test_substrate.py      # Substrate module unit tests: capacity functions, degradation, recovery (v0.5)
+│   └── test_substrate_cases.py # Substrate integration tests per case, backward compatibility (v0.5)
 ├── PROJECT_DEFINITION.md      # Scientific foundations and architecture vision
 ├── ROADMAP.md                 # Version roadmap and verification strategy
 ├── V01_SPEC.md                # Detailed v0.1 specification
-└── V04_SPEC.md                # Detailed v0.4 specification
+├── V04_SPEC.md                # Detailed v0.4 specification
+└── V05_SPEC.md                # Detailed v0.5 specification
 ```
 
 ### Key modules
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, plus v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
 | `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |
 | `gaia/succession.py` | Succession curve evaluation (pioneer → intermediate → climax), maturation timeline, maturation gap (v0.4) |
 | `gaia/carbon.py` | Double carbon externality: release + foregone absorption, monetized cost, payback period (v0.4) |
 | `gaia/resilience.py` | Resilience zone computation (green/yellow/red), confidence interpolation, confidence bands (v0.4) |
-| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with optional maturation pass |
-| `gaia/report.py` | `format_report(result)` — externality report with resilience assessment, carbon accounting, and confidence bands; `format_restoration_report(result)` — restoration report with maturation timeline, maturation gap, and carbon recovery |
-| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession |
-| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession |
-| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession |
+| `gaia/substrate.py` | Physical substrate computation: capacity functions (linear/threshold/logistic), degradation, recovery, recovery year estimation (v0.5) |
+| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging and substrate degradation; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with maturation pass and substrate ceiling |
+| `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling |
+| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil) |
+| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical) |
+| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte) |
 
 ---
 
@@ -383,7 +389,7 @@ pytest tests/test_forest.py -v
 pytest -k "monotonicity" -v
 ```
 
-The test suite has **375 tests** covering:
+The test suite has **433 tests** covering:
 
 - **Mathematical invariants** — all damage functions are tested for boundary conditions (`f(0)≈0`, `f(1)≈1`), monotonicity, output range, non-linearity at the threshold, and convexity in the post-threshold zone. These run across 3 function types × 5 threshold values.
 - **Recovery invariants** — all recovery functions are tested for the same boundary conditions plus the entropy asymmetry invariant: recovery must be slower than equivalent damage at every point.
@@ -394,7 +400,9 @@ The test suite has **375 tests** covering:
 - **Carbon accounting (v0.4)** — release includes biomass+soil fraction, scales linearly with units, double externality (release+foregone) exceeds release-only, payback period comparisons, annual absorption scaling.
 - **Resilience zones (v0.4)** — zone identification (green/yellow/red), confidence monotonically decreasing, continuous at boundaries, irreversibility warning triggers, wider warning zone comparisons, confidence band symmetry and widening.
 - **Maturation integration (v0.4)** — end-to-end tests through `run_extraction` and `run_restoration`: resilience tagging in extraction, maturation timeline in restoration, backward compatibility when v0.4 features are not configured.
-- **Validation** — invalid inputs are rejected with clear error messages (including new v0.4 validators for SuccessionCurve, CarbonProfile, ResilienceConfig).
+- **Substrate module (v0.5)** — capacity function correctness (linear, threshold, logistic), monotonicity, degradation mechanics (nonlinear erosion interpolation, alpha exponent, can't go below zero), recovery mechanics (can't exceed pristine), physical consistency of erosion/formation rates, mixed depletion-recovery scenarios, edge cases.
+- **Substrate integration (v0.5)** — backward compatibility (no substrate = v0.4 behavior), pristine substrate = full K, per-case profile verification (Oak Valley, Costa Brava, Posidonia), substrate ceiling binding, prevention advantage with substrate >= without, report output verification.
+- **Validation** — invalid inputs are rejected with clear error messages (including v0.4 validators for SuccessionCurve, CarbonProfile, ResilienceConfig, and v0.5 validator for SubstrateProfile).
 
 ---
 
@@ -513,7 +521,7 @@ All three satisfy these invariants:
 
 ---
 
-## Current Status (v0.4)
+## Current Status (v0.5)
 
 **What works:**
 - Damage function library: logistic, exponential, piecewise — all validated against 6 scientific invariants
@@ -529,14 +537,15 @@ All three satisfy these invariants:
 - **v0.4: Resilience zones** — three-zone system (green/yellow/red) around the safe threshold with interpolated model confidence and irreversibility warnings
 - **v0.4: Confidence bands** — externality estimates widen as model confidence degrades, reflecting real epistemic uncertainty
 - **v0.4: Maturation timeline** — year-by-year service recovery, carbon absorption, maturation gap (lost services during succession)
+- **v0.5: Physical substrate & derived carrying capacity** — K is no longer a fixed input but an emergent property of the physical substrate (soil depth, matte integrity). Extraction degrades substrate, which reduces K, creating a degradation spiral. Restoration is capped at the substrate ceiling. Three capacity functions (linear, threshold, logistic) encode distinct ecological dynamics.
+- **v0.5: Substrate impact reports** — extraction reports show substrate degradation trajectory (pristine K → current K, capacity lost, years to recover); restoration reports show substrate ceiling and enhanced prevention advantage including permanent capacity loss
 - Three ready-to-run cases, both extraction and restoration modes:
-  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession; prevention advantage **2.50×**
-  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession; prevention advantage **6.08×**
-  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, inverted economics; prevention advantage **81.00×**
-- 375 tests, all passing
+  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil); prevention advantage **2.50×**
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical minimum); prevention advantage **6.08×**
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), inverted economics; prevention advantage **81.00×**
+- 433 tests, all passing
 
-**What's coming (v0.5+):**
-- Physical substrate model and derived carrying capacity (v0.5)
+**What's coming (v0.6+):**
 - NPV / time-horizon analysis for multi-year investment decisions (v0.6)
 - Endogenous pricing — prices derived from interaction network + scarcity (v0.7)
 

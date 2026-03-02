@@ -468,16 +468,27 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] 375 tests pass (320 existing + 55 new across 4 test files: test_succession.py, test_carbon.py, test_resilience.py, test_maturation.py)
 - [x] Full backward compatibility — all v0.4 features are opt-in via Optional fields defaulting to None
 
-### 🔲 v0.5 — Physical Substrate & Derived Carrying Capacity
+### ✅ v0.5 — Physical Substrate & Derived Carrying Capacity (complete)
 
-- [ ] Add `Substrate` dataclass — physical characteristics of the land or sea that constrain what can grow there: land (area_ha, slope_degrees, soil_depth_cm, soil_organic_matter_pct, climate_zone) / sea (area_ha, depth_range_m, light_penetration_m, substrate_type, water_clarity_ntu)
-- [ ] Derive carrying capacity K from substrate parameters rather than accepting it as a bare number — e.g. for Mediterranean forest: `K = area_ha × f(slope, soil_depth, climate_zone)` yields trees/ha at climax; for Posidonia: `K = area_ha × f(depth, light, substrate)` yields viable ha of meadow
-- [ ] Track **current K** vs **historical (climax) K** — severe degradation reduces the substrate itself (soil erosion, seabed compaction), meaning `current K < historical K` even before any replanting begins
-- [ ] Expose the **degradation debt**: `historical_K − current_K` — the carrying capacity that has been permanently lost and must be recovered through substrate restoration before biological restoration can proceed
-- [ ] Add `SubstrateRestorationCost` — the additional cost of recovering substrate capacity before biological units can be planted (soil remediation, erosion control, seabed preparation); substrate restoration is a prerequisite to biological restoration in severely degraded sites
-- [ ] Update `run_restoration()` to enforce the constraint `units_to_restore ≤ current_K` — you cannot plant more than the land can currently sustain, even if the historical K was higher
-- [ ] Update restoration reports to show: current K, historical K, degradation debt, and whether substrate restoration is required before biological restoration is viable
-- [ ] Calibrate substrate parameters for all three existing cases: Oak Valley Forest (temperate loam, ~600 trees/ha at climax), Costa Brava Holm Oak (thin Mediterranean soil, ~300 trees/ha at climax, fire-degraded patches lower), Costa Brava Posidonia (sandy/rocky substrate, light-limited to ~15m depth)
+- [x] Add `SubstrateProfile` dataclass — physical substrate properties (substrate_type, soil_depth_cm, water_availability_mm_yr, water_clarity_kd, sediment_stability, erosion rates, formation rate, capacity function, confidence)
+- [x] Add `SubstrateState` dataclass — mutable current state tracking current vs pristine substrate values, capacity_fraction, years_to_recover
+- [x] New `substrate.py` module — capacity functions (linear, threshold, logistic), substrate degradation with nonlinear erosion interpolation (alpha exponent), substrate recovery, recovery year estimation
+- [x] Three capacity functions encoding distinct ecological dynamics:
+    - **Linear:** capacity = current/pristine (Oak Valley temperate forest)
+    - **Threshold:** cliff-edge below critical minimum with residual fraction (Costa Brava holm oak — below ~8cm soil, K drops to near-zero)
+    - **Logistic:** smooth S-curve for light-limited marine systems (Posidonia matte integrity)
+- [x] Derive carrying capacity K from substrate state — `effective_K = total_units × capacity_fraction` — K is no longer fixed but degrades as substrate erodes
+- [x] Phase 3.5 substrate degradation in `run_extraction()` — vegetation cover loss exposes substrate to erosion; erosion reduces capacity_fraction; tracked per simulation step (substrate_erosion, effective_k, k_fraction)
+- [x] Substrate ceiling in `run_restoration()` — biological restoration capped at substrate capacity; enhanced prevention advantage including permanent capacity loss NPV
+- [x] Substrate Impact Assessment section in extraction reports — substrate type, pristine values, capacity lost, pristine K vs current K, years to pristine substrate recovery
+- [x] Substrate Restoration Ceiling section in restoration reports — max recoverable services, substrate recovery time, enhanced prevention advantage
+- [x] Extended `validation.py` with `validate_substrate_profile()` — validates substrate properties, erosion/formation rates, capacity function type, confidence level
+- [x] Calibrated substrate profiles for all three cases:
+    - Oak Valley Forest: terrestrial_soil, 45cm depth, linear capacity, 15.0/0.5 t/ha/yr erosion, 0.8 t/ha/yr formation
+    - Costa Brava Holm Oak: terrestrial_soil, 30cm depth, threshold capacity (8cm critical minimum), 25.0/1.0 t/ha/yr erosion, 0.4 t/ha/yr formation
+    - Costa Brava Posidonia: marine_matte, logistic capacity, sediment_stability=0.85, 5.0/0.0 erosion, 1.0 mm/yr formation, alpha=3.0
+- [x] 433 tests pass (375 existing + 58 new across test_substrate.py and test_substrate_cases.py)
+- [x] Full backward compatibility — all v0.5 features are opt-in via Optional fields defaulting to None; no substrate = v0.4 behavior exactly
 
 ### 🔲 v0.6 — NPV & Time-Horizon Analysis
 
