@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Text report generation.
+Gaia v0.6 — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
@@ -12,10 +12,30 @@ v0.4: Resilience Assessment, Carbon Accounting sections in extraction report;
       Maturation Timeline, Carbon Recovery sections in restoration report.
 v0.5: Substrate Impact Assessment in extraction report;
       Substrate Restoration Ceiling in restoration report.
+v0.6: NPV Analysis in extraction report; Investment Analysis, Carbon Credit
+      Breakeven, Prevention Advantage (NPV) in restoration report.
+      New: format_sensitivity_report() for discount rate comparison.
 """
 
+from typing import List, Optional
+
 from gaia.carbon import compute_carbon_cost, compute_carbon_payback_period
-from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
+from gaia.discount import (
+    DISCOUNT_CENTRAL,
+    DISCOUNT_ENVIRONMENTAL,
+    DISCOUNT_GREEN_BOOK,
+    DISCOUNT_MARKET,
+)
+from gaia.models import (
+    Agent,
+    DiscountConfig,
+    Ecosystem,
+    ExtractionNPV,
+    RestorationResult,
+    Resource,
+    SimulationResult,
+)
+from gaia.npv import compute_extraction_npv, compute_restoration_npv
 from gaia.resilience import compute_confidence_band
 from gaia.substrate import compute_substrate_recovery_years, create_substrate_state
 
@@ -334,6 +354,82 @@ def format_report(result: SimulationResult) -> str:
                     f"  {'Years to pristine substrate:':<40} {'N/A':>10}"
                 )
 
+    # v0.6: NPV Analysis
+    if result.extraction_npv is not None:
+        npv: ExtractionNPV = result.extraction_npv
+        dc: DiscountConfig = npv.discount_config
+        lines.append("")
+        rate_label: str
+        if isinstance(dc.rate_schedule, (int, float)):
+            rate_label = f"{float(dc.rate_schedule):.1%}"
+        else:
+            rates = [e[1] for e in dc.rate_schedule]
+            rate_label = (
+                f"{rates[0]:.1%}\u2192{rates[-1]:.1%} (declining)"
+            )
+        lines.append(
+            f"  \u2500\u2500 NPV Analysis ({dc.horizon_years}-year horizon, "
+            f"{rate_label} rate) \u2500" + "\u2500" * 3
+        )
+        lines.append(
+            f"  Ramsey: \u03b4={dc.delta:.1%}, "
+            f"\u03b7={dc.eta:.2f}, g={dc.g:.1%}"
+        )
+        if dc.scarcity_rate > 0:
+            lines.append(
+                f"  Scarcity uplift: {dc.scarcity_rate:.1%}/yr on ecosystem services"
+            )
+        lines.append(
+            f"  Carbon price: \u20ac{dc.carbon_price_current:.0f}/t "
+            f"growing at {dc.carbon_price_growth:.1%}/yr"
+        )
+        lines.append("")
+        lines.append(f"  Externality NPV breakdown:")
+        lines.append(
+            f"  {'  Direct ecosystem services:':<40} "
+            f"{npv.direct:>14,.0f}\u20ac"
+        )
+        if npv.carbon_release > 0:
+            lines.append(
+                f"  {'  Carbon released (immediate):':<40} "
+                f"{npv.carbon_release:>14,.0f}\u20ac"
+            )
+        if npv.carbon_foregone > 0:
+            lines.append(
+                f"  {'  Foregone absorption '}"
+                f"({dc.remaining_productive_years}yr):"
+                f"{'':>5} {npv.carbon_foregone:>14,.0f}\u20ac"
+            )
+        if npv.substrate_damage > 0:
+            lines.append(
+                f"  {'  Substrate damage (permanent):':<40} "
+                f"{npv.substrate_damage:>14,.0f}\u20ac"
+            )
+        _npv_sep = "  " + "\u2500" * 38
+        lines.append(f"  {_npv_sep}")
+        lines.append(
+            f"  {'  Total extraction NPV:':<40} "
+            f"{npv.total:>14,.0f}\u20ac"
+        )
+        lines.append("")
+        undiscounted: float = result.total_externality_cost
+        if undiscounted > 1e-9:
+            discount_effect_pct: float = (npv.total - undiscounted) / undiscounted * 100
+            lines.append(
+                f"  For comparison (undiscounted): "
+                f"{undiscounted:>14,.0f}\u20ac"
+            )
+            lines.append(
+                f"  Discount effect:               "
+                f"{discount_effect_pct:>13.1f}%"
+            )
+        if dc.scarcity_rate > 0:
+            lines.append("")
+            lines.append(
+                f"  Note: scarcity uplift ({dc.scarcity_rate:.1%}/yr) "
+                f"partially offsets discounting."
+            )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
@@ -523,7 +619,7 @@ def format_restoration_report(result: RestorationResult) -> str:
                     f"  {'Substrate recovery time:':<40} {'N/A':>10}"
                 )
 
-        # Enhanced prevention advantage
+        # Enhanced prevention advantage (substrate, v0.5)
         if result.prevention_advantage_with_substrate > result.prevention_advantage:
             lines.append("")
             lines.append(
@@ -539,6 +635,254 @@ def format_restoration_report(result: RestorationResult) -> str:
                 f"{result.prevention_advantage_with_substrate:>10.2f}\u00d7"
             )
 
+    # v0.6: Investment Analysis (NPV)
+    if result.npv is not None:
+        npv_r = result.npv
+        dc_r: DiscountConfig = npv_r.discount_config
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Investment Analysis ({dc_r.horizon_years}-year horizon) "
+            + "\u2500" * 19
+        )
+        lines.append(f"  Restoration NPV:")
+        lines.append(
+            f"  {'  Costs (discounted):':<40} "
+            f"{-npv_r.cost:>14,.0f}\u20ac"
+        )
+        lines.append(
+            f"  {'  Service recovery:':<40} "
+            f"{npv_r.service_benefits:>+14,.0f}\u20ac"
+        )
+        if npv_r.carbon_benefits > 0:
+            lines.append(
+                f"  {'  Carbon absorption:':<40} "
+                f"{npv_r.carbon_benefits:>+14,.0f}\u20ac"
+            )
+        _rest_sep = "  " + "\u2500" * 38
+        lines.append(f"  {_rest_sep}")
+        lines.append(
+            f"  {'  Net Present Value:':<40} "
+            f"{npv_r.net_present_value:>+14,.0f}\u20ac"
+        )
+        lines.append(
+            f"  {'  ROI:':<40} "
+            f"{npv_r.roi:>13.2f}\u00d7"
+        )
+        if npv_r.carbon_payback_years is not None:
+            lines.append("")
+            lines.append(
+                f"  {'Carbon payback period:':<40} "
+                f"{npv_r.carbon_payback_years:>10} years"
+            )
+            lines.append(
+                f"  (years to recapture released CO\u2082 through absorption)"
+            )
+
+    # v0.6: Carbon Credit Breakeven
+    if result.carbon_breakeven is not None:
+        cb = result.carbon_breakeven
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Carbon Credit Breakeven \u2500" + "\u2500" * 35
+        )
+        if cb.breakeven_price < float("inf"):
+            lines.append(
+                f"  {'Breakeven carbon price:':<40} "
+                f"{cb.breakeven_price:>10,.0f}\u20ac/t CO\u2082"
+            )
+        else:
+            lines.append(
+                f"  {'Breakeven carbon price:':<40} "
+                f"{'N/A (no absorption)':>10}"
+            )
+        lines.append(
+            f"  {'Current EU ETS price:':<40} "
+            f"{cb.current_price:>10,.0f}\u20ac/t CO\u2082"
+        )
+        if cb.breakeven_price < float("inf"):
+            gap_sign: str = "+" if cb.gap_to_current > 0 else ""
+            lines.append(
+                f"  {'Gap to breakeven:':<40} "
+                f"{gap_sign}{cb.gap_to_current:>9,.0f}\u20ac/t CO\u2082"
+            )
+        profit_label: str = "Yes \u2705" if cb.profitable_at_current else "No"
+        lines.append(
+            f"  {'Profitable from carbon alone:':<40} "
+            f"{profit_label:>10}"
+        )
+        if cb.projected_breakeven_year is not None and not cb.profitable_at_current:
+            lines.append("")
+            lines.append(
+                f"  At {result.npv.discount_config.carbon_price_growth:.1%}/yr "
+                f"carbon price growth:"
+                if result.npv is not None else
+                f"  At current carbon growth rate:"
+            )
+            lines.append(
+                f"  {'  Breakeven reached in year:':<40} "
+                f"{cb.projected_breakeven_year}"
+            )
+
+    # v0.6: Prevention Advantage (NPV-adjusted)
+    if result.prevention_advantage_v06 is not None:
+        pav = result.prevention_advantage_v06
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Prevention Advantage (NPV-adjusted) \u2500" + "\u2500" * 22
+        )
+        lines.append(f"  Prevention advantage metrics:")
+        lines.append(
+            f"  {'  Simple (v0.2, undiscounted):':<40} "
+            f"{pav.pa_simple:>10.2f}\u00d7"
+        )
+        lines.append(
+            f"  {'  With carbon NPV:':<40} "
+            f"{pav.pa_with_carbon:>10.2f}\u00d7"
+        )
+        lines.append(
+            f"  {'  With substrate NPV:':<40} "
+            f"{pav.pa_with_substrate:>10.2f}\u00d7"
+        )
+        lines.append(
+            f"  {'  Full (all NPV components):':<40} "
+            f"{pav.pa_full:>10.2f}\u00d7"
+        )
+        lines.append("")
+        lines.append(
+            f"  For every \u20ac1 of prevention cost, "
+            f"extraction-then-restoration"
+        )
+        lines.append(
+            f"  costs \u20ac{pav.pa_full:.2f} in present value terms."
+        )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
+
+
+def format_sensitivity_report(
+    extraction_result: SimulationResult,
+    restoration_result: Optional[RestorationResult] = None,
+    profiles: Optional[List[DiscountConfig]] = None,
+) -> str:
+    """Format a discount rate sensitivity table across multiple discount profiles.
+
+    Shows how key NPV outputs (extraction NPV, restoration NPV, prevention
+    advantage, carbon breakeven) vary across different discount rate assumptions.
+
+    Args:
+        extraction_result: SimulationResult from run_extraction().
+        restoration_result: Optional RestorationResult from run_restoration().
+        profiles: List of DiscountConfig profiles to compare. Defaults to the
+            four standard profiles [MARKET, CENTRAL, ENVIRONMENTAL, GREEN_BOOK].
+
+    Returns:
+        Multi-line string with sensitivity table.
+    """
+    if profiles is None:
+        profiles = [
+            DISCOUNT_MARKET,
+            DISCOUNT_CENTRAL,
+            DISCOUNT_ENVIRONMENTAL,
+            DISCOUNT_GREEN_BOOK,
+        ]
+
+    resource = extraction_result.ecosystem.resource
+    lines: list = []
+
+    lines.append(_DOUBLE_LINE)
+    lines.append("  GAIA \u2014 Discount Rate Sensitivity Analysis")
+    lines.append(_DOUBLE_LINE)
+    lines.append("")
+
+    # Column headers
+    col_width: int = 13
+    header_rate: str = "  {:<24}".format("") + "".join(
+        "{:>{w}}".format(_profile_label(p), w=col_width) for p in profiles
+    )
+    lines.append(header_rate)
+    lines.append("  " + "\u2500" * (_WIDTH - 2))
+
+    # Discount rates row
+    rate_row: str = "  {:<24}".format("Rate:") + "".join(
+        "{:>{w}}".format(_rate_str(p), w=col_width) for p in profiles
+    )
+    lines.append(rate_row)
+    lines.append("  " + "\u2500" * (_WIDTH - 2))
+
+    # Extraction NPV row
+    ext_npvs: list = []
+    for p in profiles:
+        enp = compute_extraction_npv(extraction_result, p)
+        ext_npvs.append(enp.total)
+    ext_row: str = "  {:<24}".format("Extraction NPV:") + "".join(
+        "{:>{w}}".format(_fmt_euro_m(v), w=col_width) for v in ext_npvs
+    )
+    lines.append(ext_row)
+
+    # Restoration NPV and other metrics (if available)
+    if restoration_result is not None:
+        # Get succession curve from maturation timeline or from case data
+        succ_curve = None  # use maturation_timeline if available
+
+        rest_npvs: list = []
+        cb_prices: list = []
+        pa_fulls: list = []
+        for p in profiles:
+            rnp = compute_restoration_npv(restoration_result, p, succ_curve)
+            rest_npvs.append(rnp.net_present_value)
+            from gaia.npv import carbon_breakeven as _cb
+            cb = _cb(restoration_result, p, succ_curve)
+            cb_prices.append(cb.breakeven_price)
+            from gaia.npv import compute_prevention_advantage_v06 as _pav
+            pav = _pav(restoration_result, p, succ_curve)
+            pa_fulls.append(pav.pa_full)
+
+        rest_row: str = "  {:<24}".format("Restoration NPV:") + "".join(
+            "{:>{w}}".format(_fmt_euro_m(v), w=col_width) for v in rest_npvs
+        )
+        lines.append(rest_row)
+
+        pa_row: str = "  {:<24}".format("Prevention adv. (full):") + "".join(
+            "{:>{w}}".format(
+                f"{v:.1f}\u00d7" if v < 1000 else ">1000\u00d7", w=col_width
+            ) for v in pa_fulls
+        )
+        lines.append(pa_row)
+
+        cb_row: str = "  {:<24}".format("Carbon breakeven:") + "".join(
+            "{:>{w}}".format(
+                f"\u20ac{v:,.0f}/t" if v < float("inf") else "N/A",
+                w=col_width
+            ) for v in cb_prices
+        )
+        lines.append(cb_row)
+
+    lines.append("  " + "\u2500" * (_WIDTH - 2))
+    lines.append("")
+    lines.append("  The discount rate choice is an ethical and empirical decision.")
+    lines.append("  It is not a purely technical parameter.")
+    lines.append(_DOUBLE_LINE)
+
+    return "\n".join(lines)
+
+
+def _profile_label(discount: DiscountConfig) -> str:
+    """Short label for a discount profile."""
+    if isinstance(discount.rate_schedule, (int, float)):
+        return f"{float(discount.rate_schedule):.1%}"
+    rates = [e[1] for e in discount.rate_schedule]
+    return f"{rates[0]:.1%}\u2192{rates[-1]:.1%}"
+
+
+def _rate_str(discount: DiscountConfig) -> str:
+    """Rate string for sensitivity table."""
+    return _profile_label(discount)
+
+
+def _fmt_euro_m(value: float) -> str:
+    """Format a euro value as ±X.XM€."""
+    m = value / 1_000_000
+    sign: str = "+" if value >= 0 else ""
+    return f"{sign}{m:.1f}M\u20ac"

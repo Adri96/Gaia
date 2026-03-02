@@ -102,6 +102,7 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
+from gaia.discount import COSTA_BRAVA_POSIDONIA_DISCOUNT
 from gaia.models import (
     Agent,
     CarbonProfile,
@@ -215,6 +216,7 @@ def build_posidonia_ecosystem(
         carbon_profile=_POSIDONIA_CARBON,
         resilience=_POSIDONIA_RESILIENCE,
         substrate=_POSIDONIA_SUBSTRATE,
+        discount=COSTA_BRAVA_POSIDONIA_DISCOUNT,
     )
 
     t = safe_threshold_ratio  # shorthand

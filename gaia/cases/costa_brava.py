@@ -77,6 +77,7 @@ import argparse
 import sys
 
 from gaia.damage import exponential_damage, logistic_damage
+from gaia.discount import COSTA_BRAVA_OAK_DISCOUNT
 from gaia.models import (
     Agent,
     CarbonProfile,
@@ -179,6 +180,7 @@ def build_costa_brava_ecosystem(
         carbon_profile=_CB_CARBON,
         resilience=_CB_RESILIENCE,
         substrate=_HOLM_OAK_SUBSTRATE,
+        discount=COSTA_BRAVA_OAK_DISCOUNT,
     )
 
     t = safe_threshold_ratio  # shorthand for threshold argument

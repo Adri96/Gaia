@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Simulation engine.
+Gaia v0.6 — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return
@@ -16,12 +16,14 @@ v0.2: Added run_restoration() — the inverse of run_extraction().
 v0.3: Two-phase loops with trophic amplification and interaction propagation.
 v0.4: Resilience zone tagging in extraction, maturation pass in restoration.
 v0.5: Phase 3.5 substrate degradation in extraction, substrate ceiling in restoration.
+v0.6: Per-step discount annotation in extraction; NPV/breakeven/PA_v06 in restoration.
 """
 
 from typing import List, Optional
 
 from gaia.models import (
     Agent,
+    DiscountConfig,
     Ecosystem,
     RestorationCost,
     RestorationResult,
@@ -30,6 +32,12 @@ from gaia.models import (
     SimulationStep,
     SubstrateState,
     SuccessionCurve,
+)
+from gaia.npv import (
+    carbon_breakeven,
+    compute_extraction_npv,
+    compute_prevention_advantage_v06,
+    compute_restoration_npv,
 )
 from gaia.propagation import compute_trophic_amplification, propagate_interactions
 from gaia.recovery import RecoveryFunc
@@ -123,6 +131,14 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
     has_interactions: bool = len(interactions) > 0
     has_resilience: bool = resource.resilience is not None
+
+    # v0.6: Discount annotation
+    has_discount: bool = resource.discount is not None
+    discount_rate: float = 0.0
+    discount_carbon_price: float = 0.0
+    if has_discount:
+        discount_rate = resource.discount.rate_at_year(0)
+        discount_carbon_price = resource.discount.carbon_price_at_year(0)
 
     # v0.5: Initialize substrate state if profile is configured
     has_substrate: bool = resource.substrate is not None
@@ -219,6 +235,19 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
                 )
             )
 
+        # Phase 5: Discount annotation (v0.6) — informational per-step fields
+        # Extraction spans ≤1 year; t_frac = fraction of year elapsed at this step.
+        # discount_factor ≈ 1.0 for short extractions (as intended).
+        step_discount_factor: float = 1.0
+        step_npv_externality: float = marginal_cost
+        step_carbon_price: float = 0.0
+        if has_discount:
+            t_frac: float = step / units_to_extract
+            if discount_rate > 1e-9:
+                step_discount_factor = 1.0 / (1.0 + discount_rate) ** t_frac
+            step_npv_externality = marginal_cost * step_discount_factor
+            step_carbon_price = discount_carbon_price
+
         steps.append(SimulationStep(
             step=step,
             units_extracted=units_extracted,
@@ -238,6 +267,9 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             substrate_erosion=step_substrate_erosion,
             effective_k=step_effective_k,
             k_fraction=step_k_fraction,
+            discount_factor=step_discount_factor,
+            npv_externality=step_npv_externality,
+            carbon_price_used=step_carbon_price,
         ))
 
         previous_total_cost = step_total_cost
@@ -246,7 +278,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     total_externality: float = final_step.cumulative_cost
     total_revenue: float = final_step.private_revenue
 
-    return SimulationResult(
+    sim_result: SimulationResult = SimulationResult(
         ecosystem=ecosystem,
         steps=steps,
         total_units_extracted=units_to_extract,
@@ -255,6 +287,14 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         net_social_cost=total_revenue - total_externality,
         final_ecosystem_health=final_step.ecosystem_health,
     )
+
+    # v0.6: Compute extraction NPV if discount config is set
+    if has_discount:
+        sim_result.extraction_npv = compute_extraction_npv(
+            sim_result, resource.discount
+        )
+
+    return sim_result
 
 
 def run_restoration(
@@ -470,7 +510,7 @@ def run_restoration(
         years_to_50pct = find_years_to_threshold(succession_curve, 0.50)
         years_to_90pct = find_years_to_threshold(succession_curve, 0.90)
 
-    return RestorationResult(
+    restore_result: RestorationResult = RestorationResult(
         ecosystem=ecosystem,
         restoration_cost=restoration_cost,
         steps=steps,
@@ -489,3 +529,18 @@ def run_restoration(
         substrate_recovery_years=substrate_recovery_yrs,
         prevention_advantage_with_substrate=prevention_advantage_with_substrate,
     )
+
+    # v0.6: Compute NPV analysis if discount config is set
+    if ecosystem.resource.discount is not None:
+        dc: DiscountConfig = ecosystem.resource.discount
+        restore_result.npv = compute_restoration_npv(
+            restore_result, dc, succession_curve
+        )
+        restore_result.carbon_breakeven = carbon_breakeven(
+            restore_result, dc, succession_curve
+        )
+        restore_result.prevention_advantage_v06 = compute_prevention_advantage_v06(
+            restore_result, dc, succession_curve
+        )
+
+    return restore_result

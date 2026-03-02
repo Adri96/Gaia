@@ -38,6 +38,7 @@ import argparse
 import sys
 
 from gaia.damage import logistic_damage
+from gaia.discount import OAK_VALLEY_DISCOUNT
 from gaia.models import (
     Agent,
     CarbonProfile,
@@ -124,6 +125,7 @@ def build_forest_ecosystem(
         carbon_profile=_FOREST_CARBON,
         resilience=_FOREST_RESILIENCE,
         substrate=_OAK_VALLEY_SUBSTRATE,
+        discount=OAK_VALLEY_DISCOUNT,
     )
 
     # Logistic damage functions centered at the safe extraction threshold.
