@@ -136,7 +136,7 @@ def test_posidonia_past_threshold():
     vs annual recurring externality costs. The single-year externality snapshot does
     NOT cross the one-time revenue figure (revenue per ha is high relative to
     annual service loss per ha at any single moment). The real crossover requires
-    multi-year NPV — a v0.5 feature.
+    multi-year NPV — a v0.6 feature.
 
     The correct invariant here: externality at 50% must be substantially larger
     than at 20% (the safe threshold), confirming the S-curve acceleration. The

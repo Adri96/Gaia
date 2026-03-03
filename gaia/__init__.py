@@ -1,2 +1,2 @@
 # Gaia — Externality Computation Framework
-# v0.3: Trophic cascades & agent interactions
+# v0.5: Physical substrate & derived carrying capacity

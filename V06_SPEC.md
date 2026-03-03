@@ -19,7 +19,7 @@ Gaia's simulations produce streams of costs and benefits over decades to millenn
 - **Substrate damage** creates permanent capacity loss whose NPV depends critically on the discount rate (v0.5's millennia-scale soil/matte recovery)
 - **Carbon externalities** include foregone absorption extending over the remaining productive lifetime of destroyed units
 
-Without discounting, a euro of ecosystem services 100 years from now is weighted equally with a euro today. With a 4.3% rate (Nordhaus), that future euro is worth €1.48 today. With a 1.4% rate (Stern), it's worth €24.90. The difference is 17× — enough to flip any cost-benefit analysis from "do nothing" to "act urgently."
+Without discounting, a euro of ecosystem services 100 years from now is weighted equally with a euro today. With a 4.3% rate (Nordhaus), that future euro is worth just €0.015 today. With a 1.4% rate (Stern), it's worth €0.25. The difference is 17× — enough to flip any cost-benefit analysis from "do nothing" to "act urgently."
 
 ### 1.2 The Ramsey Framework
 

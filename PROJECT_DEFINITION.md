@@ -490,12 +490,27 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] 433 tests pass (375 existing + 58 new across test_substrate.py and test_substrate_cases.py)
 - [x] Full backward compatibility — all v0.5 features are opt-in via Optional fields defaulting to None; no substrate = v0.4 behavior exactly
 
-### 🔲 v0.6 — NPV & Time-Horizon Analysis
+### 🔲 v0.6 — NPV, Discounting & Carbon Credit Breakeven
 
-- [ ] Restoration investment report with NPV (net present value over configurable time horizon), ROI, and payback period — enables fair comparison of one-time private revenue against recurring annual externality losses (critical for the Posidonia marine inversion case where single-year snapshot is misleading)
-- [ ] Prevention-vs-restoration comparison with full maturation damage gap (externality cost during recovery window, not just direct restoration cost)
-- [ ] Pluggable monetary conversion models (region-specific valuation, time-discounted shadow prices, EU ETS carbon pricing)
-- [ ] Discount rate sensitivity analysis (how prevention advantage changes with different social discount rates)
+The bridge between ecological modeling (v0.1–v0.5) and economic decision-making (v0.7–v0.8). Transforms Gaia's outputs from "this is the damage" into "this is the investment case."
+
+Full specification: `V06_SPEC.md`
+
+- [ ] Add `DiscountConfig` dataclass — Ramsey-based discount rate (r = δ + η × g) with configurable pure time preference, utility elasticity, and growth rate; supports constant rate and declining schedule; includes scarcity uplift rate, carbon price trajectory, and analysis horizon
+- [ ] Add preconfigured discount profiles: `DISCOUNT_MARKET` (Nordhaus-adjacent, 4.1%), `DISCOUNT_CENTRAL` (Drupp et al. consensus, 2.3%), `DISCOUNT_ENVIRONMENTAL` (Stern-adjacent, 1.4%), `DISCOUNT_GREEN_BOOK` (UK Treasury declining 3.5%→2.5%)
+- [ ] Add `ExtractionNPV` dataclass — NPV breakdown: direct ecosystem service loss, carbon release, foregone absorption, substrate damage, total; all with scarcity uplift and rising carbon prices
+- [ ] Add `RestorationNPV` dataclass — investment case: discounted costs, recovering service benefits (scarcity-adjusted), carbon absorption benefits (at rising prices), net present value, ROI, carbon payback period
+- [ ] Add `CarbonBreakeven` dataclass — at what carbon price does restoration become privately profitable purely from carbon credit revenue? Includes breakeven price, gap to current EU ETS, projected breakeven year at carbon price growth rate
+- [ ] Add `PreventionAdvantageV06` dataclass — NPV-adjusted prevention advantage: simple (v0.2), with carbon, with substrate, full (all-inclusive); scarcity uplift and rising carbon prices make PA *increase* over time
+- [ ] Implement `compute_extraction_npv()` — discount stream of extraction externalities: direct costs with scarcity uplift, carbon release at current price, foregone absorption with rising prices, permanent substrate loss as NPV of perpetual services gap
+- [ ] Implement `compute_restoration_npv()` — discount restoration investment case: costs (planting + maintenance schedule), recovering services (succession × substrate ceiling × scarcity), carbon absorption (succession × rising prices), ROI
+- [ ] Implement `carbon_breakeven()` — find carbon price where restoration NPV = 0 from carbon alone; solve breakeven_price = npv_cost / npv_absorption_per_euro; project when rising market prices reach breakeven
+- [ ] Implement scarcity uplift: `ecosystem_value_at_t = base_value × (1 + scarcity_rate)^t` — mathematically equivalent to reduced discount rate for environmental flows (default 2%/yr, per Drupp & Hänsel 2021)
+- [ ] Extend `Resource` with optional `DiscountConfig`; extend `SimulationStep` with discount_factor, npv_externality, carbon_price_used; extend `RestorationResult` with NPV, carbon breakeven, prevention advantage v0.6
+- [ ] NPV sections in extraction and restoration reports (only when DiscountConfig is provided); discount rate sensitivity report showing key outputs across Stern/Central/Green Book/Nordhaus profiles
+- [ ] Per-case discount configurations: Oak Valley (central, 2.3%, 100yr), Costa Brava Holm Oak (2.5% scarcity uplift, 100yr), Posidonia (declining schedule 2.3%→1.4%, 3% scarcity uplift, 200yr horizon)
+- [ ] Discount rate sensitivity analysis — how prevention advantage, breakeven price, and NPV change across the Stern–Nordhaus spectrum
+- [ ] Full backward compatibility — no DiscountConfig = identical v0.5 behavior; all 433 existing tests pass unchanged
 
 ### 🔲 v0.7 — Endogenous Pricing (Equilibrium-Derived Monetary Values)
 
