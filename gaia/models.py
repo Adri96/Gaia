@@ -493,7 +493,7 @@ class RestorationResult:
             (foregone_revenue + total_restoration_cost) / foregone_revenue
             A ratio > 1.0 means restoration costs more than prevention.
             [NOTE: this is a simplified ratio without time-discounting.
-             Full NPV analysis is a v0.5 feature.]
+             Full NPV analysis is a v0.6 feature.]
         final_ecosystem_health: Ecosystem health after all restoration.
         maturation_timeline: Year-by-year service recovery (v0.4, empty if no succession).
         years_to_pioneer: Years until services first become non-zero (v0.4).

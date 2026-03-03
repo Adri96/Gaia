@@ -156,11 +156,13 @@ Gaia/
 │   ├── test_maturation.py     # End-to-end integration tests for v0.4 maturation + resilience
 │   ├── test_substrate.py      # Substrate module unit tests: capacity functions, degradation, recovery (v0.5)
 │   └── test_substrate_cases.py # Substrate integration tests per case, backward compatibility (v0.5)
-├── PROJECT_DEFINITION.md      # Scientific foundations and architecture vision
-├── ROADMAP.md                 # Version roadmap and verification strategy
+├── PROJECT_DEFINITION.md      # Scientific foundations, architecture vision, and roadmap
 ├── V01_SPEC.md                # Detailed v0.1 specification
+├── V03_SPEC.md                # Detailed v0.3 specification
 ├── V04_SPEC.md                # Detailed v0.4 specification
-└── V05_SPEC.md                # Detailed v0.5 specification
+├── V05_SPEC.md                # Detailed v0.5 specification
+├── V06_SPEC.md                # Detailed v0.6 specification (NPV, discounting, carbon breakeven)
+└── V07_RATIONALE.md           # v0.7 design rationale (endogenous pricing)
 ```
 
 ### Key modules
@@ -629,11 +631,15 @@ All three satisfy these invariants:
   - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), inverted economics; prevention advantage **81.00×**
 - 433 tests, all passing
 
-**What's coming (v0.6+):**
-- NPV / time-horizon analysis for multi-year investment decisions (v0.6)
-- Endogenous pricing — prices derived from interaction network + scarcity (v0.7)
+**What's coming (v0.6):**
+- NPV / time-horizon analysis with Ramsey-based discounting (configurable: Stern, Nordhaus, Drupp et al. consensus, UK Green Book declining schedule)
+- Scarcity uplift on ecosystem service valuations (relative price effect: ecosystem services become more valuable as they become scarcer)
+- Carbon credit breakeven analysis: at what carbon price does restoration become privately profitable?
+- Rising carbon price trajectories anchored to EU ETS market data and consensus 2030 forecasts
+- NPV-adjusted prevention advantage with full accounting (direct costs + carbon externality + permanent substrate loss)
+- Discount rate sensitivity analysis across the Stern-Nordhaus spectrum
 
-See `PROJECT_DEFINITION.md` for the full roadmap.
+See `V06_SPEC.md` for the full specification and `PROJECT_DEFINITION.md` for the roadmap.
 
 ---
 

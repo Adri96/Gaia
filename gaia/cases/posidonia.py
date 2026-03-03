@@ -479,7 +479,7 @@ def run_posidonia_restoration(
 
 def _parse_args(argv: list = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Gaia v0.2 — Costa Brava Posidonia Meadow externality and restoration simulation",
+        description="Gaia v0.5 — Costa Brava Posidonia Meadow externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
