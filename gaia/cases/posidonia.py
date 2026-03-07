@@ -104,12 +104,16 @@ import sys
 from gaia.damage import exponential_damage, logistic_damage
 from gaia.models import (
     Agent,
+    AnchorPoint,
     CarbonProfile,
+    DiscountConfig,
     Ecosystem,
     InteractionEdge,
+    PricingConfig,
     ResilienceConfig,
     RestorationCost,
     Resource,
+    ScarcityFunction,
     SubstrateProfile,
     SuccessionCurve,
 )
@@ -166,6 +170,58 @@ _POSIDONIA_SUBSTRATE = SubstrateProfile(
     confidence="low-medium",
 )
 
+# v0.6: Posidonia discount configuration
+# Declining rate schedule: near-term 2.3%, mid-term 1.8%, long-term 1.4%
+_POSIDONIA_DISCOUNT = DiscountConfig(
+    delta=0.005, eta=1.35, g=0.013,
+    rate_schedule=[(0, 0.023), (31, 0.018), (101, 0.014)],
+    scarcity_rate=0.03,  # Higher: Posidonia declining 34%+ since 1960s
+    carbon_price_current=80.0,
+    carbon_price_growth=0.03,
+    horizon_years=200,  # Longer horizon for marine ecosystems
+)
+
+# v0.7: Posidonia pricing configuration
+_POSIDONIA_PRICING = PricingConfig(
+    anchors=[
+        AnchorPoint(
+            agent_name="Blue Carbon",
+            anchor_value=136000.0,
+            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 1,000 ha",
+            confidence="high",
+            description="Carbon: €80/t × 1,700 t CO₂/yr",
+        ),
+        AnchorPoint(
+            agent_name="Human Communities",
+            anchor_value=500000.0,
+            source="Costa Brava tourism revenue attributable to coastal water quality per ~5 km",
+            confidence="medium",
+            description="Tourism: attributable water quality value for ~5 km coastline",
+        ),
+        AnchorPoint(
+            agent_name="Fish Populations",
+            anchor_value=75000.0,
+            source="Artisanal catch value: ~15 boats × €5,000/yr/boat",
+            confidence="medium",
+            description="Fishing: 15 artisanal boats × €5,000/yr",
+        ),
+    ],
+    scarcity_functions={
+        "Posidonia Meadow": ScarcityFunction("smooth", alpha=2.0, max_multiplier=50.0, description="Foundation species; millennium-scale recovery"),
+        "Coralligenous & Red Coral": ScarcityFunction("smooth", alpha=1.5, max_multiplier=50.0, description="Biogenic habitat; century-scale recovery"),
+        "Epiphytes & Algae": ScarcityFunction("smooth", alpha=0.8, max_multiplier=50.0),
+        "Marine Invertebrates": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Fish Populations": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Marine Megafauna": ScarcityFunction("smooth", alpha=0.5, max_multiplier=50.0),
+        "Seabirds": ScarcityFunction("smooth", alpha=0.5, max_multiplier=50.0),
+        "Coastal Protection": ScarcityFunction("threshold", threshold=0.3, max_multiplier=40.0, description="Beach nourishment cost replacement"),
+        "Water Quality": ScarcityFunction("threshold", threshold=0.3, max_multiplier=30.0, description="Turbidity collapse threshold"),
+        "Blue Carbon": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+    },
+    default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
+)
+
 # Shared steepness for all logistic agents.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
 _STEEPNESS: float = 12.0
@@ -183,6 +239,7 @@ def build_posidonia_ecosystem(
     total_hectares: int = 5_000,
     safe_threshold_ratio: float = 0.20,
     revenue_per_hectare: float = 2_500.0,
+    with_pricing: bool = False,
 ) -> Ecosystem:
     """
     Build the Costa Brava Posidonia Meadow ecosystem with 11 agents.
@@ -215,6 +272,7 @@ def build_posidonia_ecosystem(
         carbon_profile=_POSIDONIA_CARBON,
         resilience=_POSIDONIA_RESILIENCE,
         substrate=_POSIDONIA_SUBSTRATE,
+        discount=_POSIDONIA_DISCOUNT,
     )
 
     t = safe_threshold_ratio  # shorthand
@@ -389,6 +447,7 @@ def build_posidonia_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        pricing=_POSIDONIA_PRICING if with_pricing else None,
     )
 
 

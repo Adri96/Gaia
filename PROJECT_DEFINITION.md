@@ -490,46 +490,60 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] 433 tests pass (375 existing + 58 new across test_substrate.py and test_substrate_cases.py)
 - [x] Full backward compatibility — all v0.5 features are opt-in via Optional fields defaulting to None; no substrate = v0.4 behavior exactly
 
-### 🔲 v0.6 — NPV, Discounting & Carbon Credit Breakeven
+### ✅ v0.6 — NPV, Discounting & Carbon Credit Breakeven (complete)
 
 The bridge between ecological modeling (v0.1–v0.5) and economic decision-making (v0.7–v0.8). Transforms Gaia's outputs from "this is the damage" into "this is the investment case."
 
 Full specification: `V06_SPEC.md`
 
-- [ ] Add `DiscountConfig` dataclass — Ramsey-based discount rate (r = δ + η × g) with configurable pure time preference, utility elasticity, and growth rate; supports constant rate and declining schedule; includes scarcity uplift rate, carbon price trajectory, and analysis horizon
-- [ ] Add preconfigured discount profiles: `DISCOUNT_MARKET` (Nordhaus-adjacent, 4.1%), `DISCOUNT_CENTRAL` (Drupp et al. consensus, 2.3%), `DISCOUNT_ENVIRONMENTAL` (Stern-adjacent, 1.4%), `DISCOUNT_GREEN_BOOK` (UK Treasury declining 3.5%→2.5%)
-- [ ] Add `ExtractionNPV` dataclass — NPV breakdown: direct ecosystem service loss, carbon release, foregone absorption, substrate damage, total; all with scarcity uplift and rising carbon prices
-- [ ] Add `RestorationNPV` dataclass — investment case: discounted costs, recovering service benefits (scarcity-adjusted), carbon absorption benefits (at rising prices), net present value, ROI, carbon payback period
-- [ ] Add `CarbonBreakeven` dataclass — at what carbon price does restoration become privately profitable purely from carbon credit revenue? Includes breakeven price, gap to current EU ETS, projected breakeven year at carbon price growth rate
-- [ ] Add `PreventionAdvantageV06` dataclass — NPV-adjusted prevention advantage: simple (v0.2), with carbon, with substrate, full (all-inclusive); scarcity uplift and rising carbon prices make PA *increase* over time
-- [ ] Implement `compute_extraction_npv()` — discount stream of extraction externalities: direct costs with scarcity uplift, carbon release at current price, foregone absorption with rising prices, permanent substrate loss as NPV of perpetual services gap
-- [ ] Implement `compute_restoration_npv()` — discount restoration investment case: costs (planting + maintenance schedule), recovering services (succession × substrate ceiling × scarcity), carbon absorption (succession × rising prices), ROI
-- [ ] Implement `carbon_breakeven()` — find carbon price where restoration NPV = 0 from carbon alone; solve breakeven_price = npv_cost / npv_absorption_per_euro; project when rising market prices reach breakeven
-- [ ] Implement scarcity uplift: `ecosystem_value_at_t = base_value × (1 + scarcity_rate)^t` — mathematically equivalent to reduced discount rate for environmental flows (default 2%/yr, per Drupp & Hänsel 2021)
-- [ ] Extend `Resource` with optional `DiscountConfig`; extend `SimulationStep` with discount_factor, npv_externality, carbon_price_used; extend `RestorationResult` with NPV, carbon breakeven, prevention advantage v0.6
-- [ ] NPV sections in extraction and restoration reports (only when DiscountConfig is provided); discount rate sensitivity report showing key outputs across Stern/Central/Green Book/Nordhaus profiles
-- [ ] Per-case discount configurations: Oak Valley (central, 2.3%, 100yr), Costa Brava Holm Oak (2.5% scarcity uplift, 100yr), Posidonia (declining schedule 2.3%→1.4%, 3% scarcity uplift, 200yr horizon)
-- [ ] Discount rate sensitivity analysis — how prevention advantage, breakeven price, and NPV change across the Stern–Nordhaus spectrum
-- [ ] Full backward compatibility — no DiscountConfig = identical v0.5 behavior; all 433 existing tests pass unchanged
+- [x] Add `DiscountConfig` dataclass — Ramsey-based discount rate (r = δ + η × g) with configurable pure time preference (δ), utility elasticity (η), and growth rate (g); supports constant rate and declining schedule (list of (year, rate) tuples); includes scarcity uplift rate, carbon price trajectory, and analysis horizon. Methods: `rate_at_year()`, `discount_factor()`, `carbon_price_at_year()`, `scarcity_factor()`
+- [x] Add preconfigured discount profiles: `DISCOUNT_MARKET` (Nordhaus-adjacent, 4.1%), `DISCOUNT_CENTRAL` (Drupp et al. consensus, 2.3%), `DISCOUNT_ENVIRONMENTAL` (Stern-adjacent, 1.4%), `DISCOUNT_GREEN_BOOK` (UK Treasury declining 3.5%→2.5%)
+- [x] Add `ExtractionNPV` dataclass — NPV breakdown: direct ecosystem service loss, carbon release, foregone absorption, substrate damage, total; all with scarcity uplift and rising carbon prices
+- [x] Add `RestorationNPV` dataclass — investment case: discounted costs, recovering service benefits (scarcity-adjusted), carbon absorption benefits (at rising prices), net present value, ROI, carbon payback period
+- [x] Add `CarbonBreakeven` dataclass — at what carbon price does restoration become privately profitable purely from carbon credit revenue? Includes breakeven price, gap to current EU ETS, projected breakeven year at carbon price growth rate
+- [x] Add `PreventionAdvantageV06` dataclass — NPV-adjusted prevention advantage: simple (v0.2), with carbon, with substrate, full (all-inclusive); scarcity uplift and rising carbon prices make PA *increase* over time
+- [x] Implement `compute_extraction_npv()` — discount stream of extraction externalities: direct costs with scarcity uplift, carbon release at current price, foregone absorption with rising prices, permanent substrate loss as NPV of perpetual services gap
+- [x] Implement `compute_restoration_npv()` — discount restoration investment case: costs (planting + maintenance schedule), recovering services (succession × substrate ceiling × scarcity), carbon absorption (succession × rising prices), ROI
+- [x] Implement `compute_carbon_breakeven()` — find carbon price where restoration NPV = 0 from carbon alone; solve breakeven_price = npv_cost / npv_absorption_per_euro; project when rising market prices reach breakeven
+- [x] Implement scarcity uplift: `ecosystem_value_at_t = base_value × (1 + scarcity_rate)^t` — mathematically equivalent to reduced discount rate for environmental flows (default 2%/yr, per Drupp & Hänsel 2021)
+- [x] Extend `Resource` with optional `DiscountConfig`; extend `SimulationStep` with discount_factor_at_step, npv_externality, carbon_price_used; extend `SimulationResult` with extraction_npv; extend `RestorationResult` with restoration_npv, carbon_breakeven, prevention_advantage_v06
+- [x] NPV sections in extraction and restoration reports (only when DiscountConfig is provided): NPV Analysis (Ramsey components, scarcity uplift, extraction NPV breakdown), Investment Analysis (restoration NPV costs vs benefits, ROI), Carbon Breakeven (breakeven price, current price, projected year), Prevention Advantage v0.6 (simple/carbon/substrate/full PA)
+- [x] Per-case discount configurations:
+    - Oak Valley Forest: central profile (2.3%, 2% scarcity, 100yr horizon)
+    - Costa Brava Holm Oak: central profile (2.3%, 2.5% scarcity for Mediterranean fragility, 100yr)
+    - Costa Brava Posidonia: declining schedule (2.3%→1.8%→1.4%, 3% scarcity for marine irreversibility, 200yr horizon)
+- [x] New `gaia/discount.py` module with preconfigured profiles and NPV computation functions
+- [x] Extended `gaia/validation.py` with `validate_discount_config()` — validates rate >= 0, schedule sorted, horizon > 0, carbon price >= 0
+- [x] 483 tests pass (433 existing + 50 new in tests/test_discount.py)
+- [x] Full backward compatibility — no DiscountConfig = identical v0.5 behavior; all 433 existing tests pass unchanged
 
-### 🔲 v0.7 — Endogenous Pricing (Equilibrium-Derived Monetary Values)
+### ✅ v0.7 — Endogenous Pricing (Equilibrium-Derived Monetary Values) (complete)
 
-- Replace static monetary_rate per agent with derived prices that emerge from the interaction matrix and ecosystem state — prices are no longer manually calibrated but computed from ecological structure
-- Implement the value system: for each agent i, solve value_i = base_anchor_i × scarcity(health_i) × Σⱼ(edge_strength_ji × value_j) — a system of N equations in N unknowns where prices reflect both scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices)
-  Scarcity function: scarcity(health) = 1 / health^α where α controls price elasticity — as an agent's health drops toward zero, its price rises sharply (scarce → expensive); α is configurable per ecosystem and validated against economic literature on ecosystem service valuation
-- Demand aggregation from the v0.3 interaction matrix: agents with many high-strength incoming edges (i.e. many dependents) automatically receive higher prices — keystone species emerge as the most valuable agents without manual weighting, purely from network centrality
-- Anchor points: the system produces relative prices; absolute €-values require at least one external price anchor per ecosystem. Candidate anchors: EU ETS carbon price (for Carbon & Climate agent), regional water treatment costs (for Watershed agent), tourism revenue data (for Human Communities agent). Only 1–2 anchors needed; all other prices float relative to them.
-- Solve the price system at each simulation step — prices are dynamic, changing as the ecosystem degrades. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce. This matches economic reality: we don't value ecosystem services until they're degraded.
-  Matrix formulation: the value system is a linear system (at fixed ecosystem state) solvable as V = (I − S·W)⁻¹ · A where V is the value vector, S is the diagonal scarcity matrix, W is the edge-strength matrix (transposed interaction matrix), and A is the anchor vector. This is an eigenvalue-adjacent problem — well-conditioned when interaction strengths are < 1.0.
-- Validate convergence: the system must have a unique positive solution (guaranteed when the spectral radius of S·W < 1, which holds when individual edge strengths are < 1.0 and the interaction graph is not too dense)
-- Backward compatibility: when no anchors are provided, fall back to static monetary_rate (v0.1–v0.6 behavior). Endogenous pricing is opt-in.
-- Price decomposition in reports: show per-agent price as base_anchor × scarcity_multiplier × demand_multiplier so the user can see WHY a service is priced the way it is — which component dominates (is it scarce? is it depended upon? or both?)
-- Calibrate anchor points for all three existing cases:
-    - Oak Valley Forest: carbon anchor (EU ETS ~€80/tonne), water treatment anchor (~€2.50/m³)
-    - Costa Brava Holm Oak: carbon anchor + regional fire management costs + cork/mushroom market prices
-    - Costa Brava Posidonia: carbon anchor + Costa Brava tourism revenue per km of beach + artisanal fishing revenue per boat
+Full specification: `V07_SPEC.md`
 
-- Sensitivity analysis: show how total externality changes when anchor prices shift ±20% — demonstrates which anchor dominates the result and where better data would most improve accuracy
+- [x] Replace static monetary_rate per agent with derived prices that emerge from the interaction matrix and ecosystem state — prices are no longer manually calibrated but computed from ecological structure
+- [x] Implement Leontief-Hannon value system: V = (I − S·W)⁻¹ · A where V is the value vector, S is the diagonal scarcity matrix, W is the edge-strength matrix (transposed interaction matrix), and A is the anchor vector. Solved via Gaussian elimination with partial pivoting. All matrix operations in pure Python (no numpy) for Cython compatibility.
+- [x] Scarcity functions: `compute_scarcity(health, scarcity_fn)` — two types:
+    - **smooth**: `min(max_multiplier, 1.0 / health^α)` — as health drops toward zero, price rises sharply
+    - **threshold**: quadratic rise below critical health threshold, capped at max_multiplier
+- [x] Add `ScarcityFunction` dataclass — function_type ("smooth"/"threshold"), alpha, threshold, max_multiplier
+- [x] Add `AnchorPoint` dataclass — agent_name, anchor_value, source, confidence, description
+- [x] Add `PricingConfig` dataclass — anchors list, per-agent scarcity_functions dict, default_scarcity, convergence_tolerance, max_iterations, fallback_to_static
+- [x] Add `PriceResult` dataclass — prices dict, scarcity_multipliers, demand_multipliers, anchor_contributions, spectral_radius, converged, iterations
+- [x] Spectral radius validation via power iteration — verifies Hawkins-Simon condition (spectral radius of S·W < 1.0) for unique positive solution; binary search scarcity capping when condition is not met
+- [x] Demand aggregation from v0.3 interaction matrix: agents with many high-strength incoming edges automatically receive higher prices — keystone species emerge as the most valuable purely from network centrality
+- [x] Dynamic per-step pricing in `run_extraction()` — prices recomputed at each simulation step as ecosystem health changes. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce.
+- [x] Extend `Ecosystem` with optional `PricingConfig`; extend `SimulationStep` with agent_prices list and price_result
+- [x] Price decomposition in reports: per-agent price table showing price, scarcity multiplier, demand multiplier, and anchor contribution — user can see WHY each service is priced the way it is
+- [x] Calibrated anchor points for all three cases:
+    - Oak Valley Forest: 1 anchor (General Biosphere/Carbon at €80k — EU ETS × 1,000 tCO₂/yr); all agents smooth α=1.0, max_multiplier=50.0
+    - Costa Brava Holm Oak: 2 anchors (Carbon €136k, Watershed €250k); 11 per-agent scarcity functions including threshold for Watershed at 0.4 critical health
+    - Costa Brava Posidonia: 3 anchors (Blue Carbon €136k, Tourism €500k, Fishing €75k); 11 per-agent scarcity functions including thresholds for Coastal Protection and Water Quality at 0.3 critical health
+- [x] Pricing is opt-in via `with_pricing=True` parameter in case builder functions — default `False` for backward compatibility
+- [x] New `gaia/pricing.py` module with matrix math (pure Python), scarcity functions, and Leontief solver
+- [x] Extended `gaia/validation.py` with `validate_scarcity_function()`, `validate_anchor_point()`, `validate_pricing_config()`
+- [x] 510 tests pass (483 existing + 27 new in tests/test_pricing.py)
+- [x] Full backward compatibility — no PricingConfig = identical v0.6 behavior; all 483 existing tests pass unchanged
 
 ### 🔲 v0.8 — Performance & Generalization
 

@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Simulation engine.
+Gaia v0.7 — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return
@@ -16,6 +16,8 @@ v0.2: Added run_restoration() — the inverse of run_extraction().
 v0.3: Two-phase loops with trophic amplification and interaction propagation.
 v0.4: Resilience zone tagging in extraction, maturation pass in restoration.
 v0.5: Phase 3.5 substrate degradation in extraction, substrate ceiling in restoration.
+v0.6: NPV computation on SimulationResult and RestorationResult when DiscountConfig present.
+v0.7: Per-step price solver when PricingConfig present; dynamic prices replace monetary_rate.
 """
 
 from typing import List, Optional
@@ -124,6 +126,12 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     has_interactions: bool = len(interactions) > 0
     has_resilience: bool = resource.resilience is not None
 
+    # v0.7: Pre-extract pricing metadata
+    has_pricing: bool = ecosystem.pricing is not None
+    monetary_rates_dict: dict = {}
+    if has_pricing:
+        monetary_rates_dict = {a.name: a.monetary_rate for a in agents}
+
     # v0.5: Initialize substrate state if profile is configured
     has_substrate: bool = resource.substrate is not None
     substrate_state: Optional[SubstrateState] = None
@@ -170,15 +178,45 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             keystone_triggered = []
 
         # Phase 3: Compute costs from effective damages
+        # v0.7: Solve endogenous prices when PricingConfig is present
+        step_price_result = None
+        step_agent_prices: list = []
+
+        if has_pricing:
+            from gaia.pricing import solve_prices
+            # Agent health = 1.0 - effective_damage
+            agent_healths_dict: dict = {}
+            for i in range(n_agents):
+                h: float = 1.0 - effective_damages[i]
+                if h < 0.0:
+                    h = 0.0
+                elif h > 1.0:
+                    h = 1.0
+                agent_healths_dict[agent_names[i]] = h
+
+            step_price_result = solve_prices(
+                agent_names=agent_names,
+                agent_healths=agent_healths_dict,
+                interactions=interactions,
+                pricing=ecosystem.pricing,
+                monetary_rates=monetary_rates_dict,
+            )
+            step_agent_prices = [
+                step_price_result.prices.get(agent_names[i], agents[i].monetary_rate)
+                for i in range(n_agents)
+            ]
+
         agent_costs: list = []
         step_total_cost: float = 0.0
         health_sum: float = 0.0
 
         for i in range(n_agents):
-            cost: float = (
-                effective_damages[i] * agents[i].dependency_weight
-                * agents[i].monetary_rate
+            # v0.7: Use dynamic price if available, else static monetary_rate
+            rate: float = (
+                step_agent_prices[i] if has_pricing and step_agent_prices
+                else agents[i].monetary_rate
             )
+            cost: float = effective_damages[i] * agents[i].dependency_weight * rate
             agent_costs.append(cost)
             step_total_cost += cost
             health_sum += agents[i].dependency_weight * effective_damages[i]
@@ -238,6 +276,8 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             substrate_erosion=step_substrate_erosion,
             effective_k=step_effective_k,
             k_fraction=step_k_fraction,
+            agent_prices=step_agent_prices,
+            price_result=step_price_result,
         ))
 
         previous_total_cost = step_total_cost
@@ -245,6 +285,20 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     final_step: SimulationStep = steps[-1]
     total_externality: float = final_step.cumulative_cost
     total_revenue: float = final_step.private_revenue
+
+    # v0.6: Compute extraction NPV when discount config present
+    extraction_npv = None
+    if resource.discount is not None:
+        from gaia.discount import compute_extraction_npv
+        extraction_npv = compute_extraction_npv(
+            total_externality=total_externality,
+            discount=resource.discount,
+            carbon_profile=resource.carbon_profile,
+            units_extracted=units_to_extract,
+            substrate_ceiling=(
+                final_step.k_fraction if has_substrate else 1.0
+            ),
+        )
 
     return SimulationResult(
         ecosystem=ecosystem,
@@ -254,6 +308,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         total_externality_cost=total_externality,
         net_social_cost=total_revenue - total_externality,
         final_ecosystem_health=final_step.ecosystem_health,
+        extraction_npv=extraction_npv,
     )
 
 
@@ -470,6 +525,72 @@ def run_restoration(
         years_to_50pct = find_years_to_threshold(succession_curve, 0.50)
         years_to_90pct = find_years_to_threshold(succession_curve, 0.90)
 
+    # v0.6: NPV computations when discount config present
+    restoration_npv_result = None
+    carbon_breakeven_result = None
+    pa_v06_result = None
+
+    if ecosystem.resource.discount is not None:
+        from gaia.discount import (
+            compute_carbon_breakeven,
+            compute_prevention_advantage_v06,
+            compute_restoration_npv,
+        )
+        discount = ecosystem.resource.discount
+
+        # Total maintenance cost (total across all units)
+        maintenance_total_per_year: float = (
+            restoration_cost.annual_maintenance_per_unit * units_to_restore
+        )
+
+        # Carbon released during prior extraction
+        carbon_released: float = 0.0
+        if ecosystem.resource.carbon_profile is not None:
+            cp = ecosystem.resource.carbon_profile
+            carbon_released = units_to_restore * (
+                cp.stored_carbon_tonnes
+                + cp.soil_carbon_tonnes * cp.soil_release_fraction
+            )
+
+        restoration_npv_result = compute_restoration_npv(
+            restoration_cost_total=total_cost,
+            maintenance_cost_per_year=maintenance_total_per_year,
+            maintenance_years=restoration_cost.maintenance_years,
+            max_recovered_value=total_recovered,
+            discount=discount,
+            succession_curve=succession_curve,
+            carbon_profile=ecosystem.resource.carbon_profile,
+            units_restored=units_to_restore,
+            substrate_ceiling=substrate_ceiling,
+            carbon_released=carbon_released,
+        )
+
+        carbon_breakeven_result = compute_carbon_breakeven(
+            restoration_cost_total=total_cost,
+            maintenance_cost_per_year=maintenance_total_per_year,
+            maintenance_years=restoration_cost.maintenance_years,
+            discount=discount,
+            succession_curve=succession_curve,
+            carbon_profile=ecosystem.resource.carbon_profile,
+            units_restored=units_to_restore,
+            substrate_ceiling=substrate_ceiling,
+        )
+
+        pa_v06_result = compute_prevention_advantage_v06(
+            foregone_revenue=foregone_revenue,
+            restoration_cost_total=total_cost,
+            maintenance_cost_per_year=maintenance_total_per_year,
+            maintenance_years=restoration_cost.maintenance_years,
+            discount=discount,
+            max_recovered_value=total_recovered,
+            succession_curve=succession_curve,
+            carbon_profile=ecosystem.resource.carbon_profile,
+            units=units_to_restore,
+            substrate_ceiling=substrate_ceiling,
+            carbon_released=carbon_released,
+            pa_simple=prevention_advantage,
+        )
+
     return RestorationResult(
         ecosystem=ecosystem,
         restoration_cost=restoration_cost,
@@ -488,4 +609,7 @@ def run_restoration(
         substrate_ceiling=substrate_ceiling,
         substrate_recovery_years=substrate_recovery_yrs,
         prevention_advantage_with_substrate=prevention_advantage_with_substrate,
+        restoration_npv=restoration_npv_result,
+        carbon_breakeven=carbon_breakeven_result,
+        prevention_advantage_v06=pa_v06_result,
     )

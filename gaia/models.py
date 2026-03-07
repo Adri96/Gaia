@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Core data models.
+Gaia v0.7 — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
@@ -13,10 +13,15 @@ v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep
                 SimulationStep + resilience fields; RestorationResult + maturation
 v0.5 additions: SubstrateProfile, SubstrateState; Resource + substrate;
                 SimulationStep + substrate fields; RestorationResult + substrate ceiling
+v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven,
+                PreventionAdvantageV06; Resource + discount;
+                SimulationStep + discount fields; RestorationResult + NPV
+v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
+                Ecosystem + pricing; SimulationStep + price fields
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple, Union
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
 DamageFunc = Callable[[float], float]
@@ -101,6 +106,259 @@ class SubstrateState:
     pristine_sediment_stability: Optional[float] = None
     capacity_fraction: float = 1.0
     years_to_recover: float = 0.0
+
+
+# ── v0.6: Discount & NPV models ────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class DiscountConfig:
+    """Configuration for time-value-of-money calculations.
+
+    The discount rate follows the Ramsey formula: r = delta + eta * g.
+    All three Ramsey components are stored for transparency,
+    though only the resulting rate(s) are used in calculations.
+
+    Attributes:
+        delta: Pure rate of time preference (0.5% Drupp et al. median).
+        eta: Elasticity of marginal utility of consumption (1.35 Drupp et al. mean).
+        g: Per-capita consumption growth rate (1.3%).
+        rate_schedule: Effective discount rate — either a single float (constant)
+            or a list of (year_threshold, rate) tuples (declining schedule).
+            If None, computed from Ramsey formula on init.
+        scarcity_rate: Annual relative price change for ecosystem services (2%/yr).
+        horizon_years: NPV analysis horizon in years (default 100).
+        carbon_price_current: Current carbon price in euros/tonne CO2.
+        carbon_price_growth: Annual real growth rate of carbon price.
+    """
+
+    delta: float = 0.005
+    eta: float = 1.35
+    g: float = 0.013
+    rate_schedule: Union[float, list] = None  # type: ignore[assignment]
+    scarcity_rate: float = 0.02
+    horizon_years: int = 100
+    carbon_price_current: float = 80.0
+    carbon_price_growth: float = 0.03
+
+    def __post_init__(self) -> None:
+        if self.rate_schedule is None:
+            object.__setattr__(self, 'rate_schedule', self.delta + self.eta * self.g)
+
+    def rate_at_year(self, year: int) -> float:
+        """Return the discount rate applicable at a given year."""
+        if isinstance(self.rate_schedule, (int, float)):
+            return float(self.rate_schedule)
+        # Declining schedule: list of (threshold, rate) tuples
+        for threshold, rate in reversed(self.rate_schedule):
+            if year >= threshold:
+                return rate
+        return self.rate_schedule[0][1]
+
+    def discount_factor(self, year: int) -> float:
+        """Cumulative discount factor for a given year.
+
+        For constant rates: 1 / (1 + r)^t
+        For declining schedules: product of annual factors.
+        """
+        if isinstance(self.rate_schedule, (int, float)):
+            return 1.0 / (1.0 + float(self.rate_schedule)) ** year
+        # For declining schedules, compound year by year
+        factor: float = 1.0
+        for t in range(1, year + 1):
+            factor /= (1.0 + self.rate_at_year(t))
+        return factor
+
+    def carbon_price_at_year(self, year: int) -> float:
+        """Carbon price in year t, growing at carbon_price_growth rate."""
+        return self.carbon_price_current * (1.0 + self.carbon_price_growth) ** year
+
+    def scarcity_factor(self, year: int) -> float:
+        """Scarcity uplift multiplier for ecosystem services at year t."""
+        return (1.0 + self.scarcity_rate) ** year
+
+
+@dataclass(frozen=True)
+class ExtractionNPV:
+    """NPV of extraction externalities.
+
+    Attributes:
+        direct: NPV of direct ecosystem service loss.
+        carbon_release: NPV of carbon released at extraction.
+        carbon_foregone: NPV of future absorption capacity foregone.
+        substrate_damage: NPV of permanent substrate capacity loss.
+        total: Sum of all components.
+        horizon: Analysis horizon in years.
+    """
+
+    direct: float
+    carbon_release: float
+    carbon_foregone: float
+    substrate_damage: float
+    total: float
+    horizon: int
+
+
+@dataclass(frozen=True)
+class RestorationNPV:
+    """NPV of restoration as an investment.
+
+    Attributes:
+        cost: NPV of total restoration expenditure.
+        service_benefits: NPV of recovered ecosystem services.
+        carbon_benefits: NPV of carbon absorption at rising prices.
+        total_benefits: service_benefits + carbon_benefits.
+        net_present_value: total_benefits - cost.
+        roi: total_benefits / cost.
+        carbon_payback_years: Undiscounted years to recapture released carbon.
+        horizon: Analysis horizon in years.
+    """
+
+    cost: float
+    service_benefits: float
+    carbon_benefits: float
+    total_benefits: float
+    net_present_value: float
+    roi: float
+    carbon_payback_years: Optional[int]
+    horizon: int
+
+
+@dataclass(frozen=True)
+class CarbonBreakeven:
+    """Carbon credit breakeven analysis.
+
+    At breakeven_price, restoration NPV = 0 from carbon credits alone.
+
+    Attributes:
+        breakeven_price: Euro/tonne CO2 where restoration NPV = 0.
+        current_price: Current EU ETS price.
+        gap_to_current: breakeven_price - current_price.
+        profitable_at_current: True if breakeven <= current price.
+        projected_breakeven_year: Year when rising carbon prices reach breakeven.
+        npv_cost: NPV of restoration costs.
+        npv_absorption_per_euro: Discounted absorption per euro/t price.
+    """
+
+    breakeven_price: float
+    current_price: float
+    gap_to_current: float
+    profitable_at_current: bool
+    projected_breakeven_year: Optional[int]
+    npv_cost: float
+    npv_absorption_per_euro: float
+
+
+@dataclass(frozen=True)
+class PreventionAdvantageV06:
+    """Enhanced prevention advantage with full NPV accounting.
+
+    Attributes:
+        pa_simple: v0.2-style undiscounted PA.
+        pa_with_carbon: Including carbon externality NPV.
+        pa_with_substrate: Including permanent substrate loss NPV.
+        pa_full: All-inclusive NPV-based PA.
+        npv_prevention_cost: Foregone extraction revenue.
+        npv_restoration_total: Full cost of restore-after-extract.
+    """
+
+    pa_simple: float
+    pa_with_carbon: float
+    pa_with_substrate: float
+    pa_full: float
+    npv_prevention_cost: float
+    npv_restoration_total: float
+
+
+# ── v0.7: Endogenous Pricing models ───────────────────────────────────────────
+
+
+@dataclass
+class ScarcityFunction:
+    """Maps agent health to a scarcity price multiplier.
+
+    Two variants matching the substrate capacity function pattern:
+    - smooth: scarcity = min(max_multiplier, 1.0 / health^alpha)
+    - threshold: 1.0 above threshold, quadratic rise below
+
+    Attributes:
+        function_type: "smooth" or "threshold".
+        alpha: Elasticity parameter (smooth), or pre-threshold multiplier.
+        threshold: Health threshold below which price rises (threshold type).
+        max_multiplier: Cap to prevent infinity (default 50.0).
+        description: Human-readable description.
+    """
+
+    function_type: str
+    alpha: float = 1.0
+    threshold: float = 0.3
+    max_multiplier: float = 50.0
+    description: str = ""
+
+
+@dataclass
+class AnchorPoint:
+    """External market price grounding the relative price system in absolute euros.
+
+    Attributes:
+        agent_name: Name of the agent this anchors.
+        anchor_value: Euro-value at pristine health (annual flow value).
+        source: Data source description.
+        confidence: "high", "medium", or "low".
+        description: Calculation explanation.
+    """
+
+    agent_name: str
+    anchor_value: float
+    source: str
+    confidence: str
+    description: str
+
+
+@dataclass
+class PricingConfig:
+    """Top-level configuration for endogenous pricing.
+
+    Attributes:
+        anchors: At least one AnchorPoint required.
+        scarcity_functions: Per-agent scarcity functions, keyed by agent name.
+        default_scarcity: Fallback for agents without explicit scarcity function.
+        convergence_tolerance: For iterative solver (default 1e-6).
+        max_iterations: Cap on iterative solve (default 100).
+        fallback_to_static: If True, use monetary_rate when solve fails.
+    """
+
+    anchors: list              # List[AnchorPoint]
+    scarcity_functions: dict   # Dict[str, ScarcityFunction]
+    default_scarcity: ScarcityFunction = field(
+        default_factory=lambda: ScarcityFunction("smooth", 1.0, 0.3, 50.0)
+    )
+    convergence_tolerance: float = 1e-6
+    max_iterations: int = 100
+    fallback_to_static: bool = True
+
+
+@dataclass
+class PriceResult:
+    """Output of the price solver at a given ecosystem state.
+
+    Attributes:
+        prices: Computed price per agent (Dict[str, float]).
+        scarcity_multipliers: scarcity(health) per agent.
+        demand_multipliers: Network centrality contribution per agent.
+        anchor_contributions: How much of price comes from anchor vs network.
+        spectral_radius: Spectral radius of S*W — must be < 1.0 for convergence.
+        converged: Whether the solve converged.
+        iterations: Number of iterations (if iterative solver used).
+    """
+
+    prices: dict              # Dict[str, float]
+    scarcity_multipliers: dict
+    demand_multipliers: dict
+    anchor_contributions: dict
+    spectral_radius: float
+    converged: bool
+    iterations: int = 0
 
 
 # ── v0.4: Succession, Carbon & Resilience models ──────────────────────────────
@@ -251,6 +509,9 @@ class Resource:
     # v0.5: Physical substrate (None → fixed K, backward compatible)
     substrate: Optional[SubstrateProfile] = None
 
+    # v0.6: Discount configuration (None → no NPV, backward compatible)
+    discount: Optional[DiscountConfig] = None
+
     @property
     def safe_threshold_units(self) -> int:
         """Absolute number of units that can be extracted at the safe threshold."""
@@ -331,6 +592,9 @@ class Ecosystem:
     # v0.3: Agent interaction edges (empty list preserves v0.1/v0.2 behavior)
     interactions: list = field(default_factory=list)  # List[InteractionEdge]
 
+    # v0.7: Endogenous pricing (None → use static monetary_rate, backward compatible)
+    pricing: Optional[PricingConfig] = None
+
 
 @dataclass
 class SimulationStep:
@@ -374,6 +638,15 @@ class SimulationStep:
     effective_k: int = 0                      # Current effective carrying capacity
     k_fraction: float = 1.0                   # effective_k / total_units
 
+    # v0.6: Discount fields (defaults preserve v0.5 behavior)
+    discount_factor_at_step: float = 1.0      # Discount factor at this step's time
+    npv_externality: float = 0.0              # Externality * discount_factor
+    carbon_price_used: float = 0.0            # Carbon price at this step's year
+
+    # v0.7: Endogenous pricing fields (defaults preserve v0.6 behavior)
+    agent_prices: list = field(default_factory=list)  # Per-agent dynamic price
+    price_result: Optional[PriceResult] = None        # Full price decomposition
+
 
 @dataclass
 class SimulationResult:
@@ -398,6 +671,9 @@ class SimulationResult:
     total_externality_cost: float
     net_social_cost: float
     final_ecosystem_health: float
+
+    # v0.6: NPV of extraction externalities (None → no NPV, backward compatible)
+    extraction_npv: Optional[ExtractionNPV] = None
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────
@@ -524,3 +800,9 @@ class RestorationResult:
     substrate_recovery_years: float = 0.0       # Years for substrate to return to pristine
     substrate_recovery_cost: float = 0.0        # Cost of substrate stabilization
     prevention_advantage_with_substrate: float = 0.0  # PA including permanent capacity loss
+
+    # v0.6: NPV and carbon breakeven (defaults preserve v0.5 behavior)
+    extraction_npv: Optional[ExtractionNPV] = None
+    restoration_npv: Optional[RestorationNPV] = None
+    carbon_breakeven: Optional[CarbonBreakeven] = None
+    prevention_advantage_v06: Optional[PreventionAdvantageV06] = None

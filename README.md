@@ -123,7 +123,9 @@ Gaia/
 │   ├── __init__.py
 │   ├── models.py              # Data model: Resource, Agent, Ecosystem, SimulationResult, RestorationResult,
 │   │                          #   SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep (v0.4),
-│   │                          #   SubstrateProfile, SubstrateState (v0.5)
+│   │                          #   SubstrateProfile, SubstrateState (v0.5),
+│   │                          #   DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven (v0.6),
+│   │                          #   ScarcityFunction, AnchorPoint, PricingConfig, PriceResult (v0.7)
 │   ├── damage.py              # Damage function library (logistic, exponential, piecewise)
 │   ├── recovery.py            # Recovery function library (logistic_recovery, linear_recovery)
 │   ├── propagation.py         # Trophic cascade amplification and interaction propagation (v0.3)
@@ -131,6 +133,8 @@ Gaia/
 │   ├── carbon.py              # Double carbon externality: release + foregone absorption (v0.4)
 │   ├── resilience.py          # Resilience zones, confidence interpolation, confidence bands (v0.4)
 │   ├── substrate.py           # Physical substrate: capacity functions, degradation, recovery (v0.5)
+│   ├── discount.py            # NPV computation, Ramsey discounting, preconfigured profiles (v0.6)
+│   ├── pricing.py             # Endogenous pricing: Leontief solver, scarcity functions, matrix math (v0.7)
 │   ├── validation.py          # Input validation with scientific constraints
 │   ├── simulation.py          # Simulation engine (extraction + restoration modes)
 │   ├── report.py              # Plain-text report formatter (externality + restoration reports)
@@ -155,13 +159,16 @@ Gaia/
 │   ├── test_resilience.py     # Resilience zone computation, confidence interpolation (v0.4)
 │   ├── test_maturation.py     # End-to-end integration tests for v0.4 maturation + resilience
 │   ├── test_substrate.py      # Substrate module unit tests: capacity functions, degradation, recovery (v0.5)
-│   └── test_substrate_cases.py # Substrate integration tests per case, backward compatibility (v0.5)
+│   ├── test_substrate_cases.py # Substrate integration tests per case, backward compatibility (v0.5)
+│   ├── test_discount.py       # NPV, discounting, carbon breakeven, prevention advantage v0.6 (v0.6)
+│   └── test_pricing.py        # Endogenous pricing: scarcity, matrix math, solver, integration (v0.7)
 ├── PROJECT_DEFINITION.md      # Scientific foundations, architecture vision, and roadmap
 ├── V01_SPEC.md                # Detailed v0.1 specification
 ├── V03_SPEC.md                # Detailed v0.3 specification
 ├── V04_SPEC.md                # Detailed v0.4 specification
 ├── V05_SPEC.md                # Detailed v0.5 specification
 ├── V06_SPEC.md                # Detailed v0.6 specification (NPV, discounting, carbon breakeven)
+├── V07_SPEC.md                # Detailed v0.7 specification (endogenous pricing)
 └── V07_RATIONALE.md           # v0.7 design rationale (endogenous pricing)
 ```
 
@@ -169,7 +176,7 @@ Gaia/
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState`, v0.6: `DiscountConfig`, `ExtractionNPV`, `RestorationNPV`, `CarbonBreakeven`, `PreventionAdvantageV06`, v0.7: `ScarcityFunction`, `AnchorPoint`, `PricingConfig`, `PriceResult` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
 | `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |
@@ -177,11 +184,13 @@ Gaia/
 | `gaia/carbon.py` | Double carbon externality: release + foregone absorption, monetized cost, payback period (v0.4) |
 | `gaia/resilience.py` | Resilience zone computation (green/yellow/red), confidence interpolation, confidence bands (v0.4) |
 | `gaia/substrate.py` | Physical substrate computation: capacity functions (linear/threshold/logistic), degradation, recovery, recovery year estimation (v0.5) |
-| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging and substrate degradation; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with maturation pass and substrate ceiling |
-| `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling |
-| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil) |
-| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical) |
-| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte) |
+| `gaia/discount.py` | NPV computation engine (v0.6): Ramsey-based discounting, scarcity uplift, carbon price trajectories, 4 preconfigured profiles (Market/Central/Environmental/Green Book), `compute_extraction_npv()`, `compute_restoration_npv()`, `compute_carbon_breakeven()`, `compute_prevention_advantage_v06()` |
+| `gaia/pricing.py` | Endogenous pricing engine (v0.7): Leontief-Hannon value system V = (I-SW)⁻¹A, scarcity functions (smooth/threshold), pure Python matrix math (no numpy), Gaussian elimination with partial pivoting, spectral radius validation via power iteration, `solve_prices()` with fallback to static rates |
+| `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging, substrate degradation, NPV computation, and dynamic pricing; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with maturation pass, substrate ceiling, restoration NPV, and carbon breakeven |
+| `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact, NPV analysis, price decomposition; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling, investment analysis, carbon breakeven, prevention advantage v0.6 |
+| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%, 2% scarcity), 1 price anchor (Carbon €80k) |
+| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical), central discount (2.3%, 2.5% scarcity), 2 price anchors (Carbon €136k, Watershed €250k) |
+| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount (2.3%→1.4%, 3% scarcity, 200yr), 3 price anchors (Blue Carbon €136k, Tourism €500k, Fishing €75k) |
 
 ---
 
@@ -475,7 +484,7 @@ pytest tests/test_forest.py -v
 pytest -k "monotonicity" -v
 ```
 
-The test suite has **433 tests** covering:
+The test suite has **510 tests** covering:
 
 - **Mathematical invariants** — all damage functions are tested for boundary conditions (`f(0)≈0`, `f(1)≈1`), monotonicity, output range, non-linearity at the threshold, and convexity in the post-threshold zone. These run across 3 function types × 5 threshold values.
 - **Recovery invariants** — all recovery functions are tested for the same boundary conditions plus the entropy asymmetry invariant: recovery must be slower than equivalent damage at every point.
@@ -488,7 +497,9 @@ The test suite has **433 tests** covering:
 - **Maturation integration (v0.4)** — end-to-end tests through `run_extraction` and `run_restoration`: resilience tagging in extraction, maturation timeline in restoration, backward compatibility when v0.4 features are not configured.
 - **Substrate module (v0.5)** — capacity function correctness (linear, threshold, logistic), monotonicity, degradation mechanics (nonlinear erosion interpolation, alpha exponent, can't go below zero), recovery mechanics (can't exceed pristine), physical consistency of erosion/formation rates, mixed depletion-recovery scenarios, edge cases.
 - **Substrate integration (v0.5)** — backward compatibility (no substrate = v0.4 behavior), pristine substrate = full K, per-case profile verification (Oak Valley, Costa Brava, Posidonia), substrate ceiling binding, prevention advantage with substrate >= without, report output verification.
-- **Validation** — invalid inputs are rejected with clear error messages (including v0.4 validators for SuccessionCurve, CarbonProfile, ResilienceConfig, and v0.5 validator for SubstrateProfile).
+- **Discount & NPV (v0.6)** — discount mechanics (constant/declining rates, Ramsey consistency, carbon price trajectory, scarcity factor), preconfigured profiles (Market/Central/Environmental/Green Book), extraction NPV (components, with/without carbon, substrate, total), restoration NPV (positive ROI, cost, succession, carbon payback), carbon breakeven (monotonicity, zero absorption = infinity), prevention advantage v0.6 (layered PA ordering), edge cases (zero horizon, zero/high rates, zero externality).
+- **Endogenous pricing (v0.7)** — scarcity functions (smooth/threshold, alpha effect, capping, monotonicity), matrix construction (W transposition, anchor vector, S diagonal), solver (trivial/two-agent, positive prices, anchor reproduction, spectral radius, divergence fallback, determinism), price dynamics (degradation increases prices, keystone highest, propagation), simulation integration (backward compat, pricing increases cost, price vector in steps), per-case integration tests.
+- **Validation** — invalid inputs are rejected with clear error messages (including v0.4 validators for SuccessionCurve, CarbonProfile, ResilienceConfig, v0.5 validator for SubstrateProfile, v0.6 validator for DiscountConfig, and v0.7 validators for ScarcityFunction, AnchorPoint, PricingConfig).
 
 ---
 
@@ -607,7 +618,7 @@ All three satisfy these invariants:
 
 ---
 
-## Current Status (v0.5)
+## Current Status (v0.7)
 
 **What works:**
 - Damage function library: logistic, exponential, piecewise — all validated against 6 scientific invariants
@@ -625,21 +636,25 @@ All three satisfy these invariants:
 - **v0.4: Maturation timeline** — year-by-year service recovery, carbon absorption, maturation gap (lost services during succession)
 - **v0.5: Physical substrate & derived carrying capacity** — K is no longer a fixed input but an emergent property of the physical substrate (soil depth, matte integrity). Extraction degrades substrate, which reduces K, creating a degradation spiral. Restoration is capped at the substrate ceiling. Three capacity functions (linear, threshold, logistic) encode distinct ecological dynamics.
 - **v0.5: Substrate impact reports** — extraction reports show substrate degradation trajectory (pristine K → current K, capacity lost, years to recover); restoration reports show substrate ceiling and enhanced prevention advantage including permanent capacity loss
+- **v0.6: NPV & Ramsey-based discounting** — transforms externality outputs into discounted investment cases using the Ramsey formula (r = δ + η × g). Four preconfigured profiles spanning the Stern–Nordhaus spectrum: Market (4.1%), Central (2.3%), Environmental (1.4%), and UK Green Book (declining 3.5%→2.5%). Includes scarcity uplift on ecosystem service valuations, rising carbon price trajectories, and NPV-adjusted prevention advantage with full accounting (direct + carbon + substrate).
+- **v0.6: Carbon credit breakeven** — computes the carbon price at which restoration becomes privately profitable purely from carbon credit revenue. Reports breakeven price, gap to current EU ETS, and projected breakeven year at configured carbon price growth rate.
+- **v0.6: NPV-adjusted prevention advantage** — layered PA computation: simple (v0.2), with carbon externality, with substrate loss, and full NPV-inclusive. Scarcity uplift and rising carbon prices cause PA to increase over time, making the case for prevention stronger the further into the future you look.
+- **v0.7: Endogenous pricing** — replaces static `monetary_rate` per agent with prices derived from ecosystem structure using a Leontief-Hannon input-output model: V = (I − S·W)⁻¹ · A. Prices emerge from scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices). Keystone species become the most expensive agents purely from network centrality, without manual weighting.
+- **v0.7: Dynamic per-step pricing** — prices are recomputed at each simulation step as the ecosystem degrades. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce. This matches economic reality: we don't value ecosystem services until they're degraded.
+- **v0.7: Price decomposition** — reports show per-agent price breakdown: scarcity multiplier × demand multiplier × anchor contribution, so the user can see WHY each service is priced the way it is.
 - Three ready-to-run cases, both extraction and restoration modes:
-  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil); prevention advantage **2.50×**
-  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical minimum); prevention advantage **6.08×**
-  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), inverted economics; prevention advantage **81.00×**
-- 433 tests, all passing
+  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%), 1 price anchor; prevention advantage **2.50×**
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical minimum), 2 price anchors; prevention advantage **6.08×**
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount, 3 price anchors, inverted economics; prevention advantage **81.00×**
+- 510 tests, all passing
 
-**What's coming (v0.6):**
-- NPV / time-horizon analysis with Ramsey-based discounting (configurable: Stern, Nordhaus, Drupp et al. consensus, UK Green Book declining schedule)
-- Scarcity uplift on ecosystem service valuations (relative price effect: ecosystem services become more valuable as they become scarcer)
-- Carbon credit breakeven analysis: at what carbon price does restoration become privately profitable?
-- Rising carbon price trajectories anchored to EU ETS market data and consensus 2030 forecasts
-- NPV-adjusted prevention advantage with full accounting (direct costs + carbon externality + permanent substrate loss)
-- Discount rate sensitivity analysis across the Stern-Nordhaus spectrum
+**What's coming (v0.8):**
+- Cython-optimized simulation loop (drop-in replacement, same API) — critical now that v0.7 adds a matrix solve per simulation step
+- Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
+- Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty
+- Pluggable case template system — structured template for adding new ecosystems without writing Python
 
-See `V06_SPEC.md` for the full specification and `PROJECT_DEFINITION.md` for the roadmap.
+See `PROJECT_DEFINITION.md` for the full roadmap.
 
 ---
 

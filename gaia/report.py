@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Text report generation.
+Gaia v0.7 — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
@@ -12,6 +12,11 @@ v0.4: Resilience Assessment, Carbon Accounting sections in extraction report;
       Maturation Timeline, Carbon Recovery sections in restoration report.
 v0.5: Substrate Impact Assessment in extraction report;
       Substrate Restoration Ceiling in restoration report.
+v0.6: NPV Analysis section in extraction report;
+      Investment Analysis (NPV), Carbon Credit Breakeven,
+      Prevention Advantage V06 sections in restoration report.
+v0.7: Price Decomposition section in extraction report
+      (endogenous pricing with scarcity and demand multipliers).
 """
 
 from gaia.carbon import compute_carbon_cost, compute_carbon_payback_period
@@ -21,8 +26,8 @@ from gaia.substrate import compute_substrate_recovery_years, create_substrate_st
 
 # Report width (characters)
 _WIDTH: int = 63
-_DOUBLE_LINE: str = "═" * _WIDTH
-_SINGLE_LINE: str = "─" * _WIDTH
+_DOUBLE_LINE: str = "=" * _WIDTH
+_SINGLE_LINE: str = "-" * _WIDTH
 
 
 def format_report(result: SimulationResult) -> str:
@@ -35,6 +40,10 @@ def format_report(result: SimulationResult) -> str:
         - Per-agent externality costs with descriptions
         - Total externality cost
         - Net social cost (positive = society gained, negative = society lost)
+        - v0.4: Resilience Assessment, Carbon Accounting
+        - v0.5: Substrate Impact Assessment
+        - v0.6: NPV Analysis (100-year horizon with Ramsey discounting)
+        - v0.7: Price Decomposition (endogenous pricing)
 
     Args:
         result: A completed SimulationResult from run_extraction().
@@ -334,6 +343,108 @@ def format_report(result: SimulationResult) -> str:
                     f"  {'Years to pristine substrate:':<40} {'N/A':>10}"
                 )
 
+    # v0.6: NPV Analysis
+    if result.extraction_npv is not None:
+        npv = result.extraction_npv
+        discount = resource.discount
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 NPV Analysis ({npv.horizon}-year horizon"
+        )
+        if discount is not None:
+            ramsey_rate: float = discount.delta + discount.eta * discount.g
+            lines.append(
+                f"     {ramsey_rate:.1%} discount rate) \u2500"
+                + "\u2500" * 33
+            )
+            lines.append("")
+            lines.append(
+                f"  Ramsey components: "
+                f"\u03b4={discount.delta:.1%}, "
+                f"\u03b7={discount.eta:.2f}, "
+                f"g={discount.g:.1%}"
+            )
+            lines.append(
+                f"  Scarcity uplift: {discount.scarcity_rate:.1%}/yr "
+                f"on ecosystem services"
+            )
+            lines.append(
+                f"  Carbon price: \u20ac{discount.carbon_price_current:,.0f}/t "
+                f"growing at {discount.carbon_price_growth:.1%}/yr"
+            )
+        else:
+            lines.append(f"     ) \u2500" + "\u2500" * 49)
+
+        lines.append("")
+        lines.append(f"  Externality NPV breakdown:")
+        lines.append(
+            f"    {'Direct ecosystem services:':<36} "
+            f"\u20ac{npv.direct:>14,.0f}"
+        )
+        lines.append(
+            f"    {'Carbon released:':<36} "
+            f"\u20ac{npv.carbon_release:>14,.0f}"
+        )
+        lines.append(
+            f"    {'Foregone absorption:':<36} "
+            f"\u20ac{npv.carbon_foregone:>14,.0f}"
+        )
+        lines.append(
+            f"    {'Substrate damage (permanent):':<36} "
+            f"\u20ac{npv.substrate_damage:>14,.0f}"
+        )
+        lines.append(f"    {'':=<36} {'':=>15}")
+        lines.append(
+            f"    {'Total extraction NPV:':<36} "
+            f"\u20ac{npv.total:>14,.0f}"
+        )
+
+        # Undiscounted comparison
+        undiscounted_total: float = result.total_externality_cost
+        if undiscounted_total > 0.0:
+            discount_effect: float = (npv.total - undiscounted_total) / undiscounted_total
+            lines.append("")
+            lines.append(
+                f"  {'For comparison (undiscounted):':<40} "
+                f"\u20ac{undiscounted_total:>12,.0f}"
+            )
+            lines.append(
+                f"  {'Discount effect:':<40} "
+                f"{discount_effect:>12.1%}"
+            )
+
+    # v0.7: Price Decomposition
+    if result.steps:
+        final_step = result.steps[-1]
+        if final_step.price_result is not None:
+            pr = final_step.price_result
+            lines.append("")
+            lines.append(
+                f"  \u2500\u2500 Price Decomposition (v0.7 endogenous) \u2500"
+                + "\u2500" * 20
+            )
+            lines.append(
+                f"  Solver: {'converged' if pr.converged else 'FAILED'}"
+                f" in {pr.iterations} iterations"
+                f"  (spectral radius {pr.spectral_radius:.4f})"
+            )
+            lines.append("")
+            lines.append(
+                f"  {'Agent':<24} {'Price':>12} "
+                f"{'Scarcity':>10} {'Demand':>10}"
+            )
+            lines.append(f"  {_SINGLE_LINE}")
+            for agent_name in pr.prices:
+                price_val: float = pr.prices[agent_name]
+                scarcity_m: float = pr.scarcity_multipliers.get(agent_name, 1.0)
+                demand_m: float = pr.demand_multipliers.get(agent_name, 1.0)
+                lines.append(
+                    f"  {agent_name:<24} "
+                    f"\u20ac{price_val:>10,.0f} "
+                    f"{scarcity_m:>10.2f}x "
+                    f"{demand_m:>10.2f}x"
+                )
+
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
@@ -350,6 +461,10 @@ def format_restoration_report(result: RestorationResult) -> str:
         - Total recovered ecosystem value
         - Net restoration value (recovered value minus restoration cost)
         - Prevention advantage (how much cheaper prevention is vs destroy-then-restore)
+        - v0.4: Maturation Timeline, Carbon Recovery
+        - v0.5: Substrate Restoration Ceiling
+        - v0.6: Investment Analysis (NPV), Carbon Credit Breakeven,
+                Prevention Advantage V06
 
     Args:
         result: A completed RestorationResult from run_restoration().
@@ -538,6 +653,118 @@ def format_restoration_report(result: RestorationResult) -> str:
                 f"  {'Including substrate loss:':<40} "
                 f"{result.prevention_advantage_with_substrate:>10.2f}\u00d7"
             )
+
+    # v0.6: Investment Analysis (NPV)
+    if result.restoration_npv is not None:
+        rnpv = result.restoration_npv
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Investment Analysis (NPV, {rnpv.horizon}-year) \u2500"
+            + "\u2500" * 24
+        )
+        lines.append(
+            f"  {'Restoration cost (NPV):':<40} "
+            f"\u20ac{rnpv.cost:>14,.0f}"
+        )
+        lines.append(
+            f"  {'Service recovery (NPV):':<40} "
+            f"\u20ac{rnpv.service_benefits:>14,.0f}"
+        )
+        lines.append(
+            f"  {'Carbon absorption (NPV):':<40} "
+            f"\u20ac{rnpv.carbon_benefits:>14,.0f}"
+        )
+        lines.append(
+            f"  {'Total benefits (NPV):':<40} "
+            f"\u20ac{rnpv.total_benefits:>14,.0f}"
+        )
+        lines.append(f"  {_SINGLE_LINE}")
+        lines.append(
+            f"  {'Net Present Value:':<40} "
+            f"\u20ac{rnpv.net_present_value:>14,.0f}"
+        )
+        lines.append(
+            f"  {'ROI (benefits / cost):':<40} "
+            f"{rnpv.roi:>14.2f}x"
+        )
+        if rnpv.carbon_payback_years is not None:
+            lines.append(
+                f"  {'Carbon payback:':<40} "
+                f"{rnpv.carbon_payback_years:>14} years"
+            )
+        else:
+            lines.append(
+                f"  {'Carbon payback:':<40} "
+                f"{'N/A':>14}"
+            )
+
+    # v0.6: Carbon Credit Breakeven
+    if result.carbon_breakeven is not None:
+        cb = result.carbon_breakeven
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Carbon Credit Breakeven \u2500" + "\u2500" * 36
+        )
+        lines.append(
+            f"  {'Breakeven price:':<40} "
+            f"\u20ac{cb.breakeven_price:>12,.2f}/t CO\u2082"
+        )
+        lines.append(
+            f"  {'Current EU ETS price:':<40} "
+            f"\u20ac{cb.current_price:>12,.2f}/t CO\u2082"
+        )
+        lines.append(
+            f"  {'Gap to current:':<40} "
+            f"\u20ac{cb.gap_to_current:>12,.2f}/t CO\u2082"
+        )
+        profitable_label: str = "Yes" if cb.profitable_at_current else "No"
+        lines.append(
+            f"  {'Profitable at current price:':<40} "
+            f"{profitable_label:>14}"
+        )
+        if cb.projected_breakeven_year is not None:
+            lines.append(
+                f"  {'Projected breakeven year:':<40} "
+                f"{cb.projected_breakeven_year:>14}"
+            )
+        else:
+            lines.append(
+                f"  {'Projected breakeven year:':<40} "
+                f"{'N/A':>14}"
+            )
+
+    # v0.6: Prevention Advantage V06
+    if result.prevention_advantage_v06 is not None:
+        pa = result.prevention_advantage_v06
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Prevention Advantage (NPV-based) \u2500" + "\u2500" * 26
+        )
+        lines.append(
+            f"  {'PA simple (undiscounted):':<40} "
+            f"{pa.pa_simple:>14.2f}x"
+        )
+        lines.append(
+            f"  {'PA with carbon:':<40} "
+            f"{pa.pa_with_carbon:>14.2f}x"
+        )
+        lines.append(
+            f"  {'PA with substrate:':<40} "
+            f"{pa.pa_with_substrate:>14.2f}x"
+        )
+        lines.append(
+            f"  {'PA full (all-inclusive NPV):':<40} "
+            f"{pa.pa_full:>14.2f}x"
+        )
+        lines.append("")
+        lines.append(
+            f"  {'NPV prevention cost (revenue):':<40} "
+            f"\u20ac{pa.npv_prevention_cost:>14,.0f}"
+        )
+        lines.append(
+            f"  {'NPV restoration total:':<40} "
+            f"\u20ac{pa.npv_restoration_total:>14,.0f}"
+        )
 
     lines.append(f"  {_DOUBLE_LINE}")
 

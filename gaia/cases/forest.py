@@ -40,12 +40,16 @@ import sys
 from gaia.damage import logistic_damage
 from gaia.models import (
     Agent,
+    AnchorPoint,
     CarbonProfile,
+    DiscountConfig,
     Ecosystem,
     InteractionEdge,
+    PricingConfig,
     ResilienceConfig,
     RestorationCost,
     Resource,
+    ScarcityFunction,
     SubstrateProfile,
     SuccessionCurve,
 )
@@ -99,11 +103,43 @@ _OAK_VALLEY_SUBSTRATE = SubstrateProfile(
     confidence="medium",
 )
 
+# v0.6: Oak Valley discount configuration
+# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023
+_OAK_VALLEY_DISCOUNT = DiscountConfig(
+    delta=0.005, eta=1.35, g=0.013,
+    rate_schedule=0.023,
+    scarcity_rate=0.02,
+    carbon_price_current=80.0,
+    carbon_price_growth=0.03,
+    horizon_years=100,
+)
+
+# v0.7: Oak Valley pricing configuration
+_OAK_VALLEY_PRICING = PricingConfig(
+    anchors=[
+        AnchorPoint(
+            agent_name="General Biosphere",
+            anchor_value=80000.0,
+            source="EU ETS carbon price × estimated 1,000 t CO₂/yr sequestration",
+            confidence="medium",
+            description="Carbon: €80/t × 1,000 t CO₂/yr",
+        ),
+    ],
+    scarcity_functions={
+        "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Animal Populations": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Vegetation & Flora": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "General Biosphere": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+    },
+    default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
+)
+
 
 def build_forest_ecosystem(
     total_trees: int = 10_000,
     safe_threshold_ratio: float = 0.3,
     tree_value: float = 100.0,
+    with_pricing: bool = False,
 ) -> Ecosystem:
     """
     Build the Oak Valley Forest ecosystem with the four standard agents.
@@ -112,6 +148,8 @@ def build_forest_ecosystem(
         total_trees: Total number of trees in the forest. [PLACEHOLDER]
         safe_threshold_ratio: Fraction that can be safely extracted. [PLACEHOLDER]
         tree_value: Revenue per tree in euros. [PLACEHOLDER]
+        with_pricing: If True, enable v0.7 endogenous pricing. Default False
+            for backward compatibility with v0.1-v0.6 tests.
 
     Returns:
         A fully configured Ecosystem ready for simulation.
@@ -124,6 +162,7 @@ def build_forest_ecosystem(
         carbon_profile=_FOREST_CARBON,
         resilience=_FOREST_RESILIENCE,
         substrate=_OAK_VALLEY_SUBSTRATE,
+        discount=_OAK_VALLEY_DISCOUNT,
     )
 
     # Logistic damage functions centered at the safe extraction threshold.
@@ -209,6 +248,7 @@ def build_forest_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        pricing=_OAK_VALLEY_PRICING if with_pricing else None,
     )
 
 

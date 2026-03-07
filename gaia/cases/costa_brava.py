@@ -79,12 +79,16 @@ import sys
 from gaia.damage import exponential_damage, logistic_damage
 from gaia.models import (
     Agent,
+    AnchorPoint,
     CarbonProfile,
+    DiscountConfig,
     Ecosystem,
     InteractionEdge,
+    PricingConfig,
     ResilienceConfig,
     RestorationCost,
     Resource,
+    ScarcityFunction,
     SubstrateProfile,
     SuccessionCurve,
 )
@@ -141,6 +145,51 @@ _HOLM_OAK_SUBSTRATE = SubstrateProfile(
     confidence="medium",
 )
 
+# v0.6: Costa Brava Holm Oak discount configuration
+# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023
+_COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
+    delta=0.005, eta=1.35, g=0.013,
+    rate_schedule=0.023,
+    scarcity_rate=0.025,  # Higher: Mediterranean holm oak more threatened
+    carbon_price_current=80.0,
+    carbon_price_growth=0.03,
+    horizon_years=100,
+)
+
+# v0.7: Costa Brava Holm Oak pricing configuration
+_COSTA_BRAVA_OAK_PRICING = PricingConfig(
+    anchors=[
+        AnchorPoint(
+            agent_name="Carbon & Climate",
+            anchor_value=136000.0,
+            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 1,000 ha",
+            confidence="high",
+            description="Carbon: €80/t × 1,700 t CO₂/yr",
+        ),
+        AnchorPoint(
+            agent_name="Watershed & Water Cycle",
+            anchor_value=250000.0,
+            source="Municipal water treatment cost avoided: ~€2.50/m³ × 100,000 m³/yr",
+            confidence="medium",
+            description="Watershed: €2.50/m³ × 100,000 m³/yr recharge",
+        ),
+    ],
+    scarcity_functions={
+        "Mycorrhizal Fungi": ScarcityFunction("smooth", alpha=2.0, max_multiplier=50.0, description="Non-substitutable; no artificial equivalent"),
+        "Soil Microbiome": ScarcityFunction("smooth", alpha=1.5, max_multiplier=50.0, description="Partially substitutable (fertilizers)"),
+        "Canopy Trees": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Understory & Matorral": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Pollinators & Insects": ScarcityFunction("smooth", alpha=2.0, max_multiplier=50.0, description="Hand pollination ~$5,000/ha/yr replacement cost"),
+        "Forest Birds": ScarcityFunction("smooth", alpha=0.8, max_multiplier=50.0),
+        "Forest Mammals": ScarcityFunction("smooth", alpha=0.8, max_multiplier=50.0),
+        "Raptors & Apex Predators": ScarcityFunction("smooth", alpha=0.5, max_multiplier=50.0),
+        "Watershed & Water Cycle": ScarcityFunction("threshold", threshold=0.4, max_multiplier=30.0, description="Water purification collapses below ~40% forest cover"),
+        "Carbon & Climate": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+    },
+    default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
+)
+
 # Shared steepness for all logistic agents.
 # 12.0 gives a clear S-curve with an observable knee at the threshold.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
@@ -151,6 +200,7 @@ def build_costa_brava_ecosystem(
     total_trees: int = 10_000,
     safe_threshold_ratio: float = 0.25,
     tree_value: float = 60.0,
+    with_pricing: bool = False,
 ) -> Ecosystem:
     """
     Build the Costa Brava Holm Oak Forest ecosystem with 11 agents.
@@ -179,6 +229,7 @@ def build_costa_brava_ecosystem(
         carbon_profile=_CB_CARBON,
         resilience=_CB_RESILIENCE,
         substrate=_HOLM_OAK_SUBSTRATE,
+        discount=_COSTA_BRAVA_OAK_DISCOUNT,
     )
 
     t = safe_threshold_ratio  # shorthand for threshold argument
@@ -353,6 +404,7 @@ def build_costa_brava_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        pricing=_COSTA_BRAVA_OAK_PRICING if with_pricing else None,
     )
 
 

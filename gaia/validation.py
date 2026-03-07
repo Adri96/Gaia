@@ -1,5 +1,5 @@
 """
-Gaia v0.5 — Input validation.
+Gaia v0.7 — Input validation.
 
 Validation functions raise descriptive ValueError on bad inputs.
 They never silently default — bad input must be caught early.
@@ -8,15 +8,21 @@ v0.3: Added validation for trophic levels, keystone thresholds,
       and interaction edges.
 v0.4: Added validation for SuccessionCurve, CarbonProfile, ResilienceConfig.
 v0.5: Added validation for SubstrateProfile.
+v0.6: Added validation for DiscountConfig.
+v0.7: Added validation for ScarcityFunction, AnchorPoint, PricingConfig.
 """
 
 from gaia.models import (
+    AnchorPoint,
     CarbonProfile,
     DamageFunc,
+    DiscountConfig,
     Ecosystem,
     InteractionEdge,
+    PricingConfig,
     ResilienceConfig,
     Resource,
+    ScarcityFunction,
     SubstrateProfile,
     SuccessionCurve,
 )
@@ -65,6 +71,10 @@ def validate_resource(resource: Resource) -> None:
     # v0.5: Validate optional substrate profile
     if resource.substrate is not None:
         validate_substrate_profile(resource.substrate)
+
+    # v0.6: Validate optional discount config
+    if resource.discount is not None:
+        validate_discount_config(resource.discount)
 
 
 def validate_ecosystem(ecosystem: Ecosystem) -> None:
@@ -125,6 +135,10 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
                 agent.succession_curve,
                 name=f"Agent '{agent.name}' succession_curve",
             )
+
+    # v0.7: Validate optional pricing config
+    if ecosystem.pricing is not None:
+        validate_pricing_config(ecosystem.pricing, agent_names)
 
 
 def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
@@ -479,4 +493,186 @@ def validate_substrate_profile(
         raise ValueError(
             f"{name}: confidence must be one of "
             f"{sorted(_VALID_CONFIDENCE_LEVELS)}, got '{profile.confidence}'"
+        )
+
+
+# ── v0.6: Discount validation ───────────────────────────────────────────────
+
+
+def validate_discount_config(
+    config: DiscountConfig,
+    name: str = "DiscountConfig",
+) -> None:
+    """Validate a DiscountConfig dataclass.
+
+    Checks:
+        - delta >= 0
+        - eta >= 0
+        - g >= 0
+        - rate_schedule: if float, >= 0; if list, sorted ascending, each rate >= 0
+        - scarcity_rate >= 0
+        - horizon_years > 0
+        - carbon_price_current >= 0
+        - carbon_price_growth >= 0
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if config.delta < 0.0:
+        raise ValueError(f"{name}: delta must be >= 0.0, got {config.delta}")
+    if config.eta < 0.0:
+        raise ValueError(f"{name}: eta must be >= 0.0, got {config.eta}")
+    if config.g < 0.0:
+        raise ValueError(f"{name}: g must be >= 0.0, got {config.g}")
+
+    if isinstance(config.rate_schedule, (int, float)):
+        if float(config.rate_schedule) < 0.0:
+            raise ValueError(
+                f"{name}: rate_schedule must be >= 0.0, got {config.rate_schedule}"
+            )
+    elif isinstance(config.rate_schedule, list):
+        if len(config.rate_schedule) == 0:
+            raise ValueError(f"{name}: rate_schedule list must not be empty")
+        prev_year: int = -1
+        for i, entry in enumerate(config.rate_schedule):
+            if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+                raise ValueError(
+                    f"{name}: rate_schedule entry {i} must be (year, rate) tuple"
+                )
+            year_val, rate_val = entry
+            if year_val <= prev_year:
+                raise ValueError(
+                    f"{name}: rate_schedule years must be ascending, "
+                    f"got year {year_val} after {prev_year}"
+                )
+            if rate_val < 0.0:
+                raise ValueError(
+                    f"{name}: rate_schedule rate at year {year_val} must be >= 0.0, "
+                    f"got {rate_val}"
+                )
+            prev_year = year_val
+    else:
+        raise ValueError(
+            f"{name}: rate_schedule must be a float or list of (year, rate) tuples"
+        )
+
+    if config.scarcity_rate < 0.0:
+        raise ValueError(
+            f"{name}: scarcity_rate must be >= 0.0, got {config.scarcity_rate}"
+        )
+    if config.horizon_years <= 0:
+        raise ValueError(
+            f"{name}: horizon_years must be > 0, got {config.horizon_years}"
+        )
+    if config.carbon_price_current < 0.0:
+        raise ValueError(
+            f"{name}: carbon_price_current must be >= 0.0, "
+            f"got {config.carbon_price_current}"
+        )
+    if config.carbon_price_growth < 0.0:
+        raise ValueError(
+            f"{name}: carbon_price_growth must be >= 0.0, "
+            f"got {config.carbon_price_growth}"
+        )
+
+
+# ── v0.7: Pricing validation ────────────────────────────────────────────────
+
+_VALID_SCARCITY_TYPES = {"smooth", "threshold"}
+_VALID_ANCHOR_CONFIDENCE = {"high", "medium", "low"}
+
+
+def validate_scarcity_function(
+    fn: ScarcityFunction,
+    name: str = "ScarcityFunction",
+) -> None:
+    """Validate a ScarcityFunction dataclass.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if fn.function_type not in _VALID_SCARCITY_TYPES:
+        raise ValueError(
+            f"{name}: function_type must be one of "
+            f"{sorted(_VALID_SCARCITY_TYPES)}, got '{fn.function_type}'"
+        )
+    if fn.function_type == "smooth":
+        if fn.alpha <= 0.0:
+            raise ValueError(
+                f"{name}: alpha must be > 0.0 for smooth type, got {fn.alpha}"
+            )
+    if fn.function_type == "threshold":
+        if not (0.0 < fn.threshold < 1.0):
+            raise ValueError(
+                f"{name}: threshold must be in (0.0, 1.0) for threshold type, "
+                f"got {fn.threshold}"
+            )
+    if fn.max_multiplier < 1.0:
+        raise ValueError(
+            f"{name}: max_multiplier must be >= 1.0, got {fn.max_multiplier}"
+        )
+
+
+def validate_anchor_point(
+    anchor: AnchorPoint,
+    agent_names: set,
+    name: str = "AnchorPoint",
+) -> None:
+    """Validate an AnchorPoint against available agents.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if anchor.agent_name not in agent_names:
+        raise ValueError(
+            f"{name}: agent_name '{anchor.agent_name}' is not an agent. "
+            f"Available: {sorted(agent_names)}"
+        )
+    if anchor.anchor_value <= 0.0:
+        raise ValueError(
+            f"{name}: anchor_value must be > 0.0, got {anchor.anchor_value}"
+        )
+    if anchor.confidence not in _VALID_ANCHOR_CONFIDENCE:
+        raise ValueError(
+            f"{name}: confidence must be one of "
+            f"{sorted(_VALID_ANCHOR_CONFIDENCE)}, got '{anchor.confidence}'"
+        )
+
+
+def validate_pricing_config(
+    config: PricingConfig,
+    agent_names: set,
+    name: str = "PricingConfig",
+) -> None:
+    """Validate a PricingConfig dataclass.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    if len(config.anchors) == 0:
+        raise ValueError(f"{name}: at least one anchor is required")
+
+    for i, anchor in enumerate(config.anchors):
+        validate_anchor_point(anchor, agent_names, name=f"{name}.anchors[{i}]")
+
+    for agent_key, scarcity_fn in config.scarcity_functions.items():
+        if agent_key not in agent_names:
+            raise ValueError(
+                f"{name}: scarcity_functions key '{agent_key}' is not an agent. "
+                f"Available: {sorted(agent_names)}"
+            )
+        validate_scarcity_function(
+            scarcity_fn, name=f"{name}.scarcity_functions['{agent_key}']"
+        )
+
+    validate_scarcity_function(config.default_scarcity, name=f"{name}.default_scarcity")
+
+    if config.convergence_tolerance <= 0.0:
+        raise ValueError(
+            f"{name}: convergence_tolerance must be > 0.0, "
+            f"got {config.convergence_tolerance}"
+        )
+    if config.max_iterations <= 0:
+        raise ValueError(
+            f"{name}: max_iterations must be > 0, got {config.max_iterations}"
         )
