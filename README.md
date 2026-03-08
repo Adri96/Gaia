@@ -520,6 +520,28 @@ resource = Resource(
 )
 ```
 
+### Step 1b: Choose your calibration regime — do this before writing any damage function
+
+This is the most consequential modelling decision you will make. The answer determines how interaction edges interact with your damage functions, and **mixing the two regimes produces incoherent results**.
+
+**Option A — Empirically-calibrated functions (recommended)**
+
+Your damage functions are fitted to field data: e.g., observed predator population decline vs. measured deforestation rate. Real-world measurements already embed all indirect effects along the trophic chain (the observer cannot separate "direct habitat loss" from "loss via prey collapse"). Under this regime:
+
+- Interaction edges are correct without double-counting: the single-pass propagation does not compound effects that the data already captured.
+- Edges should only model structural effects invisible to aggregate data — chiefly **keystone species collapse** (non-linear regime shifts triggered at a health threshold).
+
+**Option B — First-principles or lab-calibrated functions**
+
+Your damage functions model only the direct dependency on the primary resource, derived from theory or controlled experiments. Under this regime:
+
+- The single-pass propagation **underestimates cascade damage** in chains longer than one hop (A→B→C: A's contribution to B's degradation never reaches C). The output is a lower bound.
+- This is not corrected by more simulation steps: each step recomputes damage functions fresh from the depletion ratio — no cascade state accumulates across steps.
+
+Document your choice in the case file. See `PROJECT_DEFINITION.md` for the full discussion.
+
+---
+
 ### Step 2: Pick damage functions
 
 Three options are available in `gaia.damage`:

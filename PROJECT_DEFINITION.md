@@ -150,6 +150,38 @@ Gaia requires validation on two separate tracks that must not be confused:
 
 ---
 
+## Critical Modelling Assumption: Damage Function Calibration Regime
+
+The interaction propagation engine uses a **single-pass** algorithm: damage from a source agent is added to its direct neighbours, but does not compound further through the chain. Given edges A→B and B→C, A's contribution to B's damage does not propagate onward to C.
+
+This design is only ecologically valid under a specific calibration assumption that **the builder of every ecosystem case must resolve explicitly**:
+
+### Option A — Empirically-calibrated damage functions (recommended)
+
+Damage functions are fitted to real-world field observations: e.g., the observed decline in predator populations as a function of measured deforestation rates.
+
+**What empirical data already encodes:** a field-measured relationship between resource depletion and agent damage includes all indirect effects along the trophic chain. The observer does not decompose "direct habitat loss" from "loss mediated via prey collapse" — the measurement is the total outcome across all pathways.
+
+In this case, single-pass propagation is **correct by construction**. Adding cascade contributions from interaction edges on top of empirically-calibrated functions would double-count the indirect effects already embedded in the data. Under this regime, interaction edges serve a narrower purpose: they capture **structural network effects** that aggregate damage functions cannot represent — chiefly the **keystone species collapse**, a non-linear regime shift triggered when a specific agent crosses a health threshold regardless of the global depletion ratio.
+
+### Option B — First-principles or lab-calibrated damage functions
+
+Damage functions are derived theoretically or from controlled experiments that isolate only the direct dependency on the primary resource, excluding indirect pathways.
+
+In this case, single-pass propagation **systematically underestimates cascade damage** in chains longer than one hop. The computed externality is a **structural lower bound** of the true damage. This is not corrected by running more simulation steps: each step recomputes all damage functions fresh from the current depletion ratio — there is no accumulation of cascade state across steps.
+
+### The risk of mixing calibrations
+
+The most dangerous scenario is an ecosystem where some damage functions are empirically calibrated and others are theoretical. Empirically-calibrated agents already carry their indirect damage; theoretical agents do not — yet both receive identical cascade treatment. The combined output has no coherent interpretation.
+
+**Recommendation:** Decide which calibration regime applies to the entire ecosystem before building it, document the choice in the case file, and apply it consistently across all agents.
+
+### Relationship to endogenous pricing
+
+Note that the pricing engine (`gaia/pricing.py`) uses a full Leontief-Hannon matrix inverse — `V = (I − S·W)⁻¹ · A` — which implicitly captures all infinite-hop chains. This is intentional and not an inconsistency: market prices compound through supply chains by nature, regardless of how damage functions are calibrated. The asymmetry between single-pass damage propagation and full-matrix price propagation is a deliberate modelling choice.
+
+---
+
 ## Mathematical Framework
 
 These are the modeling decisions we make to turn the scientific foundations into computable outputs. They are not laws of nature — they are tools we chose because they best serve the goal of making externalities visible and actionable. **If a mathematical choice proves inadequate, it can be replaced. The science above cannot.**
