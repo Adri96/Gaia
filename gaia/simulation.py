@@ -49,6 +49,254 @@ from gaia.succession import (
 )
 from gaia.validation import validate_ecosystem, validate_extraction
 
+# v0.8: Try importing Cython-optimized simulation loop
+try:
+    from gaia.cy.simulation_cy import extraction_loop_cy
+    _HAS_CYTHON = True
+except ImportError:
+    _HAS_CYTHON = False
+
+# Bulk density for soil t/ha/yr → mm/yr conversion (from substrate.py)
+_BULK_DENSITY_KG_M3: float = 1300.0
+_T_HA_TO_MM_FACTOR: float = 10.0 / _BULK_DENSITY_KG_M3
+
+
+def _extract_damage_params(damage_fn) -> tuple:
+    """Extract damage function parameters from a closure for the Cython loop.
+
+    Inspects the closure variables to determine function type and extract
+    the pre-computed parameters. Returns a 5-tuple:
+        (kind, p1, p2, p3, p4)
+
+    Kind values:
+        0 = logistic:    (inflection, raw_0, span, steepness)
+        1 = exponential: (scale, raw_1, base, 0.0)
+        2 = piecewise:   (threshold, pre_slope, post_slope, pre_slope_ratio)
+
+    Falls back to kind=-1 if the closure cannot be inspected, which signals
+    the caller to use the pure-Python path.
+    """
+    closure = getattr(damage_fn, '__closure__', None)
+    if closure is None:
+        return (-1, 0.0, 0.0, 0.0, 0.0)
+
+    freevars = damage_fn.__code__.co_freevars
+    params = {name: cell.cell_contents for name, cell in zip(freevars, closure)}
+
+    fname = damage_fn.__code__.co_name
+
+    if fname == '_logistic' and 'inflection' in params:
+        return (0, params['inflection'], params['raw_0'],
+                params['span'], params['steepness'])
+    elif fname == '_exponential' and 'scale' in params:
+        return (1, params['scale'], params['raw_1'],
+                params.get('base', 2.0), 0.0)
+    elif fname == '_piecewise' and 'pre_slope' in params:
+        return (2, params['threshold'], params['pre_slope'],
+                params['post_slope'], params['pre_slope_ratio'])
+    else:
+        return (-1, 0.0, 0.0, 0.0, 0.0)
+
+
+def _can_use_cython(ecosystem: Ecosystem) -> bool:
+    """Check if the Cython fast path can be used for this ecosystem.
+
+    The fast path is available when:
+    1. The Cython extension is compiled and importable
+    2. No v0.7 pricing config (pricing requires per-step Python solver)
+    3. All damage functions have extractable parameters
+    4. Substrate is terrestrial soil (not marine sediment)
+    """
+    if not _HAS_CYTHON:
+        return False
+    if ecosystem.pricing is not None:
+        return False
+    # Check all damage functions are extractable
+    for agent in ecosystem.agents:
+        kind = _extract_damage_params(agent.damage_function)[0]
+        if kind == -1:
+            return False
+    # Check substrate compatibility (marine uses sediment_stability, not soil_depth)
+    if ecosystem.resource.substrate is not None:
+        sub = ecosystem.resource.substrate
+        # Marine substrates use sediment_stability, which the Cython loop
+        # doesn't handle (it assumes soil_depth_cm)
+        if sub.substrate_type not in ("terrestrial_soil",):
+            return False
+    return True
+
+
+def _run_extraction_cython(
+    ecosystem: Ecosystem, units_to_extract: int
+) -> SimulationResult:
+    """Run extraction using the Cython-optimized inner loop.
+
+    Extracts all parameters from Python objects into flat lists/primitives,
+    calls the C-typed loop, then wraps results back into SimulationStep
+    dataclasses.
+    """
+    resource = ecosystem.resource
+    agents = ecosystem.agents
+    n_agents = len(agents)
+    total_units = resource.total_units
+    unit_value = resource.unit_value
+
+    # Build name-to-index lookup for converting keystone indices back to names
+    agent_names = [a.name for a in agents]
+
+    # Pre-extract all per-agent arrays
+    damage_params = [_extract_damage_params(a.damage_function) for a in agents]
+    dep_weights = [a.dependency_weight for a in agents]
+    monetary_rates = [a.monetary_rate for a in agents]
+    trophic_levels = [a.trophic_level for a in agents]
+    is_keystone = [a.is_keystone for a in agents]
+    keystone_thresholds = [a.keystone_threshold for a in agents]
+
+    # Pre-extract per-edge arrays (convert names to indices)
+    interactions = ecosystem.interactions
+    name_to_idx = {name: i for i, name in enumerate(agent_names)}
+    edge_src_idx = [name_to_idx[e.source] for e in interactions]
+    edge_tgt_idx = [name_to_idx[e.target] for e in interactions]
+    edge_strengths = [e.strength for e in interactions]
+    n_edges = len(interactions)
+
+    has_trophic = any(lvl >= 1 for lvl in trophic_levels)
+    has_interactions = n_edges > 0
+    has_resilience = resource.resilience is not None
+    has_substrate = resource.substrate is not None
+
+    # Resilience config
+    r = resource.resilience
+    res_warning = r.warning_zone_width if r else 0.0
+    res_conf_green = r.confidence_green if r else 0.9
+    res_conf_yellow = r.confidence_yellow if r else 0.6
+    res_conf_red = r.confidence_red if r else 0.3
+    res_irrev = r.irreversibility_flag_ratio if r else 0.5
+
+    # Substrate config
+    sub = resource.substrate
+    sub_depth = sub.soil_depth_cm if sub and sub.soil_depth_cm else 0.0
+    sub_erosion_unp = sub.erosion_rate_unprotected if sub else 0.0
+    sub_erosion_pro = sub.erosion_rate_protected if sub else 0.0
+    sub_formation = sub.formation_rate if sub else 0.0
+    sub_alpha = sub.erosion_alpha if sub else 2.0
+    sub_critical = sub.critical_minimum if sub else 0.0
+    sub_residual = sub.residual_fraction if sub else 0.05
+    sub_cap_fn = sub.capacity_function if sub else "linear"
+
+    # Call the Cython loop
+    raw_steps = extraction_loop_cy(
+        n_agents=n_agents,
+        n_edges=n_edges,
+        total_units=total_units,
+        units_to_extract=units_to_extract,
+        unit_value=unit_value,
+        safe_threshold_ratio=resource.safe_threshold_ratio,
+        damage_params=damage_params,
+        dep_weights=dep_weights,
+        monetary_rates=monetary_rates,
+        trophic_levels=trophic_levels,
+        is_keystone=is_keystone,
+        keystone_thresholds=keystone_thresholds,
+        edge_src_idx=edge_src_idx,
+        edge_tgt_idx=edge_tgt_idx,
+        edge_strengths=edge_strengths,
+        has_trophic=has_trophic,
+        has_interactions=has_interactions,
+        has_resilience=has_resilience,
+        has_substrate=has_substrate,
+        resilience_warning_width=res_warning,
+        resilience_conf_green=res_conf_green,
+        resilience_conf_yellow=res_conf_yellow,
+        resilience_conf_red=res_conf_red,
+        resilience_irreversibility_ratio=res_irrev,
+        substrate_soil_depth_cm=sub_depth,
+        substrate_erosion_unprotected=sub_erosion_unp,
+        substrate_erosion_protected=sub_erosion_pro,
+        substrate_formation_rate=sub_formation,
+        substrate_erosion_alpha=sub_alpha,
+        substrate_critical_minimum=sub_critical,
+        substrate_residual_fraction=sub_residual,
+        substrate_capacity_function=sub_cap_fn,
+        substrate_t_ha_to_mm_factor=_T_HA_TO_MM_FACTOR,
+    )
+
+    # Convert raw tuples into SimulationStep dataclasses
+    steps = []
+    for raw in raw_steps:
+        (step, units_extracted, depletion_ratio,
+         effective_damages, agent_costs, marginal_cost, cumulative_cost,
+         private_revenue, ecosystem_health,
+         direct_damages, cascade_damages, keystone_triggered_indices,
+         zone, confidence, irreversibility,
+         substrate_erosion, effective_k, k_fraction) = raw
+
+        # Convert keystone indices back to agent names
+        keystone_names = [agent_names[idx] for idx in keystone_triggered_indices]
+
+        steps.append(SimulationStep(
+            step=step,
+            units_extracted=units_extracted,
+            depletion_ratio=depletion_ratio,
+            agent_damages=effective_damages,
+            agent_costs=agent_costs,
+            marginal_cost=marginal_cost,
+            cumulative_cost=cumulative_cost,
+            private_revenue=private_revenue,
+            ecosystem_health=ecosystem_health,
+            agent_direct_damages=direct_damages,
+            agent_cascade_damages=cascade_damages,
+            keystone_triggered=keystone_names,
+            resilience_zone=zone,
+            model_confidence=confidence,
+            irreversibility_warning=irreversibility,
+            substrate_erosion=substrate_erosion,
+            effective_k=effective_k,
+            k_fraction=k_fraction,
+            agent_prices=[],
+            price_result=None,
+        ))
+
+    if not steps:
+        return SimulationResult(
+            ecosystem=ecosystem,
+            steps=steps,
+            total_units_extracted=0,
+            total_private_revenue=0.0,
+            total_externality_cost=0.0,
+            net_social_cost=0.0,
+            final_ecosystem_health=1.0,
+        )
+
+    final_step = steps[-1]
+    total_externality = final_step.cumulative_cost
+    total_revenue = final_step.private_revenue
+
+    # v0.6: Compute extraction NPV when discount config present
+    extraction_npv = None
+    if resource.discount is not None:
+        from gaia.discount import compute_extraction_npv
+        extraction_npv = compute_extraction_npv(
+            total_externality=total_externality,
+            discount=resource.discount,
+            carbon_profile=resource.carbon_profile,
+            units_extracted=units_to_extract,
+            substrate_ceiling=(
+                final_step.k_fraction if has_substrate else 1.0
+            ),
+        )
+
+    return SimulationResult(
+        ecosystem=ecosystem,
+        steps=steps,
+        total_units_extracted=units_to_extract,
+        total_private_revenue=total_revenue,
+        total_externality_cost=total_externality,
+        net_social_cost=total_revenue - total_externality,
+        final_ecosystem_health=final_step.ecosystem_health,
+        extraction_npv=extraction_npv,
+    )
+
 
 def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationResult:
     """
@@ -89,6 +337,10 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     """
     validate_ecosystem(ecosystem)
     validate_extraction(ecosystem, units_to_extract)
+
+    # v0.8: Dispatch to Cython fast path when available and compatible
+    if _can_use_cython(ecosystem) and units_to_extract > 0:
+        return _run_extraction_cython(ecosystem, units_to_extract)
 
     resource = ecosystem.resource
     agents: list = ecosystem.agents

@@ -66,7 +66,14 @@ CLI usage:
 
 import argparse
 import sys
+import warnings
 
+from gaia.cli import (
+    add_common_arguments,
+    add_restoration_arguments,
+    output_result,
+    warn_unused_restoration_args,
+)
 from gaia.damage import exponential_damage, logistic_damage
 from gaia.models import (
     Agent,
@@ -559,16 +566,18 @@ def run_amazon_restoration(
 
 def _parse_args(argv: list = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Gaia v0.7 — Central Amazon Rainforest externality and restoration simulation",
+        description="Gaia v0.8.1 — Central Amazon Rainforest externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
             "  # Extraction — at safe threshold (20%):\n"
-            "  python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --cut 80000\n\n"
+            "  python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --units 80000\n\n"
             "  # Extraction — past threshold (40%):\n"
-            "  python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --cut 160000\n\n"
+            "  python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --units 160000\n\n"
             "  # Restoration mode:\n"
-            "  python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --cut 80000 --mode restore\n"
+            "  python -m gaia.cases.amazon_forest --trees 400000 --units 80000 --mode restore\n\n"
+            "  # JSON output:\n"
+            "  python -m gaia.cases.amazon_forest --units 80000 --format json\n"
         ),
     )
     parser.add_argument(
@@ -586,78 +595,87 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
         help="Safe extraction threshold ratio, 0.0 < threshold < 1.0 (default: 0.20)",
     )
     parser.add_argument(
-        "--cut",
+        "--units",
         type=int,
         default=80_000,
         metavar="N",
-        help="Number of trees to cut/restore (default: 80000)",
+        help="Number of units to extract or restore (default: 80000)",
+    )
+    # Deprecated alias for --units
+    parser.add_argument(
+        "--cut", type=int, default=None, metavar="N",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
-        "--tree-value",
+        "--unit-value",
         type=float,
         default=1.50,
         metavar="EUROS",
-        help="Revenue per tree in euros (default: 1.50)",
+        help="Revenue per unit extracted in euros (default: 1.50)",
     )
+    # Deprecated alias for --unit-value
     parser.add_argument(
-        "--mode",
-        choices=["extract", "restore"],
-        default="extract",
-        help="Simulation mode: 'extract' (default) or 'restore'",
+        "--tree-value", type=float, default=None, metavar="EUROS",
+        help=argparse.SUPPRESS,
     )
-    parser.add_argument(
-        "--planting-cost",
-        type=float,
-        default=5.0,
-        metavar="EUROS",
-        help="[restore mode] Planting cost per tree in euros (default: 5.0)",
+    add_common_arguments(parser)
+    add_restoration_arguments(
+        parser,
+        planting_cost_default=5.0,
+        maintenance_cost_default=1.0,
+        maintenance_years_default=20,
     )
-    parser.add_argument(
-        "--maintenance-cost",
-        type=float,
-        default=1.0,
-        metavar="EUROS",
-        help="[restore mode] Annual maintenance cost per tree in euros (default: 1.0)",
-    )
-    parser.add_argument(
-        "--maintenance-years",
-        type=int,
-        default=20,
-        metavar="N",
-        help="[restore mode] Number of maintenance years (default: 20)",
-    )
-    parser.add_argument(
-        "--time-horizon",
-        type=int,
-        default=0,
-        metavar="YEARS",
-        help="[restore mode] Years of maturation to simulate, v0.4 (default: 0=skip)",
-    )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    # Resolve deprecated aliases
+    if args.cut is not None:
+        warnings.warn(
+            "--cut is deprecated, use --units instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        args.units = args.cut
+    if args.tree_value is not None:
+        warnings.warn(
+            "--tree-value is deprecated, use --unit-value instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        args.unit_value = args.tree_value
+    return args
 
 
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
+    warn_unused_restoration_args(args)
     try:
+        ecosystem = build_amazon_ecosystem(
+            total_trees=args.trees,
+            safe_threshold_ratio=args.threshold,
+            tree_value=args.unit_value,
+            with_pricing=args.with_pricing,
+        )
         if args.mode == "restore":
-            report = run_amazon_restoration(
-                total_trees=args.trees,
-                safe_threshold_ratio=args.threshold,
-                trees_to_restore=args.cut,
-                tree_value=args.tree_value,
-                planting_cost_per_tree=args.planting_cost,
-                annual_maintenance_per_tree=args.maintenance_cost,
+            cost = RestorationCost(
+                planting_cost_per_unit=args.planting_cost,
+                annual_maintenance_per_unit=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
+            )
+            recovery_fns = [
+                logistic_recovery(threshold=args.threshold)
+                for _ in ecosystem.agents
+            ]
+            result = run_restoration(
+                ecosystem, args.units, cost, recovery_fns,
+                succession_curve=(
+                    _AMAZON_SUCCESSION if args.time_horizon > 0 else None
+                ),
                 time_horizon_years=args.time_horizon,
             )
+            text_report = format_restoration_report(result)
         else:
-            report = run_amazon(
-                total_trees=args.trees,
-                safe_threshold_ratio=args.threshold,
-                trees_cut=args.cut,
-                tree_value=args.tree_value,
-            )
-        print(report)
+            result = run_extraction(ecosystem, args.units)
+            text_report = format_report(result)
+        output_result(text_report, result, args)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)

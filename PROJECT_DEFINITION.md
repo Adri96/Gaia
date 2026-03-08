@@ -584,10 +584,23 @@ Full specification: `V07_SPEC.md`
 - Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates
 - Pluggable case template system — structured template for adding new ecosystems without writing Python
 
-### 🔲 v0.8.1 — I/O flexibility
+### ✅ v0.8.1 — I/O Flexibility (complete)
 
-- Review the input params of the program. Make sure they make sense (for instance, should we have a "cut" parameter if mode === "restoration"?)
-- Give the option to get the output of the program in a JSON with a specific, predictable structure that can be exported to other places
+Full specification: `V081_SPEC.md`
+
+- [x] Rename `--cut`/`--destroy` to mode-agnostic `--units` across all 4 cases (deprecated aliases preserved with `DeprecationWarning`)
+- [x] Rename `--tree-value`/`--revenue` to consistent `--unit-value` across all 4 cases (deprecated aliases preserved)
+- [x] Add warnings when restoration-only params (`--planting-cost`, `--maintenance-cost`, `--maintenance-years`, `--time-horizon`) are passed in extraction mode
+- [x] Add `--with-pricing` flag to enable v0.7 endogenous pricing from CLI
+- [x] Add `--format text|json` flag (default: `text`) for output format selection
+- [x] Add `--output FILE` flag to write output to file instead of stdout
+- [x] Add `--summary-only` flag to omit per-step data from JSON output
+- [x] New `gaia/serialization.py` module — `simulation_result_to_dict()`, `restoration_result_to_dict()`, `to_json()` with stable, documented JSON schema
+- [x] New `gaia/cli.py` module — shared CLI argument definitions (`add_common_arguments`, `add_restoration_arguments`, `warn_unused_restoration_args`, `output_result`)
+- [x] Refactored `main()` in all 4 case files to decompose build → simulate → format pipeline for JSON support
+- [x] JSON schema includes: ecosystem metadata, agent list, interaction edges, per-step data, NPV analysis, carbon breakeven, prevention advantage, endogenous pricing, and optional annotations (Posidonia marine note)
+- [x] 579 tests pass (510 existing + 30 serialization + 21 CLI + 18 new across existing test files)
+- [x] Full backward compatibility — all deprecated flags work, default text output unchanged, all 510 existing tests pass unmodified
 
 ### 🔲 v1.0 — UI (very big effort)
 
