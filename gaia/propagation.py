@@ -75,6 +75,26 @@ def propagate_interactions(
     - Chain non-propagation: A->B->C means A reaches B but NOT C in one pass
     - Order independence: result is the same regardless of edge ordering
 
+    CALIBRATION ASSUMPTION — critical for correct use:
+    The chain non-propagation is only ecologically valid if damage_function
+    values are calibrated from real-world empirical observations. Field data
+    already embeds indirect effects: an observed predator population decline
+    measured against deforestation rate implicitly captures the full chain
+    (trees → prey → predator). Adding full multi-hop cascade propagation on
+    top of empirically-calibrated damage functions would double-count those
+    indirect effects.
+
+    If, instead, damage functions are calibrated from first-principles or
+    controlled lab studies that isolate only the direct dependency on the
+    resource, then this single-pass propagation underestimates cascade damage
+    in chains longer than one hop (e.g. A→B→C: A's contribution to B's
+    degradation never reaches C).
+
+    The builder of each ecosystem case is responsible for choosing one
+    interpretation and applying it consistently across all agents. Mixing
+    empirical functions for some agents with theoretical functions for others
+    will produce incoherent results. This trade-off is documented in V03_SPEC.md.
+
     Keystone effect: when a keystone agent's health (1 - direct_damage) drops
     below its keystone_threshold, ALL its outgoing edges have strength doubled
     (capped at 1.0).
