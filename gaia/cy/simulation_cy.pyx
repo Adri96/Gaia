@@ -106,6 +106,11 @@ def extraction_loop_cy(
     cdef double zone_position, conf
     cdef double weight
 
+    # Resilience zone variables (must be at function scope for Cython)
+    cdef str zone
+    cdef double confidence
+    cdef bint irreversibility
+
     # Substrate state (mutable, C-level)
     cdef double current_soil_depth = substrate_soil_depth_cm
     cdef double pristine_soil_depth = substrate_soil_depth_cm
@@ -361,31 +366,41 @@ def extraction_loop_cy(
             step_effective_k = <int>(<double>total_units * step_k_fraction)
 
         # ── Phase 4: Resilience zone tagging (inlined) ─────────────────
-        cdef str zone = "green"
-        cdef double confidence = 1.0
-        cdef bint irreversibility = False
+        zone = "green"
+        confidence = 1.0
+        irreversibility = False
 
         if has_resilience:
             remaining_frac = 1.0 - depletion_ratio
-            threshold_lower = safe_threshold_ratio - resilience_warning_width
-            threshold_upper = safe_threshold_ratio
+            # Convert extraction threshold to remaining threshold:
+            # safe_threshold_ratio=0.30 means 30% can be extracted, so 70% must remain
+            threshold_lower = 1.0 - safe_threshold_ratio  # safe_remaining
+            threshold_upper = threshold_lower + resilience_warning_width  # warning_start
 
-            if remaining_frac >= threshold_upper:
+            if remaining_frac > threshold_upper:
                 zone = "green"
                 confidence = resilience_conf_green
-                irreversibility = False
-            elif remaining_frac >= threshold_lower:
+            elif remaining_frac > threshold_lower:
                 zone = "yellow"
-                if threshold_upper > threshold_lower:
-                    zone_position = (threshold_upper - remaining_frac) / (threshold_upper - threshold_lower)
+                # Linearly interpolate confidence from green to yellow across warning zone
+                if resilience_warning_width > 0.0:
+                    zone_position = (threshold_upper - remaining_frac) / resilience_warning_width
+                    confidence = resilience_conf_green - zone_position * (resilience_conf_green - resilience_conf_yellow)
                 else:
-                    zone_position = 1.0
-                confidence = resilience_conf_green - (resilience_conf_green - resilience_conf_yellow) * zone_position
-                irreversibility = False
+                    confidence = resilience_conf_yellow
             else:
                 zone = "red"
-                confidence = resilience_conf_red
-                irreversibility = remaining_frac < (safe_threshold_ratio * resilience_irreversibility_ratio)
+                # Linearly interpolate from yellow to red based on how far past threshold
+                if threshold_lower > 0.0:
+                    zone_position = (threshold_lower - remaining_frac) / threshold_lower
+                    if zone_position > 1.0:
+                        zone_position = 1.0
+                    confidence = resilience_conf_yellow - zone_position * (resilience_conf_yellow - resilience_conf_red)
+                else:
+                    confidence = resilience_conf_red
+
+            # Irreversibility: depletion_ratio > irreversibility_flag_ratio
+            irreversibility = depletion_ratio > resilience_irreversibility_ratio
 
         # ── Record step ────────────────────────────────────────────────
         # Convert keystone_triggered from indices back to be handled by caller
