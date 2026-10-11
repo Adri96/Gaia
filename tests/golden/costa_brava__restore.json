@@ -1,0 +1,1822 @@
+{
+  "agents": [
+    "Mycorrhizal Fungi",
+    "Soil Microbiome",
+    "Canopy Trees",
+    "Understory & Matorral",
+    "Pollinators & Insects",
+    "Forest Birds",
+    "Forest Mammals",
+    "Raptors & Apex Predators",
+    "Watershed & Water Cycle",
+    "Carbon & Climate",
+    "Human Communities"
+  ],
+  "cli_summary_json": {
+    "carbon_breakeven": {
+      "breakeven_price": 1190.71,
+      "current_price": 80.0,
+      "gap_to_current": 1110.71,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 92
+    },
+    "ecosystem": {
+      "agents": [
+        {
+          "dependency_weight": 0.13,
+          "description": "Keystone underground network \u2014 nutrient/water transport, cascades to all tree regeneration",
+          "is_keystone": true,
+          "keystone_threshold": 0.3,
+          "monetary_rate": 3077000.0,
+          "name": "Mycorrhizal Fungi",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "Soil microbiome and biocrusts \u2014 nitrogen fixation, carbon storage, erosion prevention",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 3500000.0,
+          "name": "Soil Microbiome",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.12,
+          "description": "Remaining canopy trees \u2014 self-reinforcing decline from microclimate loss and network fragmentation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2500000.0,
+          "name": "Canopy Trees",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.08,
+          "description": "Understory shrubs and aromatic plants \u2014 microclimate collapse and biodiversity loss",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 1875000.0,
+          "name": "Understory & Matorral",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "Keystone pollination services \u2014 base of animal food web, agricultural crop dependency",
+          "is_keystone": true,
+          "keystone_threshold": 0.4,
+          "monetary_rate": 3500000.0,
+          "name": "Pollinators & Insects",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.08,
+          "description": "Nesting and migratory stopover habitat \u2014 seed dispersal, insect control, ecotourism",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2500000.0,
+          "name": "Forest Birds",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.07,
+          "description": "Habitat displacement \u2014 predator-prey disruption, human-wildlife conflict, crop damage",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2571000.0,
+          "name": "Forest Mammals",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.04,
+          "description": "Apex trophic control \u2014 carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 3000000.0,
+          "name": "Raptors & Apex Predators",
+          "trophic_level": 3
+        },
+        {
+          "dependency_weight": 0.12,
+          "description": "Aquifer recharge, flood control, drought buffering \u2014 Costa Brava water and tourism supply",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 4167000.0,
+          "name": "Watershed & Water Cycle",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "CO\u2082 release, lost sequestration, fire risk amplification \u2014 exponential accumulation, no plateau",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 4500000.0,
+          "name": "Carbon & Climate",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.06,
+          "description": "Water, fire protection, tourism economy, traditional livelihoods \u2014 Costa Brava coastal dependency",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 8333000.0,
+          "name": "Human Communities",
+          "trophic_level": -1
+        }
+      ],
+      "interactions": [
+        {
+          "description": "Mycorrhizal collapse cuts nutrient/water supply to remaining trees",
+          "interaction_type": "keystone",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.35,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Understory plants lose mycorrhizal nutrient access",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.25,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Mycorrhizal network supports bacterial communities and nutrient cycling",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.3,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Pollinator loss collapses plant reproduction",
+          "interaction_type": "keystone",
+          "source": "Pollinators & Insects",
+          "strength": 0.3,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Insect decline reduces food for insectivorous birds",
+          "interaction_type": "trophic",
+          "source": "Pollinators & Insects",
+          "strength": 0.2,
+          "target": "Forest Birds"
+        },
+        {
+          "description": "Canopy loss removes shade \u2192 understory heat/drought stress",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.25,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Canopy loss exposes soil to UV and drying \u2192 biocrust collapse",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.2,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Root loss reduces water infiltration and aquifer recharge",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.3,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Prey decline starves apex predators",
+          "interaction_type": "trophic",
+          "source": "Forest Mammals",
+          "strength": 0.3,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Bird decline reduces prey for raptors",
+          "interaction_type": "trophic",
+          "source": "Forest Birds",
+          "strength": 0.2,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Vegetation loss reduces food and cover for herbivores",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.25,
+          "target": "Forest Mammals"
+        },
+        {
+          "description": "Understory flowering loss reduces pollinator food sources",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.2,
+          "target": "Pollinators & Insects"
+        },
+        {
+          "description": "Soil health decline reduces tree nutrient availability",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.15,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Soil degradation reduces water retention capacity",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.2,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Tree loss directly reduces carbon sequestration capacity",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.35,
+          "target": "Carbon & Climate"
+        },
+        {
+          "description": "Water quality decline affects human health and tourism",
+          "interaction_type": "dependency",
+          "source": "Watershed & Water Cycle",
+          "strength": 0.25,
+          "target": "Human Communities"
+        },
+        {
+          "description": "Climate regulation loss increases fire risk and heat stress",
+          "interaction_type": "dependency",
+          "source": "Carbon & Climate",
+          "strength": 0.1,
+          "target": "Human Communities"
+        }
+      ],
+      "name": "Costa Brava Holm Oak Forest",
+      "resource": {
+        "carbon_absorption_per_unit_yr": 0.018,
+        "carbon_price_per_tonne": 80.0,
+        "carbon_stored_per_unit": 0.5,
+        "discount_horizon_years": 100,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Costa Brava Holm Oak Forest",
+        "safe_threshold_ratio": 0.25,
+        "safe_threshold_units": 2500,
+        "substrate_type": "terrestrial_soil",
+        "total_units": 10000,
+        "unit_value": 60.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "maturation": {
+      "timeline": [
+        {
+          "annual_carbon_absorbed": 0.0,
+          "annual_service_value": 0.0,
+          "cumulative_carbon_absorbed": 0.0,
+          "cumulative_service_value": 0.0,
+          "service_fraction": 0.0,
+          "succession_phase": "delay",
+          "year": 1
+        },
+        {
+          "annual_carbon_absorbed": 0.0,
+          "annual_service_value": 0.0,
+          "cumulative_carbon_absorbed": 0.0,
+          "cumulative_service_value": 0.0,
+          "service_fraction": 0.0,
+          "succession_phase": "delay",
+          "year": 2
+        },
+        {
+          "annual_carbon_absorbed": 0.0,
+          "annual_service_value": 0.0,
+          "cumulative_carbon_absorbed": 0.0,
+          "cumulative_service_value": 0.0,
+          "service_fraction": 0.0,
+          "succession_phase": "pioneer",
+          "year": 3
+        },
+        {
+          "annual_carbon_absorbed": 0.18,
+          "annual_service_value": 8750.0,
+          "cumulative_carbon_absorbed": 0.18,
+          "cumulative_service_value": 8750.0,
+          "service_fraction": 0.0025,
+          "succession_phase": "pioneer",
+          "year": 4
+        },
+        {
+          "annual_carbon_absorbed": 0.36,
+          "annual_service_value": 17500.0,
+          "cumulative_carbon_absorbed": 0.54,
+          "cumulative_service_value": 26250.0,
+          "service_fraction": 0.005,
+          "succession_phase": "pioneer",
+          "year": 5
+        },
+        {
+          "annual_carbon_absorbed": 0.54,
+          "annual_service_value": 26250.0,
+          "cumulative_carbon_absorbed": 1.08,
+          "cumulative_service_value": 52500.0,
+          "service_fraction": 0.0075,
+          "succession_phase": "pioneer",
+          "year": 6
+        },
+        {
+          "annual_carbon_absorbed": 0.72,
+          "annual_service_value": 35000.0,
+          "cumulative_carbon_absorbed": 1.8,
+          "cumulative_service_value": 87500.0,
+          "service_fraction": 0.01,
+          "succession_phase": "pioneer",
+          "year": 7
+        },
+        {
+          "annual_carbon_absorbed": 0.9,
+          "annual_service_value": 43750.0,
+          "cumulative_carbon_absorbed": 2.7,
+          "cumulative_service_value": 131250.0,
+          "service_fraction": 0.0125,
+          "succession_phase": "pioneer",
+          "year": 8
+        },
+        {
+          "annual_carbon_absorbed": 1.08,
+          "annual_service_value": 52500.0,
+          "cumulative_carbon_absorbed": 3.78,
+          "cumulative_service_value": 183750.0,
+          "service_fraction": 0.015,
+          "succession_phase": "pioneer",
+          "year": 9
+        },
+        {
+          "annual_carbon_absorbed": 1.26,
+          "annual_service_value": 61250.0,
+          "cumulative_carbon_absorbed": 5.04,
+          "cumulative_service_value": 245000.0,
+          "service_fraction": 0.0175,
+          "succession_phase": "pioneer",
+          "year": 10
+        },
+        {
+          "annual_carbon_absorbed": 1.44,
+          "annual_service_value": 70000.0,
+          "cumulative_carbon_absorbed": 6.48,
+          "cumulative_service_value": 315000.0,
+          "service_fraction": 0.02,
+          "succession_phase": "pioneer",
+          "year": 11
+        },
+        {
+          "annual_carbon_absorbed": 1.62,
+          "annual_service_value": 78750.0,
+          "cumulative_carbon_absorbed": 8.1,
+          "cumulative_service_value": 393750.0,
+          "service_fraction": 0.0225,
+          "succession_phase": "pioneer",
+          "year": 12
+        },
+        {
+          "annual_carbon_absorbed": 1.8,
+          "annual_service_value": 87500.0,
+          "cumulative_carbon_absorbed": 9.9,
+          "cumulative_service_value": 481250.0,
+          "service_fraction": 0.025,
+          "succession_phase": "pioneer",
+          "year": 13
+        },
+        {
+          "annual_carbon_absorbed": 1.98,
+          "annual_service_value": 96250.0,
+          "cumulative_carbon_absorbed": 11.88,
+          "cumulative_service_value": 577500.0,
+          "service_fraction": 0.0275,
+          "succession_phase": "pioneer",
+          "year": 14
+        },
+        {
+          "annual_carbon_absorbed": 2.16,
+          "annual_service_value": 105000.0,
+          "cumulative_carbon_absorbed": 14.04,
+          "cumulative_service_value": 682500.0,
+          "service_fraction": 0.03,
+          "succession_phase": "pioneer",
+          "year": 15
+        },
+        {
+          "annual_carbon_absorbed": 2.2671,
+          "annual_service_value": 110203.83,
+          "cumulative_carbon_absorbed": 16.3071,
+          "cumulative_service_value": 792703.83,
+          "service_fraction": 0.031487,
+          "succession_phase": "intermediate",
+          "year": 16
+        },
+        {
+          "annual_carbon_absorbed": 2.5754,
+          "annual_service_value": 125193.97,
+          "cumulative_carbon_absorbed": 18.8825,
+          "cumulative_service_value": 917897.8,
+          "service_fraction": 0.03577,
+          "succession_phase": "intermediate",
+          "year": 17
+        },
+        {
+          "annual_carbon_absorbed": 3.0659,
+          "annual_service_value": 149038.38,
+          "cumulative_carbon_absorbed": 21.9484,
+          "cumulative_service_value": 1066936.18,
+          "service_fraction": 0.042582,
+          "succession_phase": "intermediate",
+          "year": 18
+        },
+        {
+          "annual_carbon_absorbed": 3.7194,
+          "annual_service_value": 180805.05,
+          "cumulative_carbon_absorbed": 25.6678,
+          "cumulative_service_value": 1247741.23,
+          "service_fraction": 0.051659,
+          "succession_phase": "intermediate",
+          "year": 19
+        },
+        {
+          "annual_carbon_absorbed": 4.5167,
+          "annual_service_value": 219561.93,
+          "cumulative_carbon_absorbed": 30.1845,
+          "cumulative_service_value": 1467303.16,
+          "service_fraction": 0.062732,
+          "succession_phase": "intermediate",
+          "year": 20
+        },
+        {
+          "annual_carbon_absorbed": 5.4386,
+          "annual_service_value": 264377.0,
+          "cumulative_carbon_absorbed": 35.6231,
+          "cumulative_service_value": 1731680.16,
+          "service_fraction": 0.075536,
+          "succession_phase": "intermediate",
+          "year": 21
+        },
+        {
+          "annual_carbon_absorbed": 6.466,
+          "annual_service_value": 314318.24,
+          "cumulative_carbon_absorbed": 42.0891,
+          "cumulative_service_value": 2045998.4,
+          "service_fraction": 0.089805,
+          "succession_phase": "intermediate",
+          "year": 22
+        },
+        {
+          "annual_carbon_absorbed": 7.5796,
+          "annual_service_value": 368453.6,
+          "cumulative_carbon_absorbed": 49.6687,
+          "cumulative_service_value": 2414452.0,
+          "service_fraction": 0.105272,
+          "succession_phase": "intermediate",
+          "year": 23
+        },
+        {
+          "annual_carbon_absorbed": 8.7604,
+          "annual_service_value": 425851.07,
+          "cumulative_carbon_absorbed": 58.4291,
+          "cumulative_service_value": 2840303.07,
+          "service_fraction": 0.121672,
+          "succession_phase": "intermediate",
+          "year": 24
+        },
+        {
+          "annual_carbon_absorbed": 9.989,
+          "annual_service_value": 485578.61,
+          "cumulative_carbon_absorbed": 68.4181,
+          "cumulative_service_value": 3325881.69,
+          "service_fraction": 0.138737,
+          "succession_phase": "intermediate",
+          "year": 25
+        },
+        {
+          "annual_carbon_absorbed": 11.2465,
+          "annual_service_value": 546704.2,
+          "cumulative_carbon_absorbed": 79.6646,
+          "cumulative_service_value": 3872585.89,
+          "service_fraction": 0.156201,
+          "succession_phase": "intermediate",
+          "year": 26
+        },
+        {
+          "annual_carbon_absorbed": 12.5135,
+          "annual_service_value": 608295.8,
+          "cumulative_carbon_absorbed": 92.1781,
+          "cumulative_service_value": 4480881.69,
+          "service_fraction": 0.173799,
+          "succession_phase": "intermediate",
+          "year": 27
+        },
+        {
+          "annual_carbon_absorbed": 13.771,
+          "annual_service_value": 669421.39,
+          "cumulative_carbon_absorbed": 105.9491,
+          "cumulative_service_value": 5150303.07,
+          "service_fraction": 0.191263,
+          "succession_phase": "intermediate",
+          "year": 28
+        },
+        {
+          "annual_carbon_absorbed": 14.9996,
+          "annual_service_value": 729148.93,
+          "cumulative_carbon_absorbed": 120.9487,
+          "cumulative_service_value": 5879452.0,
+          "service_fraction": 0.208328,
+          "succession_phase": "intermediate",
+          "year": 29
+        },
+        {
+          "annual_carbon_absorbed": 16.1804,
+          "annual_service_value": 786546.4,
+          "cumulative_carbon_absorbed": 137.1291,
+          "cumulative_service_value": 6665998.4,
+          "service_fraction": 0.224728,
+          "succession_phase": "intermediate",
+          "year": 30
+        },
+        {
+          "annual_carbon_absorbed": 17.294,
+          "annual_service_value": 840681.76,
+          "cumulative_carbon_absorbed": 154.4231,
+          "cumulative_service_value": 7506680.16,
+          "service_fraction": 0.240195,
+          "succession_phase": "intermediate",
+          "year": 31
+        },
+        {
+          "annual_carbon_absorbed": 18.3214,
+          "annual_service_value": 890623.0,
+          "cumulative_carbon_absorbed": 172.7445,
+          "cumulative_service_value": 8397303.16,
+          "service_fraction": 0.254464,
+          "succession_phase": "intermediate",
+          "year": 32
+        },
+        {
+          "annual_carbon_absorbed": 19.2433,
+          "annual_service_value": 935438.07,
+          "cumulative_carbon_absorbed": 191.9878,
+          "cumulative_service_value": 9332741.23,
+          "service_fraction": 0.267268,
+          "succession_phase": "intermediate",
+          "year": 33
+        },
+        {
+          "annual_carbon_absorbed": 20.0406,
+          "annual_service_value": 974194.95,
+          "cumulative_carbon_absorbed": 212.0284,
+          "cumulative_service_value": 10306936.18,
+          "service_fraction": 0.278341,
+          "succession_phase": "intermediate",
+          "year": 34
+        },
+        {
+          "annual_carbon_absorbed": 20.6941,
+          "annual_service_value": 1005961.62,
+          "cumulative_carbon_absorbed": 232.7225,
+          "cumulative_service_value": 11312897.8,
+          "service_fraction": 0.287418,
+          "succession_phase": "intermediate",
+          "year": 35
+        },
+        {
+          "annual_carbon_absorbed": 21.1846,
+          "annual_service_value": 1029806.03,
+          "cumulative_carbon_absorbed": 253.9071,
+          "cumulative_service_value": 12342703.83,
+          "service_fraction": 0.29423,
+          "succession_phase": "intermediate",
+          "year": 36
+        },
+        {
+          "annual_carbon_absorbed": 21.4929,
+          "annual_service_value": 1044796.17,
+          "cumulative_carbon_absorbed": 275.4,
+          "cumulative_service_value": 13387500.0,
+          "service_fraction": 0.298513,
+          "succession_phase": "intermediate",
+          "year": 37
+        },
+        {
+          "annual_carbon_absorbed": 21.6,
+          "annual_service_value": 1050000.0,
+          "cumulative_carbon_absorbed": 297.0,
+          "cumulative_service_value": 14437500.0,
+          "service_fraction": 0.3,
+          "succession_phase": "intermediate",
+          "year": 38
+        },
+        {
+          "annual_carbon_absorbed": 23.8151,
+          "annual_service_value": 1157679.01,
+          "cumulative_carbon_absorbed": 320.8151,
+          "cumulative_service_value": 15595179.01,
+          "service_fraction": 0.330765,
+          "succession_phase": "climax",
+          "year": 39
+        },
+        {
+          "annual_carbon_absorbed": 25.9804,
+          "annual_service_value": 1262938.27,
+          "cumulative_carbon_absorbed": 346.7956,
+          "cumulative_service_value": 16858117.28,
+          "service_fraction": 0.36084,
+          "succession_phase": "climax",
+          "year": 40
+        },
+        {
+          "annual_carbon_absorbed": 28.096,
+          "annual_service_value": 1365777.78,
+          "cumulative_carbon_absorbed": 374.8916,
+          "cumulative_service_value": 18223895.06,
+          "service_fraction": 0.390222,
+          "succession_phase": "climax",
+          "year": 41
+        },
+        {
+          "annual_carbon_absorbed": 30.1618,
+          "annual_service_value": 1466197.53,
+          "cumulative_carbon_absorbed": 405.0533,
+          "cumulative_service_value": 19690092.59,
+          "service_fraction": 0.418914,
+          "succession_phase": "climax",
+          "year": 42
+        },
+        {
+          "annual_carbon_absorbed": 32.1778,
+          "annual_service_value": 1564197.53,
+          "cumulative_carbon_absorbed": 437.2311,
+          "cumulative_service_value": 21254290.12,
+          "service_fraction": 0.446914,
+          "succession_phase": "climax",
+          "year": 43
+        },
+        {
+          "annual_carbon_absorbed": 34.144,
+          "annual_service_value": 1659777.78,
+          "cumulative_carbon_absorbed": 471.3751,
+          "cumulative_service_value": 22914067.9,
+          "service_fraction": 0.474222,
+          "succession_phase": "climax",
+          "year": 44
+        },
+        {
+          "annual_carbon_absorbed": 36.0604,
+          "annual_service_value": 1752938.27,
+          "cumulative_carbon_absorbed": 507.4356,
+          "cumulative_service_value": 24667006.17,
+          "service_fraction": 0.50084,
+          "succession_phase": "climax",
+          "year": 45
+        },
+        {
+          "annual_carbon_absorbed": 37.9271,
+          "annual_service_value": 1843679.01,
+          "cumulative_carbon_absorbed": 545.3627,
+          "cumulative_service_value": 26510685.19,
+          "service_fraction": 0.526765,
+          "succession_phase": "climax",
+          "year": 46
+        },
+        {
+          "annual_carbon_absorbed": 39.744,
+          "annual_service_value": 1932000.0,
+          "cumulative_carbon_absorbed": 585.1067,
+          "cumulative_service_value": 28442685.19,
+          "service_fraction": 0.552,
+          "succession_phase": "climax",
+          "year": 47
+        },
+        {
+          "annual_carbon_absorbed": 41.5111,
+          "annual_service_value": 2017901.23,
+          "cumulative_carbon_absorbed": 626.6178,
+          "cumulative_service_value": 30460586.42,
+          "service_fraction": 0.576543,
+          "succession_phase": "climax",
+          "year": 48
+        },
+        {
+          "annual_carbon_absorbed": 43.2284,
+          "annual_service_value": 2101382.72,
+          "cumulative_carbon_absorbed": 669.8462,
+          "cumulative_service_value": 32561969.14,
+          "service_fraction": 0.600395,
+          "succession_phase": "climax",
+          "year": 49
+        },
+        {
+          "annual_carbon_absorbed": 44.896,
+          "annual_service_value": 2182444.44,
+          "cumulative_carbon_absorbed": 714.7422,
+          "cumulative_service_value": 34744413.58,
+          "service_fraction": 0.623556,
+          "succession_phase": "climax",
+          "year": 50
+        },
+        {
+          "annual_carbon_absorbed": 46.5138,
+          "annual_service_value": 2261086.42,
+          "cumulative_carbon_absorbed": 761.256,
+          "cumulative_service_value": 37005500.0,
+          "service_fraction": 0.646025,
+          "succession_phase": "climax",
+          "year": 51
+        },
+        {
+          "annual_carbon_absorbed": 48.0818,
+          "annual_service_value": 2337308.64,
+          "cumulative_carbon_absorbed": 809.3378,
+          "cumulative_service_value": 39342808.64,
+          "service_fraction": 0.667802,
+          "succession_phase": "climax",
+          "year": 52
+        },
+        {
+          "annual_carbon_absorbed": 49.6,
+          "annual_service_value": 2411111.11,
+          "cumulative_carbon_absorbed": 858.9378,
+          "cumulative_service_value": 41753919.75,
+          "service_fraction": 0.688889,
+          "succession_phase": "climax",
+          "year": 53
+        },
+        {
+          "annual_carbon_absorbed": 51.0684,
+          "annual_service_value": 2482493.83,
+          "cumulative_carbon_absorbed": 910.0062,
+          "cumulative_service_value": 44236413.58,
+          "service_fraction": 0.709284,
+          "succession_phase": "climax",
+          "year": 54
+        },
+        {
+          "annual_carbon_absorbed": 52.4871,
+          "annual_service_value": 2551456.79,
+          "cumulative_carbon_absorbed": 962.4933,
+          "cumulative_service_value": 46787870.37,
+          "service_fraction": 0.728988,
+          "succession_phase": "climax",
+          "year": 55
+        },
+        {
+          "annual_carbon_absorbed": 53.856,
+          "annual_service_value": 2618000.0,
+          "cumulative_carbon_absorbed": 1016.3493,
+          "cumulative_service_value": 49405870.37,
+          "service_fraction": 0.748,
+          "succession_phase": "climax",
+          "year": 56
+        },
+        {
+          "annual_carbon_absorbed": 55.1751,
+          "annual_service_value": 2682123.46,
+          "cumulative_carbon_absorbed": 1071.5244,
+          "cumulative_service_value": 52087993.83,
+          "service_fraction": 0.766321,
+          "succession_phase": "climax",
+          "year": 57
+        },
+        {
+          "annual_carbon_absorbed": 56.4444,
+          "annual_service_value": 2743827.16,
+          "cumulative_carbon_absorbed": 1127.9689,
+          "cumulative_service_value": 54831820.99,
+          "service_fraction": 0.783951,
+          "succession_phase": "climax",
+          "year": 58
+        },
+        {
+          "annual_carbon_absorbed": 57.664,
+          "annual_service_value": 2803111.11,
+          "cumulative_carbon_absorbed": 1185.6329,
+          "cumulative_service_value": 57634932.1,
+          "service_fraction": 0.800889,
+          "succession_phase": "climax",
+          "year": 59
+        },
+        {
+          "annual_carbon_absorbed": 58.8338,
+          "annual_service_value": 2859975.31,
+          "cumulative_carbon_absorbed": 1244.4667,
+          "cumulative_service_value": 60494907.41,
+          "service_fraction": 0.817136,
+          "succession_phase": "climax",
+          "year": 60
+        },
+        {
+          "annual_carbon_absorbed": 59.9538,
+          "annual_service_value": 2914419.75,
+          "cumulative_carbon_absorbed": 1304.4204,
+          "cumulative_service_value": 63409327.16,
+          "service_fraction": 0.832691,
+          "succession_phase": "climax",
+          "year": 61
+        },
+        {
+          "annual_carbon_absorbed": 61.024,
+          "annual_service_value": 2966444.44,
+          "cumulative_carbon_absorbed": 1365.4444,
+          "cumulative_service_value": 66375771.6,
+          "service_fraction": 0.847556,
+          "succession_phase": "climax",
+          "year": 62
+        },
+        {
+          "annual_carbon_absorbed": 62.0444,
+          "annual_service_value": 3016049.38,
+          "cumulative_carbon_absorbed": 1427.4889,
+          "cumulative_service_value": 69391820.99,
+          "service_fraction": 0.861728,
+          "succession_phase": "climax",
+          "year": 63
+        },
+        {
+          "annual_carbon_absorbed": 63.0151,
+          "annual_service_value": 3063234.57,
+          "cumulative_carbon_absorbed": 1490.504,
+          "cumulative_service_value": 72455055.56,
+          "service_fraction": 0.87521,
+          "succession_phase": "climax",
+          "year": 64
+        },
+        {
+          "annual_carbon_absorbed": 63.936,
+          "annual_service_value": 3108000.0,
+          "cumulative_carbon_absorbed": 1554.44,
+          "cumulative_service_value": 75563055.56,
+          "service_fraction": 0.888,
+          "succession_phase": "climax",
+          "year": 65
+        },
+        {
+          "annual_carbon_absorbed": 64.8071,
+          "annual_service_value": 3150345.68,
+          "cumulative_carbon_absorbed": 1619.2471,
+          "cumulative_service_value": 78713401.23,
+          "service_fraction": 0.900099,
+          "succession_phase": "climax",
+          "year": 66
+        },
+        {
+          "annual_carbon_absorbed": 65.6284,
+          "annual_service_value": 3190271.6,
+          "cumulative_carbon_absorbed": 1684.8756,
+          "cumulative_service_value": 81903672.84,
+          "service_fraction": 0.911506,
+          "succession_phase": "climax",
+          "year": 67
+        },
+        {
+          "annual_carbon_absorbed": 66.4,
+          "annual_service_value": 3227777.78,
+          "cumulative_carbon_absorbed": 1751.2756,
+          "cumulative_service_value": 85131450.62,
+          "service_fraction": 0.922222,
+          "succession_phase": "climax",
+          "year": 68
+        },
+        {
+          "annual_carbon_absorbed": 67.1218,
+          "annual_service_value": 3262864.2,
+          "cumulative_carbon_absorbed": 1818.3973,
+          "cumulative_service_value": 88394314.81,
+          "service_fraction": 0.932247,
+          "succession_phase": "climax",
+          "year": 69
+        },
+        {
+          "annual_carbon_absorbed": 67.7938,
+          "annual_service_value": 3295530.86,
+          "cumulative_carbon_absorbed": 1886.1911,
+          "cumulative_service_value": 91689845.68,
+          "service_fraction": 0.94158,
+          "succession_phase": "climax",
+          "year": 70
+        },
+        {
+          "annual_carbon_absorbed": 68.416,
+          "annual_service_value": 3325777.78,
+          "cumulative_carbon_absorbed": 1954.6071,
+          "cumulative_service_value": 95015623.46,
+          "service_fraction": 0.950222,
+          "succession_phase": "climax",
+          "year": 71
+        },
+        {
+          "annual_carbon_absorbed": 68.9884,
+          "annual_service_value": 3353604.94,
+          "cumulative_carbon_absorbed": 2023.5956,
+          "cumulative_service_value": 98369228.4,
+          "service_fraction": 0.958173,
+          "succession_phase": "climax",
+          "year": 72
+        },
+        {
+          "annual_carbon_absorbed": 69.5111,
+          "annual_service_value": 3379012.35,
+          "cumulative_carbon_absorbed": 2093.1067,
+          "cumulative_service_value": 101748240.74,
+          "service_fraction": 0.965432,
+          "succession_phase": "climax",
+          "year": 73
+        },
+        {
+          "annual_carbon_absorbed": 69.984,
+          "annual_service_value": 3402000.0,
+          "cumulative_carbon_absorbed": 2163.0907,
+          "cumulative_service_value": 105150240.74,
+          "service_fraction": 0.972,
+          "succession_phase": "climax",
+          "year": 74
+        },
+        {
+          "annual_carbon_absorbed": 70.4071,
+          "annual_service_value": 3422567.9,
+          "cumulative_carbon_absorbed": 2233.4978,
+          "cumulative_service_value": 108572808.64,
+          "service_fraction": 0.977877,
+          "succession_phase": "climax",
+          "year": 75
+        },
+        {
+          "annual_carbon_absorbed": 70.7804,
+          "annual_service_value": 3440716.05,
+          "cumulative_carbon_absorbed": 2304.2782,
+          "cumulative_service_value": 112013524.69,
+          "service_fraction": 0.983062,
+          "succession_phase": "climax",
+          "year": 76
+        },
+        {
+          "annual_carbon_absorbed": 71.104,
+          "annual_service_value": 3456444.44,
+          "cumulative_carbon_absorbed": 2375.3822,
+          "cumulative_service_value": 115469969.14,
+          "service_fraction": 0.987556,
+          "succession_phase": "climax",
+          "year": 77
+        },
+        {
+          "annual_carbon_absorbed": 71.3778,
+          "annual_service_value": 3469753.09,
+          "cumulative_carbon_absorbed": 2446.76,
+          "cumulative_service_value": 118939722.22,
+          "service_fraction": 0.991358,
+          "succession_phase": "climax",
+          "year": 78
+        },
+        {
+          "annual_carbon_absorbed": 71.6018,
+          "annual_service_value": 3480641.98,
+          "cumulative_carbon_absorbed": 2518.3618,
+          "cumulative_service_value": 122420364.2,
+          "service_fraction": 0.994469,
+          "succession_phase": "climax",
+          "year": 79
+        },
+        {
+          "annual_carbon_absorbed": 71.776,
+          "annual_service_value": 3489111.11,
+          "cumulative_carbon_absorbed": 2590.1378,
+          "cumulative_service_value": 125909475.31,
+          "service_fraction": 0.996889,
+          "succession_phase": "climax",
+          "year": 80
+        },
+        {
+          "annual_carbon_absorbed": 71.9004,
+          "annual_service_value": 3495160.49,
+          "cumulative_carbon_absorbed": 2662.0382,
+          "cumulative_service_value": 129404635.8,
+          "service_fraction": 0.998617,
+          "succession_phase": "climax",
+          "year": 81
+        },
+        {
+          "annual_carbon_absorbed": 71.9751,
+          "annual_service_value": 3498790.12,
+          "cumulative_carbon_absorbed": 2734.0133,
+          "cumulative_service_value": 132903425.93,
+          "service_fraction": 0.999654,
+          "succession_phase": "climax",
+          "year": 82
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 2806.0133,
+          "cumulative_service_value": 136403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 83
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 2878.0133,
+          "cumulative_service_value": 139903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 84
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 2950.0133,
+          "cumulative_service_value": 143403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 85
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3022.0133,
+          "cumulative_service_value": 146903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 86
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3094.0133,
+          "cumulative_service_value": 150403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 87
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3166.0133,
+          "cumulative_service_value": 153903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 88
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3238.0133,
+          "cumulative_service_value": 157403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 89
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3310.0133,
+          "cumulative_service_value": 160903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 90
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3382.0133,
+          "cumulative_service_value": 164403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 91
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3454.0133,
+          "cumulative_service_value": 167903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 92
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3526.0133,
+          "cumulative_service_value": 171403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 93
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3598.0133,
+          "cumulative_service_value": 174903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 94
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3670.0133,
+          "cumulative_service_value": 178403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 95
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3742.0133,
+          "cumulative_service_value": 181903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 96
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3814.0133,
+          "cumulative_service_value": 185403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 97
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3886.0133,
+          "cumulative_service_value": 188903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 98
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 3958.0133,
+          "cumulative_service_value": 192403425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 99
+        },
+        {
+          "annual_carbon_absorbed": 72.0,
+          "annual_service_value": 3500000.0,
+          "cumulative_carbon_absorbed": 4030.0133,
+          "cumulative_service_value": 195903425.93,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 100
+        }
+      ],
+      "total_maturation_gap": 154096574.07,
+      "years_to_50pct": 45.00000000000037,
+      "years_to_90pct": 66.00000000000053,
+      "years_to_pioneer": 3.4000000000000017
+    },
+    "mode": "restoration",
+    "npv_analysis": {
+      "carbon_benefits": 513458.71,
+      "carbon_payback_years": 78,
+      "cost": 1073930.58,
+      "horizon": 100,
+      "net_present_value": 220018850.65,
+      "roi": 205.8725,
+      "service_benefits": 220579322.52,
+      "total_benefits": 221092781.23
+    },
+    "prevention_advantage_v06": {
+      "npv_prevention_cost": 240000.0,
+      "npv_restoration_total": 167189072.79,
+      "pa_full": 697.6211,
+      "pa_simple": 6.0833,
+      "pa_with_carbon": 697.3625,
+      "pa_with_substrate": 695.5722
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit": 80.0,
+      "total_cost_per_unit": 305.0
+    },
+    "substrate": {
+      "prevention_advantage_with_substrate": 6.1117,
+      "substrate_ceiling": 0.999839,
+      "substrate_recovery_years": 12.1
+    },
+    "summary": {
+      "final_ecosystem_health": 1.0,
+      "net_restoration_value": 2280000.0,
+      "num_steps": 4000,
+      "prevention_advantage": 6.0833,
+      "total_recovered_value": 3500000.0,
+      "total_restoration_cost": 1220000.0,
+      "total_units_restored": 4000
+    }
+  },
+  "maturation": {
+    "samples": [
+      {
+        "annual_carbon_absorbed": 0.0,
+        "annual_service_value": 0.0,
+        "cumulative_carbon_absorbed": 0.0,
+        "cumulative_service_value": 0.0,
+        "service_fraction": 0.0,
+        "succession_phase": "delay",
+        "year": 1
+      },
+      {
+        "annual_carbon_absorbed": 1.4399999999999997,
+        "annual_service_value": 69999.99999999999,
+        "cumulative_carbon_absorbed": 6.4799999999999995,
+        "cumulative_service_value": 315000.0,
+        "service_fraction": 0.019999999999999997,
+        "succession_phase": "pioneer",
+        "year": 11
+      },
+      {
+        "annual_carbon_absorbed": 5.438612640749568,
+        "annual_service_value": 264377.00336977065,
+        "cumulative_carbon_absorbed": 35.62313470863812,
+        "cumulative_service_value": 1731680.1594476863,
+        "service_fraction": 0.07553628667707733,
+        "succession_phase": "intermediate",
+        "year": 21
+      },
+      {
+        "annual_carbon_absorbed": 17.294024821237773,
+        "annual_service_value": 840681.762143503,
+        "cumulative_carbon_absorbed": 154.4231347086381,
+        "cumulative_service_value": 7506680.159447686,
+        "service_fraction": 0.24019478918385798,
+        "succession_phase": "intermediate",
+        "year": 31
+      },
+      {
+        "annual_carbon_absorbed": 28.095999999999993,
+        "annual_service_value": 1365777.7777777775,
+        "cumulative_carbon_absorbed": 374.89155555555556,
+        "cumulative_service_value": 18223895.06172839,
+        "service_fraction": 0.39022222222222214,
+        "succession_phase": "climax",
+        "year": 41
+      },
+      {
+        "annual_carbon_absorbed": 46.513777777777776,
+        "annual_service_value": 2261086.4197530863,
+        "cumulative_carbon_absorbed": 761.256,
+        "cumulative_service_value": 37005500.0,
+        "service_fraction": 0.6460246913580246,
+        "succession_phase": "climax",
+        "year": 51
+      },
+      {
+        "annual_carbon_absorbed": 58.833777777777776,
+        "annual_service_value": 2859975.3086419753,
+        "cumulative_carbon_absorbed": 1244.4666666666667,
+        "cumulative_service_value": 60494907.40740741,
+        "service_fraction": 0.8171358024691358,
+        "succession_phase": "climax",
+        "year": 60
+      },
+      {
+        "annual_carbon_absorbed": 67.79377777777779,
+        "annual_service_value": 3295530.8641975312,
+        "cumulative_carbon_absorbed": 1886.1911111111112,
+        "cumulative_service_value": 91689845.67901234,
+        "service_fraction": 0.9415802469135803,
+        "succession_phase": "climax",
+        "year": 70
+      },
+      {
+        "annual_carbon_absorbed": 71.77599999999998,
+        "annual_service_value": 3489111.1111111105,
+        "cumulative_carbon_absorbed": 2590.1377777777775,
+        "cumulative_service_value": 125909475.30864197,
+        "service_fraction": 0.9968888888888887,
+        "succession_phase": "climax",
+        "year": 80
+      },
+      {
+        "annual_carbon_absorbed": 72.0,
+        "annual_service_value": 3500000.0,
+        "cumulative_carbon_absorbed": 3310.013333333333,
+        "cumulative_service_value": 160903425.9259259,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 90
+      },
+      {
+        "annual_carbon_absorbed": 72.0,
+        "annual_service_value": 3500000.0,
+        "cumulative_carbon_absorbed": 4030.013333333333,
+        "cumulative_service_value": 195903425.9259259,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 100
+      }
+    ],
+    "sums": {
+      "annual_carbon_absorbed": 4030.013333333333,
+      "annual_service_value": 195903425.9259259,
+      "cumulative_carbon_absorbed": 124237.46155009455,
+      "cumulative_service_value": 6039321047.574039,
+      "service_fraction": 55.972407407407395,
+      "year": 5050.0
+    }
+  },
+  "per_agent": {
+    "Canopy Trees": 300000.0,
+    "Carbon & Climate": 450000.0,
+    "Forest Birds": 200000.0,
+    "Forest Mammals": 179970.00000000003,
+    "Human Communities": 499980.0,
+    "Mycorrhizal Fungi": 400010.0,
+    "Pollinators & Insects": 350000.0,
+    "Raptors & Apex Predators": 120000.0,
+    "Soil Microbiome": 350000.0,
+    "Understory & Matorral": 150000.0,
+    "Watershed & Water Cycle": 500040.0
+  },
+  "result": {
+    "carbon_breakeven": {
+      "breakeven_price": 1190.705418887048,
+      "current_price": 80.0,
+      "gap_to_current": 1110.705418887048,
+      "npv_absorption_per_euro": 901.9280201502979,
+      "npv_cost": 1073930.5810390264,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 92
+    },
+    "extraction_npv": null,
+    "final_ecosystem_health": 1.0,
+    "net_restoration_value": 2280000.0,
+    "prevention_advantage": 6.083333333333333,
+    "prevention_advantage_v06": {
+      "npv_prevention_cost": 240000.0,
+      "npv_restoration_total": 167189072.79317,
+      "pa_full": 697.6211366382083,
+      "pa_simple": 6.083333333333333,
+      "pa_with_carbon": 697.3624719116258,
+      "pa_with_substrate": 695.5722169244402
+    },
+    "prevention_advantage_with_substrate": 6.111702403846154,
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit": 80.0
+    },
+    "restoration_npv": {
+      "carbon_benefits": 513458.7133301231,
+      "carbon_payback_years": 78,
+      "cost": 1073930.5810390264,
+      "horizon": 100,
+      "net_present_value": 220018850.65344334,
+      "roi": 205.8725071601699,
+      "service_benefits": 220579322.52115226,
+      "total_benefits": 221092781.23448238
+    },
+    "substrate_ceiling": 0.9998392307692308,
+    "substrate_recovery_cost": 0.0,
+    "substrate_recovery_years": 12.099999999999332,
+    "total_maturation_gap": 154096574.0740741,
+    "total_recovered_value": 3500000.0,
+    "total_restoration_cost": 1220000.0,
+    "total_units_restored": 4000,
+    "years_to_50pct": 45.00000000000037,
+    "years_to_90pct": 66.00000000000053,
+    "years_to_pioneer": 3.4000000000000017
+  },
+  "scenario": {
+    "argv": [
+      "--mode",
+      "restore",
+      "--trees",
+      "10000",
+      "--units",
+      "4000",
+      "--time-horizon",
+      "100"
+    ],
+    "case": "costa_brava",
+    "name": "costa_brava__restore"
+  },
+  "step_sums": {
+    "agent_recoveries": [
+      1688.3204644156276,
+      1983.3614113845038,
+      1983.689803549544,
+      2195.953707142724,
+      2241.032089642844,
+      2294.6011857640906,
+      2252.24514733746,
+      2856.808876897859,
+      1968.0494042689497,
+      1902.3830967608635,
+      1902.3830967608635
+    ],
+    "agent_service_values": [
+      675345068.9708952,
+      694176493.9845767,
+      595106941.0648631,
+      329393056.07140857,
+      784361231.374995,
+      458920237.1528181,
+      405336559.1663228,
+      342817065.227743,
+      984103424.110646,
+      856072393.5423888,
+      951153500.7184968
+    ],
+    "cumulative_service_value": 7076785971.385166,
+    "ecosystem_health": 2051.6849177188074,
+    "marginal_service_value": 3500000.0,
+    "recovery_ratio": 2000.4999999999998,
+    "restoration_cost_so_far": 2440610000.0,
+    "step": 8002000.0,
+    "units_restored": 8002000.0
+  },
+  "steps": [
+    {
+      "agent_recoveries": [
+        2.7475128774926287e-05,
+        3.434391096865786e-05,
+        3.434391096865786e-05,
+        4.0966200750239776e-05,
+        4.68961114213721e-05,
+        4.856345839826742e-05,
+        4.7582989640745254e-05,
+        0.000125028340915198,
+        3.434391096865786e-05,
+        3.228327631053839e-05,
+        3.228327631053838e-05
+      ],
+      "agent_service_values": [
+        10.990326261258264,
+        12.020368839030251,
+        10.303173290597357,
+        6.144930112535966,
+        16.413638997480238,
+        9.712691679653483,
+        8.563510645644923,
+        15.003400909823759,
+        17.173329240767675,
+        14.527474339742277,
+        16.14099248974298
+      ],
+      "cumulative_service_value": 136.9938368062772,
+      "ecosystem_health": 4.059794746524811e-05,
+      "marginal_service_value": 136.9938368062772,
+      "recovery_ratio": 0.00025,
+      "restoration_cost_so_far": 305.0,
+      "step": 1,
+      "units_restored": 1
+    },
+    {
+      "agent_recoveries": [
+        0.015721526787444193,
+        0.01965190848430524,
+        0.01965190848430524,
+        0.023441244907374925,
+        0.026834395499208977,
+        0.027788467102511014,
+        0.02722743366889508,
+        0.07154239119278755,
+        0.01965190848430524,
+        0.018472793975246926,
+        0.01847279397524693
+      ],
+      "agent_service_values": [
+        6288.767930245552,
+        6878.167969506834,
+        5895.572545291572,
+        3516.1867361062386,
+        9392.038424723143,
+        5557.693420502203,
+        4900.121237391048,
+        8585.086943134505,
+        9826.740318491991,
+        8312.757288861118,
+        9236.02753174396
+      ],
+      "cumulative_service_value": 78389.16034599816,
+      "ecosystem_health": 0.023230526918316972,
+      "marginal_service_value": 267.78332043639966,
+      "recovery_ratio": 0.10025,
+      "restoration_cost_so_far": 122305.0,
+      "step": 401,
+      "units_restored": 401
+    },
+    {
+      "agent_recoveries": [
+        0.0459582948833084,
+        0.057447868604135505,
+        0.057447868604135505,
+        0.06852512866278206,
+        0.07844422987930794,
+        0.08123324043007481,
+        0.07959318725139064,
+        0.2091378500032853,
+        0.057447868604135505,
+        0.05400099648788737,
+        0.05400099648788737
+      ],
+      "agent_service_values": [
+        18383.777536272195,
+        20106.75401144743,
+        17234.36058124065,
+        10278.769299417309,
+        27455.48045775778,
+        16246.648086014962,
+        14324.385909632774,
+        25096.542000394234,
+        28726.232216811917,
+        24300.448419549317,
+        26999.418224013927
+      ],
+      "cumulative_service_value": 229152.8167425525,
+      "ecosystem_health": 0.06790914272138625,
+      "marginal_service_value": 508.55037249127054,
+      "recovery_ratio": 0.20025,
+      "restoration_cost_so_far": 244305.0,
+      "step": 801,
+      "units_restored": 801
+    },
+    {
+      "agent_recoveries": [
+        0.10183512673521655,
+        0.1272939084190207,
+        0.1272939084190207,
+        0.15183907887879167,
+        0.1738179824053282,
+        0.1799979167049872,
+        0.17636386057370862,
+        0.4634110015241305,
+        0.1272939084190207,
+        0.11965627391387945,
+        0.11965627391387945
+      ],
+      "agent_service_values": [
+        40735.06904535397,
+        44552.86794665724,
+        38188.172525706206,
+        22775.861831818747,
+        60836.29384186487,
+        35999.58334099744,
+        31740.203987450343,
+        55609.32018289566,
+        63652.04596584711,
+        53845.32326124576,
+        59825.74383146144
+      ],
+      "cumulative_service_value": 507760.4857612987,
+      "ecosystem_health": 0.15047416735262586,
+      "marginal_service_value": 914.6122541518416,
+      "recovery_ratio": 0.30025,
+      "restoration_cost_so_far": 366305.0,
+      "step": 1201,
+      "units_restored": 1201
+    },
+    {
+      "agent_recoveries": [
+        0.19756393044879264,
+        0.24695491306099082,
+        0.2469549130609908,
+        0.2945734559452802,
+        0.3372133456068085,
+        0.34920264781812216,
+        0.34215244386802834,
+        0.8990345650805555,
+        0.24695491306099082,
+        0.23213761827733134,
+        0.23213761827733134
+      ],
+      "agent_service_values": [
+        79027.54781882155,
+        86434.2195713468,
+        74086.47391829723,
+        44186.01839179204,
+        118024.67096238297,
+        69840.52956362444,
+        61577.17532292907,
+        107884.14780966667,
+        123487.33472701783,
+        104461.9282247991,
+        116064.16638630012
+      ],
+      "cumulative_service_value": 985074.2126969778,
+      "ecosystem_health": 0.2919254768591902,
+      "marginal_service_value": 1493.0093843673822,
+      "recovery_ratio": 0.40025,
+      "restoration_cost_so_far": 488305.0,
+      "step": 1601,
+      "units_restored": 1601
+    },
+    {
+      "agent_recoveries": [
+        0.34209041344389657,
+        0.42761301680487074,
+        0.4276130168048707,
+        0.5100665648076763,
+        0.5838993613630937,
+        0.6046593520205745,
+        0.5924516216991912,
+        1.0,
+        0.42761301680487074,
+        0.40195623579657846,
+        0.40195623579657846
+      ],
+      "agent_service_values": [
+        136839.58628169307,
+        149664.5558817048,
+        128283.9050414612,
+        76509.98472115144,
+        204364.7764770828,
+        120931.8704041149,
+        106623.51835720344,
+        120000.0,
+        213823.61292310755,
+        180880.30610846033,
+        200970.0787735733
+      ],
+      "cumulative_service_value": 1638892.1949695528,
+      "ecosystem_health": 0.4832128001903279,
+      "marginal_service_value": 1857.1232410753146,
+      "recovery_ratio": 0.50025,
+      "restoration_cost_so_far": 610305.0,
+      "step": 2001,
+      "units_restored": 2001
+    },
+    {
+      "agent_recoveries": [
+        0.5229281506694691,
+        0.6536601883368364,
+        0.6536601883368363,
+        0.9057413907252497,
+        0.8925634896949913,
+        1.0,
+        0.905636693461728,
+        1.0,
+        0.6536601883368364,
+        0.6144405770366261,
+        0.6144405770366261
+      ],
+      "agent_service_values": [
+        209176.48954929432,
+        228781.06591789273,
+        196098.05650105086,
+        135861.20860878745,
+        312397.22139324696,
+        200000.0,
+        162987.4357223072,
+        120000.0,
+        326856.24057595164,
+        276498.25966648175,
+        307207.99970677233
+      ],
+      "cumulative_service_value": 2475863.9776417846,
+      "ecosystem_health": 0.7336458447172556,
+      "marginal_service_value": 1943.8165125395171,
+      "recovery_ratio": 0.6,
+      "restoration_cost_so_far": 732000.0,
+      "step": 2400,
+      "units_restored": 2400
+    },
+    {
+      "agent_recoveries": [
+        0.7041841559324047,
+        0.9858578183053666,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.8802301949155059,
+        0.8274163832205755,
+        0.8274163832205754
+      ],
+      "agent_service_values": [
+        281680.7042145212,
+        345050.23640687834,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        440150.3066655496,
+        372337.372449259,
+        413691.6432826233
+      ],
+      "cumulative_service_value": 3152880.2630188316,
+      "ecosystem_health": 0.9181439668069021,
+      "marginal_service_value": 1100.5830400954,
+      "recovery_ratio": 0.7,
+      "restoration_cost_so_far": 854000.0,
+      "step": 2800,
+      "units_restored": 2800
+    },
+    {
+      "agent_recoveries": [
+        0.8485918049818828,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9970953708537122,
+        0.9970953708537122
+      ],
+      "agent_service_values": [
+        339445.2079108029,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        448692.9168841705,
+        498527.7435194391
+      ],
+      "cumulative_service_value": 3436675.8683144124,
+      "ecosystem_health": 0.9798521939842387,
+      "marginal_service_value": 454.01289923582226,
+      "recovery_ratio": 0.8,
+      "restoration_cost_so_far": 976000.0,
+      "step": 3200,
+      "units_restored": 3200
+    },
+    {
+      "agent_recoveries": [
+        0.9442046068664263,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "agent_service_values": [
+        377691.2847926392,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        450000.0,
+        499980.0
+      ],
+      "cumulative_service_value": 3477681.2847926393,
+      "ecosystem_health": 0.9927465988926354,
+      "marginal_service_value": 73.37473940476775,
+      "recovery_ratio": 0.9,
+      "restoration_cost_so_far": 1098000.0,
+      "step": 3600,
+      "units_restored": 3600
+    },
+    {
+      "agent_recoveries": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "agent_service_values": [
+        400010.0,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        450000.0,
+        499980.0
+      ],
+      "cumulative_service_value": 3500000.0,
+      "ecosystem_health": 1.0,
+      "marginal_service_value": 40.798437683377415,
+      "recovery_ratio": 1.0,
+      "restoration_cost_so_far": 1220000.0,
+      "step": 4000,
+      "units_restored": 4000
+    }
+  ]
+}

@@ -1,0 +1,801 @@
+{
+  "agents": [
+    "Mycorrhizal Fungi",
+    "Soil Microbiome",
+    "Canopy Trees",
+    "Understory & Matorral",
+    "Pollinators & Insects",
+    "Forest Birds",
+    "Forest Mammals",
+    "Raptors & Apex Predators",
+    "Watershed & Water Cycle",
+    "Carbon & Climate",
+    "Human Communities"
+  ],
+  "cli_summary_json": {
+    "carbon_breakeven": {
+      "breakeven_price": 374.07,
+      "current_price": 80.0,
+      "gap_to_current": 294.07,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 53
+    },
+    "ecosystem": {
+      "agents": [
+        {
+          "dependency_weight": 0.13,
+          "description": "Keystone underground network \u2014 nutrient/water transport, cascades to all tree regeneration",
+          "is_keystone": true,
+          "keystone_threshold": 0.3,
+          "monetary_rate": 3077000.0,
+          "name": "Mycorrhizal Fungi",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "Soil microbiome and biocrusts \u2014 nitrogen fixation, carbon storage, erosion prevention",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 3500000.0,
+          "name": "Soil Microbiome",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.12,
+          "description": "Remaining canopy trees \u2014 self-reinforcing decline from microclimate loss and network fragmentation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2500000.0,
+          "name": "Canopy Trees",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.08,
+          "description": "Understory shrubs and aromatic plants \u2014 microclimate collapse and biodiversity loss",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 1875000.0,
+          "name": "Understory & Matorral",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "Keystone pollination services \u2014 base of animal food web, agricultural crop dependency",
+          "is_keystone": true,
+          "keystone_threshold": 0.4,
+          "monetary_rate": 3500000.0,
+          "name": "Pollinators & Insects",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.08,
+          "description": "Nesting and migratory stopover habitat \u2014 seed dispersal, insect control, ecotourism",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2500000.0,
+          "name": "Forest Birds",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.07,
+          "description": "Habitat displacement \u2014 predator-prey disruption, human-wildlife conflict, crop damage",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 2571000.0,
+          "name": "Forest Mammals",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.04,
+          "description": "Apex trophic control \u2014 carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 3000000.0,
+          "name": "Raptors & Apex Predators",
+          "trophic_level": 3
+        },
+        {
+          "dependency_weight": 0.12,
+          "description": "Aquifer recharge, flood control, drought buffering \u2014 Costa Brava water and tourism supply",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 4167000.0,
+          "name": "Watershed & Water Cycle",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.1,
+          "description": "CO\u2082 release, lost sequestration, fire risk amplification \u2014 exponential accumulation, no plateau",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 4500000.0,
+          "name": "Carbon & Climate",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.06,
+          "description": "Water, fire protection, tourism economy, traditional livelihoods \u2014 Costa Brava coastal dependency",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 8333000.0,
+          "name": "Human Communities",
+          "trophic_level": -1
+        }
+      ],
+      "interactions": [
+        {
+          "description": "Mycorrhizal collapse cuts nutrient/water supply to remaining trees",
+          "interaction_type": "keystone",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.35,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Understory plants lose mycorrhizal nutrient access",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.25,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Mycorrhizal network supports bacterial communities and nutrient cycling",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.3,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Pollinator loss collapses plant reproduction",
+          "interaction_type": "keystone",
+          "source": "Pollinators & Insects",
+          "strength": 0.3,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Insect decline reduces food for insectivorous birds",
+          "interaction_type": "trophic",
+          "source": "Pollinators & Insects",
+          "strength": 0.2,
+          "target": "Forest Birds"
+        },
+        {
+          "description": "Canopy loss removes shade \u2192 understory heat/drought stress",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.25,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Canopy loss exposes soil to UV and drying \u2192 biocrust collapse",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.2,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Root loss reduces water infiltration and aquifer recharge",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.3,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Prey decline starves apex predators",
+          "interaction_type": "trophic",
+          "source": "Forest Mammals",
+          "strength": 0.3,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Bird decline reduces prey for raptors",
+          "interaction_type": "trophic",
+          "source": "Forest Birds",
+          "strength": 0.2,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Vegetation loss reduces food and cover for herbivores",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.25,
+          "target": "Forest Mammals"
+        },
+        {
+          "description": "Understory flowering loss reduces pollinator food sources",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.2,
+          "target": "Pollinators & Insects"
+        },
+        {
+          "description": "Soil health decline reduces tree nutrient availability",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.15,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Soil degradation reduces water retention capacity",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.2,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Tree loss directly reduces carbon sequestration capacity",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.35,
+          "target": "Carbon & Climate"
+        },
+        {
+          "description": "Water quality decline affects human health and tourism",
+          "interaction_type": "dependency",
+          "source": "Watershed & Water Cycle",
+          "strength": 0.25,
+          "target": "Human Communities"
+        },
+        {
+          "description": "Climate regulation loss increases fire risk and heat stress",
+          "interaction_type": "dependency",
+          "source": "Carbon & Climate",
+          "strength": 0.1,
+          "target": "Human Communities"
+        }
+      ],
+      "name": "Costa Brava Holm Oak Forest",
+      "resource": {
+        "carbon_absorption_per_unit_yr": 0.018,
+        "carbon_price_per_tonne": 80.0,
+        "carbon_stored_per_unit": 0.5,
+        "discount_horizon_years": 100,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Costa Brava Holm Oak Forest",
+        "safe_threshold_ratio": 0.25,
+        "safe_threshold_units": 250,
+        "substrate_type": "terrestrial_soil",
+        "total_units": 1000,
+        "unit_value": 60.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "mode": "restoration",
+    "npv_analysis": {
+      "carbon_benefits": 185050.64,
+      "carbon_payback_years": 33,
+      "cost": 241634.38,
+      "horizon": 100,
+      "net_present_value": 385821890.13,
+      "roi": 1597.7177,
+      "service_benefits": 385878473.87,
+      "total_benefits": 386063524.51
+    },
+    "prevention_advantage_v06": {
+      "npv_prevention_cost": 54000.0,
+      "npv_restoration_total": 808369.51,
+      "pa_full": 15.9698,
+      "pa_simple": 6.0833,
+      "pa_with_carbon": 11.1148,
+      "pa_with_substrate": 15.1847
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit": 80.0,
+      "total_cost_per_unit": 305.0
+    },
+    "substrate": {
+      "prevention_advantage_with_substrate": 8.2836,
+      "substrate_ceiling": 0.999321,
+      "substrate_recovery_years": 51.1
+    },
+    "summary": {
+      "final_ecosystem_health": 1.0,
+      "net_restoration_value": 3225500.0,
+      "num_steps": 900,
+      "prevention_advantage": 6.0833,
+      "total_recovered_value": 3500000.0,
+      "total_restoration_cost": 274500.0,
+      "total_units_restored": 900
+    }
+  },
+  "per_agent": {
+    "Canopy Trees": 300000.0,
+    "Carbon & Climate": 450000.0,
+    "Forest Birds": 200000.0,
+    "Forest Mammals": 179970.00000000003,
+    "Human Communities": 499980.0,
+    "Mycorrhizal Fungi": 400010.0,
+    "Pollinators & Insects": 350000.0,
+    "Raptors & Apex Predators": 120000.0,
+    "Soil Microbiome": 350000.0,
+    "Understory & Matorral": 150000.0,
+    "Watershed & Water Cycle": 500040.0
+  },
+  "result": {
+    "carbon_breakeven": {
+      "breakeven_price": 374.0696397791013,
+      "current_price": 80.0,
+      "gap_to_current": 294.0696397791013,
+      "npv_absorption_per_euro": 645.9609522881165,
+      "npv_cost": 241634.38073378097,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 53
+    },
+    "extraction_npv": null,
+    "final_ecosystem_health": 1.0,
+    "net_restoration_value": 3225500.0,
+    "prevention_advantage": 6.083333333333333,
+    "prevention_advantage_v06": {
+      "npv_prevention_cost": 54000.0,
+      "npv_restoration_total": 808369.5116824333,
+      "pa_full": 15.969805771896914,
+      "pa_simple": 6.083333333333333,
+      "pa_with_carbon": 11.11479474219447,
+      "pa_with_substrate": 15.184732813734158
+    },
+    "prevention_advantage_with_substrate": 8.283637658637838,
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit": 80.0
+    },
+    "restoration_npv": {
+      "carbon_benefits": 185050.6381591354,
+      "carbon_payback_years": 33,
+      "cost": 241634.38073378097,
+      "horizon": 100,
+      "net_present_value": 385821890.12942076,
+      "roi": 1597.717689584486,
+      "service_benefits": 385878473.8719954,
+      "total_benefits": 386063524.51015455
+    },
+    "substrate_ceiling": 0.9993210489510489,
+    "substrate_recovery_cost": 0.0,
+    "substrate_recovery_years": 51.1000000000008,
+    "total_maturation_gap": 0.0,
+    "total_recovered_value": 3500000.0,
+    "total_restoration_cost": 274500.0,
+    "total_units_restored": 900,
+    "years_to_50pct": 0.0,
+    "years_to_90pct": 0.0,
+    "years_to_pioneer": 0.0
+  },
+  "scenario": {
+    "argv": [
+      "--mode",
+      "restore",
+      "--trees",
+      "1000",
+      "--units",
+      "900"
+    ],
+    "case": "costa_brava",
+    "name": "costa_brava__restore_severe"
+  },
+  "step_sums": {
+    "agent_recoveries": [
+      380.2596306761205,
+      446.6817691864623,
+      446.7620433277958,
+      494.50090101720446,
+      504.6197369139961,
+      516.6887232470267,
+      507.1427812593587,
+      643.1693478102301,
+      443.1986367448867,
+      428.42372662355365,
+      428.42372662355365
+    ],
+    "agent_service_values": [
+      152107654.8667549,
+      156338619.21526176,
+      134028612.99833876,
+      74175135.1525807,
+      176616907.9198987,
+      103337744.6494053,
+      91270486.34324676,
+      77180321.73722762,
+      221617046.31791317,
+      192790676.98059922,
+      214203294.83724424
+    ],
+    "cumulative_service_value": 1593666501.0184705,
+    "ecosystem_health": 462.0289190081346,
+    "marginal_service_value": 3500000.0,
+    "recovery_ratio": 450.5,
+    "restoration_cost_so_far": 123662250.0,
+    "step": 405450.0,
+    "units_restored": 405450.0
+  },
+  "steps": [
+    {
+      "agent_recoveries": [
+        0.00012246960444860512,
+        0.0001530870055607564,
+        0.0001530870055607564,
+        0.00018260567376203232,
+        0.00020903808178669993,
+        0.00021647023347602337,
+        0.00021209982189791506,
+        0.0005573102707610779,
+        0.0001530870055607564,
+        0.00014390178522711102,
+        0.00014390178522711102
+      ],
+      "agent_service_values": [
+        48.98906647548654,
+        53.580451946264745,
+        45.92610166822692,
+        27.390851064304847,
+        73.16332862534499,
+        43.29404669520467,
+        38.171604946967776,
+        66.87723249132935,
+        76.54962626060063,
+        64.75580335219996,
+        71.94801457785097
+      ],
+      "cumulative_service_value": 610.6461281037814,
+      "ecosystem_health": 0.00018096419522632524,
+      "marginal_service_value": 610.6461281037814,
+      "recovery_ratio": 0.0011111111111111111,
+      "restoration_cost_so_far": 305.0,
+      "step": 1,
+      "units_restored": 1
+    },
+    {
+      "agent_recoveries": [
+        0.015907192433184766,
+        0.019883990541480958,
+        0.019883990541480958,
+        0.023718077681413548,
+        0.027151300176202407,
+        0.028116639026172324,
+        0.027548979987032027,
+        0.07238728141485185,
+        0.019883990541480958,
+        0.0186909511089921,
+        0.0186909511089921
+      ],
+      "agent_service_values": [
+        6363.036045198238,
+        6959.396689518336,
+        5965.197162444287,
+        3557.7116522120323,
+        9502.955061670842,
+        5623.327805234465,
+        4957.9899282661545,
+        8686.473769782222,
+        9942.790630362137,
+        8410.927999046446,
+        9345.10173547387
+      ],
+      "cumulative_service_value": 79314.90847920904,
+      "ecosystem_health": 0.02350487118776971,
+      "marginal_service_value": 1193.531453647287,
+      "recovery_ratio": 0.10111111111111111,
+      "restoration_cost_so_far": 27755.0,
+      "step": 91,
+      "units_restored": 91
+    },
+    {
+      "agent_recoveries": [
+        0.04631081755258934,
+        0.057888521940736674,
+        0.05788852194073667,
+        0.06905075001863001,
+        0.07904593560788109,
+        0.08185633923788438,
+        0.08020370604669583,
+        0.2107420399175985,
+        0.057888521940736674,
+        0.05441521062429247,
+        0.05441521062429248
+      ],
+      "agent_service_values": [
+        18524.790129211262,
+        20260.982679257835,
+        17366.556582221,
+        10357.612502794502,
+        27666.077462758385,
+        16371.267847576877,
+        14434.260977223848,
+        25289.044790111817,
+        28946.576511245967,
+        24486.844780931613,
+        27206.51700793375
+      ],
+      "cumulative_service_value": 230910.53127126687,
+      "ecosystem_health": 0.0684300391628558,
+      "marginal_service_value": 2266.2649012056354,
+      "recovery_ratio": 0.2011111111111111,
+      "restoration_cost_so_far": 55205.0,
+      "step": 181,
+      "units_restored": 181
+    },
+    {
+      "agent_recoveries": [
+        0.1024688718741085,
+        0.12808608984263561,
+        0.12808608984263561,
+        0.15278401095889274,
+        0.17489969462912502,
+        0.1811180881858856,
+        0.17746141642597774,
+        0.4662949226124656,
+        0.12808608984263561,
+        0.12040092445207748,
+        0.12040092445207748
+      ],
+      "agent_service_values": [
+        40988.573438362146,
+        44830.13144492247,
+        38425.82695279068,
+        22917.601643833914,
+        61214.89312019377,
+        36223.61763717712,
+        31937.731114183214,
+        55955.39071349587,
+        64048.168364911515,
+        54180.41600343487,
+        60198.05420754969
+      ],
+      "cumulative_service_value": 510920.40464085527,
+      "ecosystem_health": 0.15141060525127445,
+      "marginal_service_value": 4074.5311337084277,
+      "recovery_ratio": 0.3011111111111111,
+      "restoration_cost_so_far": 82655.0,
+      "step": 271,
+      "units_restored": 271
+    },
+    {
+      "agent_recoveries": [
+        0.1985977379386461,
+        0.24824717242330763,
+        0.24824717242330763,
+        0.2961148924027168,
+        0.3389779069899261,
+        0.3510299465156676,
+        0.34394285043839223,
+        0.9037390101931128,
+        0.24824717242330763,
+        0.23335234207790917,
+        0.23335234207790917
+      ],
+      "agent_service_values": [
+        79441.08115283783,
+        86886.51034815767,
+        74474.15172699229,
+        44417.23386040753,
+        118642.26744647414,
+        70205.98930313352,
+        61899.394793397456,
+        108448.68122317354,
+        124133.51609855074,
+        105008.55393505914,
+        116671.50399211302
+      ],
+      "cumulative_service_value": 990228.8838802968,
+      "ecosystem_health": 0.2934530570392894,
+      "marginal_service_value": 6647.680567686446,
+      "recovery_ratio": 0.4011111111111111,
+      "restoration_cost_so_far": 110105.0,
+      "step": 361,
+      "units_restored": 361
+    },
+    {
+      "agent_recoveries": [
+        0.3435329926320544,
+        0.429416240790068,
+        0.42941624079006796,
+        0.5122174915277768,
+        0.5863616375145977,
+        0.6072091720765315,
+        0.5949499623303991,
+        1.0,
+        0.429416240790068,
+        0.4036512663426639,
+        0.4036512663426639
+      ],
+      "agent_service_values": [
+        137416.6323827481,
+        150295.68427652383,
+        128824.87223702038,
+        76832.62372916653,
+        205226.5731301092,
+        121441.8344153063,
+        107073.14472060194,
+        120000.0,
+        214725.29704466558,
+        181643.06985419875,
+        201817.5601460051
+      ],
+      "cumulative_service_value": 1645297.2919363459,
+      "ecosystem_health": 0.48508180772854875,
+      "marginal_service_value": 8262.220207868377,
+      "recovery_ratio": 0.5011111111111111,
+      "restoration_cost_so_far": 137555.0,
+      "step": 451,
+      "units_restored": 451
+    },
+    {
+      "agent_recoveries": [
+        0.5229281506694691,
+        0.6536601883368364,
+        0.6536601883368363,
+        0.9057413907252497,
+        0.8925634896949913,
+        1.0,
+        0.905636693461728,
+        1.0,
+        0.6536601883368364,
+        0.6144405770366261,
+        0.6144405770366261
+      ],
+      "agent_service_values": [
+        209176.48954929432,
+        228781.06591789273,
+        196098.05650105086,
+        135861.20860878745,
+        312397.22139324696,
+        200000.0,
+        162987.4357223072,
+        120000.0,
+        326856.24057595164,
+        276498.25966648175,
+        307207.99970677233
+      ],
+      "cumulative_service_value": 2475863.9776417846,
+      "ecosystem_health": 0.7336458447172556,
+      "marginal_service_value": 8639.14315378014,
+      "recovery_ratio": 0.6,
+      "restoration_cost_so_far": 164700.0,
+      "step": 540,
+      "units_restored": 540
+    },
+    {
+      "agent_recoveries": [
+        0.7041841559324047,
+        0.9858578183053666,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.8802301949155059,
+        0.8274163832205755,
+        0.8274163832205754
+      ],
+      "agent_service_values": [
+        281680.7042145212,
+        345050.23640687834,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        440150.3066655496,
+        372337.372449259,
+        413691.6432826233
+      ],
+      "cumulative_service_value": 3152880.2630188316,
+      "ecosystem_health": 0.9181439668069021,
+      "marginal_service_value": 4896.422183074988,
+      "recovery_ratio": 0.7,
+      "restoration_cost_so_far": 192150.0,
+      "step": 630,
+      "units_restored": 630
+    },
+    {
+      "agent_recoveries": [
+        0.8485918049818828,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9970953708537122,
+        0.9970953708537122
+      ],
+      "agent_service_values": [
+        339445.2079108029,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        448692.9168841705,
+        498527.7435194391
+      ],
+      "cumulative_service_value": 3436675.8683144124,
+      "ecosystem_health": 0.9798521939842387,
+      "marginal_service_value": 2021.509549325332,
+      "recovery_ratio": 0.8,
+      "restoration_cost_so_far": 219600.0,
+      "step": 720,
+      "units_restored": 720
+    },
+    {
+      "agent_recoveries": [
+        0.9442046068664263,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "agent_service_values": [
+        377691.2847926392,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        450000.0,
+        499980.0
+      ],
+      "cumulative_service_value": 3477681.2847926393,
+      "ecosystem_health": 0.9927465988926354,
+      "marginal_service_value": 326.8791324128397,
+      "recovery_ratio": 0.9,
+      "restoration_cost_so_far": 247050.0,
+      "step": 810,
+      "units_restored": 810
+    },
+    {
+      "agent_recoveries": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "agent_service_values": [
+        400010.0,
+        350000.0,
+        300000.0,
+        150000.0,
+        350000.0,
+        200000.0,
+        179970.00000000003,
+        120000.0,
+        500040.0,
+        450000.0,
+        499980.0
+      ],
+      "cumulative_service_value": 3500000.0,
+      "ecosystem_health": 1.0,
+      "marginal_service_value": 181.8110306225717,
+      "recovery_ratio": 1.0,
+      "restoration_cost_so_far": 274500.0,
+      "step": 900,
+      "units_restored": 900
+    }
+  ]
+}

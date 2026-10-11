@@ -1,0 +1,1063 @@
+{
+  "agents": [
+    "Human Communities",
+    "Animal Populations",
+    "Vegetation & Flora",
+    "General Biosphere"
+  ],
+  "cli_summary_json": {
+    "ecosystem": {
+      "agents": [
+        {
+          "dependency_weight": 0.2,
+          "description": "Health costs, water treatment, lost recreation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 750000.0,
+          "name": "Human Communities",
+          "trophic_level": -1
+        },
+        {
+          "dependency_weight": 0.3,
+          "description": "Habitat loss, population decline, species loss",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 1167000.0,
+          "name": "Animal Populations",
+          "trophic_level": 1
+        },
+        {
+          "dependency_weight": 0.15,
+          "description": "Soil erosion, pollination network disruption",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 1000000.0,
+          "name": "Vegetation & Flora",
+          "trophic_level": 0
+        },
+        {
+          "dependency_weight": 0.35,
+          "description": "Carbon release, watershed degradation, climate impact",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "monetary_rate": 1571000.0,
+          "name": "General Biosphere",
+          "trophic_level": -1
+        }
+      ],
+      "has_pricing": true,
+      "interactions": [
+        {
+          "description": "Vegetation loss reduces food and habitat for animals",
+          "interaction_type": "dependency",
+          "source": "Vegetation & Flora",
+          "strength": 0.2,
+          "target": "Animal Populations"
+        },
+        {
+          "description": "Wildlife decline reduces ecosystem health indicators",
+          "interaction_type": "dependency",
+          "source": "Animal Populations",
+          "strength": 0.1,
+          "target": "Human Communities"
+        }
+      ],
+      "name": "Oak Valley Forest",
+      "resource": {
+        "carbon_absorption_per_unit_yr": 0.022,
+        "carbon_price_per_tonne": 80.0,
+        "carbon_stored_per_unit": 0.8,
+        "discount_horizon_years": 100,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Oak Valley Forest",
+        "safe_threshold_ratio": 0.3,
+        "safe_threshold_units": 600,
+        "substrate_type": "terrestrial_soil",
+        "total_units": 2000,
+        "unit_value": 100.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "mode": "extraction",
+    "npv_analysis": {
+      "carbon_foregone": 187896.44,
+      "carbon_release": 70000.0,
+      "direct": 7545169.59,
+      "horizon": 100,
+      "substrate_damage": 220.57,
+      "total": 7803286.61
+    },
+    "pricing": {
+      "converged": true,
+      "demand_multipliers": {
+        "Animal Populations": 11.0,
+        "General Biosphere": 1.0,
+        "Human Communities": 8.6605,
+        "Vegetation & Flora": 1.0
+      },
+      "iterations": 0,
+      "prices": {
+        "Animal Populations": 0.0,
+        "General Biosphere": 328414.44,
+        "Human Communities": 0.0,
+        "Vegetation & Flora": 0.0
+      },
+      "scarcity_multipliers": {
+        "Animal Populations": 50.0,
+        "General Biosphere": 4.1052,
+        "Human Communities": 6.964,
+        "Vegetation & Flora": 4.1052
+      },
+      "spectral_radius": 0.0
+    },
+    "summary": {
+      "final_ecosystem_health": 0.150516,
+      "net_social_cost": 13054.95,
+      "num_steps": 1000,
+      "total_externality_cost": 86945.05,
+      "total_private_revenue": 100000.0,
+      "total_units_extracted": 1000
+    }
+  },
+  "per_agent": {
+    "Animal Populations": 0.0,
+    "General Biosphere": 86945.05305305736,
+    "Human Communities": 0.0,
+    "Vegetation & Flora": 0.0
+  },
+  "result": {
+    "extraction_npv": {
+      "carbon_foregone": 187896.44362117242,
+      "carbon_release": 70000.0,
+      "direct": 7545169.593481718,
+      "horizon": 100,
+      "substrate_damage": 220.56999830276175,
+      "total": 7803286.607101193
+    },
+    "final_ecosystem_health": 0.15051625519675782,
+    "net_social_cost": 13054.94694694264,
+    "total_externality_cost": 86945.05305305736,
+    "total_private_revenue": 100000.0,
+    "total_units_extracted": 1000
+  },
+  "scenario": {
+    "argv": [
+      "--trees",
+      "2000",
+      "--units",
+      "1000",
+      "--with-pricing"
+    ],
+    "case": "forest",
+    "name": "forest__extract_pricing"
+  },
+  "step_sums": {
+    "agent_cascade_damages": [
+      35.70429818464577,
+      28.342614428806947,
+      0.0,
+      0.0
+    ],
+    "agent_costs": [
+      0.0,
+      0.0,
+      0.0,
+      14300824.138590775
+    ],
+    "agent_damages": [
+      265.29848874741054,
+      385.3855962752633,
+      229.59419056276474,
+      229.59419056276474
+    ],
+    "agent_direct_damages": [
+      229.59419056276474,
+      357.0429818464564,
+      229.59419056276474,
+      229.59419056276474
+    ],
+    "agent_prices": [
+      0.0,
+      0.0,
+      0.0,
+      120859497.53883077
+    ],
+    "carbon_price_used": 0.0,
+    "cumulative_cost": 14300824.138590775,
+    "depletion_ratio": 250.25,
+    "discount_factor_at_step": 1000.0,
+    "ecosystem_health": 716.5275280865571,
+    "effective_k": 1999000.0,
+    "k_fraction": 999.9905377234604,
+    "marginal_cost": 86945.05305305736,
+    "model_confidence": 732.6642857142843,
+    "npv_externality": 0.0,
+    "private_revenue": 50050000.0,
+    "step": 500500.0,
+    "substrate_erosion": 0.0013154972596153836,
+    "units_extracted": 500500.0
+  },
+  "steps": [
+    {
+      "agent_cascade_damages": [
+        7.442768185740829e-06,
+        9.263760168600114e-06,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        1.296986498463334
+      ],
+      "agent_damages": [
+        5.376156902874139e-05,
+        8.36914420260084e-05,
+        4.631880084300056e-05,
+        4.631880084300056e-05
+      ],
+      "agent_direct_damages": [
+        4.631880084300056e-05,
+        7.442768185740829e-05,
+        4.631880084300056e-05,
+        4.631880084300056e-05
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        80003.70567570989
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 1.296986498463334,
+      "depletion_ratio": 0.0005,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.999940980853165,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999999914529294,
+      "keystone_triggered": [],
+      "marginal_cost": 1.296986498463334,
+      "model_confidence": 0.9,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.200016739689374,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1200081257940762,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 80003.70567570989,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.0000836984468697,
+          "General Biosphere": 1.0000463209463737,
+          "Human Communities": 1.0000537644594905,
+          "Vegetation & Flora": 1.0000463209463737
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 100.0,
+      "resilience_zone": "green",
+      "step": 1,
+      "substrate_erosion": 3.8461817307692303e-07,
+      "units_extracted": 1
+    },
+    {
+      "agent_cascade_damages": [
+        0.0010237999050229409,
+        0.0012742888860811756,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        179.5444012265702
+      ],
+      "agent_damages": [
+        0.007395244335428819,
+        0.011512287936310579,
+        0.006371444430405878,
+        0.006371444430405878
+      ],
+      "agent_direct_damages": [
+        0.006371444430405878,
+        0.010237999050229403,
+        0.006371444430405878,
+        0.006371444430405878
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        80512.98400350449
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 179.5444012265702,
+      "depletion_ratio": 0.0505,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.9918815425368182,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999991151538908,
+      "keystone_triggered": [],
+      "marginal_cost": 2.3632874298481568,
+      "model_confidence": 0.9,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.2023292728469586,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1211287036441784,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 80512.98400350449,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.0116463642347926,
+          "General Biosphere": 1.006412300043806,
+          "Human Communities": 1.0074503414306912,
+          "Vegetation & Flora": 1.006412300043806
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 10100.0,
+      "resilience_zone": "green",
+      "step": 101,
+      "substrate_erosion": 4.130604807692307e-07,
+      "units_extracted": 101
+    },
+    {
+      "agent_cascade_damages": [
+        0.0028430669898629572,
+        0.0035386686888640093,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        504.3370246294164
+      ],
+      "agent_damages": [
+        0.020536410434183017,
+        0.03196933858749358,
+        0.01769334344432006,
+        0.01769334344432006
+      ],
+      "agent_direct_damages": [
+        0.01769334344432006,
+        0.028430669898629572,
+        0.01769334344432006,
+        0.01769334344432006
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        81440.96292751262
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 504.3370246294164,
+      "depletion_ratio": 0.1005,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.9774552446147553,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999981130642551,
+      "keystone_triggered": [],
+      "marginal_cost": 4.306269965680428,
+      "model_confidence": 0.9,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.206605026031065,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1231903910349477,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 81440.96292751262,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.0330251301553253,
+          "General Biosphere": 1.0180120365939078,
+          "Human Communities": 1.0209669972962307,
+          "Vegetation & Flora": 1.0180120365939078
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 20100.0,
+      "resilience_zone": "green",
+      "step": 201,
+      "substrate_erosion": 4.972720192307694e-07,
+      "units_extracted": 201
+    },
+    {
+      "agent_cascade_damages": [
+        0.00605364142254404,
+        0.0075347613798573895,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        1096.1632352343504
+      ],
+      "agent_damages": [
+        0.04372744832183097,
+        0.06807117560529781,
+        0.03767380689928693,
+        0.03767380689928693
+      ],
+      "agent_direct_damages": [
+        0.03767380689928693,
+        0.06053641422544042,
+        0.03767380689928693,
+        0.03767380689928693
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        83131.89495781243
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 1096.1632352343504,
+      "depletion_ratio": 0.1505,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.951996254204401,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.999996861252396,
+      "keystone_triggered": [],
+      "marginal_cost": 7.846799453611084,
+      "model_confidence": 0.9,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.2146086640574747,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1270149040590938,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 83131.89495781243,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.0730433202873737,
+          "General Biosphere": 1.0391486869726554,
+          "Human Communities": 1.0457269721326763,
+          "Vegetation & Flora": 1.0391486869726554
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 30100.0,
+      "resilience_zone": "green",
+      "step": 301,
+      "substrate_erosion": 6.372527884615385e-07,
+      "units_extracted": 301
+    },
+    {
+      "agent_cascade_damages": [
+        0.011580134693980351,
+        0.014413399403012797,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        2174.59224958135
+      ],
+      "agent_damages": [
+        0.08364713170904428,
+        0.1302147463428163,
+        0.07206699701506393,
+        0.07206699701506393
+      ],
+      "agent_direct_damages": [
+        0.07206699701506393,
+        0.1158013469398035,
+        0.07206699701506393,
+        0.07206699701506393
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        86213.12071308956
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 2174.59224958135,
+      "depletion_ratio": 0.2005,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.9081726512478143,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.999995235786691,
+      "keystone_triggered": [],
+      "marginal_cost": 14.298677346026125,
+      "model_confidence": 0.8985000000000002,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.2299418151308734,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1342214181557349,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 86213.12071308956,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.149709075654367,
+          "General Biosphere": 1.0776640089136196,
+          "Human Communities": 1.091282664793804,
+          "Vegetation & Flora": 1.0776640089136196
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 40100.0,
+      "resilience_zone": "yellow",
+      "step": 401,
+      "substrate_erosion": 8.330027884615386e-07,
+      "units_extracted": 401
+    },
+    {
+      "agent_cascade_damages": [
+        0.02069723485607111,
+        0.0257611435792352,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        4139.78853532365
+      ],
+      "agent_damages": [
+        0.14950295275224712,
+        0.23273349213994626,
+        0.128805717896176,
+        0.128805717896176
+      ],
+      "agent_direct_damages": [
+        0.128805717896176,
+        0.20697234856071106,
+        0.128805717896176,
+        0.128805717896176
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        91827.96724378185
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 4139.78853532365,
+      "depletion_ratio": 0.2505,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.8358765028594787,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999931127355162,
+      "keystone_triggered": [],
+      "marginal_cost": 26.05679940157097,
+      "model_confidence": 0.7485000000000004,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.2606656200305295,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1482269249623032,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 91827.96724378185,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.303328100152647,
+          "General Biosphere": 1.1478495905472732,
+          "Human Communities": 1.1757830356213999,
+          "Vegetation & Flora": 1.1478495905472732
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 50100.0,
+      "resilience_zone": "yellow",
+      "step": 501,
+      "substrate_erosion": 1.084522019230769e-06,
+      "units_extracted": 501
+    },
+    {
+      "agent_cascade_damages": [
+        0.03456474001114887,
+        0.0430215551206809,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        7673.6875837006355
+      ],
+      "agent_damages": [
+        0.24967251561455348,
+        0.3886689552321695,
+        0.2151077756034046,
+        0.2151077756034046
+      ],
+      "agent_direct_damages": [
+        0.2151077756034046,
+        0.3456474001114886,
+        0.2151077756034046,
+        0.2151077756034046
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        101924.8216677161
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 7673.6875837006355,
+      "depletion_ratio": 0.3,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.7259109225057362,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999903990963681,
+      "keystone_triggered": [],
+      "marginal_cost": 47.204046024530726,
+      "model_confidence": 0.6,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.3271549869939214,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.1768767657606098,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 101924.8216677161,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 1.6357749349696071,
+          "General Biosphere": 1.2740602708464512,
+          "Human Communities": 1.3327513929721595,
+          "Vegetation & Flora": 1.2740602708464512
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 60000.0,
+      "resilience_zone": "red",
+      "step": 600,
+      "substrate_erosion": 1.3884615384615389e-06,
+      "units_extracted": 600
+    },
+    {
+      "agent_cascade_damages": [
+        0.05397402548497099,
+        0.06717963195261234,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        14162.208118577362
+      ],
+      "agent_damages": [
+        0.38987218524803285,
+        0.606919886802322,
+        0.33589815976306187,
+        0.33589815976306187
+      ],
+      "agent_direct_damages": [
+        0.33589815976306187,
+        0.5397402548497097,
+        0.33589815976306187,
+        0.33589815976306187
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        120463.45176736389
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 14162.208118577362,
+      "depletion_ratio": 0.35,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.5720005170281659,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999869171473298,
+      "keystone_triggered": [],
+      "marginal_cost": 86.04310192329467,
+      "model_confidence": 0.5785714285714286,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 1.508802132911316,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.2472927961044824,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 120463.45176736389,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 2.5440106645565788,
+          "General Biosphere": 1.5057931470920487,
+          "Human Communities": 1.63900083854811,
+          "Vegetation & Flora": 1.5057931470920487
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 70000.0,
+      "resilience_zone": "red",
+      "step": 700,
+      "substrate_erosion": 1.7509615384615382e-06,
+      "units_extracted": 700
+    },
+    {
+      "agent_cascade_damages": [
+        0.07735365688593943,
+        0.0962794631879561,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        25991.236182550627
+      ],
+      "agent_damages": [
+        0.5587509728257198,
+        0.8698160320473497,
+        0.4813973159397804,
+        0.4813973159397804
+      ],
+      "agent_direct_damages": [
+        0.4813973159397804,
+        0.7735365688593936,
+        0.4813973159397804,
+        0.4813973159397804
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        154260.67480728752
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 25991.236182550627,
+      "depletion_ratio": 0.4,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.38660633785076093,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999825670572654,
+      "keystone_triggered": [],
+      "marginal_cost": 156.8861573451686,
+      "model_confidence": 0.5571428571428572,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 2.5362874795208485,
+          "General Biosphere": 1.0,
+          "Human Communities": 1.5747972966111699,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 154260.67480728752,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 7.681437397604241,
+          "General Biosphere": 1.9282584350910938,
+          "Human Communities": 2.266293948349103,
+          "Vegetation & Flora": 1.9282584350910938
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 80000.0,
+      "resilience_zone": "red",
+      "step": 800,
+      "substrate_erosion": 2.1692307692307695e-06,
+      "units_extracted": 800
+    },
+    {
+      "agent_cascade_damages": [
+        0.09999999999999998,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        47565.64836454507
+      ],
+      "agent_damages": [
+        0.7294612617505519,
+        1.0,
+        0.629461261750552,
+        0.629461261750552
+      ],
+      "agent_direct_damages": [
+        0.629461261750552,
+        1.0,
+        0.629461261750552,
+        0.629461261750552
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        215901.8524701288
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 47565.64836454507,
+      "depletion_ratio": 0.45,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.2393771167746137,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999772248945515,
+      "keystone_triggered": [],
+      "marginal_cost": 286.2156677130042,
+      "model_confidence": 0.5357142857142857,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 11.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 5.0659611526159845,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 215901.8524701288,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 50.0,
+          "General Biosphere": 2.69877315587661,
+          "Human Communities": 3.696328320559986,
+          "Vegetation & Flora": 2.69877315587661
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 90000.0,
+      "resilience_zone": "red",
+      "step": 900,
+      "substrate_erosion": 2.6432692307692306e-06,
+      "units_extracted": 900
+    },
+    {
+      "agent_cascade_damages": [
+        0.09999999999999998,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "agent_costs": [
+        0.0,
+        0.0,
+        0.0,
+        86945.05305305736
+      ],
+      "agent_damages": [
+        0.8564053497189174,
+        1.0,
+        0.7564053497189174,
+        0.7564053497189174
+      ],
+      "agent_direct_damages": [
+        0.7564053497189174,
+        1.0,
+        0.7564053497189174,
+        0.7564053497189174
+      ],
+      "agent_prices": [
+        0.0,
+        0.0,
+        0.0,
+        328414.4372944496
+      ],
+      "carbon_price_used": 0.0,
+      "cumulative_cost": 86945.05305305736,
+      "depletion_ratio": 0.5,
+      "discount_factor_at_step": 1.0,
+      "ecosystem_health": 0.15051625519675782,
+      "effective_k": 1999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999707667275639,
+      "keystone_triggered": [],
+      "marginal_cost": 522.6855100786779,
+      "model_confidence": 0.5142857142857142,
+      "npv_externality": 0.0,
+      "price_result": {
+        "anchor_contributions": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "converged": true,
+        "demand_multipliers": {
+          "Animal Populations": 11.0,
+          "General Biosphere": 1.0,
+          "Human Communities": 8.660452515792057,
+          "Vegetation & Flora": 1.0
+        },
+        "iterations": 0,
+        "prices": {
+          "Animal Populations": 0.0,
+          "General Biosphere": 328414.4372944496,
+          "Human Communities": 0.0,
+          "Vegetation & Flora": 0.0
+        },
+        "scarcity_multipliers": {
+          "Animal Populations": 50.0,
+          "General Biosphere": 4.10518046618062,
+          "Human Communities": 6.964047741629142,
+          "Vegetation & Flora": 4.10518046618062
+        },
+        "spectral_radius": 0.0
+      },
+      "private_revenue": 100000.0,
+      "resilience_zone": "red",
+      "step": 1000,
+      "substrate_erosion": 3.1730769230769233e-06,
+      "units_extracted": 1000
+    }
+  ]
+}
