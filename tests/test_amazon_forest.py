@@ -361,9 +361,12 @@ def test_amazon_max_externality_matches_per_hectare_calibration():
 
 
 def test_amazon_agent_value_equals_pricing_anchors():
-    """The agent value and the (carbon-free) pricing anchors agree."""
+    """The agent value and the documented (carbon-free) pricing anchors
+    agree. The PLACEHOLDER anchors of the other agents (Step 4) are each
+    agent's own annual value and are left out."""
     eco = build_amazon_ecosystem(with_pricing=True)
-    anchors = sum(p.anchor_value for p in eco.pricing.anchors)
+    anchors = sum(p.anchor_value for p in eco.pricing.anchors
+                  if "PLACEHOLDER" not in p.source)
     agents = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
     assert anchors == pytest.approx(agents, rel=1e-12)

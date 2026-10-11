@@ -122,7 +122,8 @@ class TestExtractionSerialization:
         d = simulation_result_to_dict(result)
         assert "pricing" in d
         assert "prices_eur_yr" in d["pricing"]
-        assert "converged" in d["pricing"]
+        assert d["pricing"]["experimental"] is True
+        assert d["pricing"]["spectral_radius_bound"] < 1.0
 
     def test_pricing_absent_when_disabled(self):
         result, _ = _run_extraction(with_pricing=False)
@@ -299,7 +300,7 @@ _NON_MONETARY_KEYS = {
     # ratios
     "restoration_cost_ratio", "penalty_ratio", "roi",
     # pricing decomposition
-    "scarcity_multipliers", "demand_multipliers", "spectral_radius", "iterations",
+    "scarcity_multipliers", "demand_multipliers", "spectral_radius_bound", "iterations",
 }
 _UNIT_SUFFIXES = ("_eur_yr", "_eur_per_ha_yr", "_eur_pv", "_eur", "_eur_per_t")
 

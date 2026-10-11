@@ -48,6 +48,16 @@ def _horizon_sensitivity_lines(by_horizon: dict) -> list:
     return lines
 
 
+# Shown at the top of every extraction report that used endogenous pricing.
+_PRICING_BANNER: list = [
+    "  \u26a0  EXPERIMENTAL: endogenous pricing (--with-pricing) is quarantined",
+    "     (decision D4, C8). Every price below is certified convergent, but the",
+    "     formulation counts upstream value once per dependent agent, prices",
+    "     the whole loss at the end-state scarcity price, and most anchors are",
+    "     placeholders. Do not use these figures as estimates.",
+]
+
+
 def format_report(result: SimulationResult) -> str:
     """
     Format a SimulationResult into a human-readable plain-text externality report.
@@ -104,6 +114,9 @@ def format_report(result: SimulationResult) -> str:
     lines.append(f"  {title}")
     lines.append(_DOUBLE_LINE)
     lines.append("")
+    if ecosystem.pricing is not None:
+        lines.extend(_PRICING_BANNER)
+        lines.append("")
 
     # Resource state
     lines.append(
@@ -448,14 +461,18 @@ def format_report(result: SimulationResult) -> str:
             pr = final_step.price_result
             lines.append("")
             lines.append(
-                f"  \u2500\u2500 Price Decomposition (v0.7 endogenous) \u2500"
-                + "\u2500" * 20
+                f"  \u2500\u2500 Price Decomposition (v0.7 endogenous, EXPERIMENTAL) \u2500"
+                + "\u2500" * 7
+            )
+            method: str = (
+                "row/column sum bound" if pr.convergence_check == "norm_bound"
+                else f"direct iteration, {pr.iterations} iterations"
             )
             lines.append(
-                f"  Solver: {'converged' if pr.converged else 'FAILED'}"
-                f" in {pr.iterations} iterations"
-                f"  (spectral radius {pr.spectral_radius:.4f})"
+                f"  Convergence: certified, \u03c1(S\u00b7W) <= "
+                f"{pr.spectral_radius_bound:.4f} < 1 ({method})"
             )
+            lines.append("  EXPERIMENTAL: not an estimate (see banner above)")
             lines.append("")
             lines.append(
                 f"  {'Agent':<24} {'Price':>12} "

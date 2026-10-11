@@ -59,8 +59,11 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
     "costa_brava__extract": (
         "costa_brava", ["--trees", "10000", "--units", "4000"],
     ),
+    # Pricing (experimental) runs stay below the depletion at which the
+    # price system stops converging (Costa Brava ~32.6%, Posidonia ~35.4%,
+    # Amazon ~22.3%): beyond it the run fails explicitly (Step 4, C8).
     "costa_brava__extract_pricing": (
-        "costa_brava", ["--trees", "2000", "--units", "800", "--with-pricing"],
+        "costa_brava", ["--trees", "2000", "--units", "600", "--with-pricing"],
     ),
     "costa_brava__restore": (
         "costa_brava",
@@ -79,7 +82,7 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
         "posidonia", ["--hectares", "5000", "--units", "2000"],
     ),
     "posidonia__extract_pricing": (
-        "posidonia", ["--hectares", "1000", "--units", "400", "--with-pricing"],
+        "posidonia", ["--hectares", "1000", "--units", "300", "--with-pricing"],
     ),
     "posidonia__restore": (
         "posidonia",

@@ -411,16 +411,20 @@ class AnchorPoint:
 
 @dataclass
 class PricingConfig:
-    """Top-level configuration for endogenous pricing.
+    """Top-level configuration for endogenous pricing (EXPERIMENTAL, D4).
+
+    There is no fallback: a state whose price system cannot be certified
+    convergent raises gaia.pricing.PricingConvergenceError (C8).
 
     Attributes:
-        anchors: At least one AnchorPoint required.
+        anchors: One AnchorPoint per agent at least: every agent must be
+            anchored (validated).
         scarcity_functions: Per-agent scarcity functions, keyed by agent name.
         default_scarcity: Fallback for agents without explicit scarcity function.
-        convergence_tolerance: For iterative solver (default 1e-6).
-        max_iterations: Cap on iterative solve (default 100).
-        fallback_to_static: If True, use each agent's static annual value
-            (€/yr at full damage over the resource area) when the solve fails.
+        convergence_tolerance: Maximum residual of the price solve, relative
+            to max(S·A) (default 1e-6).
+        max_iterations: Cap on the direct iterations used to certify
+            convergence when the row/column sum bound is >= 1 (default 100).
     """
 
     anchors: list              # List[AnchorPoint]
@@ -430,29 +434,32 @@ class PricingConfig:
     )
     convergence_tolerance: float = 1e-6
     max_iterations: int = 100
-    fallback_to_static: bool = True
 
 
 @dataclass
 class PriceResult:
     """Output of the price solver at a given ecosystem state.
 
+    A PriceResult exists only for a certified convergent state: the solver
+    raises instead of returning an unconverged result.
+
     Attributes:
-        prices: Computed price per agent (Dict[str, float]).
+        prices: Computed price per agent, €/yr (Dict[str, float]).
         scarcity_multipliers: scarcity(health) per agent.
         demand_multipliers: Network centrality contribution per agent.
         anchor_contributions: How much of price comes from anchor vs network.
-        spectral_radius: Spectral radius of S*W — must be < 1.0 for convergence.
-        converged: Whether the solve converged.
-        iterations: Number of iterations (if iterative solver used).
+        spectral_radius_bound: Guaranteed upper bound on ρ(S·W), < 1.
+        convergence_check: How convergence was proven: "norm_bound"
+            (row/column sums) or "direct_iteration" (Collatz–Wielandt).
+        iterations: Direct iterations used (0 for "norm_bound").
     """
 
     prices: dict              # Dict[str, float]
     scarcity_multipliers: dict
     demand_multipliers: dict
     anchor_contributions: dict
-    spectral_radius: float
-    converged: bool
+    spectral_radius_bound: float
+    convergence_check: str
     iterations: int = 0
 
 

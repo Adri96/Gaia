@@ -77,6 +77,7 @@ from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
     apply_carbon_price_view,
+    drop_pricing_in_restore_mode,
     handle_deprecated_alias,
     output_result,
     warn_unused_restoration_args,
@@ -98,7 +99,7 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
-from gaia.pricing import scale_anchors
+from gaia.pricing import anchor_every_agent, scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -172,8 +173,11 @@ _OAK_VALLEY_DISCOUNT = DiscountConfig(
     horizon_years=100,
 )
 
-# v0.7: Oak Valley pricing configuration. Anchor values are €/yr for the
-# FOREST_AREA_HA reference forest and are scaled with area_ha by the builder.
+# v0.7: Oak Valley pricing configuration (EXPERIMENTAL, decision D4). Anchor
+# values are €/yr for the FOREST_AREA_HA reference forest and are scaled with
+# area_ha by the builder. Only the water supply anchor is documented; the
+# builder anchors every other agent at its own direct annual service value,
+# annual_value_per_ha × area_ha (gaia.pricing.anchor_every_agent) [PLACEHOLDER].
 _OAK_VALLEY_PRICING = PricingConfig(
     anchors=[
         # The former carbon anchor (€80/t × 1,000 t/yr) is gone: carbon is
@@ -210,8 +214,8 @@ def build_forest_ecosystem(
         total_trees: Total number of trees in the forest. [PLACEHOLDER]
         safe_threshold_ratio: Fraction that can be safely extracted. [PLACEHOLDER]
         tree_value: Revenue per tree in euros. [PLACEHOLDER]
-        with_pricing: If True, enable v0.7 endogenous pricing. Default False
-            for backward compatibility with v0.1-v0.6 tests.
+        with_pricing: If True, enable the EXPERIMENTAL v0.7 endogenous
+            pricing (every agent anchored). Default False.
         area_ha: Forest area in hectares. Default: total_trees at the
             reference density (FOREST_TREES_PER_HA). Hold it fixed to vary
             the number of trees without changing the per-ha result.
@@ -312,7 +316,9 @@ def build_forest_ecosystem(
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
-            scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA)
+            anchor_every_agent(
+                scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA), agents, area_ha
+            )
             if with_pricing else None
         ),
     )
@@ -487,6 +493,7 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
     warn_unused_restoration_args(args)
+    drop_pricing_in_restore_mode(args)
     try:
         ecosystem = build_forest_ecosystem(
             total_trees=args.trees,

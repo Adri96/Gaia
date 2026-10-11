@@ -39,6 +39,7 @@ from gaia.discount import (
 )
 from gaia.carbon import SOCIAL_COST_OF_CARBON_EUR
 from gaia.models import RestorationCost
+from gaia.pricing import PricingConvergenceError
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report
 from gaia.serialization import to_json
@@ -182,28 +183,68 @@ def test_npv_bounded_as_horizon_grows(name):
     assert npv_2000 <= 1.10 * npv_1000, (npv_1000, npv_2000)
 
 
-# ── 5. Cost is monotonic in depletion with endogenous pricing (C8) ──────────
+# ── 5. With endogenous pricing: monotone and continuous where it succeeds,
+#       explicit failure where it cannot (C8, Step 4) ─────────────────────────
 
 
-@pytest.mark.parametrize("case", [
-    "forest",
-    "costa_brava",
-    pytest.param("posidonia", marks=pytest.mark.xfail(strict=True, reason=(
-        "C8: once the spectral radius reaches 1 the solver falls back to "
-        "static rates on a different scale, so total cost drops"))),
-    pytest.param("amazon_forest", marks=pytest.mark.xfail(strict=True, reason=(
-        "C8: once the spectral radius reaches 1 the solver falls back to "
-        "static rates on a different scale, so total cost drops"))),
-])
-def test_cost_monotonic_in_depletion_with_pricing(case):
-    eco, _ = build(case, 200, with_pricing=True)
-    costs = [s.annual_externality for s in run_extraction(eco, 200).steps]
+def priced_costs(case, total_units):
+    """Annual externality per step with pricing on, and the failing step.
+
+    Returns the costs of every step up to the first one whose price system
+    cannot be certified convergent, and that step (None if all succeed).
+    """
+    eco, _ = build(case, total_units, with_pricing=True)
+    try:
+        steps = run_extraction(eco, total_units).steps
+        return [s.annual_externality for s in steps], None
+    except PricingConvergenceError as exc:
+        failed = exc.step
+    steps = run_extraction(eco, failed - 1).steps if failed > 1 else []
+    return [s.annual_externality for s in steps], failed
+
+
+@pytest.mark.parametrize("case", list(CASES))
+def test_cost_monotonic_where_pricing_succeeds_failure_explicit(case):
+    """Where pricing succeeds, cost never decreases with depletion; where it
+    cannot, every run fails with PricingConvergenceError — never a silent
+    fallback to another scale (the old drop at ρ = 1)."""
+    costs, failed = priced_costs(case, 200)
+    assert all(math.isfinite(c) and c >= 0.0 for c in costs)
     drops = [
         (i + 1, costs[i - 1], costs[i])
         for i in range(1, len(costs))
         if costs[i] < costs[i - 1] - 1e-9 * abs(costs[i - 1])
     ]
     assert not drops, f"cost decreases at (step, before, after): {drops[:3]}"
+
+    if failed is not None:
+        eco, _ = build(case, 200, with_pricing=True)
+        for units in sorted({failed, (failed + 200) // 2, 200}):
+            with pytest.raises(PricingConvergenceError) as info:
+                run_extraction(eco, units)
+            assert info.value.step == failed
+
+
+@pytest.mark.parametrize("case", list(CASES))
+def test_cost_continuous_where_pricing_succeeds(case):
+    """cost(d + ε) − cost(d) >= 0 and shrinks with ε: refining the depletion
+    grid 10× (per-ha cost is the same at the same depletion, D2) shrinks the
+    largest increment, which a jump would not."""
+    density = CASES[case][2]
+    coarse = [c / (100 / density) for c in priced_costs(case, 100)[0]]
+    fine = [c / (1000 / density) for c in priced_costs(case, 1000)[0]]
+    k = len(coarse)
+    assert k >= 10 and len(fine) >= 10 * k
+    for j in range(1, k + 1):
+        assert fine[10 * j - 1] == pytest.approx(coarse[j - 1], rel=1e-9)
+
+    def increments(costs):
+        return [b - a for a, b in zip([0.0] + costs[:-1], costs)]
+
+    coarse_inc = increments(coarse)
+    fine_inc = increments(fine[:10 * k])
+    assert min(fine_inc) >= -1e-9 * max(fine)
+    assert max(fine_inc) <= 0.5 * max(coarse_inc), (max(fine_inc), max(coarse_inc))
 
 
 # ── 6. No hidden carbon (C5, D3) ─────────────────────────────────────────────

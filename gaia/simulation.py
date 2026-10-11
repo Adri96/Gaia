@@ -386,6 +386,34 @@ def _extraction_result(
     )
 
 
+def _pricing_failure(exc, step: int, total_units: int):
+    """The PricingConvergenceError ``exc`` located at extraction ``step``.
+
+    No price exists at this state, so the extraction stops here: there is
+    no fallback to static values (C8). The message names the last step
+    whose prices were certified.
+    """
+    from gaia.pricing import PricingConvergenceError
+
+    depletion: float = step / total_units
+    if step > 1:
+        last_ok: str = (
+            f"Pricing was certified up to step {step - 1} "
+            f"(depletion {(step - 1) / total_units:.2%}); extract at most "
+            f"{step - 1} units, or run without --with-pricing."
+        )
+    else:
+        last_ok = "No step could be priced; run without --with-pricing."
+    return PricingConvergenceError(
+        f"Endogenous pricing (EXPERIMENTAL) failed at extraction step {step} "
+        f"(depletion {depletion:.2%}): {exc} No fallback price is substituted, "
+        f"so this run has no valid result. {last_ok}",
+        spectral_radius_bound=exc.spectral_radius_bound,
+        step=step,
+        depletion_ratio=depletion,
+    )
+
+
 def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationResult:
     """
     Simulate extracting `units_to_extract` units from the ecosystem.
@@ -427,6 +455,11 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
     Raises:
         ValueError: If inputs fail validation.
+        PricingConvergenceError: (a ValueError) with pricing on, at the
+            first step whose price system cannot be certified convergent.
+            Damage, hence scarcity, only rises with depletion, so ρ(S·W)
+            never falls at later steps; no static value is ever
+            substituted (C8).
     """
     validate_ecosystem(ecosystem)
     validate_extraction(ecosystem, units_to_extract)
@@ -466,11 +499,8 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
     annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
 
-    # v0.7: Pre-extract pricing metadata
+    # v0.7: Endogenous pricing (experimental, D4)
     has_pricing: bool = ecosystem.pricing is not None
-    static_prices: dict = {}
-    if has_pricing:
-        static_prices = {agent_names[i]: annual_values[i] for i in range(n_agents)}
 
     # v0.5: Initialize substrate state if profile is configured
     has_substrate: bool = resource.substrate is not None
@@ -523,7 +553,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         step_agent_prices: list = []
 
         if has_pricing:
-            from gaia.pricing import solve_prices
+            from gaia.pricing import PricingConvergenceError, solve_prices
             # Agent health = 1.0 - effective_damage
             agent_healths_dict: dict = {}
             for i in range(n_agents):
@@ -534,15 +564,17 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
                     h = 1.0
                 agent_healths_dict[agent_names[i]] = h
 
-            step_price_result = solve_prices(
-                agent_names=agent_names,
-                agent_healths=agent_healths_dict,
-                interactions=interactions,
-                pricing=ecosystem.pricing,
-                static_prices=static_prices,
-            )
+            try:
+                step_price_result = solve_prices(
+                    agent_names=agent_names,
+                    agent_healths=agent_healths_dict,
+                    interactions=interactions,
+                    pricing=ecosystem.pricing,
+                )
+            except PricingConvergenceError as exc:
+                raise _pricing_failure(exc, step, total_units) from exc
             step_agent_prices = [
-                step_price_result.prices.get(agent_names[i], annual_values[i])
+                step_price_result.prices[agent_names[i]]
                 for i in range(n_agents)
             ]
 
@@ -551,11 +583,8 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         health_sum: float = 0.0
 
         for i in range(n_agents):
-            # v0.7: Use dynamic price (€/yr) if available, else the static annual value
-            rate: float = (
-                step_agent_prices[i] if has_pricing and step_agent_prices
-                else annual_values[i]
-            )
+            # v0.7: the endogenous price (€/yr) when pricing is on, else the static annual value
+            rate: float = step_agent_prices[i] if has_pricing else annual_values[i]
             cost: float = effective_damages[i] * agents[i].dependency_weight * rate
             agent_costs.append(cost)
             step_total_cost += cost

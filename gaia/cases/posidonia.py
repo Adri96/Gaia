@@ -130,6 +130,7 @@ from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
     apply_carbon_price_view,
+    drop_pricing_in_restore_mode,
     output_result,
     warn_unused_restoration_args,
 )
@@ -150,7 +151,7 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
-from gaia.pricing import scale_anchors
+from gaia.pricing import anchor_every_agent, scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -230,10 +231,13 @@ _POSIDONIA_DISCOUNT = DiscountConfig(
 # Posidonia's unit is the hectare: area_ha always equals total_hectares.
 POSIDONIA_AREA_HA: float = 5_000.0
 
-# v0.7: Posidonia pricing configuration. Anchor values are €/yr for the
-# POSIDONIA_AREA_HA reference meadow and are scaled with area_ha by the
-# builder. The former Blue Carbon anchor (€80/t × 1.7 t CO₂/ha/yr × 1,000 ha)
-# is gone: carbon is valued only by gaia.carbon (decision D3).
+# v0.7: Posidonia pricing configuration (EXPERIMENTAL, decision D4). Anchor
+# values are €/yr for the POSIDONIA_AREA_HA reference meadow and are scaled
+# with area_ha by the builder. The former Blue Carbon anchor (€80/t × 1.7 t
+# CO₂/ha/yr × 1,000 ha) is gone: carbon is valued only by gaia.carbon
+# (decision D3). Only the tourism and fishing anchors are documented; the
+# builder anchors every other agent at its own direct annual service value,
+# annual_value_per_ha × area_ha (gaia.pricing.anchor_every_agent) [PLACEHOLDER].
 _POSIDONIA_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
@@ -311,7 +315,8 @@ def build_posidonia_ecosystem(
             economic value extracted by activities that destroy Posidonia:
             coastal development, marina construction, trawling permits.
             NOT the value of Posidonia itself. [User spec, Low confidence]
-        with_pricing: If True, attach v0.7 endogenous pricing configuration.
+        with_pricing: If True, attach the EXPERIMENTAL v0.7 endogenous pricing
+            configuration (every agent anchored).
         area_ha: Must equal total_hectares if given — the unit is the
             hectare, so the area is not an independent parameter.
 
@@ -500,7 +505,9 @@ def build_posidonia_ecosystem(
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
-            scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA)
+            anchor_every_agent(
+                scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA), agents, area_ha
+            )
             if with_pricing else None
         ),
     )
@@ -686,6 +693,7 @@ _POSIDONIA_NOTES = [
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
     warn_unused_restoration_args(args)
+    drop_pricing_in_restore_mode(args)
     try:
         ecosystem = build_posidonia_ecosystem(
             total_hectares=args.hectares,

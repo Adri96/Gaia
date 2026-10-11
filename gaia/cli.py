@@ -48,7 +48,13 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--with-pricing",
         action="store_true",
         default=False,
-        help="Enable v0.7 endogenous pricing (default: disabled)",
+        help=(
+            "EXPERIMENTAL, quarantined (C8): v0.7 endogenous pricing, "
+            "extraction only (default: disabled). Every agent must be "
+            "anchored; a step whose price system cannot be certified "
+            "convergent stops the run with an error (no fallback values). "
+            "Not an estimate"
+        ),
     )
     parser.add_argument(
         "--area-ha",
@@ -205,6 +211,22 @@ def warn_unused_restoration_args(args: argparse.Namespace) -> None:
                 UserWarning,
                 stacklevel=2,
             )
+
+
+def drop_pricing_in_restore_mode(args: argparse.Namespace) -> None:
+    """Ignore --with-pricing in restore mode, with a warning.
+
+    Restoration values services at static agent values; endogenous prices
+    would only be solved for the starting extraction and never used.
+    """
+    if args.mode == "restore" and args.with_pricing:
+        warnings.warn(
+            "--with-pricing applies to extraction only (restoration uses "
+            "static agent values). Ignored in restore mode.",
+            UserWarning,
+            stacklevel=2,
+        )
+        args.with_pricing = False
 
 
 def output_result(

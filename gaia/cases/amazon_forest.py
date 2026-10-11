@@ -111,6 +111,7 @@ from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
     apply_carbon_price_view,
+    drop_pricing_in_restore_mode,
     output_result,
     warn_unused_restoration_args,
 )
@@ -131,7 +132,7 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
-from gaia.pricing import scale_anchors
+from gaia.pricing import anchor_every_agent, scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -225,7 +226,10 @@ _AMAZON_DISCOUNT = DiscountConfig(
 # scales the anchors with area_ha. The carbon stock (€508k) and sequestration
 # (€88k) anchors are gone: the stock was capitalised a second time by the NPV
 # and carbon is valued only by gaia.carbon (C5, decision D3). The remaining
-# anchors sum to the agent value, €580k/yr.
+# anchors sum to the agent value, €580k/yr. EXPERIMENTAL (decision D4): the
+# builder anchors the eight agents without a documented anchor at their own
+# direct annual service value, annual_value_per_ha × area_ha (€580k/yr each
+# at 1,000 ha; gaia.pricing.anchor_every_agent) [PLACEHOLDER].
 _AMAZON_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
@@ -308,7 +312,8 @@ def build_amazon_ecosystem(
         tree_value: Revenue per tree in euros. Default 1.50 — selective logging
             on a per-tree basis; low value per unit but massive unit count.
             [Calibrated, Low]
-        with_pricing: If True, attach v0.7 endogenous pricing configuration.
+        with_pricing: If True, attach the EXPERIMENTAL v0.7 endogenous pricing
+            configuration (every agent anchored).
         area_ha: Forest area in hectares. Default: total_trees at the
             reference density (AMAZON_TREES_PER_HA = 400).
 
@@ -545,7 +550,9 @@ def build_amazon_ecosystem(
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
-            scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA)
+            anchor_every_agent(
+                scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA), agents, area_ha
+            )
             if with_pricing else None
         ),
     )
@@ -720,6 +727,7 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
 def main(argv: list = None) -> None:
     args = _parse_args(argv)
     warn_unused_restoration_args(args)
+    drop_pricing_in_restore_mode(args)
     try:
         ecosystem = build_amazon_ecosystem(
             total_trees=args.trees,

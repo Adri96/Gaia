@@ -167,7 +167,35 @@ class TestForestMainJson:
         captured = capsys.readouterr()
         parsed = json.loads(captured.out)
         assert parsed["ecosystem"]["has_pricing"] is True
-        assert "pricing" in parsed
+        assert parsed["pricing"]["experimental"] is True
+
+    def test_with_pricing_text_banner(self, capsys):
+        forest_main(["--trees", "100", "--units", "50", "--with-pricing"])
+        assert "EXPERIMENTAL: endogenous pricing" in capsys.readouterr().out
+
+    def test_with_pricing_divergent_run_fails_explicitly(self, capsys):
+        """No result and exit code 1 past the convergence limit (C8)."""
+        from gaia.cases.costa_brava import main as costa_brava_main
+
+        with pytest.raises(SystemExit) as info:
+            costa_brava_main([
+                "--trees", "200", "--units", "100",
+                "--format", "json", "--with-pricing",
+            ])
+        assert info.value.code == 1
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "Error: Endogenous pricing (EXPERIMENTAL) failed" in captured.err
+        assert "No fallback" in captured.err
+
+    def test_with_pricing_ignored_in_restore_mode(self, capsys):
+        with pytest.warns(UserWarning, match="--with-pricing applies to extraction only"):
+            forest_main([
+                "--mode", "restore", "--trees", "100", "--units", "50",
+                "--format", "json", "--with-pricing",
+            ])
+        parsed = json.loads(capsys.readouterr().out)
+        assert "pricing" not in parsed
 
     def test_carbon_price_defaults_to_scc(self, capsys):
         forest_main(["--trees", "100", "--units", "50", "--format", "json"])

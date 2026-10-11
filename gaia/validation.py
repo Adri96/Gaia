@@ -883,6 +883,10 @@ def validate_pricing_config(
 ) -> None:
     """Validate a PricingConfig dataclass.
 
+    Every agent must be anchored (Step 4, C8): an unanchored agent used to
+    be priced at €0. gaia.pricing.anchor_every_agent gives the remaining
+    agents a PLACEHOLDER anchor at their own direct annual service value.
+
     Raises:
         ValueError: If any constraint is violated.
     """
@@ -891,6 +895,14 @@ def validate_pricing_config(
 
     for i, anchor in enumerate(config.anchors):
         validate_anchor_point(anchor, agent_names, name=f"{name}.anchors[{i}]")
+
+    unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
+    if unanchored:
+        raise ValueError(
+            f"{name}: every agent must be anchored when pricing is on; no "
+            f"anchor for {unanchored}. Add an AnchorPoint for each (e.g. "
+            f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
+        )
 
     for agent_key, scarcity_fn in config.scarcity_functions.items():
         if agent_key not in agent_names:

@@ -283,10 +283,32 @@ def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
         "demand_multipliers": {
             k: round(v, 4) for k, v in pr.demand_multipliers.items()
         },
-        "spectral_radius": round(pr.spectral_radius, 6),
-        "converged": pr.converged,
+        "spectral_radius_bound": round(pr.spectral_radius_bound, 6),
+        "convergence_check": pr.convergence_check,
         "iterations": pr.iterations,
     }
+
+
+PRICING_EXPERIMENTAL_NOTE: str = (
+    "EXPERIMENTAL (decision D4, C8): endogenous pricing is quarantined. "
+    "Every price is certified convergent (a run that cannot be certified "
+    "fails instead of falling back to static values), but the formulation "
+    "counts upstream value once per dependent agent and prices the whole "
+    "loss at the end-state scarcity price, and most shipped anchors are "
+    "placeholders. Do not use these figures as estimates."
+)
+
+
+def _pricing_to_dict(result: SimulationResult) -> Dict[str, Any]:
+    """The "pricing" block of an extraction that ran with pricing on."""
+    d: Dict[str, Any] = {
+        "experimental": True,
+        "status": "converged",
+        "note": PRICING_EXPERIMENTAL_NOTE,
+    }
+    if result.steps:
+        d.update(_price_result_to_dict(result.steps[-1].price_result))
+    return d
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -341,9 +363,9 @@ def simulation_result_to_dict(
     if result.extraction_npv is not None:
         d["npv_analysis"] = _extraction_npv_to_dict(result.extraction_npv)
 
-    # Final price decomposition (v0.7)
-    if result.steps and result.steps[-1].price_result is not None:
-        d["pricing"] = _price_result_to_dict(result.steps[-1].price_result)
+    # Final price decomposition (v0.7, experimental)
+    if eco.pricing is not None:
+        d["pricing"] = _pricing_to_dict(result)
 
     return d
 
