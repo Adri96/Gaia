@@ -96,7 +96,7 @@
     },
     "gaia_version": "<gaia_version>",
     "maturation": {
-      "maturation_gap_eur_pv": 16929.34,
+      "maturation_gap_eur_pv": 16899.96,
       "timeline": [
         {
           "annual_carbon_absorbed": 0.0,
@@ -655,12 +655,12 @@
       "total_benefits_eur_pv": 101677.91
     },
     "prevention_advantage_v06": {
-      "pa_full": 5.166,
+      "pa_full": 5.1651,
       "pa_simple": 2.5,
-      "pa_with_carbon": 5.1651,
-      "pa_with_substrate": 2.7359,
+      "pa_with_carbon": 5.1641,
+      "pa_with_substrate": 2.735,
       "prevention_cost_eur": 50000.0,
-      "restoration_total_eur_pv": 208300.1
+      "restoration_total_eur_pv": 208253.69
     },
     "restoration_cost": {
       "annual_maintenance_per_unit_eur_yr": 10.0,
@@ -675,10 +675,10 @@
     },
     "summary": {
       "annual_damage_reversal_eur_yr": 1714.68,
-      "annual_recovered_value_eur_yr": 585.86,
+      "annual_recovered_value_eur_yr": 585.32,
       "depletion_after": 0.5,
       "depletion_before": 1.0,
-      "final_ecosystem_health": 0.051427,
+      "final_ecosystem_health": 0.05138,
       "initial_ecosystem_health": 0.0,
       "net_restoration_value_eur_pv": 32461.86,
       "num_steps": 500,
@@ -801,13 +801,13 @@
   },
   "per_agent": {
     "Animal Populations": 0.0,
-    "Human Communities": 111.78352661783089,
-    "Vegetation & Flora": 142.2225811704416,
-    "Watershed & Local Climate": 331.8526893976971
+    "Human Communities": 111.68147712905463,
+    "Vegetation & Flora": 142.09274324047092,
+    "Watershed & Local Climate": 331.54973422776544
   },
   "result": {
     "annual_damage_reversal": 1714.6811792014653,
-    "annual_recovered_value": 585.8587971859696,
+    "annual_recovered_value": 585.323954597291,
     "carbon_breakeven": {
       "breakeven_price": 347.6590222961037,
       "current_price": 166.3456487480301,
@@ -820,18 +820,18 @@
     "depletion_after": 0.5,
     "depletion_before": 1.0,
     "extraction_npv": null,
-    "final_ecosystem_health": 0.05142721183163368,
+    "final_ecosystem_health": 0.051380262868442106,
     "initial_ecosystem_health": 0.0,
-    "maturation_gap_pv": 16929.34296352422,
+    "maturation_gap_pv": 16899.96394929429,
     "net_restoration_pv": 32461.85867590939,
     "prevention_advantage": 2.5,
     "prevention_advantage_v06": {
       "npv_prevention_cost": 50000.0,
-      "npv_restoration_total": 208300.10079170475,
-      "pa_full": 5.166002015834095,
+      "npv_restoration_total": 208253.68667272167,
+      "pa_full": 5.165073733454434,
       "pa_simple": 2.5,
-      "pa_with_carbon": 5.165073733454433,
-      "pa_with_substrate": 2.735883346556389
+      "pa_with_carbon": 5.164145451074771,
+      "pa_with_substrate": 2.7349550641767273
     },
     "prevention_advantage_with_substrate": 2.5000714093176897,
     "restoration_cost": {
@@ -877,21 +877,21 @@
   },
   "step_sums": {
     "agent_recoveries": [
-      1.69059637235446,
+      1.6890529920304909,
       0.0,
-      5.295595940674478,
-      5.295595940674478
+      5.2907614818336945,
+      5.2907614818336945
     ],
     "agent_service_values": [
-      3851.8547747724006,
+      3848.338337042271,
       0.0,
-      9049.114343424548,
-      21114.600134657278
+      9040.853220157418,
+      21095.324180367305
     ],
-    "cumulative_service_value": 34015.56925285422,
+    "cumulative_service_value": 33984.515737566995,
     "depletion_ratio": 374.75000000000006,
-    "ecosystem_health": 2.985917244808144,
-    "marginal_service_value": 585.8587971859696,
+    "ecosystem_health": 2.983191339322961,
+    "marginal_service_value": 585.323954597291,
     "recovery_ratio": 125.25,
     "restoration_cost_so_far": 18787500.0,
     "step": 125250.0,
@@ -902,19 +902,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        1.0617961551371403e-09,
-        1.0617961551371403e-09
+        1.060826819510552e-09,
+        1.060826819510552e-09
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        1.8143972698983452e-06,
-        4.233593629762805e-06
+        1.812740869179631e-06,
+        4.229728694752472e-06
       ],
-      "cumulative_service_value": 6.04799089966115e-06,
+      "cumulative_service_value": 6.042469563932104e-06,
       "depletion_ratio": 0.999,
-      "ecosystem_health": 5.308982142793184e-10,
-      "marginal_service_value": 6.04799089966115e-06,
+      "ecosystem_health": 5.30413490906767e-10,
+      "marginal_service_value": 6.042469563932104e-06,
       "recovery_ratio": 0.001,
       "restoration_cost_so_far": 150.0,
       "step": 1,
@@ -924,19 +924,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        4.503426544797424e-06,
-        4.503426544797424e-06
+        4.499315273749327e-06,
+        4.499315273749327e-06
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        0.007695455279749837,
-        0.017956062319416287
+        0.00768842993978285,
+        0.017939669859493315
       ],
-      "cumulative_service_value": 0.025651517599166125,
+      "cumulative_service_value": 0.025628099799276164,
       "depletion_ratio": 0.949,
-      "ecosystem_health": 2.2517132725052846e-06,
-      "marginal_service_value": 0.0012449283630535345,
+      "ecosystem_health": 2.249657636843594e-06,
+      "marginal_service_value": 0.0012437918422542951,
       "recovery_ratio": 0.051,
       "restoration_cost_so_far": 7650.0,
       "step": 51,
@@ -946,19 +946,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        2.9869200829206795e-05,
-        2.9869200829206795e-05
+        2.984193261923882e-05,
+        2.984193261923882e-05
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        0.05104049037694857,
-        0.11909447754621331
+        0.050993894459755294,
+        0.118985753739429
       ],
-      "cumulative_service_value": 0.17013496792316188,
+      "cumulative_service_value": 0.1699796481991843,
       "depletion_ratio": 0.899,
-      "ecosystem_health": 1.4934600414573396e-05,
-      "marginal_service_value": 0.005151678443264418,
+      "ecosystem_health": 1.4920966309617256e-05,
+      "marginal_service_value": 0.00514697536967762,
       "recovery_ratio": 0.101,
       "restoration_cost_so_far": 15150.0,
       "step": 101,
@@ -968,19 +968,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.00011672621090155187,
-        0.00011672621090155187
+        0.00011661964913427093,
+        0.00011661964913427093
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        0.19946174918857185,
-        0.4654107481066676
+        0.19927965644064216,
+        0.464985865028165
       ],
-      "cumulative_service_value": 0.6648724972952395,
+      "cumulative_service_value": 0.6642655214688071,
       "depletion_ratio": 0.849,
-      "ecosystem_health": 5.8363105450931485e-05,
-      "marginal_service_value": 0.016260890340337286,
+      "ecosystem_health": 5.830982456722644e-05,
+      "marginal_service_value": 0.01624604543790409,
       "recovery_ratio": 0.151,
       "restoration_cost_so_far": 22650.0,
       "step": 151,
@@ -990,19 +990,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.00037209782030213947,
-        0.00037209782030213947
+        0.00037175812452150436,
+        0.00037175812452150436
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        0.6358407553322959,
-        1.4836284291086905
+        0.6352602831823466,
+        1.4822739940921419
       ],
-      "cumulative_service_value": 2.1194691844409865,
+      "cumulative_service_value": 2.1175342772744887,
       "depletion_ratio": 0.799,
-      "ecosystem_health": 0.00018604891015105984,
-      "marginal_service_value": 0.046041946150983115,
+      "ecosystem_health": 0.00018587906226075201,
+      "marginal_service_value": 0.04599991350798893,
       "recovery_ratio": 0.201,
       "restoration_cost_so_far": 30150.0,
       "step": 201,
@@ -1012,19 +1012,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.00106742151966416,
-        0.00106742151966416
+        0.0010664470485261819,
+        0.0010664470485261819
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        1.8240098928021167,
-        4.256023083204939
+        1.8223447165215394,
+        4.252137671883592
       ],
-      "cumulative_service_value": 6.080032976007056,
+      "cumulative_service_value": 6.074482388405131,
       "depletion_ratio": 0.749,
-      "ecosystem_health": 0.0005337107598321067,
-      "marginal_service_value": 0.1224411584078835,
+      "ecosystem_health": 0.0005332235242631045,
+      "marginal_service_value": 0.1223293793470619,
       "recovery_ratio": 0.251,
       "restoration_cost_so_far": 37650.0,
       "step": 251,
@@ -1034,19 +1034,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.00280941026473665,
-        0.00280941026473665
+        0.0028068454961168578,
+        0.0028068454961168578
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        4.800720260381987,
-        11.20168060755797
+        4.796337583764487,
+        11.191454362117135
       ],
-      "cumulative_service_value": 16.002400867939958,
+      "cumulative_service_value": 15.987791945881622,
       "depletion_ratio": 0.7,
-      "ecosystem_health": 0.0014047051323684556,
-      "marginal_service_value": 0.304664194110817,
+      "ecosystem_health": 0.0014034227480584915,
+      "marginal_service_value": 0.3043860598794321,
       "recovery_ratio": 0.3,
       "restoration_cost_so_far": 45000.0,
       "step": 300,
@@ -1056,19 +1056,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.0071587269956152,
-        0.0071587269956152
+        0.007152191645977423,
+        0.007152191645977423
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        12.232832690107255,
-        28.543276276916927
+        12.22166508464622,
+        28.51721853084118
       ],
-      "cumulative_service_value": 40.776108967024186,
+      "cumulative_service_value": 40.7388836154874,
       "depletion_ratio": 0.65,
-      "ecosystem_health": 0.0035793634978076305,
-      "marginal_service_value": 0.736016765909163,
+      "ecosystem_health": 0.0035760958229886786,
+      "marginal_service_value": 0.7353448410114183,
       "recovery_ratio": 0.35,
       "restoration_cost_so_far": 52500.0,
       "step": 350,
@@ -1078,19 +1078,19 @@
       "agent_recoveries": [
         0.0,
         0.0,
-        0.017323125007330503,
-        0.017323125007330503
+        0.01730731036894421,
+        0.01730731036894421
       ],
       "agent_service_values": [
         0.0,
         0.0,
-        29.601756012526362,
-        69.07076402922819
+        29.574731958451867,
+        69.00770790305435
       ],
-      "cumulative_service_value": 98.67252004175455,
+      "cumulative_service_value": 98.58243986150622,
       "depletion_ratio": 0.6,
-      "ecosystem_health": 0.008661562503665232,
-      "marginal_service_value": 1.6754445523215225,
+      "ecosystem_health": 0.008653655184472031,
+      "marginal_service_value": 1.6739150044067799,
       "recovery_ratio": 0.4,
       "restoration_cost_so_far": 60000.0,
       "step": 400,
@@ -1098,21 +1098,21 @@
     },
     {
       "agent_recoveries": [
-        0.013117318512712608,
+        0.013105343441887421,
         0.0,
-        0.03946181651074264,
-        0.03946181651074264
+        0.03942579100391755,
+        0.03942579100391755
       ],
       "agent_service_values": [
-        29.88649849936441,
+        29.859214497996298,
         0.0,
-        67.43235205355703,
-        157.34215479163302
+        67.3707916674943,
+        157.19851389082004
       ],
-      "cumulative_service_value": 254.66100534455444,
+      "cumulative_service_value": 254.42852005631065,
       "depletion_ratio": 0.55,
-      "ecosystem_health": 0.022354371957913788,
-      "marginal_service_value": 4.596254195877293,
+      "ecosystem_health": 0.022333964190336286,
+      "marginal_service_value": 4.592058180550538,
       "recovery_ratio": 0.45,
       "restoration_cost_so_far": 67500.0,
       "step": 450,
@@ -1120,21 +1120,21 @@
     },
     {
       "agent_recoveries": [
-        0.04906229223043841,
+        0.04901750225116513,
         0.0,
-        0.08322950677109177,
-        0.08322950677109177
+        0.0831535248364179,
+        0.0831535248364179
       ],
       "agent_service_values": [
-        111.78352661783089,
+        111.68147712905463,
         0.0,
-        142.2225811704416,
-        331.8526893976971
+        142.09274324047092,
+        331.54973422776544
       ],
-      "cumulative_service_value": 585.8587971859696,
+      "cumulative_service_value": 585.323954597291,
       "depletion_ratio": 0.5,
-      "ecosystem_health": 0.05142721183163368,
-      "marginal_service_value": 8.87061485960669,
+      "ecosystem_health": 0.051380262868442106,
+      "marginal_service_value": 8.86251669220269,
       "recovery_ratio": 0.5,
       "restoration_cost_so_far": 75000.0,
       "step": 500,

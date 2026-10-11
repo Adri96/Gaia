@@ -211,7 +211,7 @@ def _extraction_npv_to_dict(npv: ExtractionNPV) -> Dict[str, Any]:
         "carbon_released_tco2": round(npv.carbon_released_t, 4),
         "carbon_absorption_lost_tco2_yr": round(npv.carbon_absorption_lost_t_yr, 4),
         "carbon_price_eur_per_t": round(npv.carbon_price, 2),
-        "substrate_damage_eur_pv": round(npv.substrate_damage, 2),
+        "substrate_unrecoverable_eur_pv": round(npv.substrate_unrecoverable, 2),
         "total_eur_pv": round(npv.total, 2),
         "horizon_years": npv.horizon,
     }

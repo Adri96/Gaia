@@ -103,7 +103,15 @@ def compute_extraction_npv(
         carbon_foregone: The extracted units' absorption, lost every year
             of the horizon (like the direct loss), valued at the growing
             carbon price and discounted (gaia.carbon).
-        substrate_damage: Permanent capacity loss as perpetual annuity.
+        substrate_unrecoverable: The part of ``direct`` that restoration
+            could never recover, (1 − substrate_ceiling) of the annual
+            loss over the horizon. Informational: it is already inside
+            ``direct`` and is NOT added to the total.
+
+    Substrate model: substrate damage reduces the restoration ceiling; it
+    is never also a separate permanent flow. The direct loss is already
+    permanent here (no recovery within the horizon), so adding a substrate
+    annuity on top counted the same loss twice.
 
     Carbon is valued by gaia.carbon alone, at the DiscountConfig's carbon
     price (the social cost of carbon unless the market/ETS view is chosen).
@@ -139,24 +147,17 @@ def compute_extraction_npv(
     npv_carbon_release: float = pv_carbon_release(release_t, discount)
     npv_carbon_foregone: float = pv_absorption(absorption_lost_t_yr, discount)
 
-    # Substrate damage: permanent capacity loss as annuity
-    npv_substrate: float = 0.0
-    if substrate_ceiling < 1.0:
-        permanent_gap: float = 1.0 - substrate_ceiling
-        annual_loss: float = annual_externality * permanent_gap
-        # Net effective rate for substrate annuity
-        for year in range(horizon):
-            df = discount.discount_factor(year)
-            sf = discount.scarcity_factor(year)
-            npv_substrate += annual_loss * df * sf
+    # Substrate: the share of the (permanent) direct loss that restoration
+    # could never recover. Already in npv_direct, so not added to the total.
+    npv_unrecoverable: float = npv_direct * (1.0 - substrate_ceiling)
 
-    total: float = npv_direct + npv_carbon_release + npv_carbon_foregone + npv_substrate
+    total: float = npv_direct + npv_carbon_release + npv_carbon_foregone
 
     return ExtractionNPV(
         direct=npv_direct,
         carbon_release=npv_carbon_release,
         carbon_foregone=npv_carbon_foregone,
-        substrate_damage=npv_substrate,
+        substrate_unrecoverable=npv_unrecoverable,
         total=total,
         horizon=horizon,
         carbon_released_t=release_t,
@@ -187,7 +188,8 @@ def compute_restoration_npv(
         restoration_cost_total: Total upfront restoration cost.
         maintenance_cost_per_year: Annual maintenance cost (total, not per-unit).
         maintenance_years: Number of maintenance years.
-        max_recovered_value: Full annual service value at 100% recovery.
+        max_recovered_value: Biological annual service value at full
+            maturity, before the substrate cap (€/yr).
         discount: DiscountConfig.
         succession_curve: Optional succession curve for service recovery timeline.
         carbon_profile: Optional carbon profile for absorption calculations.
@@ -371,11 +373,15 @@ def compute_prevention_advantage_v06(
 
     PA = NPV(total_cost_of_restore_after_extract) / foregone_revenue
 
-    Components layered incrementally:
+    Components layered incrementally (each cost counted once; with the
+    substrate model, the maturation gap is measured against the capped
+    mature level and the permanent shortfall above it is the substrate
+    term):
         pa_simple: v0.2-style undiscounted PA (passed in).
-        pa_with_carbon: + carbon externality NPV.
-        pa_with_substrate: + permanent substrate loss NPV.
-        pa_full: all-inclusive NPV-based PA.
+        pa_with_carbon: restoration cost + maturation gap + carbon NPV.
+        pa_with_substrate: restoration cost + maturation gap + permanent
+            substrate loss NPV.
+        pa_full: all of them.
 
     Args:
         foregone_revenue: Revenue that was earned by extraction.
@@ -383,7 +389,8 @@ def compute_prevention_advantage_v06(
         maintenance_cost_per_year: Annual maintenance cost (total).
         maintenance_years: Number of maintenance years.
         discount: DiscountConfig.
-        max_recovered_value: Full annual service value at 100% recovery.
+        max_recovered_value: Biological annual service value at full
+            maturity, before the substrate cap (€/yr).
         succession_curve: Optional succession curve.
         carbon_profile: Optional carbon profile.
         units: Number of units extracted/restored.
@@ -417,15 +424,17 @@ def compute_prevention_advantage_v06(
         df: float = discount.discount_factor(year)
         npv_restoration_cost += maintenance_cost_per_year * df
 
-    # NPV of maturation gap (lost services during recovery)
+    # NPV of the maturation gap: services not yet delivered while the
+    # replanted units mature, against the substrate-capped mature level
+    # (temporary). The permanent shortfall above the ceiling is the
+    # substrate term below — each counted once.
     npv_maturation_gap: float = 0.0
     for year in range(horizon):
         if succession_curve is not None:
             sfrac: float = succession_service(succession_curve, float(year))
         else:
             sfrac = 1.0
-        effective: float = min(sfrac, substrate_ceiling)
-        gap_fraction: float = 1.0 - effective
+        gap_fraction: float = substrate_ceiling - min(sfrac, substrate_ceiling)
         annual_gap: float = max_recovered_value * gap_fraction
         df = discount.discount_factor(year)
         sf: float = discount.scarcity_factor(year)
@@ -443,7 +452,7 @@ def compute_prevention_advantage_v06(
             discount, succession_curve, substrate_ceiling, shortfall=True,
         )
 
-    # Substrate permanent loss NPV
+    # Substrate permanent loss NPV: the biological recovery above the ceiling
     npv_substrate: float = 0.0
     if substrate_ceiling < 1.0:
         permanent_gap: float = 1.0 - substrate_ceiling

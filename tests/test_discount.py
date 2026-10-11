@@ -36,6 +36,7 @@ from gaia.discount import (
     DISCOUNT_GREEN_BOOK,
     DISCOUNT_MARKET,
 )
+from gaia.succession import succession_service
 
 
 # ── Test fixtures ─────────────────────────────────────────────────────────────
@@ -221,7 +222,7 @@ class TestComputeExtractionNPV:
         assert result.direct >= 0.0
         assert result.carbon_release >= 0.0
         assert result.carbon_foregone >= 0.0
-        assert result.substrate_damage >= 0.0
+        assert result.substrate_unrecoverable >= 0.0
         assert result.total >= 0.0
 
     def test_extraction_npv_with_no_carbon(self):
@@ -256,7 +257,12 @@ class TestComputeExtractionNPV:
         assert result.carbon_foregone > 0.0
 
     def test_extraction_npv_with_substrate(self):
-        """Substrate damage > 0 when substrate_ceiling < 1.0."""
+        """Unrecoverable share > 0 when substrate_ceiling < 1.0, inside direct.
+
+        Substrate model: the direct loss is already permanent, so substrate
+        only marks the part restoration can never recover — it does not
+        change the total (no double counting, C5).
+        """
         config = _default_discount()
 
         result = compute_extraction_npv(
@@ -266,8 +272,15 @@ class TestComputeExtractionNPV:
             units_extracted=10,
             substrate_ceiling=0.85,
         )
+        intact = compute_extraction_npv(
+            annual_externality=1000.0,
+            discount=config,
+            carbon_profile=None,
+            units_extracted=10,
+        )
 
-        assert result.substrate_damage > 0.0
+        assert result.substrate_unrecoverable == pytest.approx(0.15 * result.direct)
+        assert result.total == intact.total
 
     def test_extraction_npv_no_substrate_damage_at_full_ceiling(self):
         """Substrate damage = 0 when substrate_ceiling = 1.0 (no permanent loss)."""
@@ -281,10 +294,10 @@ class TestComputeExtractionNPV:
             substrate_ceiling=1.0,
         )
 
-        assert result.substrate_damage == 0.0
+        assert result.substrate_unrecoverable == 0.0
 
     def test_extraction_npv_total_is_sum(self):
-        """total == direct + carbon_release + carbon_foregone + substrate_damage."""
+        """total == direct + carbon_release + carbon_foregone (substrate not added)."""
         config = _default_discount()
         carbon = _carbon_profile()
 
@@ -300,7 +313,6 @@ class TestComputeExtractionNPV:
             result.direct
             + result.carbon_release
             + result.carbon_foregone
-            + result.substrate_damage
         )
         assert abs(result.total - expected_total) < 1e-6
 
@@ -680,10 +692,30 @@ class TestComputePreventionAdvantageV06:
             carbon_profile=None,
             units=100,
             substrate_ceiling=0.85,
-            pa_simple=3.5,
+            pa_simple=1.5,  # (100,000 + 50,000) / 100,000
         )
 
         assert result.pa_with_substrate >= result.pa_simple
+
+    def test_pa_substrate_shortfall_counted_once(self):
+        """Gap + substrate = Σ (1 − min(s(t), ceiling)) × value: each year's
+        shortfall once (the maturation gap is measured against the capped
+        mature level, the substrate term is the part above it)."""
+        config = _default_discount()
+        succession = _succession_curve()
+        kwargs = dict(
+            foregone_revenue=100000.0, restoration_cost_total=0.0,
+            maintenance_cost_per_year=0.0, maintenance_years=0,
+            discount=config, max_recovered_value=5000.0,
+            succession_curve=succession, carbon_profile=None, units=100,
+        )
+        result = compute_prevention_advantage_v06(substrate_ceiling=0.85, **kwargs)
+        expected = sum(
+            5000.0 * (1.0 - min(succession_service(succession, float(t)), 0.85))
+            * config.discount_factor(t) * config.scarcity_factor(t)
+            for t in range(config.horizon_years)
+        )
+        assert result.npv_restoration_total == pytest.approx(expected, rel=1e-12)
 
     def test_pa_zero_revenue(self):
         """Returns simple PA for all variants when foregone_revenue <= 0."""
@@ -872,7 +904,7 @@ class TestEdgeCases:
         )
 
         assert result.direct == 0.0
-        assert result.substrate_damage == 0.0
+        assert result.substrate_unrecoverable == 0.0
 
     def test_zero_units_extracted(self):
         """Zero units extracted should produce zero carbon components."""

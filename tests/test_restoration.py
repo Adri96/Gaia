@@ -12,6 +12,8 @@ These tests verify the run_restoration() engine and the core economic claim of v
       and recovers at most the reversal of the damage
 """
 
+import dataclasses
+
 import pytest
 from gaia.cases.forest import build_forest_ecosystem
 from gaia.models import RestorationCost
@@ -419,15 +421,20 @@ def test_final_health_below_one_when_degraded_and_efficiency_below_one():
 
     assert result.depletion_after == 0.0
     assert cut.final_ecosystem_health < result.final_ecosystem_health < 1.0
+    # The substrate ceiling of the starting state caps recovery at maturity
+    ceiling = result.substrate_ceiling
+    assert ceiling == cut.steps[-1].k_fraction < 1.0
     assert result.annual_recovered_value == pytest.approx(
-        0.8 * result.annual_damage_reversal, rel=1e-12)
-    expected_health = 1.0 - 0.2 * (1.0 - cut.final_ecosystem_health)
+        0.8 * ceiling * result.annual_damage_reversal, rel=1e-12)
+    expected_health = 1.0 - (1.0 - 0.8 * ceiling) * (1.0 - cut.final_ecosystem_health)
     assert result.final_ecosystem_health == pytest.approx(expected_health, rel=1e-9)
 
 
 def test_full_efficiency_health_is_damage_model_health_at_depletion_after():
-    """With efficiency 1, health after restoring is the extraction's health there."""
+    """With efficiency 1 and an intact substrate, health after restoring is the
+    extraction's health there."""
     eco, _ = _small()
+    eco.resource = dataclasses.replace(eco.resource, substrate=None)
     fns = [lambda r: 1.0 for _ in eco.agents]
     result = run_restoration(eco, 300, RESTORATION_COST, fns, units_lost=700)
     reference = run_extraction(eco, 400)
@@ -476,8 +483,35 @@ def test_recovery_not_trophically_amplified():
     result = run_restoration(eco, 500, RESTORATION_COST, fns, starting_state=cut)
     for recovered, lost in zip(result.steps[-1].agent_service_values,
                                cut.steps[-1].agent_annual_costs):
-        assert recovered == pytest.approx(lost, rel=1e-12)
+        assert recovered == pytest.approx(lost * result.substrate_ceiling, rel=1e-12)
     assert result.annual_recovered_value <= cut.annual_externality
+
+
+def test_substrate_caps_recovery_once():
+    """Substrate model: the ceiling caps the mature value and health, and the
+    yearly streams deliver min(s(t), ceiling) of the biological recovery —
+    the permanent shortfall is not counted again in the maturation gap."""
+    from gaia.cases.forest import _FOREST_SUCCESSION
+    from gaia.succession import succession_service
+    eco, fns = _small()
+    intact = dataclasses.replace(eco.resource, substrate=None)
+    cut = run_extraction(eco, 1_000)
+    with_soil = run_restoration(eco, 1_000, RESTORATION_COST, fns, starting_state=cut,
+                                succession_curve=_FOREST_SUCCESSION, time_horizon_years=60)
+    eco_intact, _ = _small()
+    eco_intact.resource = intact
+    no_soil = run_restoration(eco_intact, 1_000, RESTORATION_COST, fns,
+                              succession_curve=_FOREST_SUCCESSION, time_horizon_years=60)
+    c = with_soil.substrate_ceiling
+    assert 0.0 < c < 1.0
+    assert with_soil.annual_recovered_value == pytest.approx(
+        c * no_soil.annual_recovered_value, rel=1e-12)
+    for a, b in zip(with_soil.maturation_timeline, no_soil.maturation_timeline):
+        s = succession_service(_FOREST_SUCCESSION, float(a.year))
+        assert a.annual_service_value == pytest.approx(
+            no_soil.annual_recovered_value * min(s, c), rel=1e-12)
+        # gap against the capped mature value is never negative
+        assert a.annual_service_value <= with_soil.annual_recovered_value * (1 + 1e-12)
 
 
 def test_recovery_efficiency_outside_unit_interval_rejected():

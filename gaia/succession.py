@@ -127,19 +127,24 @@ def compute_maturation_timeline(
     time_horizon_years: int,
     units_restored: int,
     carbon_profile: CarbonProfile = None,
+    substrate_ceiling: float = 1.0,
 ) -> list:
     """Produce a year-by-year maturation timeline.
 
     For each year in the time horizon, compute the service fraction from the
     succession curve, the actual annual service value, cumulative service value,
     and (if carbon_profile is present) annual and cumulative carbon absorbed.
+    Services and absorption are delivered at min(service_fraction,
+    substrate_ceiling): the substrate caps what the restored units can reach.
 
     Args:
         succession_curve: The SuccessionCurve to evaluate.
-        max_recovered_value: €/yr — annual service value at full climax.
+        max_recovered_value: €/yr — biological annual service value at full
+            climax, before the substrate cap.
         time_horizon_years: Number of years to simulate.
         units_restored: Number of resource units restored.
         carbon_profile: Optional CarbonProfile for carbon absorption tracking.
+        substrate_ceiling: Max recoverable fraction (1.0 = no substrate cap).
 
     Returns:
         List of MaturationStep, one per year (year 1 to time_horizon_years).
@@ -152,7 +157,9 @@ def compute_maturation_timeline(
         svc_fraction: float = succession_service(succession_curve, float(year))
         phase: str = get_succession_phase(succession_curve, float(year))
 
-        annual_value: float = max_recovered_value * svc_fraction
+        delivered: float = min(svc_fraction, substrate_ceiling)
+
+        annual_value: float = max_recovered_value * delivered
         cumulative_service += annual_value
 
         annual_carbon: float = 0.0
@@ -160,7 +167,7 @@ def compute_maturation_timeline(
             annual_carbon = (
                 units_restored
                 * carbon_profile.annual_absorption_tonnes
-                * svc_fraction
+                * delivered
             )
         cumulative_carbon += annual_carbon
 
@@ -187,7 +194,9 @@ def compute_maturation_gap(
     Each year the restored units deliver less than their mature service
     flow. That shortfall is a yearly flow; it is discounted (and given the
     scarcity uplift, like every service stream in gaia.discount) to year 0
-    and summed:
+    and summed. The mature flow is the substrate-capped one (the
+    RestorationResult's annual_recovered_value), so the gap is temporary;
+    the permanent substrate shortfall is not part of it:
 
         maturation_gap = Σ_y (max_service_value - actual_service_value_y)
                              × discount_factor(y) × scarcity_factor(y)
@@ -196,7 +205,8 @@ def compute_maturation_gap(
 
     Args:
         timeline: List of MaturationStep from compute_maturation_timeline.
-        max_recovered_value: €/yr — annual service value at full climax.
+        max_recovered_value: €/yr — annual service value at maturity
+            (substrate-capped).
         discount: DiscountConfig used to bring each year's gap to year 0.
 
     Returns:

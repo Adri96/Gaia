@@ -640,7 +640,7 @@ def _resolve_starting_state(
     return run_extraction(ecosystem, lost)
 
 
-def _substrate_after(extraction: SimulationResult) -> Optional[SubstrateState]:
+def substrate_after_extraction(extraction: SimulationResult) -> Optional[SubstrateState]:
     """Substrate state at the end of an extraction (None without a substrate).
 
     Replays the extraction's per-step erosion on a pristine substrate, so the
@@ -686,7 +686,7 @@ def run_restoration(
         at depletions 1/N .. m/N, so restoring j units retraces that path:
             reversal[i]  = damage_i(m/N) − damage_i((m − j)/N)
             efficiency_i = recovery_functions[i](j / m)       in [0, 1]
-            recovered[i] = efficiency_i × reversal[i]
+            recovered[i] = efficiency_i × reversal[i] × substrate_ceiling
             service[i]   = recovered[i] × weight[i] × annual_value[i]   (€/yr)
             health       = 1 − Σ weight[i] × (damage_i(m/N) − recovered[i])
         At step k, Σ service is annual_recovered_value and Σ of
@@ -709,10 +709,21 @@ def run_restoration(
         faster than producers. Interaction cascades are reversed as part of
         the effective damage (the former 0.5× recovery cascade is gone).
 
+    Substrate model (Step 3.4): substrate damage REDUCES THE RESTORATION
+    CEILING and is never also counted as a separate permanent flow. The
+    ceiling (K_current / K_pristine of the starting state) caps the recovered
+    value at maturity — annual_recovered_value and health above — and, year
+    by year, the delivered fraction min(s(t), ceiling) of the biological
+    recovery (efficiency × reversal) in the maturation timeline, the
+    maturation gap (measured against the capped mature value), the
+    restoration NPV (services and carbon) and the carbon breakeven. The
+    permanent shortfall (1 − ceiling) × biological recovery appears once, in
+    the prevention-advantage substrate term. In the extraction NPV the direct
+    loss is already permanent, so substrate adds nothing to its total.
+
     Time and money:
-        The succession curve spreads annual_recovered_value over time
-        (maturation timeline and gap); the substrate ceiling of the starting
-        state caps the service fraction in the present values as before.
+        The succession curve spreads the recovery over time (maturation
+        timeline and gap), capped at the substrate ceiling.
         Present values (net restoration value, maturation gap, investment
         NPV) use the resource's DiscountConfig, or DEFAULT_DISCOUNT when it
         has none. Foregone revenue and carbon released refer to the k units
@@ -777,9 +788,19 @@ def run_restoration(
     damages_before: list = start_step.agent_damages
     no_damage: list = [0.0] * n_agents
 
+    # v0.5: Substrate ceiling of the starting state (substrate model: the
+    # ceiling caps what restoration can ever recover; see run_restoration)
+    substrate_ceiling: float = 1.0
+    substrate_recovery_yrs: float = 0.0
+    sub_state: Optional[SubstrateState] = substrate_after_extraction(start)
+    if sub_state is not None:
+        substrate_ceiling = start_step.k_fraction
+        substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
+
     steps: list = []
     previous_total_service: float = 0.0
     reversals: list = []
+    step_potential: float = 0.0
 
     for step in range(1, units_to_restore + 1):
         units_restored: int = step
@@ -794,6 +815,7 @@ def run_restoration(
         reversals = []
         agent_service_values: list = []
         step_total_service: float = 0.0
+        step_potential = 0.0
         health_sum: float = 0.0
 
         for i in range(n_agents):
@@ -813,8 +835,10 @@ def run_restoration(
             reversal: float = damages_before[i] - damages_now[i]
             if reversal < 0.0:
                 reversal = 0.0
-            recovered: float = efficiency * reversal
+            biological: float = efficiency * reversal
+            recovered: float = biological * substrate_ceiling
             service_value: float = recovered * weights[i] * annual_values[i]
+            step_potential += biological * weights[i] * annual_values[i]
 
             reversals.append(reversal)
             recoveries.append(recovered)
@@ -846,6 +870,9 @@ def run_restoration(
 
     final_step: RestorationStep = steps[-1]
     annual_recovered: float = final_step.cumulative_service_value  # €/yr
+    # Biological recovery before the substrate cap: the stream the succession
+    # curve ramps up, capped year by year at the substrate ceiling
+    annual_recovered_potential: float = step_potential
     annual_damage_reversal: float = 0.0
     for i in range(n_agents):
         annual_damage_reversal += reversals[i] * weights[i] * annual_values[i]
@@ -870,23 +897,18 @@ def run_restoration(
     else:
         prevention_advantage = 1.0
 
-    # v0.5: Substrate ceiling (from the starting state) and enhanced PA
-    substrate_ceiling: float = 1.0
-    substrate_recovery_yrs: float = 0.0
+    # v0.5: Enhanced PA including the substrate's permanent capacity loss
     prevention_advantage_with_substrate: float = prevention_advantage
-    sub_state: Optional[SubstrateState] = _substrate_after(start)
     if sub_state is not None:
-        substrate_ceiling = start_step.k_fraction
-        substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
-
-        # Enhanced prevention advantage including permanent capacity loss:
-        # the annual flow lost (€/yr) summed, undiscounted, over the
+        # The annual flow lost (€/yr) summed, undiscounted, over the
         # substrate recovery time (capped at 50 years) — a one-off €.
         # TODO(3.7): undiscounted; replaced by destroy_then_restore_penalty.
         if substrate_ceiling < 1.0 and foregone_revenue > 0.0:
             permanent_loss_fraction: float = 1.0 - substrate_ceiling
-            # Annual recovered service value at maturity (€/yr)
-            annual_lost_value: float = annual_recovered * permanent_loss_fraction
+            # Biological recovery the substrate never lets mature (€/yr)
+            annual_lost_value: float = (
+                annual_recovered_potential * permanent_loss_fraction
+            )
             # Cap at 50 years for NPV calculation (avoid infinite values)
             npv_years: float = min(substrate_recovery_yrs, 50.0)
             permanent_loss_npv: float = annual_lost_value * npv_years
@@ -905,10 +927,11 @@ def run_restoration(
     if succession_curve is not None and time_horizon_years > 0:
         maturation_timeline = compute_maturation_timeline(
             succession_curve=succession_curve,
-            max_recovered_value=annual_recovered,
+            max_recovered_value=annual_recovered_potential,
             time_horizon_years=time_horizon_years,
             units_restored=units_to_restore,
             carbon_profile=ecosystem.resource.carbon_profile,
+            substrate_ceiling=substrate_ceiling,
         )
         maturation_gap_pv = compute_maturation_gap(
             maturation_timeline, annual_recovered, discount
@@ -935,7 +958,7 @@ def run_restoration(
         restoration_cost_total=total_cost,
         maintenance_cost_per_year=maintenance_total_per_year,
         maintenance_years=restoration_cost.maintenance_years,
-        max_recovered_value=annual_recovered,
+        max_recovered_value=annual_recovered_potential,
         discount=discount,
         succession_curve=succession_curve,
         carbon_profile=ecosystem.resource.carbon_profile,
@@ -961,7 +984,7 @@ def run_restoration(
         maintenance_cost_per_year=maintenance_total_per_year,
         maintenance_years=restoration_cost.maintenance_years,
         discount=discount,
-        max_recovered_value=annual_recovered,
+        max_recovered_value=annual_recovered_potential,
         succession_curve=succession_curve,
         carbon_profile=ecosystem.resource.carbon_profile,
         units=units_to_restore,

@@ -230,8 +230,11 @@ class ExtractionNPV:
             one-off stock at the year-0 carbon price).
         carbon_foregone: PV of the absorption flow the extracted units no
             longer provide, over the horizon.
-        substrate_damage: NPV of permanent substrate capacity loss.
-        total: Sum of all components.
+        substrate_unrecoverable: Part of ``direct`` that restoration could
+            never recover (substrate ceiling < 1). Informational: inside
+            ``direct``, not added to ``total`` (substrate model: substrate
+            reduces the restoration ceiling, never also a separate flow).
+        total: direct + carbon_release + carbon_foregone.
         horizon: Analysis horizon in years.
         carbon_released_t: CO₂ released (t, a stock).
         carbon_absorption_lost_t_yr: Absorption lost (t CO₂/yr, a flow).
@@ -241,7 +244,7 @@ class ExtractionNPV:
     direct: float
     carbon_release: float
     carbon_foregone: float
-    substrate_damage: float
+    substrate_unrecoverable: float
     total: float
     horizon: int
     carbon_released_t: float = 0.0
@@ -755,8 +758,9 @@ class SimulationResult:
             final depletion level (€/yr, a flow). Excludes carbon, which is
             valued separately in extraction_npv.
         pv_externality: Present value of every externality stream at year 0
-            (€ PV, a stock) = extraction_npv.total: the annual service loss,
-            carbon released, absorption foregone and permanent substrate loss.
+            (€ PV, a stock) = extraction_npv.total: the annual service loss
+            (permanent over the horizon, so substrate damage adds nothing to
+            it), carbon released and absorption foregone.
         net_social_cost: pv_externality - revenue (€ PV). Positive = society
             loses more than the extractor gains.
         final_ecosystem_health: Ecosystem health at the end of the simulation.

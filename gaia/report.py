@@ -22,7 +22,8 @@ v0.7: Price Decomposition section in extraction report
 from gaia.carbon import carbon_price_label
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
 from gaia.resilience import compute_confidence_band
-from gaia.substrate import compute_substrate_recovery_years, create_substrate_state
+from gaia.simulation import substrate_after_extraction
+from gaia.substrate import compute_substrate_recovery_years
 
 # Report width (characters)
 _WIDTH: int = 63
@@ -188,7 +189,7 @@ def format_report(result: SimulationResult) -> str:
     )
     if result.extraction_npv is not None:
         lines.append(
-            f"    (services, carbon and substrate over "
+            f"    (services and carbon over "
             f"{result.extraction_npv.horizon} years; see NPV Analysis)"
         )
     lines.append(f"  {_SINGLE_LINE}")
@@ -346,16 +347,11 @@ def format_report(result: SimulationResult) -> str:
                 f"  {'Capacity lost permanently:':<40} {capacity_lost:>10,} units"
             )
 
-            # Recovery timeline
-            sub_state = create_substrate_state(sub)
-            # Approximate current state from k_fraction
-            if sub.soil_depth_cm is not None:
-                sub_state.current_soil_depth_cm = sub.soil_depth_cm * final_step.k_fraction
-            if sub.sediment_stability is not None:
-                sub_state.current_sediment_stability = (
-                    sub.sediment_stability * final_step.k_fraction
-                )
-            recovery_years: float = compute_substrate_recovery_years(sub_state)
+            # Recovery timeline, from the substrate state the extraction ended
+            # in (the same state a restoration starts from)
+            recovery_years: float = compute_substrate_recovery_years(
+                substrate_after_extraction(result)
+            )
             if recovery_years < float("inf"):
                 lines.append(
                     f"  {'Years to pristine substrate:':<40} {recovery_years:>10,.0f} years"
@@ -413,15 +409,19 @@ def format_report(result: SimulationResult) -> str:
             f"    {'Absorption lost (annual flow):':<36} "
             f"\u20ac{npv.carbon_foregone:>14,.0f}"
         )
-        lines.append(
-            f"    {'Substrate damage (permanent flow):':<36} "
-            f"\u20ac{npv.substrate_damage:>14,.0f}"
-        )
         lines.append(f"    {'':=<36} {'':=>15}")
         lines.append(
             f"    {'Total extraction PV:':<36} "
             f"\u20ac{npv.total:>14,.0f}"
         )
+        if npv.substrate_unrecoverable > 0.0:
+            lines.append(
+                f"    {'of which unrecoverable (substrate):':<36} "
+                f"\u20ac{npv.substrate_unrecoverable:>14,.0f}"
+            )
+            lines.append(
+                "      (part of the services PV that restoration cannot recover; not added)"
+            )
 
     # v0.7: Price Decomposition
     if result.steps:

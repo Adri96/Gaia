@@ -64,7 +64,7 @@ def test_forest_past_threshold():
     assert result.revenue == 500_000.0
     npv = result.extraction_npv
     assert result.pv_externality == pytest.approx(
-        npv.direct + npv.carbon_release + npv.carbon_foregone + npv.substrate_damage,
+        npv.direct + npv.carbon_release + npv.carbon_foregone,
         rel=1e-12,
     )
     assert result.net_social_cost == pytest.approx(

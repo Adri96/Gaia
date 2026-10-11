@@ -98,8 +98,8 @@
       "carbon_released_tco2": 875.0,
       "horizon_years": 100,
       "services_eur_pv": 144112.74,
-      "substrate_damage_eur_pv": 42.13,
-      "total_eur_pv": 523903.26
+      "substrate_unrecoverable_eur_pv": 42.13,
+      "total_eur_pv": 523861.13
     },
     "pricing": {
       "converged": true,
@@ -128,9 +128,9 @@
       "annual_externality_eur_yr": 1660.65,
       "discount_is_default": false,
       "final_ecosystem_health": 0.150516,
-      "net_social_cost_eur_pv": 423903.26,
+      "net_social_cost_eur_pv": 423861.13,
       "num_steps": 1000,
-      "pv_externality_eur_pv": 523903.26,
+      "pv_externality_eur_pv": 523861.13,
       "revenue_eur": 100000.0,
       "total_units_extracted": 1000
     }
@@ -152,12 +152,12 @@
       "carbon_released_t": 875.0,
       "direct": 144112.73923550086,
       "horizon": 100,
-      "substrate_damage": 42.128869675875485,
-      "total": 523903.2562821736
+      "substrate_unrecoverable": 42.12886967587549,
+      "total": 523861.12741249776
     },
     "final_ecosystem_health": 0.15051625519675782,
-    "net_social_cost": 423903.2562821736,
-    "pv_externality": 523903.2562821736,
+    "net_social_cost": 423861.12741249776,
+    "pv_externality": 523861.12741249776,
     "revenue": 100000.0,
     "total_units_extracted": 1000
   },
