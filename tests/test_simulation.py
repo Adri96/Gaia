@@ -27,12 +27,13 @@ def _make_simple_ecosystem(
     total_units: int = 1_000,
     threshold: float = 0.3,
     n_agents: int = 2,
-    annual_value: float = 100_000.0,
+    annual_value_per_ha: float = 100_000.0,
     unit_value: float = 50.0,
 ) -> Ecosystem:
     """Create a minimal ecosystem for simulation tests."""
     weight = 1.0 / n_agents
     resource = Resource(
+        area_ha=1.0,
         name="Test Resource",
         total_units=total_units,
         safe_threshold_ratio=threshold,
@@ -43,7 +44,7 @@ def _make_simple_ecosystem(
             name=f"Agent {i}",
             dependency_weight=weight,
             damage_function=logistic_damage(threshold=threshold),
-            annual_value=annual_value,
+            annual_value_per_ha=annual_value_per_ha,
             description=f"Test agent {i}",
         )
         for i in range(n_agents)
@@ -65,19 +66,19 @@ def test_zero_extraction_zero_cost():
 
 def test_full_extraction_maximum_cost():
     """
-    Extracting all units → externality equals sum of all agent monetary_rate * weight.
+    Extracting all units → externality equals sum of all agent annual values * weight.
 
-    At depletion=1.0, damage_function → 1.0, so cost = 1.0 * weight * monetary_rate
-    for each agent. Total = sum(weight * monetary_rate) across all agents.
+    At depletion=1.0, damage_function → 1.0, so cost = 1.0 * weight * annual_value_per_ha * area_ha (area 1 ha)
+    for each agent. Total = sum(weight * annual value) across all agents.
     """
     total = 100
     rate = 50_000.0
     n = 2
     weight = 0.5
-    eco = _make_simple_ecosystem(total_units=total, annual_value=rate, n_agents=n)
+    eco = _make_simple_ecosystem(total_units=total, annual_value_per_ha=rate, n_agents=n)
     result = run_extraction(eco, total)
 
-    expected_max = n * weight * rate  # = 1.0 * monetary_rate = 50_000.0 per agent, 100_000.0 total
+    expected_max = n * weight * rate  # = 50_000.0 per agent, 100_000.0 total
     # Allow 1e-3 relative tolerance (logistic saturates but may not reach exact 1.0)
     assert abs(result.annual_externality - expected_max) / expected_max < 1e-3, (
         f"Expected ≈ {expected_max:.2f}, got {result.annual_externality:.2f}"
@@ -206,7 +207,7 @@ def test_all_agents_contribute_to_cost():
                 name=f"Agent {i}",
                 dependency_weight=1.0 / 3,
                 damage_function=logistic_damage(threshold=0.3),
-                annual_value=100_000.0,
+                annual_value_per_ha=100_000.0,
                 description="",
             )
             for i in range(3)
@@ -224,6 +225,7 @@ def test_agent_costs_proportional_to_weights():
     dependency weight ratios (since all damage functions return ≈ 1.0).
     """
     resource = Resource(
+        area_ha=1.0,
         name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0
     )
     agents = [
@@ -231,14 +233,14 @@ def test_agent_costs_proportional_to_weights():
             name="A",
             dependency_weight=0.25,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="",
         ),
         Agent(
             name="B",
             dependency_weight=0.75,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="",
         ),
     ]
@@ -255,8 +257,9 @@ def test_agent_costs_proportional_to_weights():
     )
 
 
-def _one_agent_ecosystem(unit_value: float, annual_value: float, discount=None):
+def _one_agent_ecosystem(unit_value: float, annual_value_per_ha: float, discount=None):
     resource = Resource(
+        area_ha=1.0,
         name="F", total_units=1_000, safe_threshold_ratio=0.3,
         unit_value=unit_value, discount=discount,
     )
@@ -265,7 +268,7 @@ def _one_agent_ecosystem(unit_value: float, annual_value: float, discount=None):
             name="A",
             dependency_weight=1.0,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=annual_value,
+            annual_value_per_ha=annual_value_per_ha,
             description="",
         )
     ]
@@ -281,7 +284,7 @@ def test_net_social_cost_is_pv_of_flow_minus_revenue():
     factor Σ_{t=0}^{9} 1.05^-t. The flow itself is never compared to revenue.
     """
     discount = DiscountConfig(rate_schedule=0.05, scarcity_rate=0.0, horizon_years=10)
-    eco = _one_agent_ecosystem(unit_value=50.0, annual_value=200_000.0, discount=discount)
+    eco = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=200_000.0, discount=discount)
     result = run_extraction(eco, 800)  # 80%
     annuity = sum(1.05 ** -t for t in range(10))
     assert result.pv_externality == pytest.approx(
@@ -295,7 +298,7 @@ def test_net_social_cost_is_pv_of_flow_minus_revenue():
 def test_net_social_cost_negative_when_revenue_exceeds_pv():
     """A one-off revenue larger than the PV of the lost flow gives a net social gain."""
     discount = DiscountConfig(rate_schedule=0.05, scarcity_rate=0.0, horizon_years=10)
-    eco = _one_agent_ecosystem(unit_value=1e6, annual_value=1_000.0, discount=discount)
+    eco = _one_agent_ecosystem(unit_value=1e6, annual_value_per_ha=1_000.0, discount=discount)
     result = run_extraction(eco, 100)  # 10%
     assert result.revenue == 1e8
     assert result.net_social_cost < 0
@@ -305,7 +308,7 @@ def test_net_social_cost_negative_when_revenue_exceeds_pv():
 
 def test_default_discount_used_without_discount_config():
     """Without a DiscountConfig the PV uses DEFAULT_DISCOUNT, and says so."""
-    eco = _one_agent_ecosystem(unit_value=50.0, annual_value=200_000.0)
+    eco = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=200_000.0)
     result = run_extraction(eco, 500)
     assert result.discount_is_default
     expected = compute_extraction_npv(result.annual_externality, DEFAULT_DISCOUNT, None, 500)
@@ -317,13 +320,13 @@ def test_default_discount_used_without_discount_config():
 
 def test_single_tree_forest():
     """A forest with 1 tree, extract 1: simulation runs and produces valid output."""
-    resource = Resource(name="F", total_units=1, safe_threshold_ratio=0.5, unit_value=100.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=1, safe_threshold_ratio=0.5, unit_value=100.0)
     agents = [
         Agent(
             name="A",
             dependency_weight=1.0,
             damage_function=logistic_damage(threshold=0.5),
-            annual_value=1_000.0,
+            annual_value_per_ha=1_000.0,
             description="",
         )
     ]
@@ -338,6 +341,7 @@ def test_single_tree_forest():
 def test_large_forest():
     """A forest with 1,000,000 trees, extract 500,000: runs without overflow."""
     resource = Resource(
+        area_ha=1.0,
         name="F", total_units=1_000_000, safe_threshold_ratio=0.3, unit_value=10.0
     )
     agents = [
@@ -345,14 +349,14 @@ def test_large_forest():
             name="A",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=5_000_000.0,
+            annual_value_per_ha=5_000_000.0,
             description="",
         ),
         Agent(
             name="B",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=5_000_000.0,
+            annual_value_per_ha=5_000_000.0,
             description="",
         ),
     ]
@@ -365,13 +369,13 @@ def test_large_forest():
 
 def test_single_agent():
     """An ecosystem with only one agent (weight 1.0): works correctly."""
-    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0)
     agents = [
         Agent(
             name="Solo",
             dependency_weight=1.0,
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=10_000.0,
+            annual_value_per_ha=10_000.0,
             description="",
         )
     ]
@@ -398,13 +402,13 @@ def test_extract_one_unit():
 
 def test_threshold_near_zero_simulation():
     """threshold=0.01: damage starts almost immediately in simulation."""
-    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.01, unit_value=0.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=100, safe_threshold_ratio=0.01, unit_value=0.0)
     agents = [
         Agent(
             name="A",
             dependency_weight=1.0,
             damage_function=logistic_damage(threshold=0.01),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="",
         )
     ]
@@ -417,13 +421,13 @@ def test_threshold_near_zero_simulation():
 
 def test_threshold_near_one_simulation():
     """threshold=0.99: almost all extraction is 'safe', costs low until near full depletion."""
-    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.99, unit_value=0.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=100, safe_threshold_ratio=0.99, unit_value=0.0)
     agents = [
         Agent(
             name="A",
             dependency_weight=1.0,
             damage_function=logistic_damage(threshold=0.99),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="",
         )
     ]
@@ -459,14 +463,14 @@ def test_no_interactions_identical_to_v02():
 
 def test_cascade_increases_total_externality():
     """Adding interaction edges should increase total externality cost."""
-    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=50.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=50.0)
     agents = [
         Agent(name="A", dependency_weight=0.5,
               damage_function=logistic_damage(threshold=0.3),
-              annual_value=100_000.0, description=""),
+              annual_value_per_ha=100_000.0, description=""),
         Agent(name="B", dependency_weight=0.5,
               damage_function=logistic_damage(threshold=0.3),
-              annual_value=100_000.0, description=""),
+              annual_value_per_ha=100_000.0, description=""),
     ]
     eco_plain = Ecosystem(name="E", resource=resource, agents=agents)
     eco_cascade = Ecosystem(
@@ -485,14 +489,14 @@ def test_cascade_increases_total_externality():
 
 def test_effective_damage_geq_direct_damage():
     """Effective damage (post-cascade) is always >= direct damage."""
-    resource = Resource(name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0)
+    resource = Resource(area_ha=1.0, name="F", total_units=100, safe_threshold_ratio=0.3, unit_value=0.0)
     agents = [
         Agent(name="A", dependency_weight=0.5,
               damage_function=logistic_damage(threshold=0.3),
-              annual_value=100_000.0, description=""),
+              annual_value_per_ha=100_000.0, description=""),
         Agent(name="B", dependency_weight=0.5,
               damage_function=logistic_damage(threshold=0.3),
-              annual_value=100_000.0, description=""),
+              annual_value_per_ha=100_000.0, description=""),
     ]
     eco = Ecosystem(
         name="E", resource=resource, agents=agents,

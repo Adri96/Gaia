@@ -92,6 +92,10 @@ def format_report(result: SimulationResult) -> str:
         f"  {'Resource:':<18} {resource.total_units:>10,} units  ({resource.name})"
     )
     lines.append(
+        f"  {'Area:':<18} {resource.area_ha:>10,.1f} ha     "
+        f"({resource.units_per_ha:,.1f} units/ha)"
+    )
+    lines.append(
         f"  {'Safe Threshold:':<18} {resource.safe_threshold_units:>10,} units  "
         f"({resource.safe_threshold_ratio:.1%})"
     )
@@ -129,7 +133,7 @@ def format_report(result: SimulationResult) -> str:
             direct_dmg: float = final_direct_damages[i]
             cascade_dmg: float = final_cascade_damages[i]
             weight: float = agent.dependency_weight
-            rate: float = agent.annual_value
+            rate: float = agent.annual_value(resource.area_ha)
             direct_cost: float = direct_dmg * weight * rate
             cascade_cost: float = cascade_dmg * weight * rate
 
@@ -505,6 +509,9 @@ def format_restoration_report(result: RestorationResult) -> str:
         f"  {'Resource:':<28} {resource.total_units:>10,} units  ({resource.name})"
     )
     lines.append(
+        f"  {'Area:':<28} {resource.area_ha:>10,.1f} ha"
+    )
+    lines.append(
         f"  {'Units Restored:':<28} {result.total_units_restored:>10,}"
     )
     lines.append(
@@ -598,6 +605,7 @@ def format_restoration_report(result: RestorationResult) -> str:
             f"  (discounted services not delivered while succession proceeds)"
         )
         lines.append("")
+        # TODO(3.7): one-off cost + PV gap; replaced by destroy_then_restore_penalty
         lines.append(
             f"  This cost is IN ADDITION to restoration costs."
         )

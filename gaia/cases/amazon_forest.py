@@ -49,13 +49,18 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
-Monetary rate calibration:
-    Rates are set so that sum(weight × rate) ≈ €840,000 (total effective
-    max externality for AMAZON_AREA_HA = 1,000 ha at ~€840/ha/yr from spec §8
-    meta-analysis).
+Agent values (decisions D1, D2):
+    Every agent uses €840/ha/yr (spec §8 total annual ecosystem service value)
+    and the dependency weights split it, so sum(weight × value) =
+    €840/ha/yr × area_ha at full damage (€840,000/yr for the 1,000 ha
+    reference area). The spec §8 anchors, summed as written, give
+    ~€1,160/ha/yr and include carbon; the €840 figure is kept until carbon
+    leaves the anchors and agent values (Step 3.4) — see the note in
+    definitions/AMAZON_FOREST.md. For scale, de Groot et al. (2012) report a
+    global tropical-forest mean of Int$5,264/ha/yr (2007).
 
-    Full destruction (400,000 trees @ €1.50 = €600k revenue) imposes ≈€840k in
-    agent externalities (before carbon): a ratio of ~1.4×.
+    Revenue (€1.50/tree) is one-off; it is compared with the present value of
+    the yearly externality, never with the €/yr figure.
 
 Dependency weights sum: 0.15+0.08+0.15+0.10+0.09+0.08+0.07+0.05+0.03+0.10+0.10 = 1.00 ✓
 
@@ -68,6 +73,7 @@ CLI usage:
 import argparse
 import sys
 import warnings
+from typing import Optional
 
 from gaia.cli import (
     add_common_arguments,
@@ -91,6 +97,7 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
+from gaia.pricing import scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -114,8 +121,10 @@ _AMAZON_SUCCESSION = SuccessionCurve(
 # stems/ha). Every per-hectare quantity in this module is scaled by this area.
 AMAZON_TOTAL_TREES: int = 400_000
 AMAZON_AREA_HA: float = 1_000.0
-_SERVICE_VALUE_PER_HA_YR: float = 840.0  # € / ha / yr, spec §8
-_AGENT_ANNUAL_VALUE: float = _SERVICE_VALUE_PER_HA_YR * AMAZON_AREA_HA
+AMAZON_TREES_PER_HA: float = AMAZON_TOTAL_TREES / AMAZON_AREA_HA
+# € / ha / yr of service lost at full damage, every agent (spec §8). Without
+# an explicit area, a forest of N trees covers N / AMAZON_TREES_PER_HA ha.
+_SERVICE_VALUE_PER_HA_YR: float = 840.0
 
 # ── Carbon profile (per tree) ─────────────────────────────────────────────────
 # From spec §2: 173 Mg C/ha total biomass (above + below), 400 trees/ha.
@@ -175,7 +184,8 @@ _AMAZON_DISCOUNT = DiscountConfig(
 )
 
 # ── v0.7: Amazon pricing configuration ────────────────────────────────────────
-# From spec §8, scaled to AMAZON_AREA_HA = 1,000 ha.
+# From spec §8, for the AMAZON_AREA_HA = 1,000 ha reference area; the builder
+# scales the anchors with area_ha.
 _AMAZON_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
@@ -253,6 +263,7 @@ def build_amazon_ecosystem(
     safe_threshold_ratio: float = 0.20,
     tree_value: float = 1.50,
     with_pricing: bool = False,
+    area_ha: Optional[float] = None,
 ) -> Ecosystem:
     """
     Build the Central Amazon Rainforest ecosystem with 11 agents.
@@ -272,15 +283,20 @@ def build_amazon_ecosystem(
             on a per-tree basis; low value per unit but massive unit count.
             [Calibrated, Low]
         with_pricing: If True, attach v0.7 endogenous pricing configuration.
+        area_ha: Forest area in hectares. Default: total_trees at the
+            reference density (AMAZON_TREES_PER_HA = 400).
 
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    if area_ha is None:
+        area_ha = total_trees / AMAZON_TREES_PER_HA
     resource = Resource(
         name="Central Amazon Old-Growth Lowland Forest",
         total_units=total_trees,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=tree_value,
+        area_ha=area_ha,
         carbon_profile=_AMAZON_CARBON,
         resilience=_AMAZON_RESILIENCE,
         substrate=_AMAZON_SUBSTRATE,
@@ -295,7 +311,7 @@ def build_amazon_ecosystem(
             name="Canopy Trees",
             dependency_weight=0.15,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Emergent + canopy layer (400+ species/ha) — primary biomass, carbon stock, rainfall recycling",
             trophic_level=0,
         ),
@@ -303,7 +319,7 @@ def build_amazon_ecosystem(
             name="Understory",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Sub-canopy trees, palms, ferns, epiphytes — shade-tolerant reproduction, microclimate regulation",
             trophic_level=0,
         ),
@@ -312,7 +328,7 @@ def build_amazon_ecosystem(
             name="Mycorrhizal Fungi",
             dependency_weight=0.15,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Arbuscular + ectomycorrhizae — KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
             trophic_level=0,
             is_keystone=True,
@@ -322,7 +338,7 @@ def build_amazon_ecosystem(
             name="Soil Decomposers",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Termites, fungi, bacteria, dung beetles — organic matter breakdown, nutrient return",
             trophic_level=-1,
         ),
@@ -331,7 +347,7 @@ def build_amazon_ecosystem(
             name="Pollinators",
             dependency_weight=0.09,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Bees, butterflies, hummingbirds, bats — reproduction for 90%+ of canopy species",
             trophic_level=1,
             is_keystone=True,
@@ -341,7 +357,7 @@ def build_amazon_ecosystem(
             name="Seed Dispersers",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Monkeys, toucans, agoutis, tapirs — forest regeneration, genetic connectivity",
             trophic_level=1,
         ),
@@ -350,7 +366,7 @@ def build_amazon_ecosystem(
             name="Herbivores",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Capybaras, sloths, leafcutter ants, insects — energy transfer, population dynamics",
             trophic_level=1,
         ),
@@ -358,7 +374,7 @@ def build_amazon_ecosystem(
             name="Mesopredators",
             dependency_weight=0.05,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Snakes (boa, anaconda), caimans, ocelots, anteaters — mid-trophic regulation",
             trophic_level=2,
         ),
@@ -366,7 +382,7 @@ def build_amazon_ecosystem(
             name="Apex Predators",
             dependency_weight=0.03,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Jaguars, harpy eagles — top-down population control, KEYSTONE trophic role",
             trophic_level=3,
         ),
@@ -375,7 +391,7 @@ def build_amazon_ecosystem(
             name="Aquatic System",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="River fish (3,000+ species), river dolphins, aquatic plants — nutrient transport, fisheries",
             trophic_level=-1,
         ),
@@ -383,7 +399,7 @@ def build_amazon_ecosystem(
             name="Epiphytes & Bromeliads",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=_AGENT_ANNUAL_VALUE,
+            annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
             description="Orchids, bromeliads, lichens (~25,000 species) — water retention, microhabitat creation",
             trophic_level=0,
         ),
@@ -487,7 +503,10 @@ def build_amazon_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
-        pricing=_AMAZON_PRICING if with_pricing else None,
+        pricing=(
+            scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA)
+            if with_pricing else None
+        ),
     )
 
 
@@ -662,6 +681,7 @@ def main(argv: list = None) -> None:
             safe_threshold_ratio=args.threshold,
             tree_value=args.unit_value,
             with_pricing=args.with_pricing,
+            area_ha=args.area_ha,
         )
         if args.mode == "restore":
             cost = RestorationCost(

@@ -46,7 +46,7 @@ def extraction_loop_cy(
     # Per-agent flat arrays (length n_agents):
     list damage_params,       # list of (kind, param1, param2, param3) tuples
     list dep_weights,         # dependency_weight per agent
-    list annual_values,       # €/yr lost at full damage per agent (Agent.annual_value)
+    list annual_values,       # €/yr lost at full damage per agent (€/ha/yr × area_ha)
     list trophic_levels,      # trophic_level per agent (int)
     list is_keystone,         # bool per agent
     list keystone_thresholds, # float per agent

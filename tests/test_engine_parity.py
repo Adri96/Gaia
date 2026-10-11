@@ -125,7 +125,7 @@ def _synthetic(
             name=name,
             dependency_weight=weight,
             damage_function=_DAMAGE[kind](threshold),
-            annual_value=rate,
+            annual_value_per_ha=rate,
             description=name,
             trophic_level=level if trophic else -1,
             is_keystone=keystone and name == "Producers",
@@ -140,6 +140,7 @@ def _synthetic(
         ("Water", "Producers", 0.2),
     ]
     resource = Resource(
+        area_ha=1.0,
         name="Synthetic",
         total_units=total_units,
         safe_threshold_ratio=0.3,

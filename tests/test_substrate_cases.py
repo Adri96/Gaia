@@ -40,6 +40,7 @@ def _make_ecosystem_without_substrate(
 ) -> Ecosystem:
     """Create a simple ecosystem with NO substrate (v0.4 behavior)."""
     resource = Resource(
+        area_ha=1.0,
         name="No Substrate Eco",
         total_units=total_units,
         safe_threshold_ratio=threshold,
@@ -50,14 +51,14 @@ def _make_ecosystem_without_substrate(
             name="Agent A",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="Test agent A",
         ),
         Agent(
             name="Agent B",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="Test agent B",
         ),
     ]
@@ -81,6 +82,7 @@ def _make_ecosystem_with_substrate(
         confidence="medium",
     )
     resource = Resource(
+        area_ha=1.0,
         name="Substrate Eco",
         total_units=total_units,
         safe_threshold_ratio=threshold,
@@ -92,14 +94,14 @@ def _make_ecosystem_with_substrate(
             name="Agent A",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="Test agent A",
         ),
         Agent(
             name="Agent B",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            annual_value=100_000.0,
+            annual_value_per_ha=100_000.0,
             description="Test agent B",
         ),
     ]

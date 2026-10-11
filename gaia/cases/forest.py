@@ -13,19 +13,30 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Parameter               | Value         | Unit       | Source       | Confidence |
     |-------------------------|---------------|------------|--------------|------------|
     | total_units             | configurable  | trees      | Placeholder  | Low        |
+    | reference area          | 40            | ha         | Placeholder  | Low        |
+    | tree density            | 250           | trees/ha   | Placeholder  | Low        |
     | safe_threshold_ratio    | configurable  | ratio      | Placeholder  | Low        |
     | unit_value              | 100.0 €/tree  | €/tree     | Placeholder  | Low        |
-    | Human annual_value      | 750,000 €     | €/yr       | Placeholder  | Low        |
-    | Animal annual_value     | 1,167,000 €   | €/yr       | Placeholder  | Low        |
-    | Vegetation annual_value | 1,000,000 €   | €/yr       | Placeholder  | Low        |
-    | Biosphere annual_value  | 1,571,000 €   | €/yr       | Placeholder  | Low        |
+    | annual_value_per_ha     | 3,000         | €/ha/yr    | de Groot 2012| Low        |
+    |   (every agent)         |               |            |              |            |
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
 
-Total effective max externality sum(weight × rate) ≈ €1,200,000
-Monetary rates calibrated so that:
-    - externality < revenue at safe threshold (30%): 21.5% × €1.2M ≈ €258k < €300k revenue
-    - externality > revenue at 50% depletion: 75.6% × €1.2M ≈ €907k > €500k revenue
+Agent values are yearly flows per hectare (decisions D1, D2): every agent
+uses the biome-level value below, and the dependency weights split it, so
+sum(weight × value) = €3,000/ha/yr × area_ha at full damage
+(€120,000/yr for the 40 ha reference forest).
+
+The value is the order of magnitude of global meta-analyses for temperate
+forests: de Groot et al. (2012), Ecosystem Services 1:50-61, Int$3,013/ha/yr
+(2007 price level); Costanza et al. (2014), Global Environmental Change
+26:152-158, $3,137/ha/yr (2007) — both figures to be re-checked against the
+papers in Step 8. It is used at face value as €; currency and price-year
+conversion, and a site-specific value, are pending (Step 8).
+Both totals include climate regulation, which overlaps gaia.carbon (C5,
+Step 3.4). Rates are never tuned to produce an outcome (an earlier version
+was back-solved so that externality < revenue at 30% and > revenue at 50%).
+
 Dependency weight sum: 0.20 + 0.30 + 0.15 + 0.35 = 1.00
 
 CLI usage:
@@ -38,6 +49,7 @@ CLI usage:
 import argparse
 import sys
 import warnings
+from typing import Optional
 
 from gaia.cli import (
     add_common_arguments,
@@ -62,9 +74,22 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
+from gaia.pricing import scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# ── Reference area ───────────────────────────────────────────────────────────
+# [PLACEHOLDER] 10,000 trees on 40 ha = 250 trees/ha, so the per-tree carbon
+# below gives ~200 t CO₂/ha in biomass and ~5.5 t CO₂/ha/yr absorption —
+# plausible for a mature temperate deciduous stand. Without an explicit area,
+# a forest of N trees covers N / FOREST_TREES_PER_HA hectares.
+FOREST_TOTAL_TREES: int = 10_000
+FOREST_AREA_HA: float = 40.0
+FOREST_TREES_PER_HA: float = FOREST_TOTAL_TREES / FOREST_AREA_HA
+
+# € / ha / yr of service lost at full damage, every agent (see module docstring)
+_FOREST_VALUE_PER_HA_YR: float = 3_000.0
 
 
 # v0.4: Oak Valley Forest succession curve
@@ -123,7 +148,8 @@ _OAK_VALLEY_DISCOUNT = DiscountConfig(
     horizon_years=100,
 )
 
-# v0.7: Oak Valley pricing configuration
+# v0.7: Oak Valley pricing configuration. Anchor values are €/yr for the
+# FOREST_AREA_HA reference forest and are scaled with area_ha by the builder.
 _OAK_VALLEY_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
@@ -145,10 +171,11 @@ _OAK_VALLEY_PRICING = PricingConfig(
 
 
 def build_forest_ecosystem(
-    total_trees: int = 10_000,
+    total_trees: int = FOREST_TOTAL_TREES,
     safe_threshold_ratio: float = 0.3,
     tree_value: float = 100.0,
     with_pricing: bool = False,
+    area_ha: Optional[float] = None,
 ) -> Ecosystem:
     """
     Build the Oak Valley Forest ecosystem with the four standard agents.
@@ -159,15 +186,21 @@ def build_forest_ecosystem(
         tree_value: Revenue per tree in euros. [PLACEHOLDER]
         with_pricing: If True, enable v0.7 endogenous pricing. Default False
             for backward compatibility with v0.1-v0.6 tests.
+        area_ha: Forest area in hectares. Default: total_trees at the
+            reference density (FOREST_TREES_PER_HA). Hold it fixed to vary
+            the number of trees without changing the per-ha result.
 
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    if area_ha is None:
+        area_ha = total_trees / FOREST_TREES_PER_HA
     resource = Resource(
         name="Oak Valley Forest",
         total_units=total_trees,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=tree_value,
+        area_ha=area_ha,
         carbon_profile=_FOREST_CARBON,
         resilience=_FOREST_RESILIENCE,
         substrate=_OAK_VALLEY_SUBSTRATE,
@@ -189,12 +222,8 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            annual_value=750_000.0,
-            # Effective max contribution (weight × rate): 0.20 × €750k = €150k
+            annual_value_per_ha=_FOREST_VALUE_PER_HA_YR,
             # [PLACEHOLDER — health costs, water treatment, lost recreation]
-            # Calibration: sum(weight × rate) ≈ €1.2M, ensuring:
-            #   externality < revenue at safe threshold (30%), and
-            #   externality > revenue at 50% depletion.
             description="Health costs, water treatment, lost recreation",
             # v0.3: External beneficiary — not in trophic chain
             trophic_level=-1,
@@ -205,8 +234,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            annual_value=1_167_000.0,
-            # Effective max: 0.30 × €1,167k = €350k
+            annual_value_per_ha=_FOREST_VALUE_PER_HA_YR,
             # [PLACEHOLDER — habitat, biodiversity, species loss valuation]
             description="Habitat loss, population decline, species loss",
             # v0.3: Primary consumer — herbivores, omnivores
@@ -218,8 +246,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            annual_value=1_000_000.0,
-            # Effective max: 0.15 × €1,000k = €150k
+            annual_value_per_ha=_FOREST_VALUE_PER_HA_YR,
             # [PLACEHOLDER — soil erosion, pollination network disruption]
             description="Soil erosion, pollination network disruption",
             # v0.3: Producer — the forest vegetation itself
@@ -231,8 +258,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            annual_value=1_571_000.0,
-            # Effective max: 0.35 × €1,571k = €550k
+            annual_value_per_ha=_FOREST_VALUE_PER_HA_YR,
             # [PLACEHOLDER — carbon release, watershed, climate impact]
             description="Carbon release, watershed degradation, climate impact",
             # v0.3: Abiotic service — not in trophic chain
@@ -257,7 +283,10 @@ def build_forest_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
-        pricing=_OAK_VALLEY_PRICING if with_pricing else None,
+        pricing=(
+            scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA)
+            if with_pricing else None
+        ),
     )
 
 
@@ -430,6 +459,7 @@ def main(argv: list = None) -> None:
             safe_threshold_ratio=args.threshold,
             tree_value=args.unit_value,
             with_pricing=args.with_pricing,
+            area_ha=args.area_ha,
         )
         if args.mode == "restore":
             cost = RestorationCost(

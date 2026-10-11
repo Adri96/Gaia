@@ -294,7 +294,7 @@ _NON_MONETARY_KEYS = {
     # pricing decomposition
     "scarcity_multipliers", "demand_multipliers", "spectral_radius", "iterations",
 }
-_UNIT_SUFFIXES = ("_eur_yr", "_eur_pv", "_eur", "_eur_per_t")
+_UNIT_SUFFIXES = ("_eur_yr", "_eur_per_ha_yr", "_eur_pv", "_eur", "_eur_per_t")
 
 
 def _numeric_keys(obj, key, agent_names, out):

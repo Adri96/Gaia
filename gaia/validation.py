@@ -64,6 +64,15 @@ def validate_resource(resource: Resource) -> None:
         raise ValueError(
             f"Resource.unit_value must be >= 0.0, got {resource.unit_value}"
         )
+    if not (
+        isinstance(resource.area_ha, (int, float))
+        and math.isfinite(resource.area_ha)
+        and resource.area_ha > 0.0
+    ):
+        raise ValueError(
+            f"Resource.area_ha must be a finite number of hectares > 0, "
+            f"got {resource.area_ha!r}"
+        )
 
     # v0.4: Validate optional carbon profile and resilience config
     if resource.carbon_profile is not None:
@@ -99,10 +108,13 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
                 f"Agent '{agent.name}' dependency_weight must be in (0.0, 1.0], "
                 f"got {agent.dependency_weight}"
             )
-        if not (math.isfinite(agent.annual_value) and agent.annual_value >= 0.0):
+        if not (
+            math.isfinite(agent.annual_value_per_ha)
+            and agent.annual_value_per_ha >= 0.0
+        ):
             raise ValueError(
-                f"Agent '{agent.name}' annual_value must be finite and >= 0.0 "
-                f"(€/yr at full damage), got {agent.annual_value}"
+                f"Agent '{agent.name}' annual_value_per_ha must be finite and "
+                f">= 0.0 (€/ha/yr at full damage), got {agent.annual_value_per_ha}"
             )
         weight_sum += agent.dependency_weight
 

@@ -50,6 +50,7 @@ Scientific references:
     - de Groot R et al. (2012) Global estimates of the value of ecosystems.
 """
 
+import dataclasses
 from typing import Dict, List, Optional, Tuple
 
 from gaia.models import (
@@ -59,6 +60,25 @@ from gaia.models import (
     PricingConfig,
     ScarcityFunction,
 )
+
+
+# ── Anchor scaling ──────────────────────────────────────────────────────────
+
+
+def scale_anchors(pricing: PricingConfig, factor: float) -> PricingConfig:
+    """Return a copy of ``pricing`` with every anchor value multiplied by ``factor``.
+
+    Case files state anchors in €/yr for a reference area; the builder scales
+    them by ``area_ha / reference_area`` so anchors stay per-hectare
+    consistent with the agents' €/ha/yr values (decision D2).
+    """
+    return dataclasses.replace(
+        pricing,
+        anchors=[
+            dataclasses.replace(a, anchor_value=a.anchor_value * factor)
+            for a in pricing.anchors
+        ],
+    )
 
 
 # ── Scarcity computation ────────────────────────────────────────────────────

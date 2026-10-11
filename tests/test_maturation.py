@@ -155,13 +155,14 @@ class TestExtractionWithResilience:
         from gaia.models import Agent, Ecosystem, Resource
         from gaia.damage import logistic_damage
         resource = Resource(
+            area_ha=1.0,
             name="Test", total_units=100,
             safe_threshold_ratio=0.3, unit_value=10.0,
         )
         agents = [Agent(
             name="A", dependency_weight=1.0,
             damage_function=logistic_damage(0.3, 12.0),
-            annual_value=1000.0, description="Test",
+            annual_value_per_ha=1000.0, description="Test",
         )]
         eco = Ecosystem(name="Test", resource=resource, agents=agents)
         result = run_extraction(eco, 50)

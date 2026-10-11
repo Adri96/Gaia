@@ -16,7 +16,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_yr": 3077000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.13,
           "description": "Keystone underground network \u2014 nutrient/water transport, cascades to all tree regeneration",
           "is_keystone": true,
@@ -25,7 +26,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_yr": 3500000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.1,
           "description": "Soil microbiome and biocrusts \u2014 nitrogen fixation, carbon storage, erosion prevention",
           "is_keystone": false,
@@ -34,7 +36,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_yr": 2500000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.12,
           "description": "Remaining canopy trees \u2014 self-reinforcing decline from microclimate loss and network fragmentation",
           "is_keystone": false,
@@ -43,7 +46,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_yr": 1875000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.08,
           "description": "Understory shrubs and aromatic plants \u2014 microclimate collapse and biodiversity loss",
           "is_keystone": false,
@@ -52,7 +56,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_yr": 3500000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.1,
           "description": "Keystone pollination services \u2014 base of animal food web, agricultural crop dependency",
           "is_keystone": true,
@@ -61,7 +66,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_yr": 2500000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.08,
           "description": "Nesting and migratory stopover habitat \u2014 seed dispersal, insect control, ecotourism",
           "is_keystone": false,
@@ -70,7 +76,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_yr": 2571000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.07,
           "description": "Habitat displacement \u2014 predator-prey disruption, human-wildlife conflict, crop damage",
           "is_keystone": false,
@@ -79,7 +86,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_yr": 3000000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.04,
           "description": "Apex trophic control \u2014 carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
           "is_keystone": false,
@@ -88,7 +96,8 @@
           "trophic_level": 3
         },
         {
-          "annual_value_eur_yr": 4167000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.12,
           "description": "Aquifer recharge, flood control, drought buffering \u2014 Costa Brava water and tourism supply",
           "is_keystone": false,
@@ -97,7 +106,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_yr": 4500000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.1,
           "description": "CO\u2082 release, lost sequestration, fire risk amplification \u2014 exponential accumulation, no plateau",
           "is_keystone": false,
@@ -106,7 +116,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_yr": 8333000.0,
+          "annual_value_eur_per_ha_yr": 1600.0,
+          "annual_value_eur_yr": 32000.0,
           "dependency_weight": 0.06,
           "description": "Water, fire protection, tourism economy, traditional livelihoods \u2014 Costa Brava coastal dependency",
           "is_keystone": false,
@@ -239,6 +250,7 @@
       ],
       "name": "Costa Brava Holm Oak Forest",
       "resource": {
+        "area_ha": 20.0,
         "carbon_absorption_per_unit_yr": 0.018,
         "carbon_price_eur_per_t": 80.0,
         "carbon_stored_per_unit": 0.5,
@@ -252,7 +264,8 @@
         "safe_threshold_units": 500,
         "substrate_type": "terrestrial_soil",
         "total_units": 2000,
-        "unit_value_eur": 60.0
+        "unit_value_eur": 60.0,
+        "units_per_ha": 100.0
       }
     },
     "gaia_version": "<gaia_version>",
@@ -261,9 +274,9 @@
       "carbon_foregone_eur_pv": 122986.76,
       "carbon_release_eur_pv": 37600.0,
       "horizon_years": 100,
-      "services_eur_pv": 320917215.37,
-      "substrate_damage_eur_pv": 243300.24,
-      "total_eur_pv": 321321102.37
+      "services_eur_pv": 3020718.76,
+      "substrate_damage_eur_pv": 2290.13,
+      "total_eur_pv": 3183595.65
     },
     "pricing": {
       "converged": false,
@@ -282,17 +295,17 @@
       },
       "iterations": 0,
       "prices_eur_yr": {
-        "Canopy Trees": 2500000.0,
-        "Carbon & Climate": 4500000.0,
-        "Forest Birds": 2500000.0,
-        "Forest Mammals": 2571000.0,
-        "Human Communities": 8333000.0,
-        "Mycorrhizal Fungi": 3077000.0,
-        "Pollinators & Insects": 3500000.0,
-        "Raptors & Apex Predators": 3000000.0,
-        "Soil Microbiome": 3500000.0,
-        "Understory & Matorral": 1875000.0,
-        "Watershed & Water Cycle": 4167000.0
+        "Canopy Trees": 32000.0,
+        "Carbon & Climate": 32000.0,
+        "Forest Birds": 32000.0,
+        "Forest Mammals": 32000.0,
+        "Human Communities": 32000.0,
+        "Mycorrhizal Fungi": 32000.0,
+        "Pollinators & Insects": 32000.0,
+        "Raptors & Apex Predators": 32000.0,
+        "Soil Microbiome": 32000.0,
+        "Understory & Matorral": 32000.0,
+        "Watershed & Water Cycle": 32000.0
       },
       "scarcity_multipliers": {
         "Canopy Trees": 10.972,
@@ -310,43 +323,43 @@
       "spectral_radius": 9.144193
     },
     "summary": {
-      "annual_externality_eur_yr": 2908811.26,
+      "annual_externality_eur_yr": 27379.96,
       "discount_is_default": false,
       "final_ecosystem_health": 0.144376,
-      "net_social_cost_eur_pv": 321273102.37,
+      "net_social_cost_eur_pv": 3135595.65,
       "num_steps": 800,
-      "pv_externality_eur_pv": 321321102.37,
+      "pv_externality_eur_pv": 3183595.65,
       "revenue_eur": 48000.0,
       "total_units_extracted": 800
     }
   },
   "per_agent": {
-    "Canopy Trees": 272657.63215658703,
-    "Carbon & Climate": 227859.1629744149,
-    "Forest Birds": 200000.0,
-    "Forest Mammals": 179970.00000000003,
-    "Human Communities": 393389.7519668001,
-    "Mycorrhizal Fungi": 242368.3987532364,
-    "Pollinators & Insects": 350000.0,
-    "Raptors & Apex Predators": 120000.0,
-    "Soil Microbiome": 318100.5708493515,
-    "Understory & Matorral": 150000.0,
-    "Watershed & Water Cycle": 454465.74127859925
+    "Canopy Trees": 3490.0176916043138,
+    "Carbon & Climate": 1620.3318255958395,
+    "Forest Birds": 2560.0,
+    "Forest Mammals": 2240.0,
+    "Human Communities": 1510.6770746354975,
+    "Mycorrhizal Fungi": 2520.568332825338,
+    "Pollinators & Insects": 3200.0,
+    "Raptors & Apex Predators": 1280.0,
+    "Soil Microbiome": 2908.3480763369284,
+    "Understory & Matorral": 2560.0,
+    "Watershed & Water Cycle": 3490.0176916043138
   },
   "result": {
-    "annual_externality": 2908811.257978989,
+    "annual_externality": 27379.960692602228,
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_foregone": 122986.76309749465,
       "carbon_release": 37600.0,
-      "direct": 320917215.3687469,
+      "direct": 3020718.762096844,
       "horizon": 100,
-      "substrate_damage": 243300.23937472329,
-      "total": 321321102.37121904
+      "substrate_damage": 2290.1283032055553,
+      "total": 3183595.6534975446
     },
     "final_ecosystem_health": 0.14437622835618014,
-    "net_social_cost": 321273102.37121904,
-    "pv_externality": 321321102.37121904,
+    "net_social_cost": 3135595.6534975446,
+    "pv_externality": 3183595.6534975446,
     "revenue": 48000.0,
     "total_units_extracted": 800
   },
@@ -363,17 +376,17 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      34544257.41990505,
-      45338204.40851518,
-      38861318.064441584,
-      26215129.81287929,
-      54002857.65279724,
-      34251571.310887516,
-      28332356.03418684,
-      22080000.0,
-      67508341.61244361,
-      36191957.189248055,
-      56861776.99480789
+      359251.2958846152,
+      414520.72602071,
+      497424.871224852,
+      447404.8821398065,
+      493740.41282557463,
+      438420.1127793602,
+      352639.2038482998,
+      235520.0,
+      552110.8044775003,
+      276248.19085075246,
+      227128.03206499625
     ],
     "agent_cascade_damages": [
       0.0,
@@ -415,26 +428,26 @@
       147.1206326461461
     ],
     "agent_prices": [
-      566168000.0,
-      644000000.0,
-      460000000.0,
-      345000000.0,
-      644000000.0,
-      460000000.0,
-      473064000.0,
-      552000000.0,
-      920728000.0,
-      926426729.098698,
-      1590659802.2929778
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      5888000.0,
+      8968000.0,
+      7856534.581973961,
+      7035756.045859559
     ],
-    "annual_externality": 444187770.50011224,
+    "annual_externality": 4294408.532116469,
     "carbon_price_used": 0.0,
     "depletion_ratio": 160.19999999999996,
     "discount_factor_at_step": 800.0,
     "ecosystem_health": 567.896916942914,
     "effective_k": 1599051.0,
     "k_fraction": 799.7815059786894,
-    "marginal_annual_externality": 2908811.257978989,
+    "marginal_annual_externality": 27379.960692602228,
     "model_confidence": 584.8200000000011,
     "npv_externality": 0.0,
     "revenue": 19224000.0,
@@ -453,9 +466,9 @@
         0.0,
         0.0,
         0.0,
-        3.4521755399751948,
-        4.5026008688131185,
-        0.576816253338661
+        0.0690435107995039,
+        0.09005201737626237,
+        0.011536325066773222
       ],
       "agent_cascade_damages": [
         0.0,
@@ -505,11 +518,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        136045.02600868815,
-        76114.11620509112
+        5000.0,
+        2720.9005201737627,
+        1522.2823241018225
       ],
-      "annual_externality": 8.531592662126974,
+      "annual_externality": 0.1706318532425395,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0005,
       "discount_factor_at_step": 1.0,
@@ -518,7 +531,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999995847877184,
       "keystone_triggered": [],
-      "marginal_annual_externality": 8.531592662126974,
+      "marginal_annual_externality": 0.1706318532425395,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -552,16 +565,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 136045.02600868815,
+          "Carbon & Climate": 2720.9005201737627,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 76114.11620509112,
+          "Human Communities": 1522.2823241018225,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.0001150857612076,
@@ -594,9 +607,9 @@
         0.0,
         0.0,
         0.0,
-        356.17017058500466,
-        389.81852359373363,
-        57.637249506891116
+        7.123403411700093,
+        7.796370471874674,
+        1.1527449901378224
       ],
       "agent_cascade_damages": [
         0.0,
@@ -646,11 +659,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        139898.18523593733,
-        77450.43934870859
+        5000.0,
+        2797.963704718747,
+        1549.008786974172
       ],
-      "annual_externality": 803.6259436856294,
+      "annual_externality": 16.07251887371259,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0405,
       "discount_factor_at_step": 1.0,
@@ -659,7 +672,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999659184817739,
       "keystone_triggered": [],
-      "marginal_annual_externality": 11.516236255894341,
+      "marginal_annual_externality": 0.23032472511788882,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -693,16 +706,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 139898.18523593733,
+          "Carbon & Climate": 2797.963704718747,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 77450.43934870859,
+          "Human Communities": 1549.008786974172,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.0120149849946711,
@@ -735,9 +748,9 @@
         0.0,
         0.0,
         0.0,
-        914.6511431145368,
-        836.32352613149,
-        145.16761436351578
+        18.293022862290734,
+        16.726470522629803,
+        2.9033522872703155
       ],
       "agent_cascade_damages": [
         0.0,
@@ -787,11 +800,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        144363.2352613149,
-        79355.78376552342
+        5000.0,
+        2887.2647052262982,
+        1587.1156753104683
       ],
-      "annual_externality": 1896.1422836095426,
+      "annual_externality": 37.92284567219085,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0805,
       "discount_factor_at_step": 1.0,
@@ -800,7 +813,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999296532947113,
       "keystone_triggered": [],
-      "marginal_annual_externality": 16.055339104205586,
+      "marginal_annual_externality": 0.32110678208410803,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -834,16 +847,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 144363.2352613149,
+          "Carbon & Climate": 2887.2647052262982,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 79355.78376552342,
+          "Human Communities": 1587.1156753104683,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.0314471436328676,
@@ -876,9 +889,9 @@
         0.0,
         0.0,
         0.0,
-        1788.260013019714,
-        1368.3970720573077,
-        283.1785356300861
+        35.76520026039428,
+        27.367941441146154,
+        5.6635707126017225
       ],
       "agent_cascade_damages": [
         0.0,
@@ -928,11 +941,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        149683.97072057307,
-        82188.03933255874
+        5000.0,
+        2993.6794144114615,
+        1643.7607866511748
       ],
-      "annual_externality": 3439.835620707108,
+      "annual_externality": 68.79671241414216,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1205,
       "discount_factor_at_step": 1.0,
@@ -941,7 +954,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998882381775787,
       "keystone_triggered": [],
-      "marginal_annual_externality": 22.91449824356596,
+      "marginal_annual_externality": 0.45828996487132656,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -975,16 +988,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 149683.97072057307,
+          "Carbon & Climate": 2993.6794144114615,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 82188.03933255874,
+          "Human Communities": 1643.7607866511748,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.063387086859761,
@@ -1017,9 +1030,9 @@
         0.0,
         0.0,
         0.0,
-        3129.1919860247845,
-        2024.0348103205201,
-        506.07043681664754
+        62.58383972049569,
+        40.4806962064104,
+        10.12140873633295
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1069,11 +1082,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        156240.3481032052,
-        86558.54209059798
+        5000.0,
+        3124.806962064104,
+        1731.1708418119595
       ],
-      "annual_externality": 5659.297233161953,
+      "annual_externality": 113.18594466323904,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1605,
       "discount_factor_at_step": 1.0,
@@ -1082,7 +1095,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998391220814248,
       "keystone_triggered": [],
-      "marginal_annual_externality": 33.09029253152403,
+      "marginal_annual_externality": 0.661805850630472,
       "model_confidence": 0.8237500000000001,
       "npv_externality": 0.0,
       "price_result": {
@@ -1116,16 +1129,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 156240.3481032052,
+          "Carbon & Climate": 3124.806962064104,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 86558.54209059798,
+          "Human Communities": 1731.1708418119595,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.1164532151172128,
@@ -1158,9 +1171,9 @@
         0.0,
         0.0,
         0.0,
-        5128.7958052093645,
-        2861.6917737315457,
-        874.7674599386415
+        102.5759161041873,
+        57.23383547463092,
+        17.495349198772832
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1210,11 +1223,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        164616.91773731544,
-        93541.14943937557
+        5000.0,
+        3292.338354746309,
+        1870.8229887875113
       ],
-      "annual_externality": 8865.255038879552,
+      "annual_externality": 177.30510077759106,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.2005,
       "discount_factor_at_step": 1.0,
@@ -1223,7 +1236,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9997797539572983,
       "keystone_triggered": [],
-      "marginal_annual_externality": 47.70887307308658,
+      "marginal_annual_externality": 0.954177461461768,
       "model_confidence": 0.7237499999999999,
       "npv_externality": 0.0,
       "price_result": {
@@ -1257,16 +1270,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 164616.91773731544,
+          "Carbon & Climate": 3292.338354746309,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 93541.14943937557,
+          "Human Communities": 1870.8229887875113,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.2062142132339377,
@@ -1299,9 +1312,9 @@
         0.0,
         0.0,
         0.0,
-        7944.017249997366,
-        3952.444212420346,
-        1491.986782700213
+        158.8803449999473,
+        79.04888424840692,
+        29.83973565400426
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1351,11 +1364,11 @@
         0.0,
         0.0,
         0.0,
-        250000.0,
-        175524.44212420346,
-        104918.89059075723
+        5000.0,
+        3510.488842484069,
+        2098.3778118151445
       ],
-      "annual_externality": 13388.448245117925,
+      "annual_externality": 267.7689649023585,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.24,
       "discount_factor_at_step": 1.0,
@@ -1364,7 +1377,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9997085743461537,
       "keystone_triggered": [],
-      "marginal_annual_externality": 67.51136565219167,
+      "marginal_annual_externality": 1.3502273130438311,
       "model_confidence": 0.625,
       "npv_externality": 0.0,
       "price_result": {
@@ -1398,16 +1411,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 175524.44212420346,
+          "Carbon & Climate": 3510.488842484069,
           "Forest Birds": 0.0,
           "Forest Mammals": 0.0,
-          "Human Communities": 104918.89059075723,
+          "Human Communities": 2098.3778118151445,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.3601751660780756,
@@ -1440,9 +1453,9 @@
         -0.0,
         -0.0,
         0.0,
-        11773.258668588378,
-        5444.79405578677,
-        2593.836503934371
+        235.46517337176755,
+        108.89588111573539,
+        51.87673007868742
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1492,11 +1505,11 @@
         -0.0,
         -0.0,
         0.0,
-        250000.0,
-        190447.9405578677,
-        124775.40245469296
+        5000.0,
+        3808.958811157354,
+        2495.508049093859
       ],
-      "annual_externality": 19811.88922830952,
+      "annual_externality": 396.2377845661904,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.28,
       "discount_factor_at_step": 1.0,
@@ -1505,7 +1518,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.999621256690559,
       "keystone_triggered": [],
-      "marginal_annual_externality": 93.9094272051334,
+      "marginal_annual_externality": 1.8781885441026702,
       "model_confidence": 0.588,
       "npv_externality": 0.0,
       "price_result": {
@@ -1539,16 +1552,16 @@
         "iterations": 0,
         "prices": {
           "Canopy Trees": 0.0,
-          "Carbon & Climate": 190447.9405578677,
+          "Carbon & Climate": 3808.958811157354,
           "Forest Birds": -0.0,
           "Forest Mammals": -0.0,
-          "Human Communities": 124775.40245469296,
+          "Human Communities": 2495.508049093859,
           "Mycorrhizal Fungi": 0.0,
           "Pollinators & Insects": 0.0,
           "Raptors & Apex Predators": 0.0,
           "Soil Microbiome": 0.0,
           "Understory & Matorral": 0.0,
-          "Watershed & Water Cycle": 250000.0
+          "Watershed & Water Cycle": 5000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 1.645933272136724,
@@ -1573,17 +1586,17 @@
     },
     {
       "agent_annual_costs": [
-        146926.18986524438,
-        192835.80330305066,
-        165287.83140261486,
-        109203.30391222604,
-        232284.45985866257,
-        141650.07045823254,
-        122745.8749279386,
-        120000.0,
-        275501.75738187844,
-        159740.2595392305,
-        240877.8546205064
+        1527.994174744173,
+        1763.070201627892,
+        2115.68424195347,
+        1863.7363867686577,
+        2123.7436329934862,
+        1813.1209018653767,
+        1527.7588478000914,
+        1280.0,
+        2115.68424195347,
+        1135.9307345011946,
+        925.0079620612271
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1625,19 +1638,19 @@
         0.3673062920058108
       ],
       "agent_prices": [
-        3077000.0,
-        3500000.0,
-        2500000.0,
-        1875000.0,
-        3500000.0,
-        2500000.0,
-        2571000.0,
-        3000000.0,
-        4167000.0,
-        4500000.0,
-        8333000.0
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0
       ],
-      "annual_externality": 1907053.4052695846,
+      "annual_externality": 18191.731326269037,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.32,
       "discount_factor_at_step": 1.0,
@@ -1646,7 +1659,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9995160657482511,
       "keystone_triggered": [],
-      "marginal_annual_externality": 6694.979966268176,
+      "marginal_annual_externality": 63.986650362865475,
       "model_confidence": 0.572,
       "npv_externality": 0.0,
       "price_result": {
@@ -1679,17 +1692,17 @@
         },
         "iterations": 0,
         "prices": {
-          "Canopy Trees": 2500000.0,
-          "Carbon & Climate": 4500000.0,
-          "Forest Birds": 2500000.0,
-          "Forest Mammals": 2571000.0,
-          "Human Communities": 8333000.0,
-          "Mycorrhizal Fungi": 3077000.0,
-          "Pollinators & Insects": 3500000.0,
-          "Raptors & Apex Predators": 3000000.0,
-          "Soil Microbiome": 3500000.0,
-          "Understory & Matorral": 1875000.0,
-          "Watershed & Water Cycle": 4167000.0
+          "Canopy Trees": 32000.0,
+          "Carbon & Climate": 32000.0,
+          "Forest Birds": 32000.0,
+          "Forest Mammals": 32000.0,
+          "Human Communities": 32000.0,
+          "Mycorrhizal Fungi": 32000.0,
+          "Pollinators & Insects": 32000.0,
+          "Raptors & Apex Predators": 32000.0,
+          "Soil Microbiome": 32000.0,
+          "Understory & Matorral": 32000.0,
+          "Watershed & Water Cycle": 32000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 2.2269703110237304,
@@ -1714,17 +1727,17 @@
     },
     {
       "agent_annual_costs": [
-        194478.73519208684,
-        255246.95876564487,
-        218783.10751340986,
-        150000.0,
-        307463.14186410303,
-        200000.0,
-        162472.4804197649,
-        120000.0,
-        364667.6836033516,
-        193451.13023974895,
-        316839.0910991352
+        2022.5282827906335,
+        2333.686480143039,
+        2800.4237761716463,
+        2560.0,
+        2811.0915827575136,
+        2560.0,
+        2022.2167924669302,
+        1280.0,
+        2800.4237761716463,
+        1375.6524817048814,
+        1216.7107782518094
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1766,19 +1779,19 @@
         0.48618468336313303
       ],
       "agent_prices": [
-        3077000.0,
-        3500000.0,
-        2500000.0,
-        1875000.0,
-        3500000.0,
-        2500000.0,
-        2571000.0,
-        3000000.0,
-        4167000.0,
-        4500000.0,
-        8333000.0
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0
       ],
-      "annual_externality": 2483402.328697245,
+      "annual_externality": 23782.7339504581,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.36,
       "discount_factor_at_step": 1.0,
@@ -1789,7 +1802,7 @@
       "keystone_triggered": [
         "Pollinators & Insects"
       ],
-      "marginal_annual_externality": 6099.401412357576,
+      "marginal_annual_externality": 53.01793498664483,
       "model_confidence": 0.5559999999999999,
       "npv_externality": 0.0,
       "price_result": {
@@ -1822,17 +1835,17 @@
         },
         "iterations": 0,
         "prices": {
-          "Canopy Trees": 2500000.0,
-          "Carbon & Climate": 4500000.0,
-          "Forest Birds": 2500000.0,
-          "Forest Mammals": 2571000.0,
-          "Human Communities": 8333000.0,
-          "Mycorrhizal Fungi": 3077000.0,
-          "Pollinators & Insects": 3500000.0,
-          "Raptors & Apex Predators": 3000000.0,
-          "Soil Microbiome": 3500000.0,
-          "Understory & Matorral": 1875000.0,
-          "Watershed & Water Cycle": 4167000.0
+          "Canopy Trees": 32000.0,
+          "Carbon & Climate": 32000.0,
+          "Forest Birds": 32000.0,
+          "Forest Mammals": 32000.0,
+          "Human Communities": 32000.0,
+          "Mycorrhizal Fungi": 32000.0,
+          "Pollinators & Insects": 32000.0,
+          "Raptors & Apex Predators": 32000.0,
+          "Soil Microbiome": 32000.0,
+          "Understory & Matorral": 32000.0,
+          "Watershed & Water Cycle": 32000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 3.6938128364063374,
@@ -1857,17 +1870,17 @@
     },
     {
       "agent_annual_costs": [
-        242368.3987532364,
-        318100.5708493515,
-        272657.63215658703,
-        150000.0,
-        350000.0,
-        200000.0,
-        179970.00000000003,
-        120000.0,
-        454465.74127859925,
-        227859.1629744149,
-        393389.7519668001
+        2520.568332825338,
+        2908.3480763369284,
+        3490.0176916043138,
+        2560.0,
+        3200.0,
+        2560.0,
+        2240.0,
+        1280.0,
+        3490.0176916043138,
+        1620.3318255958395,
+        1510.6770746354975
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1909,19 +1922,19 @@
         0.6059058492368601
       ],
       "agent_prices": [
-        3077000.0,
-        3500000.0,
-        2500000.0,
-        1875000.0,
-        3500000.0,
-        2500000.0,
-        2571000.0,
-        3000000.0,
-        4167000.0,
-        4500000.0,
-        8333000.0
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0,
+        32000.0
       ],
-      "annual_externality": 2908811.257978989,
+      "annual_externality": 27379.960692602228,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.4,
       "discount_factor_at_step": 1.0,
@@ -1932,7 +1945,7 @@
       "keystone_triggered": [
         "Pollinators & Insects"
       ],
-      "marginal_annual_externality": 4426.073808675632,
+      "marginal_annual_externality": 36.21109645449178,
       "model_confidence": 0.5399999999999999,
       "npv_externality": 0.0,
       "price_result": {
@@ -1965,17 +1978,17 @@
         },
         "iterations": 0,
         "prices": {
-          "Canopy Trees": 2500000.0,
-          "Carbon & Climate": 4500000.0,
-          "Forest Birds": 2500000.0,
-          "Forest Mammals": 2571000.0,
-          "Human Communities": 8333000.0,
-          "Mycorrhizal Fungi": 3077000.0,
-          "Pollinators & Insects": 3500000.0,
-          "Raptors & Apex Predators": 3000000.0,
-          "Soil Microbiome": 3500000.0,
-          "Understory & Matorral": 1875000.0,
-          "Watershed & Water Cycle": 4167000.0
+          "Canopy Trees": 32000.0,
+          "Carbon & Climate": 32000.0,
+          "Forest Birds": 32000.0,
+          "Forest Mammals": 32000.0,
+          "Human Communities": 32000.0,
+          "Mycorrhizal Fungi": 32000.0,
+          "Pollinators & Insects": 32000.0,
+          "Raptors & Apex Predators": 32000.0,
+          "Soil Microbiome": 32000.0,
+          "Understory & Matorral": 32000.0,
+          "Watershed & Water Cycle": 32000.0
         },
         "scarcity_multipliers": {
           "Canopy Trees": 10.971983177099743,

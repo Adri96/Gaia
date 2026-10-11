@@ -11,8 +11,8 @@ The properties are written for the model as it should behave after the
 owner's decisions D1 (monetary rates are yearly flows) and D2 (rates are
 €/ha/yr, ``Resource.area_ha`` required). Where the API does not exist yet,
 the helpers in the first section stand in for it; the steps that add the API
-(3.2 area_ha, 3.3 restoration from a starting state) should update those
-helpers rather than the tests.
+(3.3 restoration from a starting state) should update those helpers rather
+than the tests.
 """
 
 import dataclasses
@@ -22,9 +22,13 @@ import re
 
 import pytest
 
-from gaia.cases.amazon_forest import build_amazon_ecosystem
-from gaia.cases.costa_brava import build_costa_brava_ecosystem
-from gaia.cases.forest import _FOREST_SUCCESSION, build_forest_ecosystem
+from gaia.cases.amazon_forest import AMAZON_TREES_PER_HA, build_amazon_ecosystem
+from gaia.cases.costa_brava import COSTA_BRAVA_TREES_PER_HA, build_costa_brava_ecosystem
+from gaia.cases.forest import (
+    _FOREST_SUCCESSION,
+    FOREST_TREES_PER_HA,
+    build_forest_ecosystem,
+)
 from gaia.cases.posidonia import build_posidonia_ecosystem
 from gaia.discount import (
     DISCOUNT_CENTRAL,
@@ -33,7 +37,7 @@ from gaia.discount import (
     DISCOUNT_MARKET,
     compute_extraction_npv,
 )
-from gaia.models import RestorationCost, Resource
+from gaia.models import RestorationCost
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report
 from gaia.serialization import to_json
@@ -44,33 +48,29 @@ from gaia.validation import validate_discount_config
 # ── Helpers (update these as the API gains area_ha / starting states) ────────
 
 # case → (builder, keyword for the number of units, units per hectare)
-# Units per hectare is the density used to give each resource an area.
-# Posidonia's unit is the hectare itself.
+# Units per hectare is the case's reference density, used to give each
+# resource an area. Posidonia's unit is the hectare itself.
 CASES = {
-    "forest": (build_forest_ecosystem, "total_trees", 100.0),
-    "costa_brava": (build_costa_brava_ecosystem, "total_trees", 100.0),
+    "forest": (build_forest_ecosystem, "total_trees", FOREST_TREES_PER_HA),
+    "costa_brava": (build_costa_brava_ecosystem, "total_trees", COSTA_BRAVA_TREES_PER_HA),
     "posidonia": (build_posidonia_ecosystem, "total_hectares", 1.0),
-    "amazon_forest": (build_amazon_ecosystem, "total_trees", 400.0),
+    "amazon_forest": (build_amazon_ecosystem, "total_trees", AMAZON_TREES_PER_HA),
 }
 TREE_CASES = ["forest", "costa_brava", "amazon_forest"]
-
-_HAS_AREA = "area_ha" in {f.name for f in dataclasses.fields(Resource)}
 
 
 def build(case, total_units, area_ha=None, with_pricing=False):
     """Build a shipped case with ``total_units`` units over ``area_ha`` hectares.
 
-    ``area_ha`` defaults to the case's reference density. It is applied
-    through ``Resource.area_ha`` once that field exists (Step 3.2); before
-    that the model has no notion of area and the argument only feeds
-    ``per_ha``.
+    ``area_ha`` defaults to the case's reference density and is passed to the
+    builder, which sets ``Resource.area_ha`` and scales any pricing anchors.
     """
     builder, units_kw, density = CASES[case]
     if area_ha is None:
         area_ha = total_units / density
-    eco = builder(**{units_kw: total_units}, with_pricing=with_pricing)
-    if _HAS_AREA:
-        eco.resource = dataclasses.replace(eco.resource, area_ha=area_ha)
+    eco = builder(**{units_kw: total_units}, with_pricing=with_pricing,
+                  area_ha=area_ha)
+    assert eco.resource.area_ha == area_ha
     return eco, area_ha
 
 
@@ -108,11 +108,7 @@ def recovered_after_cut(total_units, units_cut, units_restored):
 
 @pytest.mark.parametrize("case", TREE_CASES)
 def test_scale_invariance_finer_units_same_area(case):
-    """Same area, same fraction cut, 2× as many units → same per-ha externality.
-
-    Holds today only because rates ignore resource size entirely; must keep
-    holding once rates are €/ha/yr × area_ha.
-    """
+    """Same area, same fraction cut, 2× as many units → same per-ha externality."""
     coarse, area = build(case, 1000)
     fine, _ = build(case, 2000, area_ha=area)
     a = per_ha(annual_externality(run_extraction(coarse, 500)), area)
@@ -120,9 +116,6 @@ def test_scale_invariance_finer_units_same_area(case):
     assert b == pytest.approx(a, rel=1e-9)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "C4: agent rates are fixed € totals, so doubling the resource's extent "
-    "leaves the externality unchanged and halves it per hectare"))
 @pytest.mark.parametrize("case", list(CASES))
 def test_scale_invariance_per_ha_externality_independent_of_extent(case):
     """Same density and fraction cut on a resource twice the size → same per-ha externality."""

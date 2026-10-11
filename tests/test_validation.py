@@ -21,6 +21,7 @@ from gaia.validation import (
 def _resource(**kwargs) -> Resource:
     defaults = dict(
         name="Forest",
+        area_ha=100.0,
         total_units=10_000,
         safe_threshold_ratio=0.3,
         unit_value=100.0,
@@ -34,7 +35,7 @@ def _agent(weight: float = 1.0) -> Agent:
         name="Agent",
         dependency_weight=weight,
         damage_function=logistic_damage(threshold=0.3),
-        annual_value=100_000.0,
+        annual_value_per_ha=100_000.0,
         description="Test agent",
     )
 
@@ -67,6 +68,19 @@ def test_reject_negative_total_units():
     """total_units=-1 must be rejected."""
     with pytest.raises(ValueError, match="total_units"):
         validate_resource(_resource(total_units=-1))
+
+
+@pytest.mark.parametrize("area", [0.0, -5.0, float("inf"), float("nan"), None])
+def test_reject_invalid_area_ha(area):
+    """area_ha must be a finite number of hectares > 0 (decision D2)."""
+    with pytest.raises(ValueError, match="area_ha"):
+        validate_resource(_resource(area_ha=area))
+
+
+def test_resource_requires_area_ha():
+    """area_ha has no default: every resource states its area."""
+    with pytest.raises(TypeError, match="area_ha"):
+        Resource(name="F", total_units=10, safe_threshold_ratio=0.3, unit_value=1.0)
 
 
 def test_reject_threshold_zero():
@@ -109,8 +123,8 @@ def test_valid_ecosystem_passes():
 def test_reject_invalid_agent_annual_value(value):
     """Agent annual values must be finite and >= 0 (€/yr at full damage)."""
     eco = _ecosystem([1.0])
-    eco.agents[0].annual_value = value
-    with pytest.raises(ValueError, match="annual_value"):
+    eco.agents[0].annual_value_per_ha = value
+    with pytest.raises(ValueError, match="annual_value_per_ha"):
         validate_ecosystem(eco)
 
 
@@ -222,7 +236,7 @@ def test_reject_invalid_trophic_level():
         name="A",
         dependency_weight=1.0,
         damage_function=logistic_damage(threshold=0.3),
-        annual_value=1.0,
+        annual_value_per_ha=1.0,
         description="",
         trophic_level=5,
     )
@@ -237,7 +251,7 @@ def test_reject_invalid_keystone_threshold():
         name="A",
         dependency_weight=1.0,
         damage_function=logistic_damage(threshold=0.3),
-        annual_value=1.0,
+        annual_value_per_ha=1.0,
         description="",
         is_keystone=True,
         keystone_threshold=0.0,
@@ -281,12 +295,12 @@ def test_reject_edge_bad_strength():
     agents[0] = Agent(
         name="A", dependency_weight=0.5,
         damage_function=logistic_damage(0.3),
-        annual_value=1.0, description="",
+        annual_value_per_ha=1.0, description="",
     )
     agents[1] = Agent(
         name="B", dependency_weight=0.5,
         damage_function=logistic_damage(0.3),
-        annual_value=1.0, description="",
+        annual_value_per_ha=1.0, description="",
     )
     edge = InteractionEdge("A", "B", 0.0, "dependency", "bad")
     eco = Ecosystem(
@@ -304,10 +318,10 @@ def test_reject_edge_bad_interaction_type():
     agents = [
         Agent(name="A", dependency_weight=0.5,
               damage_function=logistic_damage(0.3),
-              annual_value=1.0, description=""),
+              annual_value_per_ha=1.0, description=""),
         Agent(name="B", dependency_weight=0.5,
               damage_function=logistic_damage(0.3),
-              annual_value=1.0, description=""),
+              annual_value_per_ha=1.0, description=""),
     ]
     edge = InteractionEdge("A", "B", 0.3, "invalid_type", "bad")
     eco = Ecosystem(

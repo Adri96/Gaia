@@ -183,7 +183,7 @@ def _run_extraction_cython(
     # Pre-extract all per-agent arrays
     damage_params = [_extract_damage_params(a.damage_function) for a in agents]
     dep_weights = [a.dependency_weight for a in agents]
-    annual_values = [a.annual_value for a in agents]
+    annual_values = [a.annual_value(resource.area_ha) for a in agents]
     trophic_levels = [a.trophic_level for a in agents]
     is_keystone = [a.is_keystone for a in agents]
     keystone_thresholds = [a.keystone_threshold for a in agents]
@@ -366,7 +366,8 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
             effective_damage[i] = direct_damage[i] + cascade_damage[i]
 
         Phase 3 — Annual cost computation (€/yr flows):
-            cost[i]          = effective_damage[i] * weight[i] * annual_value[i]
+            cost[i]          = effective_damage[i] * weight[i]
+                               * annual_value_per_ha[i] * area_ha
             annual_externality = sum(cost[i])
             marginal         = annual_externality - previous annual_externality
             ecosystem_health = 1.0 - sum(weight[i] * effective_damage[i])
@@ -423,8 +424,8 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     has_interactions: bool = len(interactions) > 0
     has_resilience: bool = resource.resilience is not None
 
-    # Agent annual values (€/yr at full damage)
-    annual_values: list = [a.annual_value for a in agents]
+    # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
+    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
 
     # v0.7: Pre-extract pricing metadata
     has_pricing: bool = ecosystem.pricing is not None
@@ -644,6 +645,7 @@ def run_restoration(
 
     agents: list = ecosystem.agents
     cost_per_unit: float = restoration_cost.total_cost_per_unit
+    annual_values: list = [a.annual_value(ecosystem.resource.area_ha) for a in agents]
 
     # v0.3: Pre-extract interaction metadata
     agent_names: list = [a.name for a in agents]
@@ -703,7 +705,7 @@ def run_restoration(
         for i in range(n_agents):
             service_value: float = (
                 effective_recoveries[i] * agents[i].dependency_weight
-                * agents[i].annual_value
+                * annual_values[i]
             )
             agent_service_values.append(service_value)
             step_total_service += service_value

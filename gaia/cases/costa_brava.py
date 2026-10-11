@@ -26,6 +26,8 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Parameter                     | Value         | Unit    | Source        | Confidence |
     |-------------------------------|---------------|---------|---------------|------------|
     | total_units                   | configurable  | trees   | Placeholder   | Low        |
+    | reference area                | 100           | ha      | Placeholder   | Low        |
+    | tree density                  | 100           | trees/ha| Placeholder   | Low        |
     | safe_threshold_ratio          | 0.25          | ratio   | User spec      | Medium     |
     | unit_value                    | 60.0 €/tree   | €/tree  | User spec      | Medium     |
     | Canopy Trees weight           | 0.12          | ratio   | User spec      | Medium     |
@@ -39,31 +41,26 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
     | Carbon & Climate weight       | 0.10          | ratio   | User spec      | Medium     |
     | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
-    | Canopy Trees annual_value     | 2,500,000 €   | €/yr    | Calibrated     | Low        |
-    | Understory annual_value       | 1,875,000 €   | €/yr    | Calibrated     | Low        |
-    | Mycorrhizal annual_value      | 3,077,000 €   | €/yr    | Calibrated     | Low        |
-    | Soil Microbiome annual_value  | 3,500,000 €   | €/yr    | Calibrated     | Low        |
-    | Pollinators annual_value      | 3,500,000 €   | €/yr    | Calibrated     | Low        |
-    | Forest Birds annual_value     | 2,500,000 €   | €/yr    | Calibrated     | Low        |
-    | Forest Mammals annual_value   | 2,571,000 €   | €/yr    | Calibrated     | Low        |
-    | Raptors annual_value          | 3,000,000 €   | €/yr    | Calibrated     | Low        |
-    | Watershed annual_value        | 4,167,000 €   | €/yr    | Calibrated     | Low        |
-    | Carbon & Climate annual_value | 4,500,000 €   | €/yr    | Calibrated     | Low        |
-    | Human Communities annual_value | 8,333,000 €  | €/yr    | Calibrated     | Low        |
+    | annual_value_per_ha (all)     | 1,600         | €/ha/yr | de Groot 2012 | Low        |
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | exponential base (carbon)     | 2.0           | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
-Monetary rate calibration:
-    Rates are set so that sum(weight × rate) ≈ €3,500,000 (total effective max externality).
-    This ensures:
-        externality < revenue at safe threshold (25%):
-            logistic_damage(0.25) ≈ 0.10 → 0.10 × €3.5M ≈ €350k < €375k revenue (6,250 trees × €60)
-        externality > revenue at 50% depletion:
-            logistic_damage(0.50) ≈ 0.76 → 0.76 × €3.5M ≈ €2.66M >> €300k revenue (5,000 trees × €60)
+Agent values (decisions D1, D2):
+    Every agent uses the same yearly value per hectare and the dependency
+    weights split it, so sum(weight × value) = €1,600/ha/yr × area_ha at full
+    damage (€160,000/yr for the 100 ha reference forest).
 
-    Full destruction (10,000 trees @ €60 = €600k revenue) imposes ≈€3.5M in externalities.
-    Ratio: 5.8× — every euro of timber revenue costs society ~€5.80. [User spec ✓]
+    €1,600/ha/yr [PLACEHOLDER] is the global mean for woodlands in de Groot
+    et al. (2012), Ecosystem Services 1:50-61 (Int$1,588/ha/yr, 2007 price
+    level; figure to be checked against the paper in Step 8), used at face value
+    as €; a Mediterranean holm-oak valuation and
+    currency/price-year conversion are pending (Step 8). The total includes
+    climate regulation, which overlaps gaia.carbon (C5, Step 3.4).
+
+    An earlier version back-solved per-agent rates so that externality <
+    revenue at 25% and > revenue at 50% ("calibrated", €3.5M in total);
+    rates are never tuned to produce an outcome.
 
 Dependency weights sum: 0.12+0.08+0.13+0.10+0.10+0.08+0.07+0.04+0.12+0.10+0.06 = 1.00 ✓
 
@@ -77,6 +74,7 @@ CLI usage:
 import argparse
 import sys
 import warnings
+from typing import Optional
 
 from gaia.cli import (
     add_common_arguments,
@@ -100,9 +98,22 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
+from gaia.pricing import scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# ── Reference area ───────────────────────────────────────────────────────────
+# [PLACEHOLDER] 10,000 trees on 100 ha = 100 trees/ha, so the per-tree
+# absorption below (0.018 t CO₂/yr) gives ~1.8 t CO₂/ha/yr, matching the
+# 1.7 t CO₂/ha/yr of the carbon anchor. Without an explicit area, a forest of
+# N trees covers N / COSTA_BRAVA_TREES_PER_HA hectares.
+COSTA_BRAVA_TOTAL_TREES: int = 10_000
+COSTA_BRAVA_AREA_HA: float = 100.0
+COSTA_BRAVA_TREES_PER_HA: float = COSTA_BRAVA_TOTAL_TREES / COSTA_BRAVA_AREA_HA
+
+# € / ha / yr of service lost at full damage, every agent (see module docstring)
+_CB_VALUE_PER_HA_YR: float = 1_600.0
 
 # v0.4: Costa Brava Mediterranean succession curve
 # Slower than temperate forest due to drought stress and fire risk.
@@ -164,22 +175,24 @@ _COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
     horizon_years=100,
 )
 
-# v0.7: Costa Brava Holm Oak pricing configuration
+# v0.7: Costa Brava Holm Oak pricing configuration. Anchor values are €/yr
+# for the COSTA_BRAVA_AREA_HA reference forest (first written for 1,000 ha and
+# restated per hectare × 100 ha); the builder scales them with area_ha.
 _COSTA_BRAVA_OAK_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
             agent_name="Carbon & Climate",
-            anchor_value=136000.0,
-            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 1,000 ha",
+            anchor_value=13_600.0,
+            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 100 ha",
             confidence="high",
-            description="Carbon: €80/t × 1,700 t CO₂/yr",
+            description="Carbon: €80/t × 170 t CO₂/yr",
         ),
         AnchorPoint(
             agent_name="Watershed & Water Cycle",
-            anchor_value=250000.0,
-            source="Municipal water treatment cost avoided: ~€2.50/m³ × 100,000 m³/yr",
+            anchor_value=25_000.0,
+            source="Municipal water treatment cost avoided: ~€2.50/m³ × 100 m³/ha/yr × 100 ha",
             confidence="medium",
-            description="Watershed: €2.50/m³ × 100,000 m³/yr recharge",
+            description="Watershed: €2.50/m³ × 10,000 m³/yr recharge",
         ),
     ],
     scarcity_functions={
@@ -205,10 +218,11 @@ _STEEPNESS: float = 12.0
 
 
 def build_costa_brava_ecosystem(
-    total_trees: int = 10_000,
+    total_trees: int = COSTA_BRAVA_TOTAL_TREES,
     safe_threshold_ratio: float = 0.25,
     tree_value: float = 60.0,
     with_pricing: bool = False,
+    area_ha: Optional[float] = None,
 ) -> Ecosystem:
     """
     Build the Costa Brava Holm Oak Forest ecosystem with 11 agents.
@@ -225,15 +239,21 @@ def build_costa_brava_ecosystem(
         tree_value: Revenue per tree in euros. Default 60.0 — holm oak is less
             commercially valuable than northern timber species. Cork harvest would
             use a different economic model (no felling). [User spec, Medium]
+        with_pricing: If True, attach v0.7 endogenous pricing configuration.
+        area_ha: Forest area in hectares. Default: total_trees at the
+            reference density (COSTA_BRAVA_TREES_PER_HA).
 
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    if area_ha is None:
+        area_ha = total_trees / COSTA_BRAVA_TREES_PER_HA
     resource = Resource(
         name="Costa Brava Holm Oak Forest",
         total_units=total_trees,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=tree_value,
+        area_ha=area_ha,
         carbon_profile=_CB_CARBON,
         resilience=_CB_RESILIENCE,
         substrate=_HOLM_OAK_SUBSTRATE,
@@ -248,7 +268,7 @@ def build_costa_brava_ecosystem(
             name="Mycorrhizal Fungi",
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_077_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Keystone underground network — nutrient/water transport, cascades to all tree regeneration",
             # v0.3: Producer-level, KEYSTONE agent
             trophic_level=0,
@@ -259,7 +279,7 @@ def build_costa_brava_ecosystem(
             name="Soil Microbiome",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_500_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Soil microbiome and biocrusts — nitrogen fixation, carbon storage, erosion prevention",
             # v0.3: Abiotic process agent
             trophic_level=-1,
@@ -269,7 +289,7 @@ def build_costa_brava_ecosystem(
             name="Canopy Trees",
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=2_500_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Remaining canopy trees — self-reinforcing decline from microclimate loss and network fragmentation",
             # v0.3: Producer — the resource itself
             trophic_level=0,
@@ -278,7 +298,7 @@ def build_costa_brava_ecosystem(
             name="Understory & Matorral",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=1_875_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Understory shrubs and aromatic plants — microclimate collapse and biodiversity loss",
             # v0.3: Secondary producer
             trophic_level=0,
@@ -288,7 +308,7 @@ def build_costa_brava_ecosystem(
             name="Pollinators & Insects",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_500_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Keystone pollination services — base of animal food web, agricultural crop dependency",
             # v0.3: Primary consumer, KEYSTONE functional group
             trophic_level=1,
@@ -300,7 +320,7 @@ def build_costa_brava_ecosystem(
             name="Forest Birds",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=2_500_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Nesting and migratory stopover habitat — seed dispersal, insect control, ecotourism",
             # v0.3: Primary consumer (insects + seeds)
             trophic_level=1,
@@ -309,7 +329,7 @@ def build_costa_brava_ecosystem(
             name="Forest Mammals",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=2_571_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Habitat displacement — predator-prey disruption, human-wildlife conflict, crop damage",
             # v0.3: Primary consumer — herbivores and omnivores
             trophic_level=1,
@@ -318,7 +338,7 @@ def build_costa_brava_ecosystem(
             name="Raptors & Apex Predators",
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_000_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Apex trophic control — carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
             # v0.3: Tertiary consumer — apex predator
             trophic_level=3,
@@ -328,7 +348,7 @@ def build_costa_brava_ecosystem(
             name="Watershed & Water Cycle",
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=4_167_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Aquifer recharge, flood control, drought buffering — Costa Brava water and tourism supply",
             # v0.3: Abiotic process
             trophic_level=-1,
@@ -337,7 +357,7 @@ def build_costa_brava_ecosystem(
             name="Carbon & Climate",
             dependency_weight=0.10,
             damage_function=exponential_damage(threshold=t, base=2.0),
-            annual_value=4_500_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="CO₂ release, lost sequestration, fire risk amplification — exponential accumulation, no plateau",
             # v0.3: Abiotic process
             trophic_level=-1,
@@ -347,7 +367,7 @@ def build_costa_brava_ecosystem(
             name="Human Communities",
             dependency_weight=0.06,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=8_333_000.0,
+            annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Water, fire protection, tourism economy, traditional livelihoods — Costa Brava coastal dependency",
             # v0.3: External beneficiary
             trophic_level=-1,
@@ -412,7 +432,10 @@ def build_costa_brava_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
-        pricing=_COSTA_BRAVA_OAK_PRICING if with_pricing else None,
+        pricing=(
+            scale_anchors(_COSTA_BRAVA_OAK_PRICING, area_ha / COSTA_BRAVA_AREA_HA)
+            if with_pricing else None
+        ),
     )
 
 
@@ -586,6 +609,7 @@ def main(argv: list = None) -> None:
             safe_threshold_ratio=args.threshold,
             tree_value=args.unit_value,
             with_pricing=args.with_pricing,
+            area_ha=args.area_ha,
         )
         if args.mode == "restore":
             cost = RestorationCost(

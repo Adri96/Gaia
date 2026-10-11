@@ -15,6 +15,7 @@ from gaia.models import Agent, Ecosystem, InteractionEdge, Resource, SimulationS
 def test_resource_creation():
     """Resource can be created with valid parameters."""
     r = Resource(
+        area_ha=1.0,
         name="Test Forest",
         total_units=10_000,
         safe_threshold_ratio=0.3,
@@ -28,19 +29,34 @@ def test_resource_creation():
 
 def test_resource_safe_threshold_units():
     """Derived safe_threshold_units is correctly computed as int(total * ratio)."""
-    r = Resource(name="F", total_units=10_000, safe_threshold_ratio=0.3, unit_value=0.0)
+    r = Resource(area_ha=1.0, name="F", total_units=10_000, safe_threshold_ratio=0.3, unit_value=0.0)
     assert r.safe_threshold_units == 3_000
 
-    r2 = Resource(name="F", total_units=7_500, safe_threshold_ratio=0.4, unit_value=0.0)
+    r2 = Resource(area_ha=1.0, name="F", total_units=7_500, safe_threshold_ratio=0.4, unit_value=0.0)
     assert r2.safe_threshold_units == 3_000  # int(7500 * 0.4) = 3000
 
-    r3 = Resource(name="F", total_units=1, safe_threshold_ratio=0.5, unit_value=0.0)
+    r3 = Resource(area_ha=1.0, name="F", total_units=1, safe_threshold_ratio=0.5, unit_value=0.0)
     assert r3.safe_threshold_units == 0  # int(1 * 0.5) = 0
+
+
+def test_resource_units_per_ha():
+    """units_per_ha is derived from total_units and area_ha."""
+    r = Resource(area_ha=40.0, name="F", total_units=10_000,
+                 safe_threshold_ratio=0.3, unit_value=0.0)
+    assert r.units_per_ha == 250.0
+
+
+def test_agent_annual_value_scales_with_area():
+    """An agent's €/yr value is its €/ha/yr value times the area."""
+    agent = Agent(name="A", dependency_weight=1.0,
+                  damage_function=logistic_damage(threshold=0.3),
+                  annual_value_per_ha=840.0, description="")
+    assert agent.annual_value(1_000.0) == 840_000.0
 
 
 def test_resource_safe_threshold_units_floors_correctly():
     """safe_threshold_units uses int() (floor division) not round()."""
-    r = Resource(name="F", total_units=10_001, safe_threshold_ratio=0.3, unit_value=0.0)
+    r = Resource(area_ha=1.0, name="F", total_units=10_001, safe_threshold_ratio=0.3, unit_value=0.0)
     # 10001 * 0.3 = 3000.3 → int → 3000
     assert r.safe_threshold_units == 3_000
 
@@ -54,12 +70,12 @@ def test_agent_creation():
         name="Test Agent",
         dependency_weight=0.5,
         damage_function=fn,
-        annual_value=100_000.0,
+        annual_value_per_ha=100_000.0,
         description="A test agent",
     )
     assert agent.name == "Test Agent"
     assert agent.dependency_weight == 0.5
-    assert agent.annual_value == 100_000.0
+    assert agent.annual_value_per_ha == 100_000.0
     assert agent.description == "A test agent"
     assert callable(agent.damage_function)
 
@@ -71,8 +87,8 @@ def test_agent_monetary_rate_removed():
         Agent(name="A", dependency_weight=1.0, damage_function=fn,
               monetary_rate=1.0, description="")
     agent = Agent(name="A", dependency_weight=1.0, damage_function=fn,
-                  annual_value=1.0, description="")
-    with pytest.raises(AttributeError, match="annual_value"):
+                  annual_value_per_ha=1.0, description="")
+    with pytest.raises(AttributeError, match="annual_value_per_ha"):
         agent.monetary_rate
 
 
@@ -83,7 +99,7 @@ def test_agent_damage_function_is_callable():
         name="A",
         dependency_weight=1.0,
         damage_function=fn,
-        annual_value=1.0,
+        annual_value_per_ha=1.0,
         description="",
     )
     result = agent.damage_function(0.5)
@@ -98,6 +114,7 @@ def _make_ecosystem(n_agents: int = 2, weights: list = None) -> Ecosystem:
         weights = [1.0 / n_agents] * n_agents
 
     resource = Resource(
+        area_ha=1.0,
         name="Test Forest",
         total_units=1_000,
         safe_threshold_ratio=0.3,
@@ -108,7 +125,7 @@ def _make_ecosystem(n_agents: int = 2, weights: list = None) -> Ecosystem:
             name=f"Agent {i}",
             dependency_weight=weights[i],
             damage_function=logistic_damage(threshold=0.3),
-            annual_value=10_000.0,
+            annual_value_per_ha=10_000.0,
             description=f"Test agent {i}",
         )
         for i in range(n_agents)
@@ -191,7 +208,7 @@ def test_agent_trophic_defaults():
         name="A",
         dependency_weight=1.0,
         damage_function=fn,
-        annual_value=1.0,
+        annual_value_per_ha=1.0,
         description="",
     )
     assert agent.trophic_level == -1
@@ -206,7 +223,7 @@ def test_agent_trophic_custom_values():
         name="K",
         dependency_weight=1.0,
         damage_function=fn,
-        annual_value=1.0,
+        annual_value_per_ha=1.0,
         description="",
         trophic_level=2,
         is_keystone=True,

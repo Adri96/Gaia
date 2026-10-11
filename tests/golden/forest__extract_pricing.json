@@ -9,7 +9,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_yr": 750000.0,
+          "annual_value_eur_per_ha_yr": 3000.0,
+          "annual_value_eur_yr": 24000.0,
           "dependency_weight": 0.2,
           "description": "Health costs, water treatment, lost recreation",
           "is_keystone": false,
@@ -18,7 +19,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_yr": 1167000.0,
+          "annual_value_eur_per_ha_yr": 3000.0,
+          "annual_value_eur_yr": 24000.0,
           "dependency_weight": 0.3,
           "description": "Habitat loss, population decline, species loss",
           "is_keystone": false,
@@ -27,7 +29,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_yr": 1000000.0,
+          "annual_value_eur_per_ha_yr": 3000.0,
+          "annual_value_eur_yr": 24000.0,
           "dependency_weight": 0.15,
           "description": "Soil erosion, pollination network disruption",
           "is_keystone": false,
@@ -36,7 +39,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_yr": 1571000.0,
+          "annual_value_eur_per_ha_yr": 3000.0,
+          "annual_value_eur_yr": 24000.0,
           "dependency_weight": 0.35,
           "description": "Carbon release, watershed degradation, climate impact",
           "is_keystone": false,
@@ -64,6 +68,7 @@
       ],
       "name": "Oak Valley Forest",
       "resource": {
+        "area_ha": 8.0,
         "carbon_absorption_per_unit_yr": 0.022,
         "carbon_price_eur_per_t": 80.0,
         "carbon_stored_per_unit": 0.8,
@@ -77,7 +82,8 @@
         "safe_threshold_units": 600,
         "substrate_type": "terrestrial_soil",
         "total_units": 2000,
-        "unit_value_eur": 100.0
+        "unit_value_eur": 100.0,
+        "units_per_ha": 250.0
       }
     },
     "gaia_version": "<gaia_version>",
@@ -86,9 +92,9 @@
       "carbon_foregone_eur_pv": 187896.44,
       "carbon_release_eur_pv": 70000.0,
       "horizon_years": 100,
-      "services_eur_pv": 7545169.59,
-      "substrate_damage_eur_pv": 2205.7,
-      "total_eur_pv": 7805271.74
+      "services_eur_pv": 1509033.92,
+      "substrate_damage_eur_pv": 441.14,
+      "total_eur_pv": 1767371.5
     },
     "pricing": {
       "converged": true,
@@ -101,7 +107,7 @@
       "iterations": 0,
       "prices_eur_yr": {
         "Animal Populations": 0.0,
-        "General Biosphere": 328414.44,
+        "General Biosphere": 65682.89,
         "Human Communities": 0.0,
         "Vegetation & Flora": 0.0
       },
@@ -114,36 +120,36 @@
       "spectral_radius": 0.0
     },
     "summary": {
-      "annual_externality_eur_yr": 86945.05,
+      "annual_externality_eur_yr": 17389.01,
       "discount_is_default": false,
       "final_ecosystem_health": 0.150516,
-      "net_social_cost_eur_pv": 7705271.74,
+      "net_social_cost_eur_pv": 1667371.5,
       "num_steps": 1000,
-      "pv_externality_eur_pv": 7805271.74,
+      "pv_externality_eur_pv": 1767371.5,
       "revenue_eur": 100000.0,
       "total_units_extracted": 1000
     }
   },
   "per_agent": {
     "Animal Populations": 0.0,
-    "General Biosphere": 86945.05305305736,
+    "General Biosphere": 17389.010610611473,
     "Human Communities": 0.0,
     "Vegetation & Flora": 0.0
   },
   "result": {
-    "annual_externality": 86945.05305305736,
+    "annual_externality": 17389.010610611473,
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_foregone": 187896.44362117242,
       "carbon_release": 70000.0,
-      "direct": 7545169.593481718,
+      "direct": 1509033.9186963441,
       "horizon": 100,
-      "substrate_damage": 2205.69998303013,
-      "total": 7805271.737085921
+      "substrate_damage": 441.139996606026,
+      "total": 1767371.5023141224
     },
     "final_ecosystem_health": 0.15051625519675782,
-    "net_social_cost": 7705271.737085921,
-    "pv_externality": 7805271.737085921,
+    "net_social_cost": 1667371.5023141224,
+    "pv_externality": 1767371.5023141224,
     "revenue": 100000.0,
     "total_units_extracted": 1000
   },
@@ -163,7 +169,7 @@
       0.0,
       0.0,
       0.0,
-      14300824.138590775
+      2860164.827718154
     ],
     "agent_cascade_damages": [
       35.70429818464577,
@@ -187,16 +193,16 @@
       0.0,
       0.0,
       0.0,
-      120859497.53883077
+      24171899.50776617
     ],
-    "annual_externality": 14300824.138590775,
+    "annual_externality": 2860164.827718154,
     "carbon_price_used": 0.0,
     "depletion_ratio": 250.25,
     "discount_factor_at_step": 1000.0,
     "ecosystem_health": 716.5275280865571,
     "effective_k": 1999000.0,
     "k_fraction": 999.9053772345821,
-    "marginal_annual_externality": 86945.05305305736,
+    "marginal_annual_externality": 17389.010610611473,
     "model_confidence": 732.6642857142843,
     "npv_externality": 0.0,
     "revenue": 50050000.0,
@@ -210,7 +216,7 @@
         0.0,
         0.0,
         0.0,
-        1.296986498463334
+        0.25939729969266684
       ],
       "agent_cascade_damages": [
         7.442768185740829e-06,
@@ -234,9 +240,9 @@
         0.0,
         0.0,
         0.0,
-        80003.70567570989
+        16000.74113514198
       ],
-      "annual_externality": 1.296986498463334,
+      "annual_externality": 0.25939729969266684,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0005,
       "discount_factor_at_step": 1.0,
@@ -245,7 +251,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999999145292948,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1.296986498463334,
+      "marginal_annual_externality": 0.25939729969266684,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -265,7 +271,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 80003.70567570989,
+          "General Biosphere": 16000.74113514198,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -288,7 +294,7 @@
         0.0,
         0.0,
         0.0,
-        179.5444012265702
+        35.90888024531404
       ],
       "agent_cascade_damages": [
         0.0010237999050229409,
@@ -312,9 +318,9 @@
         0.0,
         0.0,
         0.0,
-        80512.98400350449
+        16102.596800700898
       ],
-      "annual_externality": 179.5444012265702,
+      "annual_externality": 35.90888024531404,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0505,
       "discount_factor_at_step": 1.0,
@@ -323,7 +329,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999911515389103,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2.3632874298481568,
+      "marginal_annual_externality": 0.4726574859696271,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -343,7 +349,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 80512.98400350449,
+          "General Biosphere": 16102.596800700898,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -366,7 +372,7 @@
         0.0,
         0.0,
         0.0,
-        504.3370246294164
+        100.86740492588329
       ],
       "agent_cascade_damages": [
         0.0028430669898629572,
@@ -390,9 +396,9 @@
         0.0,
         0.0,
         0.0,
-        81440.96292751262
+        16288.192585502526
       ],
-      "annual_externality": 504.3370246294164,
+      "annual_externality": 100.86740492588329,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1005,
       "discount_factor_at_step": 1.0,
@@ -401,7 +407,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999811306425426,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4.306269965680428,
+      "marginal_annual_externality": 0.8612539931361027,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -421,7 +427,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 81440.96292751262,
+          "General Biosphere": 16288.192585502526,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -444,7 +450,7 @@
         0.0,
         0.0,
         0.0,
-        1096.1632352343504
+        219.23264704687008
       ],
       "agent_cascade_damages": [
         0.00605364142254404,
@@ -468,9 +474,9 @@
         0.0,
         0.0,
         0.0,
-        83131.89495781243
+        16626.378991562487
       ],
-      "annual_externality": 1096.1632352343504,
+      "annual_externality": 219.23264704687008,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1505,
       "discount_factor_at_step": 1.0,
@@ -479,7 +485,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999686125239529,
       "keystone_triggered": [],
-      "marginal_annual_externality": 7.846799453611084,
+      "marginal_annual_externality": 1.5693598907221826,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
@@ -499,7 +505,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 83131.89495781243,
+          "General Biosphere": 16626.378991562487,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -522,7 +528,7 @@
         0.0,
         0.0,
         0.0,
-        2174.59224958135
+        434.91844991627005
       ],
       "agent_cascade_damages": [
         0.011580134693980351,
@@ -546,9 +552,9 @@
         0.0,
         0.0,
         0.0,
-        86213.12071308956
+        17242.624142617915
       ],
-      "annual_externality": 2174.59224958135,
+      "annual_externality": 434.91844991627005,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.2005,
       "discount_factor_at_step": 1.0,
@@ -557,7 +563,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999523578669016,
       "keystone_triggered": [],
-      "marginal_annual_externality": 14.298677346026125,
+      "marginal_annual_externality": 2.8597354692052477,
       "model_confidence": 0.8985000000000002,
       "npv_externality": 0.0,
       "price_result": {
@@ -577,7 +583,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 86213.12071308956,
+          "General Biosphere": 17242.624142617915,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -600,7 +606,7 @@
         0.0,
         0.0,
         0.0,
-        4139.78853532365
+        827.95770706473
       ],
       "agent_cascade_damages": [
         0.02069723485607111,
@@ -624,9 +630,9 @@
         0.0,
         0.0,
         0.0,
-        91827.96724378185
+        18365.59344875637
       ],
-      "annual_externality": 4139.78853532365,
+      "annual_externality": 827.95770706473,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.2505,
       "discount_factor_at_step": 1.0,
@@ -635,7 +641,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.999931127355149,
       "keystone_triggered": [],
-      "marginal_annual_externality": 26.05679940157097,
+      "marginal_annual_externality": 5.2113598803141485,
       "model_confidence": 0.7485000000000004,
       "npv_externality": 0.0,
       "price_result": {
@@ -655,7 +661,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 91827.96724378185,
+          "General Biosphere": 18365.59344875637,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -678,7 +684,7 @@
         0.0,
         0.0,
         0.0,
-        7673.6875837006355
+        1534.7375167401271
       ],
       "agent_cascade_damages": [
         0.03456474001114887,
@@ -702,9 +708,9 @@
         0.0,
         0.0,
         0.0,
-        101924.8216677161
+        20384.96433354322
       ],
-      "annual_externality": 7673.6875837006355,
+      "annual_externality": 1534.7375167401271,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.3,
       "discount_factor_at_step": 1.0,
@@ -713,7 +719,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999039909636748,
       "keystone_triggered": [],
-      "marginal_annual_externality": 47.204046024530726,
+      "marginal_annual_externality": 9.440809204906373,
       "model_confidence": 0.6,
       "npv_externality": 0.0,
       "price_result": {
@@ -733,7 +739,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 101924.8216677161,
+          "General Biosphere": 20384.96433354322,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -756,7 +762,7 @@
         0.0,
         0.0,
         0.0,
-        14162.208118577362
+        2832.4416237154724
       ],
       "agent_cascade_damages": [
         0.05397402548497099,
@@ -780,9 +786,9 @@
         0.0,
         0.0,
         0.0,
-        120463.45176736389
+        24092.69035347278
       ],
-      "annual_externality": 14162.208118577362,
+      "annual_externality": 2832.4416237154724,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.35,
       "discount_factor_at_step": 1.0,
@@ -791,7 +797,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998691714732901,
       "keystone_triggered": [],
-      "marginal_annual_externality": 86.04310192329467,
+      "marginal_annual_externality": 17.208620384658843,
       "model_confidence": 0.5785714285714286,
       "npv_externality": 0.0,
       "price_result": {
@@ -811,7 +817,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 120463.45176736389,
+          "General Biosphere": 24092.69035347278,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -834,7 +840,7 @@
         0.0,
         0.0,
         0.0,
-        25991.236182550627
+        5198.247236510125
       ],
       "agent_cascade_damages": [
         0.07735365688593943,
@@ -858,9 +864,9 @@
         0.0,
         0.0,
         0.0,
-        154260.67480728752
+        30852.1349614575
       ],
-      "annual_externality": 25991.236182550627,
+      "annual_externality": 5198.247236510125,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.4,
       "discount_factor_at_step": 1.0,
@@ -869,7 +875,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998256705726488,
       "keystone_triggered": [],
-      "marginal_annual_externality": 156.8861573451686,
+      "marginal_annual_externality": 31.377231469033177,
       "model_confidence": 0.5571428571428572,
       "npv_externality": 0.0,
       "price_result": {
@@ -889,7 +895,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 154260.67480728752,
+          "General Biosphere": 30852.1349614575,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -912,7 +918,7 @@
         0.0,
         0.0,
         0.0,
-        47565.64836454507
+        9513.129672909015
       ],
       "agent_cascade_damages": [
         0.09999999999999998,
@@ -936,9 +942,9 @@
         0.0,
         0.0,
         0.0,
-        215901.8524701288
+        43180.37049402576
       ],
-      "annual_externality": 47565.64836454507,
+      "annual_externality": 9513.129672909015,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.45,
       "discount_factor_at_step": 1.0,
@@ -947,7 +953,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9997722489455121,
       "keystone_triggered": [],
-      "marginal_annual_externality": 286.2156677130042,
+      "marginal_annual_externality": 57.243133542600845,
       "model_confidence": 0.5357142857142857,
       "npv_externality": 0.0,
       "price_result": {
@@ -967,7 +973,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 215901.8524701288,
+          "General Biosphere": 43180.37049402576,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },
@@ -990,7 +996,7 @@
         0.0,
         0.0,
         0.0,
-        86945.05305305736
+        17389.010610611473
       ],
       "agent_cascade_damages": [
         0.09999999999999998,
@@ -1014,9 +1020,9 @@
         0.0,
         0.0,
         0.0,
-        328414.4372944496
+        65682.88745888992
       ],
-      "annual_externality": 86945.05305305736,
+      "annual_externality": 17389.010610611473,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.5,
       "discount_factor_at_step": 1.0,
@@ -1025,7 +1031,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9997076672756388,
       "keystone_triggered": [],
-      "marginal_annual_externality": 522.6855100786779,
+      "marginal_annual_externality": 104.53710201573631,
       "model_confidence": 0.5142857142857142,
       "npv_externality": 0.0,
       "price_result": {
@@ -1045,7 +1051,7 @@
         "iterations": 0,
         "prices": {
           "Animal Populations": 0.0,
-          "General Biosphere": 328414.4372944496,
+          "General Biosphere": 65682.88745888992,
           "Human Communities": 0.0,
           "Vegetation & Flora": 0.0
         },

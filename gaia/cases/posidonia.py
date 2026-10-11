@@ -43,41 +43,46 @@ Scientific context:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
-Monetary rates are back-calculated from user-specified max monetary impacts:
-    rate = max_monetary_impact / dependency_weight
-so that effective_max_per_agent = weight × rate = max_monetary_impact exactly.
+Agent values are yearly flows per hectare (decisions D1, D2). They restate
+the user-specified maximum annual impact of each agent for the 5,000 ha
+reference meadow per hectare and per unit of dependency weight:
+    annual_value_per_ha = max_annual_impact / (dependency_weight × 5,000 ha)
+so that weight × annual_value_per_ha × area_ha = max_annual_impact at 5,000 ha.
 
-    | Parameter                       | Max Impact | Weight | Rate (€)   | Source       | Confidence |
+    | Parameter                       | Max Impact | Weight | €/ha/yr    | Source       | Confidence |
     |---------------------------------|------------|--------|------------|--------------|------------|
-    | total_units                     | –          | –      | –          | User spec    | Low        |
+    | total_units (= area, ha)        | –          | –      | –          | User spec    | Low        |
     | safe_threshold_ratio            | –          | –      | 0.20       | User spec    | Medium     |
-    | unit_value (revenue/ha)         | –          | –      | 2,500      | User spec    | Low        |
-    | Posidonia Meadow                | €800,000   | 0.10   | 8,000,000  | User spec    | Low        |
-    | Coralligenous & Red Coral       | €600,000   | 0.10   | 6,000,000  | User spec    | Low        |
-    | Epiphytes & Algae               | €250,000   | 0.07   | 3,571,000  | User spec    | Low        |
-    | Marine Invertebrates            | €350,000   | 0.09   | 3,889,000  | User spec    | Low        |
-    | Fish Populations                | €700,000   | 0.14   | 5,000,000  | User spec    | Low        |
-    | Marine Megafauna                | €200,000   | 0.04   | 5,000,000  | User spec    | Low        |
-    | Seabirds                        | €180,000   | 0.05   | 3,600,000  | User spec    | Low        |
-    | Coastal Protection              | €900,000   | 0.13   | 6,923,000  | User spec    | Low        |
-    | Water Quality                   | €650,000   | 0.11   | 5,909,000  | User spec    | Low        |
-    | Blue Carbon                     | €500,000   | 0.09   | 5,556,000  | User spec    | Low        |
-    | Human Communities               | €700,000   | 0.08   | 8,750,000  | User spec    | Low        |
+    | unit_value (revenue/ha)         | –          | –      | 2,500 €    | User spec    | Low        |
+    | Posidonia Meadow                | €800,000   | 0.10   | 1,600.0    | User spec    | Low        |
+    | Coralligenous & Red Coral       | €600,000   | 0.10   | 1,200.0    | User spec    | Low        |
+    | Epiphytes & Algae               | €250,000   | 0.07   | 714.2      | User spec    | Low        |
+    | Marine Invertebrates            | €350,000   | 0.09   | 777.8      | User spec    | Low        |
+    | Fish Populations                | €700,000   | 0.14   | 1,000.0    | User spec    | Low        |
+    | Marine Megafauna                | €200,000   | 0.04   | 1,000.0    | User spec    | Low        |
+    | Seabirds                        | €180,000   | 0.05   | 720.0      | User spec    | Low        |
+    | Coastal Protection              | €900,000   | 0.13   | 1,384.6    | User spec    | Low        |
+    | Water Quality                   | €650,000   | 0.11   | 1,181.8    | User spec    | Low        |
+    | Blue Carbon                     | €500,000   | 0.09   | 1,111.2    | User spec    | Low        |
+    | Human Communities               | €700,000   | 0.08   | 1,750.0    | User spec    | Low        |
     | logistic steepness              | –          | –      | 12.0       | Placeholder  | Low        |
     | exponential base (carbon)       | –          | –      | 2.0        | Placeholder  | Low        |
     | dependency weight sum           | –          | 1.00   | –          | Verified ✓   | High       |
 
-Total max externality (annual): sum(weight × rate)
-    = 800k + 600k + 250k + 350k + 700k + 200k + 180k + 900k + 650k + 500k + 700k
-    = €5,830,000/year [User spec ✓]
+Total at full damage: sum(weight × annual_value_per_ha) = €1,166/ha/yr
+    (€5,830,000/yr for 5,000 ha) [User spec, PLACEHOLDER].
 
-vs one-time revenue at full destruction: 5,000 ha × €2,500 = €12,500,000
-Annual payback period: ~2.1 years [User spec ✓]
+For scale, global meta-analyses value seagrass / coastal systems far higher:
+Costanza et al. (2014), Global Environmental Change 26:152-158, $28,916/ha/yr
+for seagrass/algae beds; de Groot et al. (2012), Ecosystem Services 1:50-61,
+Int$28,917/ha/yr for coastal systems (2007 price levels). A Posidonia-
+specific valuation is pending (Step 8). The Blue Carbon agent overlaps
+gaia.carbon (C5, Step 3.4).
 
-Calibration: rates ensure externality < revenue at 20% threshold (at annual scale):
-    logistic_damage(0.20) ≈ 0.068 → 0.068 × €5,830,000 ≈ €396k/yr < €250k one-time
-    NOTE: Even at threshold, 1.6 years of annual losses exceed the one-time gain.
-    The crossover is near-immediate for marine ecosystems. [User spec ✓]
+An earlier version of this docstring claimed the rates were set so that the
+externality stays below revenue at the 20% threshold "at annual scale" (a
+flow compared with a one-off amount, and contradicted by its own numbers);
+rates are never tuned to produce an outcome.
 
 Dependency weights sum: 0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.09+0.08 = 1.00 ✓
 
@@ -91,6 +96,7 @@ CLI usage:
 import argparse
 import sys
 import warnings
+from typing import Optional
 
 from gaia.cli import (
     add_common_arguments,
@@ -114,6 +120,7 @@ from gaia.models import (
     SubstrateProfile,
     SuccessionCurve,
 )
+from gaia.pricing import scale_anchors
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -178,7 +185,14 @@ _POSIDONIA_DISCOUNT = DiscountConfig(
     horizon_years=200,  # Longer horizon for marine ecosystems
 )
 
-# v0.7: Posidonia pricing configuration
+# ── Reference area ───────────────────────────────────────────────────────────
+# Posidonia's unit is the hectare: area_ha always equals total_hectares.
+POSIDONIA_AREA_HA: float = 5_000.0
+
+# v0.7: Posidonia pricing configuration. Anchor values are €/yr for the
+# POSIDONIA_AREA_HA reference meadow and are scaled with area_ha by the
+# builder. (The Blue Carbon anchor's formula is written for 1,000 ha; carbon
+# leaves the anchors in Step 3.4.)
 _POSIDONIA_PRICING = PricingConfig(
     anchors=[
         AnchorPoint(
@@ -237,6 +251,7 @@ def build_posidonia_ecosystem(
     safe_threshold_ratio: float = 0.20,
     revenue_per_hectare: float = 2_500.0,
     with_pricing: bool = False,
+    area_ha: Optional[float] = None,
 ) -> Ecosystem:
     """
     Build the Costa Brava Posidonia Meadow ecosystem with 11 agents.
@@ -257,15 +272,29 @@ def build_posidonia_ecosystem(
             economic value extracted by activities that destroy Posidonia:
             coastal development, marina construction, trawling permits.
             NOT the value of Posidonia itself. [User spec, Low confidence]
+        with_pricing: If True, attach v0.7 endogenous pricing configuration.
+        area_ha: Must equal total_hectares if given — the unit is the
+            hectare, so the area is not an independent parameter.
 
     Returns:
         A fully configured Ecosystem ready for simulation.
+
+    Raises:
+        ValueError: If area_ha differs from total_hectares.
     """
+    if area_ha is None:
+        area_ha = float(total_hectares)
+    elif area_ha != total_hectares:
+        raise ValueError(
+            f"Posidonia's unit is the hectare: area_ha ({area_ha}) must equal "
+            f"total_hectares ({total_hectares})"
+        )
     resource = Resource(
         name="Costa Brava Posidonia Meadow",
         total_units=total_hectares,
         safe_threshold_ratio=safe_threshold_ratio,
         unit_value=revenue_per_hectare,
+        area_ha=area_ha,
         carbon_profile=_POSIDONIA_CARBON,
         resilience=_POSIDONIA_RESILIENCE,
         substrate=_POSIDONIA_SUBSTRATE,
@@ -280,7 +309,7 @@ def build_posidonia_ecosystem(
             name="Posidonia Meadow",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=8_000_000.0,
+            annual_value_per_ha=1_600.0,
             description="Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
             # v0.3: Producer, KEYSTONE foundation species
             trophic_level=0,
@@ -292,7 +321,7 @@ def build_posidonia_ecosystem(
             name="Coralligenous & Red Coral",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=6_000_000.0,
+            annual_value_per_ha=1_200.0,
             description="Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
             # v0.3: Producer (biogenic)
             trophic_level=0,
@@ -302,7 +331,7 @@ def build_posidonia_ecosystem(
             name="Epiphytes & Algae",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_571_000.0,
+            annual_value_per_ha=714.2,
             description="Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
             # v0.3: Producer
             trophic_level=0,
@@ -312,7 +341,7 @@ def build_posidonia_ecosystem(
             name="Marine Invertebrates",
             dependency_weight=0.09,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_889_000.0,
+            annual_value_per_ha=777.8,
             description="Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
             # v0.3: Primary consumer
             trophic_level=1,
@@ -322,7 +351,7 @@ def build_posidonia_ecosystem(
             name="Fish Populations",
             dependency_weight=0.14,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=5_000_000.0,
+            annual_value_per_ha=1_000.0,
             description="Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
             # v0.3: Secondary consumer
             trophic_level=2,
@@ -332,7 +361,7 @@ def build_posidonia_ecosystem(
             name="Marine Megafauna",
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=5_000_000.0,
+            annual_value_per_ha=1_000.0,
             description="Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
             # v0.3: Tertiary consumer — apex marine predator
             trophic_level=3,
@@ -342,7 +371,7 @@ def build_posidonia_ecosystem(
             name="Seabirds",
             dependency_weight=0.05,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=3_600_000.0,
+            annual_value_per_ha=720.0,
             description="Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
             # v0.3: Secondary consumer (fish-dependent)
             trophic_level=2,
@@ -352,7 +381,7 @@ def build_posidonia_ecosystem(
             name="Coastal Protection",
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=6_923_000.0,
+            annual_value_per_ha=1_384.6,
             description="Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -361,7 +390,7 @@ def build_posidonia_ecosystem(
             name="Water Quality",
             dependency_weight=0.11,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=5_909_000.0,
+            annual_value_per_ha=1_181.8,
             description="Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -371,7 +400,7 @@ def build_posidonia_ecosystem(
             name="Blue Carbon",
             dependency_weight=0.09,
             damage_function=exponential_damage(threshold=t, base=2.0),
-            annual_value=5_556_000.0,
+            annual_value_per_ha=1_111.2,
             description="Blue carbon — 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -381,7 +410,7 @@ def build_posidonia_ecosystem(
             name="Human Communities",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value=8_750_000.0,
+            annual_value_per_ha=1_750.0,
             description="Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
             # v0.3: External beneficiary
             trophic_level=-1,
@@ -444,7 +473,10 @@ def build_posidonia_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
-        pricing=_POSIDONIA_PRICING if with_pricing else None,
+        pricing=(
+            scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA)
+            if with_pricing else None
+        ),
     )
 
 
@@ -630,6 +662,7 @@ def main(argv: list = None) -> None:
             safe_threshold_ratio=args.threshold,
             revenue_per_hectare=args.unit_value,
             with_pricing=args.with_pricing,
+            area_ha=args.area_ha,
         )
         if args.mode == "restore":
             cost = RestorationCost(

@@ -16,6 +16,7 @@
     "ecosystem": {
       "agents": [
         {
+          "annual_value_eur_per_ha_yr": 1600.0,
           "annual_value_eur_yr": 8000000.0,
           "dependency_weight": 0.1,
           "description": "Posidonia meadow integrity \u2014 self-reinforcing fragmentation and turbidity feedback loop",
@@ -25,6 +26,7 @@
           "trophic_level": 0
         },
         {
+          "annual_value_eur_per_ha_yr": 1200.0,
           "annual_value_eur_yr": 6000000.0,
           "dependency_weight": 0.1,
           "description": "Coralligenous reefs and red coral \u2014 centuries-old biogenic habitat, irreplaceable on human timescales",
@@ -34,6 +36,7 @@
           "trophic_level": 0
         },
         {
+          "annual_value_eur_per_ha_yr": 714.2,
           "annual_value_eur_yr": 3571000.0,
           "dependency_weight": 0.07,
           "description": "Epiphytic algae and plant community \u2014 primary productivity, oxygen production, food web base",
@@ -43,6 +46,7 @@
           "trophic_level": 0
         },
         {
+          "annual_value_eur_per_ha_yr": 777.8,
           "annual_value_eur_yr": 3889000.0,
           "dependency_weight": 0.09,
           "description": "Sponges, urchins, octopus, lobsters, shellfish \u2014 filter feeders, grazers, urchin barren risk",
@@ -52,6 +56,7 @@
           "trophic_level": 1
         },
         {
+          "annual_value_eur_per_ha_yr": 1000.0,
           "annual_value_eur_yr": 5000000.0,
           "dependency_weight": 0.14,
           "description": "Fish nursery and feeding habitat \u2014 artisanal fisheries, grouper apex predator, Medes Islands model",
@@ -61,6 +66,7 @@
           "trophic_level": 2
         },
         {
+          "annual_value_eur_per_ha_yr": 1000.0,
           "annual_value_eur_yr": 5000000.0,
           "dependency_weight": 0.04,
           "description": "Dolphins, sea turtles, cetaceans \u2014 apex indicators, ecotourism, extreme K-strategy vulnerability",
@@ -70,6 +76,7 @@
           "trophic_level": 3
         },
         {
+          "annual_value_eur_per_ha_yr": 720.0,
           "annual_value_eur_yr": 3600000.0,
           "dependency_weight": 0.05,
           "description": "Seabirds and coastal birds \u2014 fish-dependent breeders, Audouin's gull, migratory corridor",
@@ -79,6 +86,7 @@
           "trophic_level": 2
         },
         {
+          "annual_value_eur_per_ha_yr": 1384.6,
           "annual_value_eur_yr": 6923000.0,
           "dependency_weight": 0.13,
           "description": "Wave attenuation, beach erosion prevention, sediment stabilization \u2014 Costa Brava beach economy",
@@ -88,6 +96,7 @@
           "trophic_level": -1
         },
         {
+          "annual_value_eur_per_ha_yr": 1181.8,
           "annual_value_eur_yr": 5909000.0,
           "dependency_weight": 0.11,
           "description": "Nutrient filtration, pathogen reduction, bathing water standards \u2014 direct tourism dependency",
@@ -97,6 +106,7 @@
           "trophic_level": -1
         },
         {
+          "annual_value_eur_per_ha_yr": 1111.2,
           "annual_value_eur_yr": 5556000.0,
           "dependency_weight": 0.09,
           "description": "Blue carbon \u2014 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
@@ -106,6 +116,7 @@
           "trophic_level": -1
         },
         {
+          "annual_value_eur_per_ha_yr": 1750.0,
           "annual_value_eur_yr": 8750000.0,
           "dependency_weight": 0.08,
           "description": "Dive/beach tourism economy, artisanal fishing, coastal property \u2014 perception threshold sensitive",
@@ -232,6 +243,7 @@
       ],
       "name": "Costa Brava Posidonia Meadow",
       "resource": {
+        "area_ha": 5000.0,
         "carbon_absorption_per_unit_yr": 5.9,
         "carbon_price_eur_per_t": 80.0,
         "carbon_stored_per_unit": 130.0,
@@ -245,7 +257,8 @@
         "safe_threshold_units": 1000,
         "substrate_type": "marine_matte",
         "total_units": 5000,
-        "unit_value_eur": 2500.0
+        "unit_value_eur": 2500.0,
+        "units_per_ha": 1.0
       }
     },
     "gaia_version": "<gaia_version>",

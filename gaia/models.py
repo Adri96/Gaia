@@ -329,7 +329,9 @@ class AnchorPoint:
     Attributes:
         agent_name: Name of the agent this anchors.
         anchor_value: €/yr value of the agent's service at pristine health
-            for the whole resource (an annual flow, like Agent.annual_value).
+            for the whole resource (an annual flow). Case files state anchors
+            for a reference area and scale them with Resource.area_ha
+            (gaia.pricing.scale_anchors).
         source: Data source description.
         confidence: "high", "medium", or "low".
         description: Calculation explanation.
@@ -353,7 +355,7 @@ class PricingConfig:
         convergence_tolerance: For iterative solver (default 1e-6).
         max_iterations: Cap on iterative solve (default 100).
         fallback_to_static: If True, use each agent's static annual value
-            (€/yr at full damage) when the solve fails.
+            (€/yr at full damage over the resource area) when the solve fails.
     """
 
     anchors: list              # List[AnchorPoint]
@@ -519,17 +521,21 @@ class Resource:
         safe_threshold_ratio: Fraction of total_units that can be safely extracted
                               before damage accelerates sharply. Must be in (0.0, 1.0).
         unit_value: Revenue per unit extracted, in euros. e.g. 100.0 €/tree.
+        area_ha: Area the resource covers, in hectares (finite, > 0). Agent
+            values are €/ha/yr and are scaled by this area (decision D2).
         carbon_profile: Optional carbon accounting parameters (v0.4).
         resilience: Optional resilience zone configuration (v0.4).
 
     Derived:
         safe_threshold_units: Absolute number of units at the safe threshold.
+        units_per_ha: total_units / area_ha.
     """
 
     name: str
     total_units: int
     safe_threshold_ratio: float
     unit_value: float
+    area_ha: float
 
     # v0.4: Carbon and resilience (None → no carbon/resilience accounting)
     carbon_profile: Optional[CarbonProfile] = None
@@ -546,6 +552,11 @@ class Resource:
         """Absolute number of units that can be extracted at the safe threshold."""
         return int(self.total_units * self.safe_threshold_ratio)
 
+    @property
+    def units_per_ha(self) -> float:
+        """Resource units per hectare (e.g. trees/ha)."""
+        return self.total_units / self.area_ha
+
 
 @dataclass
 class Agent:
@@ -553,23 +564,25 @@ class Agent:
     An entity that depends on the resource and suffers when it is depleted.
 
     Annual service value lost at depletion level d (a yearly FLOW, €/yr):
-        annual_cost = damage_function(d) * dependency_weight * annual_value
+        annual_cost = damage_function(d) * dependency_weight
+                      * annual_value_per_ha * resource.area_ha
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
         dependency_weight: This agent's share of total ecosystem damage. Must be in (0, 1].
                            All agents in an ecosystem must sum to 1.0.
         damage_function: Callable (depletion_ratio: float) -> damage_ratio: float
-        annual_value: € per year of service lost at full damage (damage_ratio = 1.0).
-            A yearly flow, never a one-off total: compare it with one-off
-            amounts (revenue, restoration cost) only through its present value.
+        annual_value_per_ha: € per hectare per year of service lost at full
+            damage (damage_ratio = 1.0) — decisions D1 (a yearly flow, never a
+            one-off total) and D2 (scaled by Resource.area_ha, so results do
+            not depend on how finely the resource is divided into units).
         description: Short description of what damage means for this agent.
     """
 
     name: str
     dependency_weight: float
     damage_function: DamageFunc
-    annual_value: float
+    annual_value_per_ha: float
     description: str
 
     # v0.3: Trophic cascade fields (defaults preserve v0.1/v0.2 behavior)
@@ -580,13 +593,18 @@ class Agent:
     # v0.4: Agent-specific succession curve (None → use ecosystem default)
     succession_curve: Optional[SuccessionCurve] = None
 
+    def annual_value(self, area_ha: float) -> float:
+        """€/yr of service lost at full damage over ``area_ha`` hectares."""
+        return self.annual_value_per_ha * area_ha
+
     @property
     def monetary_rate(self) -> float:
         """Removed: the field was a one-off total in some places and a yearly
-        flow in others. Raises instead of guessing which one was meant."""
+        flow in others, for the whole resource. Raises instead of guessing."""
         raise AttributeError(
-            "Agent.monetary_rate was removed: use Agent.annual_value "
-            "(€ per year of service lost at full damage)."
+            "Agent.monetary_rate was removed: use Agent.annual_value_per_ha "
+            "(€ per hectare per year of service lost at full damage), "
+            "scaled by Resource.area_ha."
         )
 
 

@@ -328,14 +328,15 @@ ecosystem = build_forest_ecosystem(
 result = run_extraction(ecosystem, units_to_extract=5_000)
 
 # Inspect results
-print(f"Revenue:     €{result.total_private_revenue:,.2f}")
-print(f"Externality: €{result.total_externality_cost:,.2f}")
-print(f"Net cost:    €{result.net_social_cost:,.2f}")
+print(f"Revenue:     €{result.revenue:,.2f} (one-off)")
+print(f"Externality: €{result.annual_externality:,.2f}/yr")
+print(f"PV:          €{result.pv_externality:,.2f}")
+print(f"Net cost:    €{result.net_social_cost:,.2f} (PV − revenue)")
 print(f"Health:      {result.final_ecosystem_health:.1%}")
 
 # Per-step data
 for step in result.steps:
-    print(step.units_extracted, step.marginal_cost, step.ecosystem_health)
+    print(step.units_extracted, step.marginal_annual_externality, step.ecosystem_health)
 
 # Full formatted report
 print(format_report(result))
@@ -516,7 +517,8 @@ resource = Resource(
     name="Amazon Rainforest Section A",
     total_units=50_000,          # e.g. hectares
     safe_threshold_ratio=0.15,   # 15% can be safely extracted
-    unit_value=2_000.0,          # revenue per hectare
+    unit_value=2_000.0,          # one-off revenue per unit extracted (€)
+    area_ha=50_000.0,            # area the resource covers (required)
 )
 ```
 
@@ -571,21 +573,21 @@ agents = [
         name="Indigenous Communities",
         dependency_weight=0.25,         # fraction of total ecosystem dependency
         damage_function=logistic_damage(threshold=0.15, steepness=10.0),
-        monetary_rate=800_000.0,        # max social cost if fully depleted (€)
+        annual_value_per_ha=16.0,       # €/ha/yr of service lost at full damage
         description="Subsistence livelihoods, cultural sites, medicinal plants",
     ),
     Agent(
         name="Jaguar Population",
         dependency_weight=0.35,
         damage_function=logistic_damage(threshold=0.15, steepness=14.0),
-        monetary_rate=1_500_000.0,
+        annual_value_per_ha=30.0,
         description="Apex predator habitat, keystone species for prey regulation",
     ),
     Agent(
         name="Watershed Network",
         dependency_weight=0.40,
         damage_function=logistic_damage(threshold=0.15, steepness=12.0),
-        monetary_rate=2_000_000.0,
+        annual_value_per_ha=40.0,
         description="Regional freshwater supply, flood regulation, soil retention",
     ),
 ]
@@ -594,10 +596,16 @@ agents = [
 The `dependency_weight` values across all agents **must sum to 1.0**. The cost formula is:
 
 ```
-cost_per_agent = damage × dependency_weight × monetary_rate
+annual_cost_per_agent = damage × dependency_weight × annual_value_per_ha × area_ha   (€/yr)
 ```
 
-So the effective maximum externality for an agent at full depletion is `weight × monetary_rate`.
+So the maximum yearly externality for an agent at full depletion is
+`weight × annual_value_per_ha × area_ha`. Agent values are yearly flows
+(€/yr) and are scaled by the resource's area, so results do not depend on
+how finely the resource is divided into units. Revenue is one-off: the
+report and JSON compare it only with the present value of the yearly
+externality (`net_social_cost = pv_externality − revenue`), using the
+resource's `DiscountConfig` or `gaia.discount.DEFAULT_DISCOUNT`.
 
 ### Step 4: Build and run
 
@@ -661,7 +669,7 @@ All three satisfy these invariants:
 - **v0.6: NPV & Ramsey-based discounting** — transforms externality outputs into discounted investment cases using the Ramsey formula (r = δ + η × g). Four preconfigured profiles spanning the Stern–Nordhaus spectrum: Market (4.1%), Central (2.3%), Environmental (1.4%), and UK Green Book (declining 3.5%→2.5%). Includes scarcity uplift on ecosystem service valuations, rising carbon price trajectories, and NPV-adjusted prevention advantage with full accounting (direct + carbon + substrate).
 - **v0.6: Carbon credit breakeven** — computes the carbon price at which restoration becomes privately profitable purely from carbon credit revenue. Reports breakeven price, gap to current EU ETS, and projected breakeven year at configured carbon price growth rate.
 - **v0.6: NPV-adjusted prevention advantage** — layered PA computation: simple (v0.2), with carbon externality, with substrate loss, and full NPV-inclusive. Scarcity uplift and rising carbon prices cause PA to increase over time, making the case for prevention stronger the further into the future you look.
-- **v0.7: Endogenous pricing** — replaces static `monetary_rate` per agent with prices derived from ecosystem structure using a Leontief-Hannon input-output model: V = (I − S·W)⁻¹ · A. Prices emerge from scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices). Keystone species become the most expensive agents purely from network centrality, without manual weighting.
+- **v0.7: Endogenous pricing** — replaces the static per-agent value with prices derived from ecosystem structure using a Leontief-Hannon input-output model: V = (I − S·W)⁻¹ · A. Prices emerge from scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices). Keystone species become the most expensive agents purely from network centrality, without manual weighting.
 - **v0.7: Dynamic per-step pricing** — prices are recomputed at each simulation step as the ecosystem degrades. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce. This matches economic reality: we don't value ecosystem services until they're degraded.
 - **v0.7: Price decomposition** — reports show per-agent price breakdown: scarcity multiplier × demand multiplier × anchor contribution, so the user can see WHY each service is priced the way it is.
 - Three ready-to-run cases, both extraction and restoration modes:

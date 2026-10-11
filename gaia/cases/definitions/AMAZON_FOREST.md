@@ -270,7 +270,7 @@ For the 1,000 ha reference area:
 
 **Total annual ecosystem service value: ~€840/ha/yr** (€840,000/yr for 1,000 ha), the figure the agent rates are calibrated to.
 
-> **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula. Summed as written above, the anchors give ~€1,160/ha/yr, not €840/ha/yr; the €840/ha/yr calibration target is kept unchanged pending the rate rework (carbon is to leave the agent rates entirely).
+> **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula. Summed as written above, the anchors give ~€1,160/ha/yr, not €840/ha/yr; the €840/ha/yr figure is kept unchanged (it is now the per-hectare agent value, `annual_value_per_ha`, scaled by `area_ha`) and is to be reconciled when carbon leaves the anchors and agent values entirely (Step 3.4).
 
 **Note on carbon anchor:** The Amazon is unusual because **stock protection** dominates over **annual sequestration**. Each hectare stores ~635 t CO₂. At EU ETS prices (€80/t), that's €50,800/ha in stored carbon value. The annual sequestration flow is much smaller because old-growth forests are near carbon equilibrium (net uptake only ~0.62 t C/ha/yr historically). The value comes from NOT releasing the stock.
 
@@ -289,7 +289,7 @@ AmazonRainforest = EcosystemConfig(
     initial_population=400_000,  # 400 trees/ha × 1,000 ha (terra firme: ~400-600 stems/ha)
     carrying_capacity=None,  # DERIVED from substrate in v0.5+
     threshold=0.20,  # Amazon tipping point (Lovejoy & Nobre)
-    monetary_rate=840.0,  # €/ha/yr baseline (from meta-analysis)
+    annual_value_per_ha=840.0,  # €/ha/yr baseline (from meta-analysis), × area_ha
     # v0.5 substrate
     substrate_type="terrestrial_soil",  # Oxisol/Ferralsol, modelled as terrestrial soil
     substrate_capacity_function="threshold",

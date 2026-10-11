@@ -228,3 +228,42 @@ class TestVersion:
             forest_parse(["--version"])
         assert exc.value.code == 0
         assert capsys.readouterr().out.strip() == f"Gaia {gaia.__version__}"
+
+
+# ── --area-ha: scale invariance (Step 3.2 acceptance) ────────────────────────
+
+
+def _json_run(main, argv, capsys):
+    main(argv + ["--format", "json", "--summary-only"])
+    return json.loads(capsys.readouterr().out)
+
+
+class TestAreaHa:
+    def test_default_is_none(self):
+        assert forest_parse([]).area_ha is None
+
+    def test_trees_vary_area_fixed_per_ha_externality_unchanged(self, capsys):
+        """Changing --trees with --area-ha fixed changes per-tree figures, not per-ha ones."""
+        a = _json_run(forest_main, ["--trees", "1000", "--units", "500",
+                                    "--area-ha", "40"], capsys)
+        b = _json_run(forest_main, ["--trees", "4000", "--units", "2000",
+                                    "--area-ha", "40"], capsys)
+        for d in (a, b):
+            assert d["ecosystem"]["resource"]["area_ha"] == 40.0
+        ext_a = a["summary"]["annual_externality_eur_yr"]
+        ext_b = b["summary"]["annual_externality_eur_yr"]
+        assert ext_a / 40.0 == pytest.approx(ext_b / 40.0, rel=1e-6)
+        assert ext_a / 500 == pytest.approx(4 * ext_b / 2000, rel=1e-6)
+
+    def test_area_scales_externality(self, capsys):
+        """Doubling the area at the same density doubles the annual externality."""
+        a = _json_run(forest_main, ["--trees", "1000", "--units", "500"], capsys)
+        b = _json_run(forest_main, ["--trees", "2000", "--units", "1000"], capsys)
+        assert b["ecosystem"]["resource"]["area_ha"] == 2 * a["ecosystem"]["resource"]["area_ha"]
+        assert b["summary"]["annual_externality_eur_yr"] == pytest.approx(
+            2 * a["summary"]["annual_externality_eur_yr"], rel=1e-6)
+
+    def test_posidonia_area_must_equal_hectares(self, capsys):
+        with pytest.raises(SystemExit):
+            posidonia_main(["--hectares", "1000", "--units", "100", "--area-ha", "500"])
+        assert "area_ha" in capsys.readouterr().err

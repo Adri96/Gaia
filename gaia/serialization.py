@@ -10,6 +10,7 @@ Pure stdlib — no numpy or third-party dependencies.
 
 Every monetary key carries its unit as a suffix (decision D1):
     *_eur_yr   — a yearly flow (€ per year)
+    *_eur_per_ha_yr — a yearly flow per hectare (€/ha/yr)
     *_eur_pv   — a present value at year 0 (€, discounted stock)
     *_eur      — an undiscounted one-off amount (€) or an undiscounted sum
     *_eur_per_t — a price per tonne of CO₂
@@ -39,13 +40,14 @@ GAIA_VERSION = __version__
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 
-def _agent_metadata(agents: list) -> List[Dict[str, Any]]:
+def _agent_metadata(agents: list, area_ha: float) -> List[Dict[str, Any]]:
     """Serialize agent metadata (no callables)."""
     return [
         {
             "name": a.name,
             "dependency_weight": a.dependency_weight,
-            "annual_value_eur_yr": a.annual_value,
+            "annual_value_eur_per_ha_yr": a.annual_value_per_ha,
+            "annual_value_eur_yr": a.annual_value(area_ha),
             "description": a.description,
             "trophic_level": a.trophic_level,
             "is_keystone": a.is_keystone,
@@ -63,6 +65,8 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         "safe_threshold_ratio": resource.safe_threshold_ratio,
         "safe_threshold_units": resource.safe_threshold_units,
         "unit_value_eur": resource.unit_value,
+        "area_ha": resource.area_ha,
+        "units_per_ha": resource.units_per_ha,
         "has_carbon_profile": resource.carbon_profile is not None,
         "has_substrate": resource.substrate is not None,
         "has_discount": resource.discount is not None,
@@ -282,7 +286,7 @@ def simulation_result_to_dict(
         "ecosystem": {
             "name": eco.name,
             "resource": _resource_metadata(eco.resource),
-            "agents": _agent_metadata(agents),
+            "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
             "has_pricing": eco.pricing is not None,
         },
@@ -338,7 +342,7 @@ def restoration_result_to_dict(
         "ecosystem": {
             "name": eco.name,
             "resource": _resource_metadata(eco.resource),
-            "agents": _agent_metadata(agents),
+            "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
         },
         "restoration_cost": {

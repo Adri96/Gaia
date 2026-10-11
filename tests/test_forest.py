@@ -222,13 +222,26 @@ def test_forest_agent_weights_sum_to_one():
     assert abs(total_weight - 1.0) < 1e-9
 
 
-def test_forest_biosphere_highest_monetary_rate():
-    """General Biosphere has the highest monetary_rate (most damage at full depletion)."""
+def test_forest_biosphere_largest_share_of_value():
+    """General Biosphere carries the largest share of the forest's annual value.
+
+    Every agent uses the same €/ha/yr biome value, so the split is decided
+    by the dependency weights (Biosphere: 0.35).
+    """
     eco = build_forest_ecosystem()
-    biosphere = next(a for a in eco.agents if "Biosphere" in a.name)
-    for agent in eco.agents:
-        if agent is not biosphere:
-            assert biosphere.annual_value >= agent.annual_value, (
-                f"Biosphere rate ({biosphere.annual_value}) should be >= "
-                f"{agent.name} ({agent.annual_value})"
-            )
+    area = eco.resource.area_ha
+    share = {a.name: a.dependency_weight * a.annual_value(area) for a in eco.agents}
+    assert max(share, key=share.get) == "General Biosphere"
+
+
+def test_forest_value_is_per_hectare():
+    """Full-damage value = €3,000/ha/yr × area; the default area follows the trees."""
+    from gaia.cases.forest import FOREST_AREA_HA, FOREST_TOTAL_TREES
+
+    eco = build_forest_ecosystem()
+    assert eco.resource.area_ha == FOREST_AREA_HA
+    total = sum(a.dependency_weight * a.annual_value(FOREST_AREA_HA) for a in eco.agents)
+    assert total == pytest.approx(3_000.0 * FOREST_AREA_HA, rel=1e-12)
+    assert build_forest_ecosystem(total_trees=2 * FOREST_TOTAL_TREES).resource.area_ha == (
+        2 * FOREST_AREA_HA)
+    assert build_forest_ecosystem(total_trees=500, area_ha=40.0).resource.area_ha == 40.0

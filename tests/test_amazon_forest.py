@@ -344,7 +344,9 @@ def test_amazon_max_externality_matches_per_hectare_calibration():
     the reference area, so the agent rates scale with the stated hectares.
     """
     eco = build_amazon_ecosystem()
-    amazon_max = sum(a.dependency_weight * a.annual_value for a in eco.agents)
+    assert eco.resource.area_ha == AMAZON_AREA_HA
+    amazon_max = sum(
+        a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
     assert amazon_max == pytest.approx(840.0 * AMAZON_AREA_HA, rel=1e-9)
 
 

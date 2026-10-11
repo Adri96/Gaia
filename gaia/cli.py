@@ -16,7 +16,8 @@ from gaia import __version__
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
-    Adds: --version, --mode, --format, --output, --with-pricing, --summary-only.
+    Adds: --version, --mode, --format, --output, --with-pricing, --summary-only,
+    --area-ha.
     """
     parser.add_argument(
         "--version",
@@ -48,6 +49,18 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         default=False,
         help="Enable v0.7 endogenous pricing (default: disabled)",
+    )
+    parser.add_argument(
+        "--area-ha",
+        type=float,
+        default=None,
+        metavar="HA",
+        help=(
+            "Area of the resource in hectares (default: the number of units "
+            "divided by the case's reference density). Agent values are "
+            "€/ha/yr, so holding the area fixed while changing the number of "
+            "units changes per-unit figures but not the per-ha externality"
+        ),
     )
     parser.add_argument(
         "--summary-only",
