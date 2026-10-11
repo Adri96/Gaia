@@ -847,6 +847,26 @@ class SimulationResult:
         pv_externality_by_horizon: pv_externality recomputed at each of
             gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV}; None
             for a horizon at which the DiscountConfig fails validation.
+        discount: The DiscountConfig every present value used (the
+            resource's, or DEFAULT_DISCOUNT).
+        agent_direct_annual_costs: Per agent, the part of the final annual
+            cost (€/yr) due to its direct (trophically amplified) damage,
+            at the rate actually used (static value or endogenous price).
+        agent_cascade_annual_costs: Per agent, the part due to interaction
+            cascades (€/yr); direct + cascade = agent_annual_costs.
+        agent_trophic_amplification: Per agent, the trophic amplification
+            factor applied to its direct damage (1.0 below level 1).
+        annual_externality_band: HEURISTIC band (low, high) in €/yr,
+            annual_externality × (1 ± (1 − final model confidence)) — not
+            a statistical interval (gaia.resilience.compute_confidence_band;
+            Monte Carlo pending). None without a ResilienceConfig or at
+            full confidence.
+        final_model_confidence: Model confidence at the final step (1.0
+            without steps or resilience config).
+        substrate_recovery_years: Years for the substrate the extraction
+            ended in to return to pristine (gaia.substrate, from the actual
+            soil depth / sediment state, whatever the capacity function);
+            inf when it never recovers; None without a substrate profile.
     """
 
     ecosystem: Ecosystem
@@ -860,6 +880,13 @@ class SimulationResult:
     extraction_npv: Optional[ExtractionNPV] = None
     discount_is_default: bool = False
     pv_externality_by_horizon: dict = field(default_factory=dict)
+    discount: Optional[DiscountConfig] = None
+    agent_direct_annual_costs: list = field(default_factory=list)   # List[float], €/yr
+    agent_cascade_annual_costs: list = field(default_factory=list)  # List[float], €/yr
+    agent_trophic_amplification: list = field(default_factory=list)  # List[float]
+    annual_externality_band: Optional[Tuple[float, float]] = None
+    final_model_confidence: float = 1.0
+    substrate_recovery_years: Optional[float] = None
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────

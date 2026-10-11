@@ -58,10 +58,17 @@ def _by_horizon(name: str, by_horizon: dict) -> Dict[str, Any]:
     }
 
 
-def _agent_metadata(agents: list, area_ha: float) -> List[Dict[str, Any]]:
-    """Serialize agent metadata (no callables)."""
-    return [
-        {
+def _agent_metadata(
+    agents: list, area_ha: float, trophic_amplification: Optional[list] = None,
+) -> List[Dict[str, Any]]:
+    """Serialize agent metadata (no callables).
+
+    ``trophic_amplification`` (SimulationResult.agent_trophic_amplification)
+    adds each agent's amplification factor.
+    """
+    out: List[Dict[str, Any]] = []
+    for i, a in enumerate(agents):
+        d: Dict[str, Any] = {
             "name": a.name,
             "dependency_weight": a.dependency_weight,
             "annual_value_eur_per_ha_yr": a.annual_value_per_ha,
@@ -71,8 +78,69 @@ def _agent_metadata(agents: list, area_ha: float) -> List[Dict[str, Any]]:
             "is_keystone": a.is_keystone,
             "keystone_threshold": a.keystone_threshold if a.is_keystone else None,
         }
-        for a in agents
-    ]
+        if trophic_amplification:
+            d["trophic_amplification"] = round(trophic_amplification[i], 6)
+        out.append(d)
+    return out
+
+
+def _by_agent(agents: list, values: list, digits: int = 2) -> Dict[str, float]:
+    """{agent name: rounded value} for a per-agent list."""
+    return {a.name: round(v, digits) for a, v in zip(agents, values)}
+
+
+CONFIDENCE_BAND_METHOD: str = (
+    "HEURISTIC, not a statistical interval: annual externality x "
+    "(1 +/- (1 - model confidence)), the confidence set by the resilience "
+    "zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval "
+    "is pending (Step 8)."
+)
+
+
+def _confidence_band(result: SimulationResult) -> Optional[Dict[str, Any]]:
+    """The heuristic band on the annual externality (None when not defined)."""
+    if result.annual_externality_band is None:
+        return None
+    low, high = result.annual_externality_band
+    return {
+        "low_eur_yr": round(low, 2),
+        "high_eur_yr": round(high, 2),
+        "model_confidence": round(result.final_model_confidence, 4),
+        "heuristic": True,
+        "method": CONFIDENCE_BAND_METHOD,
+    }
+
+
+def _discount_to_dict(discount, is_default: bool) -> Dict[str, Any]:
+    """The DiscountConfig the present values used, as configured."""
+    schedule = discount.rate_schedule
+    return {
+        "rate_schedule": (
+            float(schedule) if isinstance(schedule, (int, float))
+            else [[year, rate] for year, rate in schedule]
+        ),
+        "delta": discount.delta,
+        "eta": discount.eta,
+        "g": discount.g,
+        "scarcity_rate": discount.scarcity_rate,
+        "carbon_price_eur_per_t": round(discount.carbon_price_current, 2),
+        "carbon_price_growth": discount.carbon_price_growth,
+        "horizon_years": discount.horizon_years,
+        "is_default": is_default,
+    }
+
+
+def _extraction_substrate(result: SimulationResult) -> Optional[Dict[str, Any]]:
+    """End-of-extraction substrate state (None without a substrate profile)."""
+    if result.substrate_recovery_years is None or not result.steps:
+        return None
+    final = result.steps[-1]
+    return {
+        "k_fraction": round(final.k_fraction, 6),
+        "effective_k": final.effective_k,
+        "capacity_lost_units": result.ecosystem.resource.total_units - final.effective_k,
+        "substrate_recovery_years": round(result.substrate_recovery_years, 2),
+    }
 
 
 def _resource_metadata(resource) -> Dict[str, Any]:
@@ -384,7 +452,9 @@ def simulation_result_to_dict(
         "ecosystem": {
             "name": eco.name,
             "resource": _resource_metadata(eco.resource),
-            "agents": _agent_metadata(agents, eco.resource.area_ha),
+            "agents": _agent_metadata(
+                agents, eco.resource.area_ha, result.agent_trophic_amplification,
+            ),
             "interactions": _interaction_metadata(eco.interactions),
             "calibration_regime": _calibration_regime(eco),
             "has_pricing": eco.pricing is not None,
@@ -399,17 +469,37 @@ def simulation_result_to_dict(
             "discount_is_default": result.discount_is_default,
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
+            "annual_externality_band": _confidence_band(result),
         },
     }
+    if result.steps:
+        d["summary"]["agent_externality_eur_yr"] = _by_agent(
+            agents, result.steps[-1].agent_annual_costs,
+        )
+    if result.agent_direct_annual_costs:
+        d["summary"]["agent_direct_externality_eur_yr"] = _by_agent(
+            agents, result.agent_direct_annual_costs,
+        )
+        d["summary"]["agent_cascade_externality_eur_yr"] = _by_agent(
+            agents, result.agent_cascade_annual_costs,
+        )
 
     if include_steps:
         d["steps"] = [
             _simulation_step_to_dict(s, agents) for s in result.steps
         ]
 
-    # NPV analysis (v0.6)
+    substrate = _extraction_substrate(result)
+    if substrate is not None:
+        d["substrate"] = substrate
+
+    # NPV analysis (v0.6), with the discounting it used
     if result.extraction_npv is not None:
         d["npv_analysis"] = _extraction_npv_to_dict(result.extraction_npv)
+        if result.discount is not None:
+            d["npv_analysis"]["discount"] = _discount_to_dict(
+                result.discount, result.discount_is_default,
+            )
 
     # Final price decomposition (v0.7, experimental)
     if eco.pricing is not None:
@@ -477,6 +567,11 @@ def restoration_result_to_dict(
             "num_steps": len(result.steps),
         },
     }
+
+    if result.steps:
+        d["summary"]["agent_service_value_eur_yr"] = _by_agent(
+            agents, result.steps[-1].agent_service_values,
+        )
 
     if include_steps:
         d["steps"] = [

@@ -311,6 +311,19 @@
       "substrate_recovery_years": 18.73
     },
     "summary": {
+      "agent_service_value_eur_yr": {
+        "Canopy Trees": 1906.52,
+        "Fire & Microclimate Regulation": 1437.77,
+        "Forest Birds": 1271.23,
+        "Forest Mammals": 1112.33,
+        "Human Communities": 952.71,
+        "Mycorrhizal Fungi": 2063.44,
+        "Pollinators & Insects": 1589.04,
+        "Raptors & Apex Predators": 635.61,
+        "Soil Microbiome": 1588.68,
+        "Understory & Matorral": 1271.23,
+        "Watershed & Water Cycle": 1905.78
+      },
       "annual_damage_reversal_eur_yr": 15773.59,
       "annual_recovered_value_eur_yr": 15734.34,
       "depletion_after": 0.0,

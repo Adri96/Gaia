@@ -56,7 +56,7 @@ from gaia.propagation import (
     propagate_interactions,
     trophic_amplification_factor,
 )
-from gaia.resilience import compute_resilience_zone
+from gaia.resilience import compute_confidence_band, compute_resilience_zone
 from gaia.substrate import (
     _T_HA_TO_MM_FACTOR,
     apply_erosion,
@@ -372,6 +372,33 @@ def _extraction_result(
         for horizon, config in horizon_variants(discount).items()
     }
 
+    # Per-agent direct / cascade split of the final annual cost, at the rate
+    # each agent's cost was computed with (endogenous price or static value)
+    agents: list = ecosystem.agents
+    direct_costs: list = []
+    cascade_costs: list = []
+    confidence: float = 1.0
+    band = None
+    if steps:
+        rates: list = final_step.agent_prices or [
+            a.annual_value(resource.area_ha) for a in agents
+        ]
+        weights: list = [a.dependency_weight for a in agents]
+        direct_costs = [
+            d * w * r for d, w, r in zip(final_step.agent_direct_damages, weights, rates)
+        ]
+        cascade_costs = [
+            c * w * r for c, w, r in zip(final_step.agent_cascade_damages, weights, rates)
+        ]
+        confidence = final_step.model_confidence
+        if resource.resilience is not None and confidence < 1.0:
+            band = compute_confidence_band(annual_externality, confidence)
+
+    substrate_years: Optional[float] = None
+    end_state: Optional[SubstrateState] = _replay_substrate(resource.substrate, steps)
+    if end_state is not None:
+        substrate_years = compute_substrate_recovery_years(end_state)
+
     return SimulationResult(
         ecosystem=ecosystem,
         steps=steps,
@@ -384,6 +411,15 @@ def _extraction_result(
         extraction_npv=extraction_npv,
         discount_is_default=resource.discount is None,
         pv_externality_by_horizon=by_horizon,
+        discount=discount,
+        agent_direct_annual_costs=direct_costs,
+        agent_cascade_annual_costs=cascade_costs,
+        agent_trophic_amplification=[
+            trophic_amplification_factor(a.trophic_level) for a in agents
+        ],
+        annual_externality_band=band,
+        final_model_confidence=confidence,
+        substrate_recovery_years=substrate_years,
     )
 
 
@@ -705,19 +741,23 @@ def _resolve_starting_state(
     return run_extraction(ecosystem, lost)
 
 
+def _replay_substrate(profile, steps: list) -> Optional[SubstrateState]:
+    """Substrate state after the per-step erosion of ``steps`` (None if no profile)."""
+    if profile is None:
+        return None
+    state: SubstrateState = create_substrate_state(profile)
+    for step in steps:
+        apply_erosion(state, step.substrate_erosion)
+    return state
+
+
 def substrate_after_extraction(extraction: SimulationResult) -> Optional[SubstrateState]:
     """Substrate state at the end of an extraction (None without a substrate).
 
     Replays the extraction's per-step erosion on a pristine substrate, so the
     state is exactly the one the extraction ended in, whichever engine ran it.
     """
-    profile = extraction.ecosystem.resource.substrate
-    if profile is None:
-        return None
-    state: SubstrateState = create_substrate_state(profile)
-    for step in extraction.steps:
-        apply_erosion(state, step.substrate_erosion)
-    return state
+    return _replay_substrate(extraction.ecosystem.resource.substrate, extraction.steps)
 
 
 def run_restoration(

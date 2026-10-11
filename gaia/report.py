@@ -4,6 +4,11 @@ Gaia — Text report generation.
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.
 
+Step 6.3 (E3): this module only formats. Every figure it prints is a field
+of SimulationResult / RestorationResult (or of the objects they hold), and
+gaia.serialization writes the same fields, so the text and JSON outputs
+cannot disagree.
+
 v0.1: format_report()           — externality report from run_extraction()
 v0.2: format_restoration_report() — restoration report from run_restoration()
 v0.3: Cascade breakdown (direct vs propagated damage, trophic amplification,
@@ -23,15 +28,33 @@ v0.7: Price Decomposition section in extraction report
 
 from gaia.carbon import carbon_price_label
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
-from gaia.propagation import trophic_amplification_factor
-from gaia.resilience import compute_confidence_band
-from gaia.simulation import substrate_after_extraction
-from gaia.substrate import compute_substrate_recovery_years
 
 # Report width (characters)
 _WIDTH: int = 63
 _DOUBLE_LINE: str = "=" * _WIDTH
 _SINGLE_LINE: str = "-" * _WIDTH
+
+
+def _recovery_years_text(years: float) -> str:
+    """Substrate recovery time for the report (inf: never recovers)."""
+    if years == float("inf"):
+        return f"{'never':>10} (no substrate formation)"
+    return f"{years:>10,.0f} years"
+
+
+def _rate_schedule_text(discount) -> str:
+    """The configured discount rate schedule, e.g. "2.3%" or
+    "4.0% (years 0-29), 3.0% (years 30+)"."""
+    schedule = discount.rate_schedule
+    if isinstance(schedule, (int, float)):
+        return f"{float(schedule):.1%}"
+    parts: list = []
+    for i, (year, rate) in enumerate(schedule):
+        if i + 1 < len(schedule):
+            parts.append(f"{rate:.1%} (years {year}-{schedule[i + 1][0] - 1})")
+        else:
+            parts.append(f"{rate:.1%} (years {year}+)")
+    return ", ".join(parts)
 
 
 def _horizon_sensitivity_lines(by_horizon: dict) -> list:
@@ -161,23 +184,16 @@ def format_report(result: SimulationResult) -> str:
 
         # v0.3: Cascade breakdown (only when cascade data is present)
         if has_cascade_data and i < len(final_cascade_damages):
-            direct_dmg: float = final_direct_damages[i]
-            cascade_dmg: float = final_cascade_damages[i]
-            weight: float = agent.dependency_weight
-            rate: float = agent.annual_value(resource.area_ha)
-            direct_cost: float = direct_dmg * weight * rate
-            cascade_cost: float = cascade_dmg * weight * rate
-
-            if cascade_dmg > 1e-6:
+            if final_cascade_damages[i] > 1e-6:
                 lines.append(
-                    f"    \u2192 Direct: \u20ac{direct_cost:,.0f}/yr | "
-                    f"Cascade: \u20ac{cascade_cost:,.0f}/yr"
+                    f"    \u2192 Direct: \u20ac{result.agent_direct_annual_costs[i]:,.0f}/yr | "
+                    f"Cascade: \u20ac{result.agent_cascade_annual_costs[i]:,.0f}/yr"
                 )
 
             # Show trophic amplification for consumers
             if agent.trophic_level >= 1:
                 # The raw amplification factor (not capped damage)
-                amp: float = trophic_amplification_factor(agent.trophic_level)
+                amp: float = result.agent_trophic_amplification[i]
                 level_names = {
                     1: "primary consumer",
                     2: "secondary consumer",
@@ -320,22 +336,24 @@ def format_report(result: SimulationResult) -> str:
             f"{npv_c.carbon_foregone:>14,.2f}\u20ac (PV)"
         )
 
-    # v0.4: Confidence band on total externality
-    if result.steps and resource.resilience is not None:
-        final_confidence = result.steps[-1].model_confidence
-        if final_confidence < 1.0:
-            lower, upper = compute_confidence_band(
-                result.annual_externality, final_confidence
-            )
-            lines.append("")
-            lines.append(f"  \u2500\u2500 Externality with Confidence Band \u2500" + "\u2500" * 28)
-            lines.append(
-                f"  {'Annual Externality:':<40} {result.annual_externality:>14,.2f}\u20ac/yr"
-            )
-            lines.append(
-                f"  Confidence band ({final_confidence:.0%}):"
-                f"        {lower:>12,.2f}\u20ac/yr \u2014 {upper:>12,.2f}\u20ac/yr"
-            )
+    # v0.4: Heuristic band on the annual externality (not a statistical
+    # interval; see SimulationResult.annual_externality_band)
+    if result.annual_externality_band is not None:
+        lower, upper = result.annual_externality_band
+        lines.append("")
+        lines.append(
+            f"  \u2500\u2500 Externality Band (heuristic) \u2500" + "\u2500" * 31
+        )
+        lines.append(
+            f"  {'Annual Externality:':<40} {result.annual_externality:>14,.2f}\u20ac/yr"
+        )
+        lines.append(
+            f"  Band at {result.final_model_confidence:.0%} confidence:"
+            f"      {lower:>12,.2f}\u20ac/yr \u2014 {upper:>12,.2f}\u20ac/yr"
+        )
+        lines.append(
+            "    (heuristic: \u00b1(1 \u2212 confidence); not a statistical interval)"
+        )
 
     # v0.5: Substrate Impact Assessment
     if resource.substrate is not None and result.steps:
@@ -378,38 +396,28 @@ def format_report(result: SimulationResult) -> str:
                 f"  {'Capacity lost permanently:':<40} {capacity_lost:>10,} units"
             )
 
-            # Recovery timeline, from the substrate state the extraction ended
-            # in (the same state a restoration starts from)
-            recovery_years: float = compute_substrate_recovery_years(
-                substrate_after_extraction(result)
-            )
-            if recovery_years < float("inf"):
+            # Recovery time of the substrate state the extraction ended in
+            # (the same state a restoration starts from)
+            if result.substrate_recovery_years is not None:
                 lines.append(
-                    f"  {'Years to pristine substrate:':<40} {recovery_years:>10,.0f} years"
-                )
-            else:
-                lines.append(
-                    f"  {'Years to pristine substrate:':<40} {'N/A':>10}"
+                    f"  {'Years to pristine substrate:':<40} "
+                    f"{_recovery_years_text(result.substrate_recovery_years)}"
                 )
 
     # v0.6: NPV Analysis
     if result.extraction_npv is not None:
         npv = result.extraction_npv
-        from gaia.discount import DEFAULT_DISCOUNT
-        discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
+        discount = result.discount
         lines.append("")
         lines.append(
-            f"  \u2500\u2500 NPV Analysis ({npv.horizon}-year horizon"
+            f"  \u2500\u2500 NPV Analysis ({npv.horizon}-year horizon) \u2500"
+            + "\u2500" * 28
         )
         if discount is not None:
-            ramsey_rate: float = discount.delta + discount.eta * discount.g
-            lines.append(
-                f"     {ramsey_rate:.1%} discount rate) \u2500"
-                + "\u2500" * 33
-            )
             lines.append("")
+            lines.append(f"  Discount rate: {_rate_schedule_text(discount)}")
             lines.append(
-                f"  Ramsey components: "
+                f"  Ramsey components (reference): "
                 f"\u03b4={discount.delta:.1%}, "
                 f"\u03b7={discount.eta:.2f}, "
                 f"g={discount.g:.1%}"
@@ -423,8 +431,6 @@ def format_report(result: SimulationResult) -> str:
                 f"growing at {discount.carbon_price_growth:.1%}/yr"
             )
             lines.append(f"    ({carbon_price_label(discount)})")
-        else:
-            lines.append(f"     ) \u2500" + "\u2500" * 49)
 
         lines.append("")
         lines.append(f"  Externality present value (\u20ac PV at year 0):")
@@ -701,15 +707,10 @@ def format_restoration_report(result: RestorationResult) -> str:
             f"  Biological restoration capped at substrate ceiling."
         )
         if result.substrate_recovery_years > 0:
-            if result.substrate_recovery_years < float("inf"):
-                lines.append(
-                    f"  {'Substrate recovery time:':<40} "
-                    f"{result.substrate_recovery_years:>10,.0f} years"
-                )
-            else:
-                lines.append(
-                    f"  {'Substrate recovery time:':<40} {'N/A':>10}"
-                )
+            lines.append(
+                f"  {'Substrate recovery time:':<40} "
+                f"{_recovery_years_text(result.substrate_recovery_years)}"
+            )
 
 
     # v0.6: Investment Analysis (NPV)

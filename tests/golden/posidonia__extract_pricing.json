@@ -22,6 +22,7 @@
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -32,6 +33,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Coralligenous & Red Coral",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -42,6 +44,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Epiphytes & Algae",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -52,6 +55,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Marine Invertebrates",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -62,6 +66,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Fish Populations",
+          "trophic_amplification": 2.581989,
           "trophic_level": 2
         },
         {
@@ -72,6 +77,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Marine Megafauna",
+          "trophic_amplification": 4.148887,
           "trophic_level": 3
         },
         {
@@ -82,6 +88,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Seabirds",
+          "trophic_amplification": 2.581989,
           "trophic_level": 2
         },
         {
@@ -92,6 +99,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Coastal Protection",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -102,6 +110,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Water Quality",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -112,6 +121,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Human Communities",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         }
       ],
@@ -257,6 +267,30 @@
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 12974960.6,
       "carbon_released_tco2": 78000.0,
+      "discount": {
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "delta": 0.005,
+        "eta": 1.35,
+        "g": 0.013,
+        "horizon_years": 200,
+        "is_default": false,
+        "rate_schedule": [
+          [
+            0,
+            0.023
+          ],
+          [
+            31,
+            0.018
+          ],
+          [
+            101,
+            0.014
+          ]
+        ],
+        "scarcity_rate": 0.01
+      },
       "horizon_years": 200,
       "services_eur_pv": 50619526447.14,
       "substrate_unrecoverable_eur_pv": 1366052.3,
@@ -306,7 +340,56 @@
       "spectral_radius_bound": 0.861189,
       "status": "converged"
     },
+    "substrate": {
+      "capacity_lost_units": 1,
+      "effective_k": 999,
+      "k_fraction": 0.999973,
+      "substrate_recovery_years": 0.03
+    },
     "summary": {
+      "agent_cascade_externality_eur_yr": {
+        "Coastal Protection": 42571.11,
+        "Coralligenous & Red Coral": 121653.37,
+        "Epiphytes & Algae": 25948.63,
+        "Fish Populations": 0.0,
+        "Human Communities": 3200995.74,
+        "Marine Invertebrates": 94629.46,
+        "Marine Megafauna": 0.0,
+        "Posidonia Meadow": 0.0,
+        "Seabirds": 0.0,
+        "Water Quality": 76887.49
+      },
+      "agent_direct_externality_eur_yr": {
+        "Coastal Protection": 186186.61,
+        "Coralligenous & Red Coral": 472938.94,
+        "Epiphytes & Algae": 129699.98,
+        "Fish Populations": 46198834.71,
+        "Human Communities": 6459852.36,
+        "Marine Invertebrates": 1084226.4,
+        "Marine Megafauna": 232994173.57,
+        "Posidonia Meadow": 209767.03,
+        "Seabirds": 249293757.4,
+        "Water Quality": 248615.95
+      },
+      "agent_externality_eur_yr": {
+        "Coastal Protection": 228757.72,
+        "Coralligenous & Red Coral": 594592.31,
+        "Epiphytes & Algae": 155648.61,
+        "Fish Populations": 46198834.71,
+        "Human Communities": 9660848.09,
+        "Marine Invertebrates": 1178855.87,
+        "Marine Megafauna": 232994173.57,
+        "Posidonia Meadow": 209767.03,
+        "Seabirds": 249293757.4,
+        "Water Quality": 325503.44
+      },
+      "annual_externality_band": {
+        "heuristic": true,
+        "high_eur_yr": 777458561.96,
+        "low_eur_yr": 304222915.55,
+        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
+        "model_confidence": 0.5625
+      },
       "annual_externality_eur_yr": 540840738.75,
       "discount_is_default": false,
       "final_ecosystem_health": 0.328121,
@@ -333,7 +416,70 @@
     "Water Quality": 325503.44378310593
   },
   "result": {
+    "agent_cascade_annual_costs": [
+      0.0,
+      121653.36687260706,
+      25948.634092078977,
+      94629.46488741727,
+      0.0,
+      0.0,
+      0.0,
+      42571.10989233247,
+      76887.49290655465,
+      3200995.737336202
+    ],
+    "agent_direct_annual_costs": [
+      209767.03214884613,
+      472938.9382314643,
+      129699.98041383724,
+      1084226.4038930503,
+      46198834.713790536,
+      232994173.56895265,
+      249293757.3953064,
+      186186.60570660912,
+      248615.9508765513,
+      6459852.35603063
+    ],
+    "agent_trophic_amplification": [
+      1.0,
+      1.0,
+      1.0,
+      1.6068568378893036,
+      2.581988897471611,
+      4.148886515256522,
+      2.581988897471611,
+      1.0,
+      1.0,
+      1.0
+    ],
     "annual_externality": 540840738.7513378,
+    "annual_externality_band": [
+      304222915.5476275,
+      777458561.9550481
+    ],
+    "discount": {
+      "carbon_price_current": 166.3456487480301,
+      "carbon_price_growth": 0.013,
+      "delta": 0.005,
+      "eta": 1.35,
+      "g": 0.013,
+      "horizon_years": 200,
+      "rate_schedule": [
+        [
+          0,
+          0.023
+        ],
+        [
+          31,
+          0.018
+        ],
+        [
+          101,
+          0.014
+        ]
+      ],
+      "scarcity_rate": 0.01
+    },
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 472.99999999999994,
@@ -347,6 +493,7 @@
       "total": 50641948265.242226
     },
     "final_ecosystem_health": 0.3281212013085768,
+    "final_model_confidence": 0.5625,
     "net_social_cost": 50641198265.242226,
     "pv_externality": 50641948265.242226,
     "pv_externality_by_horizon": {
@@ -355,6 +502,7 @@
       "50": 20196557249.14334
     },
     "revenue": 750000.0,
+    "substrate_recovery_years": 0.0339753749998839,
     "total_units_extracted": 300
   },
   "scenario": {

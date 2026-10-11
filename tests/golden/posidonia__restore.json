@@ -1197,6 +1197,18 @@
       "substrate_recovery_years": 0.08
     },
     "summary": {
+      "agent_service_value_eur_yr": {
+        "Coastal Protection": 791559.86,
+        "Coralligenous & Red Coral": 521630.45,
+        "Epiphytes & Algae": 214786.08,
+        "Fish Populations": 699955.36,
+        "Human Communities": 598463.54,
+        "Marine Invertebrates": 349987.68,
+        "Marine Megafauna": 199987.24,
+        "Posidonia Meadow": 573867.49,
+        "Seabirds": 179988.52,
+        "Water Quality": 572878.06
+      },
       "annual_damage_reversal_eur_yr": 4703404.24,
       "annual_recovered_value_eur_yr": 4703104.27,
       "depletion_after": 0.0,

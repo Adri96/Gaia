@@ -301,6 +301,9 @@ _NON_MONETARY_KEYS = {
     "restoration_cost_ratio", "penalty_ratio", "roi",
     # pricing decomposition
     "scarcity_multipliers", "demand_multipliers", "spectral_radius_bound", "iterations",
+    # Step 6.3: trophic factors, extraction substrate, discounting used
+    "trophic_amplification", "capacity_lost_units",
+    "rate_schedule", "delta", "eta", "g", "scarcity_rate",
 }
 _UNIT_SUFFIXES = ("_eur_yr", "_eur_per_ha_yr", "_eur_pv", "_eur", "_eur_per_t")
 

@@ -41,7 +41,7 @@ from gaia.carbon import SOCIAL_COST_OF_CARBON_EUR
 from gaia.models import RestorationCost
 from gaia.pricing import PricingConvergenceError
 from gaia.recovery import logistic_recovery
-from gaia.report import format_report
+from gaia.report import format_report, format_restoration_report
 from gaia.serialization import to_json
 from gaia.simulation import run_extraction, run_restoration
 from gaia.validation import validate_discount_config
@@ -365,23 +365,40 @@ def _json_numbers(obj, out):
     return out
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "E3: report.py computes figures absent from the result/JSON "
-    "(confidence band, direct/cascade split; carbon fixed in Step 3.4)"))
-@pytest.mark.parametrize("case", list(CASES))
-def test_text_report_figures_exist_in_json(case):
-    """Every € figure printed in the text report is a value of the JSON output."""
-    eco, _ = build(case, 1000)
-    result = run_extraction(eco, 500)
-    numbers = _json_numbers(json.loads(to_json(result, include_steps=True)), [])
+def _text_only_figures(result, text, include_steps):
+    numbers = _json_numbers(json.loads(to_json(result, include_steps=include_steps)), [])
     missing = []
-    for match in _EURO.finditer(format_report(result)):
-        text = match.group(1) or match.group(2)
-        decimals = len(text.split(".")[1]) if "." in text else 0
-        figure = float(text.replace(",", ""))
+    for match in _EURO.finditer(text):
+        figure_text = match.group(1) or match.group(2)
+        decimals = len(figure_text.split(".")[1]) if "." in figure_text else 0
+        figure = float(figure_text.replace(",", ""))
         tol = 0.5 * 10 ** -decimals + 1e-9 * abs(figure)
         if not any(abs(v - figure) <= tol for v in numbers):
             missing.append(match.group(0))
+    return missing
+
+
+@pytest.mark.parametrize("include_steps", [True, False], ids=["steps", "summary_only"])
+@pytest.mark.parametrize("case", list(CASES))
+def test_text_report_figures_exist_in_json(case, include_steps):
+    """Every € figure printed in the text report is a value of the JSON output."""
+    eco, _ = build(case, 1000)
+    result = run_extraction(eco, 500)
+    missing = _text_only_figures(result, format_report(result), include_steps)
+    assert not missing, f"text-only figures: {missing}"
+
+
+@pytest.mark.parametrize("include_steps", [True, False], ids=["steps", "summary_only"])
+@pytest.mark.parametrize("case", list(CASES))
+def test_restoration_text_report_figures_exist_in_json(case, include_steps):
+    """Same for the restoration report (partial restoration with maturation)."""
+    eco, _ = build(case, 1000)
+    cost = RestorationCost(planting_cost_per_unit=50.0,
+                           annual_maintenance_per_unit=10.0, maintenance_years=10)
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    result = run_restoration(eco, 400, cost, recovery, units_lost=700,
+                             succession_curve=_FOREST_SUCCESSION, time_horizon_years=60)
+    missing = _text_only_figures(result, format_restoration_report(result), include_steps)
     assert not missing, f"text-only figures: {missing}"
 
 
@@ -419,3 +436,16 @@ def _strict_json_cases():
 def test_json_output_is_strict(make_result):
     text = to_json(make_result(), include_steps=True)
     json.loads(text, parse_constant=_reject_constant)
+
+
+@pytest.mark.parametrize("with_pricing", [False, True], ids=["static", "pricing"])
+@pytest.mark.parametrize("case", list(CASES))
+def test_direct_plus_cascade_is_agent_cost(case, with_pricing):
+    """The result's direct/cascade split adds up to each agent's final cost,
+    at the rate actually used (endogenous prices included)."""
+    eco, _ = build(case, 1000, with_pricing=with_pricing)
+    result = run_extraction(eco, 150)
+    final = result.steps[-1].agent_annual_costs
+    for d, c, total in zip(result.agent_direct_annual_costs,
+                           result.agent_cascade_annual_costs, final):
+        assert d + c == pytest.approx(total, rel=1e-12, abs=1e-9)

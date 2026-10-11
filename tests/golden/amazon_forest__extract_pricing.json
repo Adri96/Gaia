@@ -23,6 +23,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Canopy Trees",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -33,6 +34,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Understory",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -43,6 +45,7 @@
           "is_keystone": true,
           "keystone_threshold": 0.25,
           "name": "Mycorrhizal Fungi",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -53,6 +56,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Soil Decomposers",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -63,6 +67,7 @@
           "is_keystone": true,
           "keystone_threshold": 0.35,
           "name": "Pollinators",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -73,6 +78,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Seed Dispersers",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -83,6 +89,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Herbivores",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -93,6 +100,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Mesopredators",
+          "trophic_amplification": 2.581989,
           "trophic_level": 2
         },
         {
@@ -103,6 +111,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Apex Predators",
+          "trophic_amplification": 4.148887,
           "trophic_level": 3
         },
         {
@@ -113,6 +122,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Aquatic System",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -123,6 +133,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Epiphytes & Bromeliads",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         }
       ],
@@ -398,6 +409,17 @@
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 225844.16,
       "carbon_released_tco2": 1357.68,
+      "discount": {
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "delta": 0.005,
+        "eta": 1.35,
+        "g": 0.013,
+        "horizon_years": 100,
+        "is_default": false,
+        "rate_schedule": 0.023,
+        "scarcity_rate": 0.0128
+      },
       "horizon_years": 100,
       "services_eur_pv": 1087376.02,
       "substrate_unrecoverable_eur_pv": 260.08,
@@ -450,7 +472,59 @@
       "spectral_radius_bound": 0.929145,
       "status": "converged"
     },
+    "substrate": {
+      "capacity_lost_units": 1,
+      "effective_k": 3999,
+      "k_fraction": 0.999761,
+      "substrate_recovery_years": 1.19
+    },
     "summary": {
+      "agent_cascade_externality_eur_yr": {
+        "Apex Predators": 331.33,
+        "Aquatic System": 136.39,
+        "Canopy Trees": 804.91,
+        "Epiphytes & Bromeliads": 662.18,
+        "Herbivores": 137.39,
+        "Mesopredators": 227.27,
+        "Mycorrhizal Fungi": 510.83,
+        "Pollinators": 309.31,
+        "Seed Dispersers": 52.09,
+        "Soil Decomposers": 200.08,
+        "Understory": 559.9
+      },
+      "agent_direct_externality_eur_yr": {
+        "Apex Predators": 3709.39,
+        "Aquatic System": 290.32,
+        "Canopy Trees": 1206.61,
+        "Epiphytes & Bromeliads": 1128.33,
+        "Herbivores": 766.48,
+        "Mesopredators": 1265.61,
+        "Mycorrhizal Fungi": 1374.67,
+        "Pollinators": 1533.89,
+        "Seed Dispersers": 581.17,
+        "Soil Decomposers": 692.27,
+        "Understory": 823.07
+      },
+      "agent_externality_eur_yr": {
+        "Apex Predators": 4040.72,
+        "Aquatic System": 426.71,
+        "Canopy Trees": 2011.52,
+        "Epiphytes & Bromeliads": 1790.51,
+        "Herbivores": 903.86,
+        "Mesopredators": 1492.88,
+        "Mycorrhizal Fungi": 1885.5,
+        "Pollinators": 1843.2,
+        "Seed Dispersers": 633.26,
+        "Soil Decomposers": 892.36,
+        "Understory": 1382.98
+      },
+      "annual_externality_band": {
+        "heuristic": true,
+        "high_eur_yr": 24224.88,
+        "low_eur_yr": 10382.09,
+        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
+        "model_confidence": 0.6
+      },
       "annual_externality_eur_yr": 17303.49,
       "discount_is_default": false,
       "final_ecosystem_health": 0.693522,
@@ -478,7 +552,60 @@
     "Understory": 1382.9750979409814
   },
   "result": {
+    "agent_cascade_annual_costs": [
+      804.912829991753,
+      559.900661896812,
+      510.8282053121631,
+      200.08315820622224,
+      309.3098726806158,
+      52.086386427276636,
+      137.38737246832017,
+      227.2664244199774,
+      331.3347296319952,
+      136.38591823996623,
+      662.180505943115
+    ],
+    "agent_direct_annual_costs": [
+      1206.610096074492,
+      823.0744360441694,
+      1374.6678861463618,
+      692.273841790147,
+      1533.88699292027,
+      581.1742037277593,
+      766.4766388431136,
+      1265.610775146805,
+      3709.387597824141,
+      290.32257490842187,
+      1128.3251187104877
+    ],
+    "agent_trophic_amplification": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.6068568378893036,
+      1.6068568378893036,
+      1.6068568378893036,
+      2.581988897471611,
+      4.148886515256522,
+      1.0,
+      1.0
+    ],
     "annual_externality": 17303.486227354388,
+    "annual_externality_band": [
+      10382.091736412633,
+      24224.880718296143
+    ],
+    "discount": {
+      "carbon_price_current": 166.3456487480301,
+      "carbon_price_growth": 0.013,
+      "delta": 0.005,
+      "eta": 1.35,
+      "g": 0.013,
+      "horizon_years": 100,
+      "rate_schedule": 0.023,
+      "scarcity_rate": 0.0128
+    },
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 4.8,
@@ -492,6 +619,7 @@
       "total": 1363817.9905960625
     },
     "final_ecosystem_health": 0.6935221566210474,
+    "final_model_confidence": 0.6,
     "net_social_cost": 1362617.9905960625,
     "pv_externality": 1363817.9905960625,
     "pv_externality_by_horizon": {
@@ -500,6 +628,7 @@
       "50": 934346.0333211138
     },
     "revenue": 1200.0,
+    "substrate_recovery_years": 1.1898026212230128,
     "total_units_extracted": 800
   },
   "scenario": {

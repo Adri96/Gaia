@@ -1338,6 +1338,19 @@
       "substrate_recovery_years": 1.19
     },
     "summary": {
+      "agent_service_value_eur_yr": {
+        "Apex Predators": 136.97,
+        "Aquatic System": 148.48,
+        "Canopy Trees": 252.62,
+        "Epiphytes & Bromeliads": 160.31,
+        "Herbivores": 134.0,
+        "Mesopredators": 153.84,
+        "Mycorrhizal Fungi": 207.85,
+        "Pollinators": 175.56,
+        "Seed Dispersers": 141.5,
+        "Soil Decomposers": 130.22,
+        "Understory": 135.8
+      },
       "annual_damage_reversal_eur_yr": 1777.57,
       "annual_recovered_value_eur_yr": 1777.15,
       "depletion_after": 0.0,

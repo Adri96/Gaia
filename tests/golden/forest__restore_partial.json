@@ -677,6 +677,12 @@
       "substrate_recovery_years": 6.68
     },
     "summary": {
+      "agent_service_value_eur_yr": {
+        "Animal Populations": 0.0,
+        "Human Communities": 170.51,
+        "Vegetation & Flora": 142.09,
+        "Watershed & Local Climate": 331.55
+      },
       "annual_damage_reversal_eur_yr": 1887.02,
       "annual_recovered_value_eur_yr": 644.15,
       "depletion_after": 0.5,

@@ -16,6 +16,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Human Communities",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -26,6 +27,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Animal Populations",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -36,6 +38,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Vegetation & Flora",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -46,6 +49,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Watershed & Local Climate",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         }
       ],
@@ -97,12 +101,54 @@
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 727762.21,
       "carbon_released_tco2": 4375.0,
+      "discount": {
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "delta": 0.005,
+        "eta": 1.35,
+        "g": 0.013,
+        "horizon_years": 100,
+        "is_default": false,
+        "rate_schedule": 0.023,
+        "scarcity_rate": 0.02
+      },
       "horizon_years": 100,
       "services_eur_pv": 8224317.13,
       "substrate_unrecoverable_eur_pv": 2402.2,
       "total_eur_pv": 10111612.54
     },
+    "substrate": {
+      "capacity_lost_units": 3,
+      "effective_k": 9997,
+      "k_fraction": 0.999708,
+      "substrate_recovery_years": 2.14
+    },
     "summary": {
+      "agent_cascade_externality_eur_yr": {
+        "Animal Populations": 0.0,
+        "Human Communities": 555.01,
+        "Vegetation & Flora": 0.0,
+        "Watershed & Local Climate": 0.0
+      },
+      "agent_direct_externality_eur_yr": {
+        "Animal Populations": 34176.0,
+        "Human Communities": 17233.94,
+        "Vegetation & Flora": 12925.45,
+        "Watershed & Local Climate": 30159.39
+      },
+      "agent_externality_eur_yr": {
+        "Animal Populations": 34176.0,
+        "Human Communities": 17788.95,
+        "Vegetation & Flora": 12925.45,
+        "Watershed & Local Climate": 30159.39
+      },
+      "annual_externality_band": {
+        "heuristic": true,
+        "high_eur_yr": 141216.84,
+        "low_eur_yr": 48882.75,
+        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
+        "model_confidence": 0.5143
+      },
       "annual_externality_eur_yr": 95049.79,
       "discount_is_default": false,
       "final_ecosystem_health": 0.165644,
@@ -123,7 +169,39 @@
     "Watershed & Local Climate": 30159.394103992672
   },
   "result": {
+    "agent_cascade_annual_costs": [
+      555.0060512004187,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "agent_direct_annual_costs": [
+      17233.939487995816,
+      34176.0,
+      12925.45461599686,
+      30159.394103992672
+    ],
+    "agent_trophic_amplification": [
+      1.0,
+      1.6068568378893036,
+      1.0,
+      1.0
+    ],
     "annual_externality": 95049.79425918576,
+    "annual_externality_band": [
+      48882.75133329553,
+      141216.837185076
+    ],
+    "discount": {
+      "carbon_price_current": 166.3456487480301,
+      "carbon_price_growth": 0.013,
+      "delta": 0.005,
+      "eta": 1.35,
+      "g": 0.013,
+      "horizon_years": 100,
+      "rate_schedule": 0.023,
+      "scarcity_rate": 0.02
+    },
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 110.0,
@@ -137,6 +215,7 @@
       "total": 10111612.541674387
     },
     "final_ecosystem_health": 0.1656443621911362,
+    "final_model_confidence": 0.5142857142857142,
     "net_social_cost": 9611612.541674387,
     "pv_externality": 10111612.541674387,
     "pv_externality_by_horizon": {
@@ -145,6 +224,7 @@
       "50": 5860651.893729676
     },
     "revenue": 500000.0,
+    "substrate_recovery_years": 2.1358698218866046,
     "total_units_extracted": 5000
   },
   "scenario": {

@@ -23,6 +23,7 @@
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Mycorrhizal Fungi",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -33,6 +34,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Soil Microbiome",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -43,6 +45,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Canopy Trees",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -53,6 +56,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Understory & Matorral",
+          "trophic_amplification": 1.0,
           "trophic_level": 0
         },
         {
@@ -63,6 +67,7 @@
           "is_keystone": true,
           "keystone_threshold": 0.4,
           "name": "Pollinators & Insects",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -73,6 +78,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Forest Birds",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -83,6 +89,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Forest Mammals",
+          "trophic_amplification": 1.606857,
           "trophic_level": 1
         },
         {
@@ -93,6 +100,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Raptors & Apex Predators",
+          "trophic_amplification": 4.148887,
           "trophic_level": 3
         },
         {
@@ -103,6 +111,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Watershed & Water Cycle",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -113,6 +122,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Fire & Microclimate Regulation",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         },
         {
@@ -123,6 +133,7 @@
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Human Communities",
+          "trophic_amplification": 1.0,
           "trophic_level": -1
         }
       ],
@@ -279,12 +290,75 @@
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 390912.27,
       "carbon_released_tco2": 2350.0,
+      "discount": {
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "delta": 0.005,
+        "eta": 1.35,
+        "g": 0.013,
+        "horizon_years": 100,
+        "is_default": false,
+        "rate_schedule": 0.023,
+        "scarcity_rate": 0.0128
+      },
       "horizon_years": 100,
       "services_eur_pv": 7652012.67,
       "substrate_unrecoverable_eur_pv": 5796.42,
       "total_eur_pv": 8801892.13
     },
+    "substrate": {
+      "capacity_lost_units": 8,
+      "effective_k": 9992,
+      "k_fraction": 0.999242,
+      "substrate_recovery_years": 5.7
+    },
     "summary": {
+      "agent_cascade_externality_eur_yr": {
+        "Canopy Trees": 2282.3,
+        "Fire & Microclimate Regulation": 2384.06,
+        "Forest Birds": 131.0,
+        "Forest Mammals": 44.59,
+        "Human Communities": 681.42,
+        "Mycorrhizal Fungi": 0.0,
+        "Pollinators & Insects": 50.96,
+        "Raptors & Apex Predators": 0.0,
+        "Soil Microbiome": 1901.91,
+        "Understory & Matorral": 3296.99,
+        "Watershed & Water Cycle": 2282.3
+      },
+      "agent_direct_externality_eur_yr": {
+        "Canopy Trees": 11582.5,
+        "Fire & Microclimate Regulation": 4687.99,
+        "Forest Birds": 12407.61,
+        "Forest Mammals": 10856.66,
+        "Human Communities": 5791.25,
+        "Mycorrhizal Fungi": 12547.7,
+        "Pollinators & Insects": 15509.51,
+        "Raptors & Apex Predators": 6372.0,
+        "Soil Microbiome": 9652.08,
+        "Understory & Matorral": 7721.66,
+        "Watershed & Water Cycle": 11582.5
+      },
+      "agent_externality_eur_yr": {
+        "Canopy Trees": 13864.79,
+        "Fire & Microclimate Regulation": 7072.05,
+        "Forest Birds": 12538.61,
+        "Forest Mammals": 10901.24,
+        "Human Communities": 6472.67,
+        "Mycorrhizal Fungi": 12547.7,
+        "Pollinators & Insects": 15560.47,
+        "Raptors & Apex Predators": 6372.0,
+        "Soil Microbiome": 11553.99,
+        "Understory & Matorral": 11018.65,
+        "Watershed & Water Cycle": 13864.79
+      },
+      "annual_externality_band": {
+        "heuristic": true,
+        "high_eur_yr": 177779.79,
+        "low_eur_yr": 65754.17,
+        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
+        "model_confidence": 0.54
+      },
       "annual_externality_eur_yr": 121766.98,
       "discount_is_default": false,
       "final_ecosystem_health": 0.235612,
@@ -312,7 +386,60 @@
     "Watershed & Water Cycle": 13864.793218600953
   },
   "result": {
+    "agent_cascade_annual_costs": [
+      0.0,
+      1901.9141704909462,
+      2282.297004589135,
+      3296.9893212982897,
+      50.955344756101766,
+      131.0047106373596,
+      44.58592666158873,
+      0.0,
+      2282.297004589135,
+      2384.0606488530348,
+      681.424730091092
+    ],
+    "agent_direct_annual_costs": [
+      12547.704231846135,
+      9652.080178343182,
+      11582.496214011817,
+      7721.664142674545,
+      15509.51103442655,
+      12407.60882754124,
+      10856.657724098586,
+      6372.0,
+      11582.496214011817,
+      4687.986306874175,
+      5791.248107005908
+    ],
+    "agent_trophic_amplification": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.6068568378893036,
+      1.6068568378893036,
+      1.6068568378893036,
+      4.148886515256522,
+      1.0,
+      1.0,
+      1.0
+    ],
     "annual_externality": 121766.98184280063,
+    "annual_externality_band": [
+      65754.17019511233,
+      177779.7934904889
+    ],
+    "discount": {
+      "carbon_price_current": 166.3456487480301,
+      "carbon_price_growth": 0.013,
+      "delta": 0.005,
+      "eta": 1.35,
+      "g": 0.013,
+      "horizon_years": 100,
+      "rate_schedule": 0.023,
+      "scarcity_rate": 0.0128
+    },
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 72.0,
@@ -326,6 +453,7 @@
       "total": 8801892.128655946
     },
     "final_ecosystem_health": 0.23561216671186025,
+    "final_model_confidence": 0.5399999999999999,
     "net_social_cost": 8561892.128655946,
     "pv_externality": 8801892.128655946,
     "pv_externality_by_horizon": {
@@ -334,6 +462,7 @@
       "50": 5626689.582095277
     },
     "revenue": 240000.0,
+    "substrate_recovery_years": 5.701200100012027,
     "total_units_extracted": 4000
   },
   "scenario": {

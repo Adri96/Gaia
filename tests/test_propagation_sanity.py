@@ -270,11 +270,15 @@ def test_trophic_factor_reads_constants():
 
 
 def test_report_trophic_factor_comes_from_propagation(monkeypatch):
+    """The report prints the factor the engine used (stored on the result,
+    Step 6.3), which comes from gaia.propagation."""
     eco = build_forest_ecosystem(total_trees=100)
     result = run_extraction(eco, 40)
     assert "Trophic amplification: 1.6×" in format_report(result)
     monkeypatch.setattr(propagation, "TROPHIC_AMPLIFICATION_EXPONENT", 0.5)
-    assert "Trophic amplification: 2.6×" in format_report(result)
+    rerun = run_extraction(eco, 40)
+    assert "Trophic amplification: 2.6×" in format_report(rerun)
+    assert "Trophic amplification: 1.6×" in format_report(result)
 
 
 @pytest.mark.skipif(not sim._HAS_CYTHON,
