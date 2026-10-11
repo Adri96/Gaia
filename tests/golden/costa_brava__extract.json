@@ -262,8 +262,8 @@
       "carbon_release": 188000.0,
       "direct": 320917215.37,
       "horizon": 100,
-      "substrate_damage": 24309.55,
-      "total": 321744458.73
+      "substrate_damage": 243095.47,
+      "total": 321963244.65
     },
     "summary": {
       "final_ecosystem_health": 0.144376,
@@ -293,8 +293,8 @@
       "carbon_release": 188000.0,
       "direct": 320917215.3687469,
       "horizon": 100,
-      "substrate_damage": 24309.546816882925,
-      "total": 321744458.7310512
+      "substrate_damage": 243095.4681591738,
+      "total": 321963244.6523935
     },
     "final_ecosystem_health": 0.14437622835618014,
     "net_social_cost": -2668811.257978989,
@@ -370,14 +370,14 @@
     "depletion_ratio": 800.1999999999999,
     "discount_factor_at_step": 4000.0,
     "ecosystem_health": 2841.172031486837,
-    "effective_k": 39996000.0,
-    "k_fraction": 3999.890989811884,
+    "effective_k": 39986989.0,
+    "k_fraction": 3998.909898118864,
     "marginal_cost": 2908811.257978989,
     "model_confidence": 2924.8199999999965,
     "npv_externality": 0.0,
     "private_revenue": 480120000.0,
     "step": 8002000.0,
-    "substrate_erosion": 0.0017542154153846186,
+    "substrate_erosion": 0.017542154153846135,
     "units_extracted": 8002000.0
   },
   "steps": [
@@ -442,7 +442,7 @@
       "ecosystem_health": 0.999969497566863,
       "effective_k": 9999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999999916958022,
+      "k_fraction": 0.999999916958022,
       "keystone_triggered": [],
       "marginal_cost": 109.25815678307833,
       "model_confidence": 0.9,
@@ -451,7 +451,7 @@
       "private_revenue": 60.0,
       "resilience_zone": "green",
       "step": 1,
-      "substrate_erosion": 1.9230773846153852e-07,
+      "substrate_erosion": 1.923077384615385e-06,
       "units_extracted": 1
     },
     {
@@ -515,7 +515,7 @@
       "ecosystem_health": 0.9850814116168103,
       "effective_k": 9999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999966270199507,
+      "k_fraction": 0.9999662701994892,
       "keystone_triggered": [],
       "marginal_cost": 157.00366506019782,
       "model_confidence": 0.9,
@@ -524,7 +524,7 @@
       "private_revenue": 24060.0,
       "resilience_zone": "green",
       "step": 401,
-      "substrate_erosion": 1.9972927692307694e-07,
+      "substrate_erosion": 1.9972927692307693e-06,
       "units_extracted": 401
     },
     {
@@ -588,7 +588,7 @@
       "ecosystem_health": 0.9629397405269351,
       "effective_k": 9999,
       "irreversibility_warning": false,
-      "k_fraction": 0.999993006282559,
+      "k_fraction": 0.9999300628255738,
       "keystone_triggered": [],
       "marginal_cost": 230.46799144351098,
       "model_confidence": 0.9,
@@ -597,7 +597,7 @@
       "private_revenue": 48060.0,
       "resilience_zone": "green",
       "step": 801,
-      "substrate_erosion": 2.2192004615384612e-07,
+      "substrate_erosion": 2.219200461538461e-06,
       "units_extracted": 801
     },
     {
@@ -659,9 +659,9 @@
       "depletion_ratio": 0.1201,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9297352190269275,
-      "effective_k": 9999,
+      "effective_k": 9998,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999888743787331,
+      "k_fraction": 0.9998887437873236,
       "keystone_triggered": [],
       "marginal_cost": 341.04731830584933,
       "model_confidence": 0.9,
@@ -670,7 +670,7 @@
       "private_revenue": 72060.0,
       "resilience_zone": "green",
       "step": 1201,
-      "substrate_erosion": 2.588800461538461e-07,
+      "substrate_erosion": 2.5888004615384614e-06,
       "units_extracted": 1201
     },
     {
@@ -732,9 +732,9 @@
       "depletion_ratio": 0.1601,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8801640910510431,
-      "effective_k": 9999,
+      "effective_k": 9998,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999839762035799,
+      "k_fraction": 0.999839762035784,
       "keystone_triggered": [],
       "marginal_cost": 501.3491919403896,
       "model_confidence": 0.82475,
@@ -743,7 +743,7 @@
       "private_revenue": 96060.0,
       "resilience_zone": "yellow",
       "step": 1601,
-      "substrate_erosion": 3.10609276923077e-07,
+      "substrate_erosion": 3.10609276923077e-06,
       "units_extracted": 1601
     },
     {
@@ -805,9 +805,9 @@
       "depletion_ratio": 0.2001,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8075500869426815,
-      "effective_k": 9999,
+      "effective_k": 9997,
       "irreversibility_warning": false,
-      "k_fraction": 0.999978056652201,
+      "k_fraction": 0.9997805665220092,
       "keystone_triggered": [],
       "marginal_cost": 719.9589440468699,
       "model_confidence": 0.7247500000000001,
@@ -816,7 +816,7 @@
       "private_revenue": 120060.0,
       "resilience_zone": "yellow",
       "step": 2001,
-      "substrate_erosion": 3.7710773846153837e-07,
+      "substrate_erosion": 3.7710773846153833e-06,
       "units_extracted": 2001
     },
     {
@@ -878,9 +878,9 @@
       "depletion_ratio": 0.24,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.7052433633746882,
-      "effective_k": 9999,
+      "effective_k": 9997,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999708804131883,
+      "k_fraction": 0.9997088041318887,
       "keystone_triggered": [],
       "marginal_cost": 989.7577109473059,
       "model_confidence": 0.625,
@@ -889,7 +889,7 @@
       "private_revenue": 144000.0,
       "resilience_zone": "yellow",
       "step": 2400,
-      "substrate_erosion": 4.581538461538462e-07,
+      "substrate_erosion": 4.581538461538462e-06,
       "units_extracted": 2400
     },
     {
@@ -951,9 +951,9 @@
       "depletion_ratio": 0.28,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.580058620028292,
-      "effective_k": 9999,
+      "effective_k": 9996,
       "irreversibility_warning": false,
-      "k_fraction": 0.999962156941727,
+      "k_fraction": 0.999621569417273,
       "keystone_triggered": [],
       "marginal_cost": 1133.679473431548,
       "model_confidence": 0.588,
@@ -962,7 +962,7 @@
       "private_revenue": 168000.0,
       "resilience_zone": "red",
       "step": 2800,
-      "substrate_erosion": 5.541538461538462e-07,
+      "substrate_erosion": 5.541538461538462e-06,
       "units_extracted": 2800
     },
     {
@@ -1024,9 +1024,9 @@
       "depletion_ratio": 0.32,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.43150839605409264,
-      "effective_k": 9999,
+      "effective_k": 9995,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999516474171181,
+      "k_fraction": 0.9995164741711885,
       "keystone_triggered": [],
       "marginal_cost": 1339.7848443749826,
       "model_confidence": 0.572,
@@ -1035,7 +1035,7 @@
       "private_revenue": 192000.0,
       "resilience_zone": "red",
       "step": 3200,
-      "substrate_erosion": 6.649230769230769e-07,
+      "substrate_erosion": 6.649230769230768e-06,
       "units_extracted": 3200
     },
     {
@@ -1097,9 +1097,9 @@
       "depletion_ratio": 0.36,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.2567895640481843,
-      "effective_k": 9999,
+      "effective_k": 9993,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999390967344673,
+      "k_fraction": 0.9993909673446845,
       "keystone_triggered": [
         "Pollinators & Insects"
       ],
@@ -1110,7 +1110,7 @@
       "private_revenue": 216000.0,
       "resilience_zone": "red",
       "step": 3600,
-      "substrate_erosion": 7.904615384615386e-07,
+      "substrate_erosion": 7.904615384615384e-06,
       "units_extracted": 3600
     },
     {
@@ -1172,9 +1172,9 @@
       "depletion_ratio": 0.4,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.14437622835618014,
-      "effective_k": 9999,
+      "effective_k": 9992,
       "irreversibility_warning": false,
-      "k_fraction": 0.999924249788878,
+      "k_fraction": 0.9992424978888096,
       "keystone_triggered": [
         "Pollinators & Insects"
       ],
@@ -1185,7 +1185,7 @@
       "private_revenue": 240000.0,
       "resilience_zone": "red",
       "step": 4000,
-      "substrate_erosion": 9.30769230769231e-07,
+      "substrate_erosion": 9.307692307692308e-06,
       "units_extracted": 4000
     }
   ]

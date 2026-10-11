@@ -43,6 +43,7 @@ from gaia.propagation import compute_trophic_amplification, propagate_interactio
 from gaia.recovery import RecoveryFunc
 from gaia.resilience import compute_resilience_zone
 from gaia.substrate import (
+    _T_HA_TO_MM_FACTOR,
     compute_capacity_fraction,
     compute_substrate_recovery_years,
     create_substrate_state,
@@ -103,11 +104,6 @@ def _load_cython_loop(module=None, pyx_path: Path = _PYX_PATH) -> Optional[Calla
 # v0.8: Cython-optimized simulation loop (None → pure Python)
 extraction_loop_cy = _load_cython_loop()
 _HAS_CYTHON = extraction_loop_cy is not None
-
-# Bulk density for soil t/ha/yr → mm/yr conversion (from substrate.py)
-_BULK_DENSITY_KG_M3: float = 1300.0
-_T_HA_TO_MM_FACTOR: float = 10.0 / _BULK_DENSITY_KG_M3
-
 
 _NO_KERNEL: tuple = (-1, 0.0, 0.0, 0.0, 0.0)
 _KERNEL_PROBES: tuple = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0)

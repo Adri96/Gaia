@@ -24,11 +24,11 @@ from typing import Optional
 from gaia.models import SubstrateProfile, SubstrateState, SubstrateType
 
 # Bulk density for soil t/ha/yr → mm/yr conversion
-# 1 t/ha = 10,000 kg / (10,000 m² * depth_m * bulk_density_kg_m3)
-# Simplified: depth_mm_lost = rate_t_ha_yr / (bulk_density_kg_m3 / 10.0)
-# At 1,300 kg/m³: 1 t/ha/yr ≈ 0.077 mm/yr
+# 1 t/ha = 1,000 kg / 10,000 m² = 0.1 kg/m²
+# depth_m = 0.1 / bulk_density_kg_m3  →  depth_mm = 100 / bulk_density_kg_m3
+# At 1,300 kg/m³: 1 t/ha ≈ 0.0769 mm (13 t/ha ≈ 1 mm)
 _BULK_DENSITY_KG_M3: float = 1300.0
-_T_HA_TO_MM_FACTOR: float = 10.0 / _BULK_DENSITY_KG_M3  # ≈ 0.00769 mm per t/ha
+_T_HA_TO_MM_FACTOR: float = 100.0 / _BULK_DENSITY_KG_M3  # ≈ 0.0769 mm per t/ha
 
 
 def is_terrestrial(profile: SubstrateProfile) -> bool:

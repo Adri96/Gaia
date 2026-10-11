@@ -306,7 +306,7 @@ def test_full_cover_minimal_erosion():
     state = create_substrate_state(profile)
     erosion = degrade_substrate(state, vegetation_cover=1.0, years=1.0)
     # With full cover, erosion should use protected rate (1.0 t/ha/yr)
-    # 1.0 t/ha/yr * 0.00769 mm/t_ha / 10 = very small
+    # 1.0 t/ha/yr * 0.0769 mm/t_ha / 10 ≈ 0.0077 cm
     assert erosion > 0.0, "Even protected land has some erosion"
     assert erosion < 0.01, f"Full cover erosion should be tiny, got {erosion} cm"
 
@@ -456,7 +456,7 @@ def test_recovery_years_degraded():
 
     years = compute_substrate_recovery_years(state)
     assert years > 0.0
-    # 10cm deficit / (0.4 t/ha/yr * 0.00769/10 cm per t/ha) = ~32,500 years
+    # 10cm deficit / (0.4 t/ha/yr * 0.0769/10 cm per t/ha) = ~3,250 years
     assert years > 1000, f"Soil recovery should take thousands of years, got {years}"
 
 
@@ -477,22 +477,29 @@ def test_erosion_rate_physical_consistency():
     """Spec test #5: 25 t/ha/yr → ~1.9 mm/yr at bulk density 1,300 kg/m³."""
     rate_t_ha_yr = 25.0
     rate_mm_yr = rate_t_ha_yr * _T_HA_TO_MM_FACTOR
-    # Expected: 25 * 10/1300 ≈ 0.192 mm/yr
-    assert abs(rate_mm_yr - 0.192) < 0.01, f"Expected ~0.192 mm/yr, got {rate_mm_yr}"
+    # Expected: 25 * 100/1300 ≈ 1.92 mm/yr
+    assert abs(rate_mm_yr - 1.923) < 0.01, f"Expected ~1.92 mm/yr, got {rate_mm_yr}"
 
-    # 30cm eroded at 25 t/ha/yr: time = 300mm / 0.192 mm/yr ≈ 1,562 years
+    # 30cm eroded at 25 t/ha/yr: time = 300mm / 1.92 mm/yr ≈ 156 years
     time_years = 300.0 / rate_mm_yr  # 30cm = 300mm
-    assert 1500 < time_years < 1700, f"Expected ~1,562 years, got {time_years}"
+    assert 150 < time_years < 165, f"Expected ~156 years, got {time_years}"
+
+
+def test_t_ha_to_mm_conversion_13_t_ha_is_1_mm():
+    """1 t/ha = 0.1 kg/m²; 13 t/ha at 1,300 kg/m³ is 1.3 kg/m² ÷ 1,300 kg/m³ = 1 mm."""
+    assert _BULK_DENSITY_KG_M3 == 1300.0
+    assert 13.0 * _T_HA_TO_MM_FACTOR == pytest.approx(1.0, rel=1e-12)
 
 
 def test_formation_rate_physical_consistency():
     """Spec test #6: 0.4 t/ha/yr → 30cm recovery in ~10,000+ years."""
     rate_t_ha_yr = 0.4
     rate_mm_yr = rate_t_ha_yr * _T_HA_TO_MM_FACTOR
-    # Expected: 0.4 * 10/1300 ≈ 0.031 mm/yr
+    # Expected: 0.4 * 100/1300 ≈ 0.031 mm/yr
+    assert abs(rate_mm_yr - 0.0308) < 0.001, f"Expected ~0.031 mm/yr, got {rate_mm_yr}"
     time_years = 300.0 / rate_mm_yr  # 30cm = 300mm
     # Should be on the order of 10,000 years
-    assert time_years > 5000, f"Expected >5,000 years for 30cm formation, got {time_years}"
+    assert 9000 < time_years < 11000, f"Expected ~10,000 years for 30cm formation, got {time_years}"
 
 
 # ── Mixed depletion-recovery test ─────────────────────────────────────────────

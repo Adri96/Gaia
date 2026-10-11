@@ -87,8 +87,8 @@
       "carbon_release": 70000.0,
       "direct": 7545169.59,
       "horizon": 100,
-      "substrate_damage": 220.57,
-      "total": 7803286.61
+      "substrate_damage": 2205.7,
+      "total": 7805271.74
     },
     "pricing": {
       "converged": true,
@@ -134,8 +134,8 @@
       "carbon_release": 70000.0,
       "direct": 7545169.593481718,
       "horizon": 100,
-      "substrate_damage": 220.56999830276175,
-      "total": 7803286.607101193
+      "substrate_damage": 2205.69998303013,
+      "total": 7805271.737085921
     },
     "final_ecosystem_health": 0.15051625519675782,
     "net_social_cost": 13054.94694694264,
@@ -191,13 +191,13 @@
     "discount_factor_at_step": 1000.0,
     "ecosystem_health": 716.5275280865571,
     "effective_k": 1999000.0,
-    "k_fraction": 999.9905377234604,
+    "k_fraction": 999.9053772345821,
     "marginal_cost": 86945.05305305736,
     "model_confidence": 732.6642857142843,
     "npv_externality": 0.0,
     "private_revenue": 50050000.0,
     "step": 500500.0,
-    "substrate_erosion": 0.0013154972596153836,
+    "substrate_erosion": 0.013154972596153853,
     "units_extracted": 500500.0
   },
   "steps": [
@@ -239,7 +239,7 @@
       "ecosystem_health": 0.999940980853165,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999999914529294,
+      "k_fraction": 0.9999999145292948,
       "keystone_triggered": [],
       "marginal_cost": 1.296986498463334,
       "model_confidence": 0.9,
@@ -276,7 +276,7 @@
       "private_revenue": 100.0,
       "resilience_zone": "green",
       "step": 1,
-      "substrate_erosion": 3.8461817307692303e-07,
+      "substrate_erosion": 3.8461817307692306e-06,
       "units_extracted": 1
     },
     {
@@ -317,7 +317,7 @@
       "ecosystem_health": 0.9918815425368182,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999991151538908,
+      "k_fraction": 0.9999911515389103,
       "keystone_triggered": [],
       "marginal_cost": 2.3632874298481568,
       "model_confidence": 0.9,
@@ -354,7 +354,7 @@
       "private_revenue": 10100.0,
       "resilience_zone": "green",
       "step": 101,
-      "substrate_erosion": 4.130604807692307e-07,
+      "substrate_erosion": 4.130604807692307e-06,
       "units_extracted": 101
     },
     {
@@ -395,7 +395,7 @@
       "ecosystem_health": 0.9774552446147553,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999981130642551,
+      "k_fraction": 0.9999811306425426,
       "keystone_triggered": [],
       "marginal_cost": 4.306269965680428,
       "model_confidence": 0.9,
@@ -432,7 +432,7 @@
       "private_revenue": 20100.0,
       "resilience_zone": "green",
       "step": 201,
-      "substrate_erosion": 4.972720192307694e-07,
+      "substrate_erosion": 4.972720192307694e-06,
       "units_extracted": 201
     },
     {
@@ -473,7 +473,7 @@
       "ecosystem_health": 0.951996254204401,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.999996861252396,
+      "k_fraction": 0.9999686125239529,
       "keystone_triggered": [],
       "marginal_cost": 7.846799453611084,
       "model_confidence": 0.9,
@@ -510,7 +510,7 @@
       "private_revenue": 30100.0,
       "resilience_zone": "green",
       "step": 301,
-      "substrate_erosion": 6.372527884615385e-07,
+      "substrate_erosion": 6.372527884615385e-06,
       "units_extracted": 301
     },
     {
@@ -551,7 +551,7 @@
       "ecosystem_health": 0.9081726512478143,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.999995235786691,
+      "k_fraction": 0.9999523578669016,
       "keystone_triggered": [],
       "marginal_cost": 14.298677346026125,
       "model_confidence": 0.8985000000000002,
@@ -588,7 +588,7 @@
       "private_revenue": 40100.0,
       "resilience_zone": "yellow",
       "step": 401,
-      "substrate_erosion": 8.330027884615386e-07,
+      "substrate_erosion": 8.330027884615386e-06,
       "units_extracted": 401
     },
     {
@@ -629,7 +629,7 @@
       "ecosystem_health": 0.8358765028594787,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999931127355162,
+      "k_fraction": 0.999931127355149,
       "keystone_triggered": [],
       "marginal_cost": 26.05679940157097,
       "model_confidence": 0.7485000000000004,
@@ -666,7 +666,7 @@
       "private_revenue": 50100.0,
       "resilience_zone": "yellow",
       "step": 501,
-      "substrate_erosion": 1.084522019230769e-06,
+      "substrate_erosion": 1.084522019230769e-05,
       "units_extracted": 501
     },
     {
@@ -707,7 +707,7 @@
       "ecosystem_health": 0.7259109225057362,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999903990963681,
+      "k_fraction": 0.9999039909636748,
       "keystone_triggered": [],
       "marginal_cost": 47.204046024530726,
       "model_confidence": 0.6,
@@ -744,7 +744,7 @@
       "private_revenue": 60000.0,
       "resilience_zone": "red",
       "step": 600,
-      "substrate_erosion": 1.3884615384615389e-06,
+      "substrate_erosion": 1.388461538461539e-05,
       "units_extracted": 600
     },
     {
@@ -785,7 +785,7 @@
       "ecosystem_health": 0.5720005170281659,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999869171473298,
+      "k_fraction": 0.9998691714732901,
       "keystone_triggered": [],
       "marginal_cost": 86.04310192329467,
       "model_confidence": 0.5785714285714286,
@@ -822,7 +822,7 @@
       "private_revenue": 70000.0,
       "resilience_zone": "red",
       "step": 700,
-      "substrate_erosion": 1.7509615384615382e-06,
+      "substrate_erosion": 1.750961538461538e-05,
       "units_extracted": 700
     },
     {
@@ -863,7 +863,7 @@
       "ecosystem_health": 0.38660633785076093,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999825670572654,
+      "k_fraction": 0.9998256705726488,
       "keystone_triggered": [],
       "marginal_cost": 156.8861573451686,
       "model_confidence": 0.5571428571428572,
@@ -900,7 +900,7 @@
       "private_revenue": 80000.0,
       "resilience_zone": "red",
       "step": 800,
-      "substrate_erosion": 2.1692307692307695e-06,
+      "substrate_erosion": 2.1692307692307697e-05,
       "units_extracted": 800
     },
     {
@@ -941,7 +941,7 @@
       "ecosystem_health": 0.2393771167746137,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999772248945515,
+      "k_fraction": 0.9997722489455121,
       "keystone_triggered": [],
       "marginal_cost": 286.2156677130042,
       "model_confidence": 0.5357142857142857,
@@ -978,7 +978,7 @@
       "private_revenue": 90000.0,
       "resilience_zone": "red",
       "step": 900,
-      "substrate_erosion": 2.6432692307692306e-06,
+      "substrate_erosion": 2.6432692307692307e-05,
       "units_extracted": 900
     },
     {
@@ -1019,7 +1019,7 @@
       "ecosystem_health": 0.15051625519675782,
       "effective_k": 1999,
       "irreversibility_warning": false,
-      "k_fraction": 0.9999707667275639,
+      "k_fraction": 0.9997076672756388,
       "keystone_triggered": [],
       "marginal_cost": 522.6855100786779,
       "model_confidence": 0.5142857142857142,
@@ -1056,7 +1056,7 @@
       "private_revenue": 100000.0,
       "resilience_zone": "red",
       "step": 1000,
-      "substrate_erosion": 3.1730769230769233e-06,
+      "substrate_erosion": 3.1730769230769234e-05,
       "units_extracted": 1000
     }
   ]
