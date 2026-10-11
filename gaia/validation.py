@@ -14,6 +14,7 @@ Step 3.8: Incoming edge-strength cap, calibration regime, and a
       CalibrationWarning when health at the safe threshold is low.
 """
 
+import dataclasses
 import math
 import warnings
 from typing import Optional
@@ -34,6 +35,7 @@ from gaia.models import (
     PricingConfig,
     ResilienceConfig,
     Resource,
+    RestorationCost,
     ScarcityFunction,
     SubstrateProfile,
     SubstrateType,
@@ -53,10 +55,31 @@ _DAMAGE_BOUNDARY_TOLERANCE: float = 1e-4
 
 # Number of points used when checking damage function invariants
 _INVARIANT_CHECK_POINTS: int = 100
+# Invariant 6 (convexity just past the threshold), as in tests/test_damage.py
+_CONVEXITY_WINDOW: float = 0.10          # fraction of the post-threshold span
+_CONVEXITY_CHECK_POINTS: int = 50
+_CONVEXITY_TOLERANCE: float = 1e-6
+_CONVEXITY_MAX_VIOLATIONS: float = 0.20  # fraction of points allowed to fail
 
 
 class CalibrationWarning(UserWarning):
     """A valid ecosystem whose parameters look miscalibrated (Step 3.8)."""
+
+
+def _require_finite(obj, name: str) -> None:
+    """ValueError if any numeric field of the dataclass ``obj`` is NaN or ±inf.
+
+    NaN slips through every ordered comparison (``nan < 0`` is False), and
+    an infinite rate or area yields infinite costs, so every validator calls
+    this before its range checks. Booleans, strings, None and nested
+    objects are skipped (nested dataclasses have their own validator).
+    """
+    for f in dataclasses.fields(obj):
+        value = getattr(obj, f.name)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        if not math.isfinite(value):
+            raise ValueError(f"{name}.{f.name} must be a finite number, got {value!r}")
 
 
 def validate_resource(resource: Resource) -> None:
@@ -66,6 +89,7 @@ def validate_resource(resource: Resource) -> None:
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(resource, "Resource")
     if resource.total_units <= 0:
         raise ValueError(
             f"Resource.total_units must be > 0, got {resource.total_units}"
@@ -127,6 +151,7 @@ def validate_ecosystem(
 
     weight_sum: float = 0.0
     for agent in ecosystem.agents:
+        _require_finite(agent, f"Agent '{agent.name}'")
         if not (0.0 < agent.dependency_weight <= 1.0):
             raise ValueError(
                 f"Agent '{agent.name}' dependency_weight must be in (0.0, 1.0], "
@@ -161,6 +186,15 @@ def validate_ecosystem(
                     f"Agent '{agent.name}' keystone_threshold must be in (0.0, 1.0), "
                     f"got {agent.keystone_threshold}"
                 )
+
+    # Damage functions: the six invariants, at the resource's safe threshold
+    threshold: float = ecosystem.resource.safe_threshold_ratio
+    for agent in ecosystem.agents:
+        validate_damage_function(
+            agent.damage_function,
+            name=f"Agent '{agent.name}' damage_function",
+            threshold=threshold,
+        )
 
     # v0.3: Validate interaction edges
     agent_names = {a.name for a in ecosystem.agents}
@@ -203,56 +237,101 @@ def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
         )
 
 
-def validate_damage_function(fn: DamageFunc, name: str = "damage_function") -> None:
+def validate_damage_function(
+    fn: DamageFunc,
+    name: str = "damage_function",
+    threshold: Optional[float] = None,
+) -> None:
     """
-    Validate that a damage function satisfies the six scientific invariants.
+    Validate that a damage function satisfies the six scientific invariants
+    listed in gaia.damage:
 
-    Checks:
-        1. f(0.0) ≈ 0.0  (boundary: no depletion → no damage)
-        2. f(1.0) ≈ 1.0  (boundary: full depletion → full damage)
-        3. Output in [0.0, 1.0] for all inputs
+        1. f(0.0) ≈ 0.0  (no depletion → no damage)
+        2. f(1.0) ≈ 1.0  (full depletion → full damage)
+        3. Finite output in [0.0, 1.0] (within tolerance)
         4. Monotonicity: f is non-decreasing
-        5. Non-linearity: slope after midpoint > slope before midpoint
-           (proxy check — full threshold-aware check requires knowing the threshold)
+        5. Non-linearity (Foundation F4): the slope over [t, t + h] exceeds
+           the slope over [t − h, t], h = min(0.1, 0.4 t, 0.4 (1 − t))
+        6. Convexity just past the threshold: second finite differences
+           >= -1e-6 over [t, t + 10% of (1 − t)], at most 20% of the points
+           excepted (floating-point noise near a logistic inflection)
+
+    1-4 are sampled at _INVARIANT_CHECK_POINTS + 1 evenly spaced points; 6
+    at 51. The threshold t is the function's own ``threshold`` attribute
+    (set by the gaia.damage factories), else ``threshold``, else 0.5.
+    About 150 evaluations per function: negligible next to a run.
+
+    validate_ecosystem calls this for every agent (with the resource's
+    safe_threshold_ratio as the fallback), so the invariants hold on every
+    run.
 
     Args:
         fn: The damage function to validate.
         name: Label for error messages.
+        threshold: Safe threshold for invariants 5 and 6 when ``fn`` does
+            not carry its own.
 
     Raises:
         ValueError: If any invariant is violated.
     """
     tol: float = _DAMAGE_BOUNDARY_TOLERANCE
+    own = getattr(fn, "threshold", None)
+    t: float = own if isinstance(own, float) else (0.5 if threshold is None else threshold)
 
-    at_zero: float = fn(0.0)
-    if abs(at_zero) > tol:
-        raise ValueError(
-            f"{name}: f(0.0) must be ≈ 0.0 (tolerance {tol}), got {at_zero}"
-        )
-
-    at_one: float = fn(1.0)
-    if abs(at_one - 1.0) > tol:
-        raise ValueError(
-            f"{name}: f(1.0) must be ≈ 1.0 (tolerance {tol}), got {at_one}"
-        )
+    def evaluate(x: float) -> float:
+        val = fn(x)
+        if not (isinstance(val, (int, float)) and math.isfinite(val)):
+            raise ValueError(f"{name}: output at x={x:.4f} is {val!r}, must be a finite number")
+        return float(val)
 
     n: int = _INVARIANT_CHECK_POINTS
-    prev: float = fn(0.0)
+    values: list = [evaluate(i / n) for i in range(n + 1)]
+
+    if abs(values[0]) > tol:
+        raise ValueError(
+            f"{name}: f(0.0) must be ≈ 0.0 (tolerance {tol}), got {values[0]}"
+        )
+    if abs(values[-1] - 1.0) > tol:
+        raise ValueError(
+            f"{name}: f(1.0) must be ≈ 1.0 (tolerance {tol}), got {values[-1]}"
+        )
     for i in range(1, n + 1):
         x: float = i / n
-        val: float = fn(x)
-
+        val: float = values[i]
         if val < 0.0 - tol or val > 1.0 + tol:
             raise ValueError(
                 f"{name}: output at x={x:.4f} is {val:.6f}, must be in [0.0, 1.0]"
             )
-
-        if val < prev - tol:
+        if val < values[i - 1] - tol:
             raise ValueError(
                 f"{name}: monotonicity violated at x={x:.4f}: "
-                f"f({x:.4f})={val:.6f} < f({(i-1)/n:.4f})={prev:.6f}"
+                f"f({x:.4f})={val:.6f} < f({(i-1)/n:.4f})={values[i - 1]:.6f}"
             )
-        prev = val
+
+    h: float = min(0.10, 0.4 * t, 0.4 * (1.0 - t))
+    at_t: float = evaluate(t)
+    slope_before: float = (at_t - evaluate(t - h)) / h
+    slope_after: float = (evaluate(t + h) - at_t) / h
+    if not slope_after > slope_before + 1e-9 * max(1.0, abs(slope_before)):
+        raise ValueError(
+            f"{name}: damage must accelerate at the threshold: slope "
+            f"{slope_after:.6f} over [{t:g}, {t + h:g}] must exceed slope "
+            f"{slope_before:.6f} over [{t - h:g}, {t:g}] (Foundation F4)"
+        )
+
+    window: float = (1.0 - t) * _CONVEXITY_WINDOW
+    m: int = _CONVEXITY_CHECK_POINTS
+    post: list = [evaluate(t + window * i / m) for i in range(m + 1)]
+    violations: int = sum(
+        1 for i in range(1, m)
+        if post[i + 1] - 2.0 * post[i] + post[i - 1] < -_CONVEXITY_TOLERANCE
+    )
+    if violations > max(1, int(_CONVEXITY_MAX_VIOLATIONS * m)):
+        raise ValueError(
+            f"{name}: damage must be convex (accelerating) just past the threshold: "
+            f"second differences are negative at {violations} of {m - 1} points "
+            f"in [{t:g}, {t + window:g}]"
+        )
 
 
 def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
@@ -262,6 +341,7 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(edge, f"InteractionEdge '{edge.source}' → '{edge.target}'")
     if edge.source not in agent_names:
         raise ValueError(
             f"InteractionEdge source '{edge.source}' is not an agent in the ecosystem. "
@@ -404,6 +484,31 @@ def check_threshold_health(
     return health
 
 
+def validate_restoration_cost(cost: RestorationCost, name: str = "RestorationCost") -> None:
+    """
+    Validate a RestorationCost: finite, non-negative costs and an integer
+    number of maintenance years >= 0.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    _require_finite(cost, name)
+    if cost.planting_cost_per_unit < 0.0:
+        raise ValueError(
+            f"{name}: planting_cost_per_unit must be >= 0.0, got {cost.planting_cost_per_unit}"
+        )
+    if cost.annual_maintenance_per_unit < 0.0:
+        raise ValueError(
+            f"{name}: annual_maintenance_per_unit must be >= 0.0, "
+            f"got {cost.annual_maintenance_per_unit}"
+        )
+    if (isinstance(cost.maintenance_years, bool) or not isinstance(cost.maintenance_years, int)
+            or cost.maintenance_years < 0):
+        raise ValueError(
+            f"{name}: maintenance_years must be an integer >= 0, got {cost.maintenance_years!r}"
+        )
+
+
 # ── v0.4: New validation functions ─────────────────────────────────────────────
 
 
@@ -423,6 +528,7 @@ def validate_succession_curve(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(curve, name)
     if curve.maturation_delay < 0.0:
         raise ValueError(
             f"{name}: maturation_delay must be >= 0.0, got {curve.maturation_delay}"
@@ -472,6 +578,7 @@ def validate_carbon_profile(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(profile, name)
     if profile.stored_carbon_tonnes < 0.0:
         raise ValueError(
             f"{name}: stored_carbon_tonnes must be >= 0.0, "
@@ -509,6 +616,7 @@ def validate_resilience_config(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if config.warning_zone_width <= 0.0:
         raise ValueError(
             f"{name}: warning_zone_width must be > 0.0, "
@@ -568,6 +676,7 @@ def validate_substrate_profile(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(profile, name)
     try:
         substrate_type = SubstrateType(profile.substrate_type)
     except ValueError:
@@ -704,6 +813,7 @@ def validate_discount_config(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if config.delta < 0.0:
         raise ValueError(f"{name}: delta must be >= 0.0, got {config.delta}")
     if config.eta < 0.0:
@@ -712,7 +822,7 @@ def validate_discount_config(
         raise ValueError(f"{name}: g must be >= 0.0, got {config.g}")
 
     if isinstance(config.rate_schedule, (int, float)):
-        if float(config.rate_schedule) < 0.0:
+        if not math.isfinite(config.rate_schedule) or float(config.rate_schedule) < 0.0:
             raise ValueError(
                 f"{name}: rate_schedule must be >= 0.0, got {config.rate_schedule}"
             )
@@ -726,6 +836,13 @@ def validate_discount_config(
                     f"{name}: rate_schedule entry {i} must be (year, rate) tuple"
                 )
             year_val, rate_val = entry
+            if not all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                for v in entry
+            ):
+                raise ValueError(
+                    f"{name}: rate_schedule entry {i} must be finite numbers, got {entry!r}"
+                )
             if year_val <= prev_year:
                 raise ValueError(
                     f"{name}: rate_schedule years must be ascending, "
@@ -828,6 +945,7 @@ def validate_scarcity_function(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(fn, name)
     if fn.function_type not in _VALID_SCARCITY_TYPES:
         raise ValueError(
             f"{name}: function_type must be one of "
@@ -860,6 +978,7 @@ def validate_anchor_point(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(anchor, name)
     if anchor.agent_name not in agent_names:
         raise ValueError(
             f"{name}: agent_name '{anchor.agent_name}' is not an agent. "
@@ -890,6 +1009,7 @@ def validate_pricing_config(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if len(config.anchors) == 0:
         raise ValueError(f"{name}: at least one anchor is required")
 

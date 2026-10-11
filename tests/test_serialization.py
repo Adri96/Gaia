@@ -352,3 +352,36 @@ def test_restoration_with_maturation_keys_have_units():
         if k not in _NON_MONETARY_KEYS and not k.endswith(_UNIT_SUFFIXES)
     )
     assert not unlabelled, unlabelled
+
+
+# ── Strict JSON (E8) ──────────────────────────────────────────────────────────
+
+
+def test_nonfinite_values_are_null_with_reason():
+    import dataclasses
+    eco = build_forest_ecosystem(total_trees=100)
+    eco.resource = dataclasses.replace(
+        eco.resource,
+        substrate=dataclasses.replace(eco.resource.substrate, formation_rate=0.0),
+    )
+    cost = RestorationCost(planting_cost_per_unit=50.0,
+                           annual_maintenance_per_unit=10.0, maintenance_years=10)
+    result = run_restoration(eco, 50, cost,
+                             [logistic_recovery(threshold=0.3) for _ in eco.agents])
+    assert result.substrate_recovery_years == float("inf")
+
+    def reject(name):
+        raise ValueError(name)
+
+    d = json.loads(to_json(result), parse_constant=reject)
+    sub = d["substrate"]
+    assert sub["substrate_recovery_years"] is None
+    assert sub["substrate_recovery_years_null_reason"].startswith("never")
+
+
+def test_strict_generic_reason_and_lists():
+    from gaia.serialization import _strict
+    out = _strict({"a": float("nan"), "b": [1.0, float("-inf")], "c": {"d": float("inf")}})
+    assert out["a"] is None and "non-finite" in out["a_null_reason"]
+    assert out["b"] == [1.0, None]
+    assert out["c"]["d"] is None and "d_null_reason" in out["c"]

@@ -15,9 +15,17 @@ Every monetary key carries its unit as a suffix (decision D1):
     *_eur      — an undiscounted one-off amount (€) or an undiscounted sum
     *_eur_per_t — a price per tonne of CO₂
 Ratios carry no currency suffix (e.g. ``restoration_cost_ratio``, ``roi``).
+
+The output is strict JSON (``allow_nan=False``): a non-finite number (±inf,
+NaN) is written as ``null`` and a sibling key ``<key>_null_reason`` says why,
+e.g. ``"substrate_recovery_years": null`` with
+``"substrate_recovery_years_null_reason": "never: ..."`` when the substrate
+has no formation rate. A non-finite number inside a list becomes ``null``
+with no reason key.
 """
 
 import json
+import math
 from typing import Any, Dict, List, Optional
 
 from gaia import __version__
@@ -311,6 +319,46 @@ def _pricing_to_dict(result: SimulationResult) -> Dict[str, Any]:
     return d
 
 
+# ── Strict JSON: non-finite numbers ───────────────────────────────────────────
+
+# Why a key can be non-finite; other keys get a generic reason.
+_NULL_REASONS: Dict[str, str] = {
+    "substrate_recovery_years": (
+        "never: the substrate does not recover (formation rate 0), so the "
+        "substrate damage is permanent"
+    ),
+}
+
+
+def _nonfinite_reason(key: str, value: float) -> str:
+    if key in _NULL_REASONS and value == math.inf:
+        return _NULL_REASONS[key]
+    return f"non-finite value ({value!r}) cannot be represented in JSON"
+
+
+def _strict(obj: Any) -> Any:
+    """Copy of ``obj`` with every non-finite float replaced by None.
+
+    In a dict, ``key: inf`` becomes ``key: None`` plus
+    ``key_null_reason: <why>`` (see the module docstring).
+    """
+    if isinstance(obj, dict):
+        out: Dict[str, Any] = {}
+        for key, value in obj.items():
+            if isinstance(value, float) and not math.isfinite(value):
+                out[key] = None
+                out[f"{key}_null_reason"] = _nonfinite_reason(key, value)
+            else:
+                out[key] = _strict(value)
+        return out
+    if isinstance(obj, list):
+        return [
+            None if isinstance(v, float) and not math.isfinite(v) else _strict(v)
+            for v in obj
+        ]
+    return obj
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
@@ -495,7 +543,8 @@ def to_json(
         notes: Optional annotation strings for the output.
 
     Returns:
-        JSON string.
+        JSON string: strict JSON, non-finite numbers as null plus a
+        ``<key>_null_reason`` (see the module docstring).
 
     Raises:
         TypeError: If result is not a supported type.
@@ -513,4 +562,4 @@ def to_json(
             f"Expected SimulationResult or RestorationResult, "
             f"got {type(result).__name__}"
         )
-    return json.dumps(d, indent=indent, ensure_ascii=False)
+    return json.dumps(_strict(d), indent=indent, ensure_ascii=False, allow_nan=False)

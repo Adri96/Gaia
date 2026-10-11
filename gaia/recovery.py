@@ -76,7 +76,19 @@ def logistic_recovery(threshold: float, steepness: float = 7.0) -> RecoveryFunc:
 
     Returns:
         RecoveryFunc mapping restoration_ratio in [0, 1] to recovered_ratio in [0, 1].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1) or steepness is not a
+            finite number > 0 (steepness 0 is a flat line: 0/0).
     """
+    if not (isinstance(threshold, (int, float)) and math.isfinite(threshold)
+            and 0.0 < threshold < 1.0):
+        raise ValueError(f"logistic_recovery: threshold must be in (0.0, 1.0), got {threshold!r}")
+    if not (isinstance(steepness, (int, float)) and math.isfinite(steepness)
+            and steepness > 0.0):
+        raise ValueError(
+            f"logistic_recovery: steepness must be a finite number > 0, got {steepness!r}"
+        )
     # Inflection at 60% restored: ecosystem services accelerate only after a
     # substantial fraction of the resource is back. This reflects the network
     # effect — mycorrhizal connectivity, canopy microclimate, etc. only emerge
@@ -125,7 +137,7 @@ def linear_recovery(slope: float = 0.8) -> RecoveryFunc:
     Raises:
         ValueError: If slope is not in (0.0, 1.0].
     """
-    if not (0.0 < slope <= 1.0):
+    if not (isinstance(slope, (int, float)) and 0.0 < slope <= 1.0):
         raise ValueError(
             f"slope must be in (0.0, 1.0], got {slope}. "
             f"A slope > 1.0 implies super-efficient restoration, which contradicts "

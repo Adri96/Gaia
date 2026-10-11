@@ -411,11 +411,7 @@ def _strict_json_cases():
     params.append(pytest.param(
         lambda: recovered_after_cut(1000, 500, 500), id="forest_restore"))
     params.append(pytest.param(
-        restoration_no_soil_formation, id="forest_restore_zero_formation",
-        marks=pytest.mark.xfail(strict=True, reason=(
-            "E8: substrate_recovery_years is inf and to_json emits Infinity "
-            "(json.dumps without allow_nan=False)")),
-    ))
+        restoration_no_soil_formation, id="forest_restore_zero_formation"))
     return params
 
 

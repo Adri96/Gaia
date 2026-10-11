@@ -4,12 +4,27 @@ Gaia v0.1 — Damage function library.
 All damage functions are factories that accept configuration parameters and
 return a DamageFunc: a callable (depletion_ratio: float) -> (damage_ratio: float).
 
-Scientific invariants that every damage function must satisfy:
+Scientific invariants that every damage function must satisfy (checked at
+run time by gaia.validation.validate_damage_function, from validate_ecosystem):
     1. f(0.0) ≈ 0.0  (no depletion → no damage)
     2. f(1.0) ≈ 1.0  (full depletion → full damage)
-    3. Monotonicity: f(a) <= f(b) for all a < b
-    4. Non-linearity: avg slope in (threshold, 1.0] > avg slope in [0.0, threshold)
-    5. Convexity past threshold: second finite difference is positive post-threshold
+    3. Finite output in [0.0, 1.0] everywhere on [0, 1]
+    4. Monotonicity: f(a) <= f(b) for all a < b
+    5. Non-linearity: the local slope just after the threshold exceeds the
+       local slope just before it (damage accelerates at the threshold;
+       global averages would be confounded by the saturation plateau)
+    6. Convexity just past the threshold: second finite differences are
+       non-negative over [threshold, threshold + 10% of the post-threshold
+       span] (a logistic curve is convex up to its inflection, placed 15%
+       into that span, and saturates after it)
+
+Every factory records its threshold as a ``threshold`` attribute of the
+function it returns, so invariants 5 and 6 are checked at the agent's own
+threshold (the resource's safe threshold for functions without one).
+
+The factories reject parameters that would make the curve undefined or break
+these invariants (ValueError), instead of failing with ZeroDivisionError or
+OverflowError at the first evaluation.
 
 All functions are float -> float in the hot path — Cython-compatible.
 
@@ -23,7 +38,7 @@ Kernel tags:
 """
 
 import math
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 DamageFunc = Callable[[float], float]
 Kernel = Tuple[int, float, float, float, float]
@@ -32,6 +47,13 @@ Kernel = Tuple[int, float, float, float, float]
 KERNEL_LOGISTIC: int = 0     # (inflection, raw_0, span, steepness)
 KERNEL_EXPONENTIAL: int = 1  # (scale, raw_1, base, 0.0)
 KERNEL_PIECEWISE: int = 2    # (threshold, pre_slope, post_slope, pre_slope_ratio)
+
+
+def _require_threshold(threshold: float, factory: str) -> None:
+    """ValueError unless ``threshold`` is a finite number in (0, 1)."""
+    if not (isinstance(threshold, (int, float)) and math.isfinite(threshold)
+            and 0.0 < threshold < 1.0):
+        raise ValueError(f"{factory}: threshold must be in (0.0, 1.0), got {threshold!r}")
 
 
 def evaluate_kernel(kernel: Kernel, depletion_ratio: float) -> float:
@@ -86,7 +108,17 @@ def logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:
 
     Returns:
         DamageFunc mapping depletion_ratio in [0, 1] to damage_ratio in [0, 1].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1) or steepness is not a
+            finite number > 0 (steepness 0 is a flat line: 0/0).
     """
+    _require_threshold(threshold, "logistic_damage")
+    if not (isinstance(steepness, (int, float)) and math.isfinite(steepness)
+            and steepness > 0.0):
+        raise ValueError(
+            f"logistic_damage: steepness must be a finite number > 0, got {steepness!r}"
+        )
     # Place the inflection 15% into the post-threshold range so that the
     # post-threshold region starts in the convex (still-accelerating) part
     # of the S-curve. This encodes that damage accelerates starting just past
@@ -102,7 +134,8 @@ def logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:
         raw: float = 1.0 / (1.0 + math.exp(-steepness * (depletion_ratio - inflection)))
         return (raw - raw_0) / span
 
-    _logistic.kernel = (KERNEL_LOGISTIC, inflection, raw_0, span, steepness)
+    _logistic.threshold = threshold  # type: ignore[attr-defined]
+    _logistic.kernel = (KERNEL_LOGISTIC, inflection, raw_0, span, steepness)  # type: ignore[attr-defined]
     return _logistic
 
 
@@ -128,25 +161,40 @@ def exponential_damage(threshold: float, base: float = 2.0) -> DamageFunc:
 
     Returns:
         DamageFunc mapping depletion_ratio in [0, 1] to damage_ratio in [0, 1].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1), base is not a finite
+            number > 1 (base 1 is flat: 0/0), or base^(1/(1 − threshold))
+            overflows a float.
     """
+    _require_threshold(threshold, "exponential_damage")
+    if not (isinstance(base, (int, float)) and math.isfinite(base) and base > 1.0):
+        raise ValueError(f"exponential_damage: base must be a finite number > 1, got {base!r}")
     # Scale exponent so that the curve shape respects the threshold region.
     # We stretch the x-axis by 1/(1-threshold) so that at x=threshold the
     # exponent is threshold/(1-threshold), which gives a shallow early curve
     # and a steep post-threshold curve.
-    scale: float = 1.0 / max(1.0 - threshold, 1e-9)
+    scale: float = 1.0 / (1.0 - threshold)
 
     # Normalization: raw(0) = base^0 - 1 = 0 (exact), raw(1) = base^scale - 1
-    raw_1: float = (base ** scale) - 1.0
+    try:
+        raw_1: float = (base ** scale) - 1.0
+    except OverflowError:
+        raise ValueError(
+            f"exponential_damage: base^(1/(1 - threshold)) = {base}^{scale:g} "
+            f"overflows; lower the base or the threshold"
+        ) from None
 
     def _exponential(depletion_ratio: float) -> float:
         raw: float = (base ** (depletion_ratio * scale)) - 1.0
         return raw / raw_1
 
-    _exponential.kernel = (KERNEL_EXPONENTIAL, scale, raw_1, base, 0.0)
+    _exponential.threshold = threshold  # type: ignore[attr-defined]
+    _exponential.kernel = (KERNEL_EXPONENTIAL, scale, raw_1, base, 0.0)  # type: ignore[attr-defined]
     return _exponential
 
 
-def piecewise_damage(threshold: float, pre_slope_ratio: float = None) -> DamageFunc:
+def piecewise_damage(threshold: float, pre_slope_ratio: Optional[float] = None) -> DamageFunc:
     """
     Piecewise linear damage function with two segments.
 
@@ -180,17 +228,29 @@ def piecewise_damage(threshold: float, pre_slope_ratio: float = None) -> DamageF
 
     Returns:
         DamageFunc mapping depletion_ratio in [0, 1] to damage_ratio in [0, 1].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1) or pre_slope_ratio is not
+            in [0, threshold) (otherwise damage would not accelerate past
+            the threshold).
     """
+    _require_threshold(threshold, "piecewise_damage")
     # Default pre_slope_ratio: constrained to threshold * 0.5 so that the post-threshold
     # slope always exceeds the pre-threshold slope for any valid threshold value.
     # Mathematical proof: post_slope > pre_slope iff (1-r)/(1-t) > r/t iff t > r.
     # Setting r = min(0.2, t/2) ensures t > r always holds.
     if pre_slope_ratio is None:
         pre_slope_ratio = min(0.2, threshold * 0.5)
+    elif not (isinstance(pre_slope_ratio, (int, float)) and math.isfinite(pre_slope_ratio)
+              and 0.0 <= pre_slope_ratio < threshold):
+        raise ValueError(
+            f"piecewise_damage: pre_slope_ratio must be in [0.0, threshold={threshold}), "
+            f"got {pre_slope_ratio!r}"
+        )
 
     # Pre-compute slopes at construction time
-    pre_slope: float = pre_slope_ratio / max(threshold, 1e-9)
-    post_slope: float = (1.0 - pre_slope_ratio) / max(1.0 - threshold, 1e-9)
+    pre_slope: float = pre_slope_ratio / threshold
+    post_slope: float = (1.0 - pre_slope_ratio) / (1.0 - threshold)
 
     def _piecewise(depletion_ratio: float) -> float:
         if depletion_ratio <= threshold:
@@ -198,5 +258,6 @@ def piecewise_damage(threshold: float, pre_slope_ratio: float = None) -> DamageF
         else:
             return pre_slope_ratio + post_slope * (depletion_ratio - threshold)
 
-    _piecewise.kernel = (KERNEL_PIECEWISE, threshold, pre_slope, post_slope, pre_slope_ratio)
+    _piecewise.threshold = threshold  # type: ignore[attr-defined]
+    _piecewise.kernel = (KERNEL_PIECEWISE, threshold, pre_slope, post_slope, pre_slope_ratio)  # type: ignore[attr-defined]
     return _piecewise

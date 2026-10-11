@@ -71,6 +71,7 @@ from gaia.validation import (
     validate_discount_config,
     validate_ecosystem,
     validate_extraction,
+    validate_restoration_cost,
 )
 
 _PYX_PATH: Path = Path(__file__).resolve().parent / "cy" / "simulation_cy.pyx"
@@ -831,6 +832,7 @@ def run_restoration(
             recovery efficiency outside [0, 1].
     """
     validate_ecosystem(ecosystem)
+    validate_restoration_cost(restoration_cost)
 
     n_agents: int = len(ecosystem.agents)
     if len(recovery_functions) != n_agents:

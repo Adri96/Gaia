@@ -445,3 +445,151 @@ def test_cli_rejects_divergent_discount(monkeypatch, capsys, mode):
                           "--carbon-price", "ets"])
     assert exc.value.code == 1
     assert "scarcity_rate (3.00%/yr) must be below" in capsys.readouterr().err
+
+
+# ── Step 6.2 (E8): NaN / inf, factory parameters, damage invariants at run time ─
+
+_NONFINITE = [float("nan"), float("inf"), float("-inf")]
+
+
+@pytest.mark.parametrize("value", _NONFINITE)
+@pytest.mark.parametrize("field", ["unit_value", "area_ha"])
+def test_reject_nonfinite_resource_fields(field, value):
+    with pytest.raises(ValueError, match=f"{field}"):
+        validate_resource(_resource(**{field: value}))
+
+
+@pytest.mark.parametrize("value", _NONFINITE)
+def test_reject_nonfinite_agent_value(value):
+    eco = _ecosystem()
+    eco.agents[0] = dataclasses.replace(eco.agents[0], annual_value_per_ha=value)
+    with pytest.raises(ValueError, match="annual_value_per_ha"):
+        validate_ecosystem(eco)
+
+
+@pytest.mark.parametrize("value", _NONFINITE)
+@pytest.mark.parametrize("field", [
+    "delta", "eta", "g", "rate_schedule", "scarcity_rate",
+    "carbon_price_current", "carbon_price_growth",
+])
+def test_reject_nonfinite_discount_params(field, value):
+    with pytest.raises(ValueError, match="finite"):
+        validate_discount_config(DiscountConfig(**{field: value}))
+
+
+def test_reject_nonfinite_rate_schedule_entry():
+    with pytest.raises(ValueError, match="finite"):
+        validate_discount_config(DiscountConfig(rate_schedule=[(0, 0.04), (30, float("nan"))]))
+
+
+@pytest.mark.parametrize("value", _NONFINITE)
+def test_reject_nonfinite_edge_strength(value):
+    eco = _ecosystem()
+    eco.interactions = [InteractionEdge(eco.agents[0].name, eco.agents[1].name,
+                                        value, "dependency", "")]
+    with pytest.raises(ValueError, match="strength"):
+        validate_ecosystem(eco)
+
+
+@pytest.mark.parametrize("field", ["erosion_rate_unprotected", "formation_rate"])
+def test_reject_nonfinite_substrate_rates(field):
+    from gaia.validation import validate_substrate_profile
+    profile = dataclasses.replace(forest_case._OAK_VALLEY_SUBSTRATE, **{field: float("inf")})
+    with pytest.raises(ValueError, match=field):
+        validate_substrate_profile(profile)
+
+
+@pytest.mark.parametrize("field", ["stored_carbon_tonnes", "annual_absorption_tonnes"])
+def test_reject_nonfinite_carbon_profile(field):
+    from gaia.validation import validate_carbon_profile
+    profile = dataclasses.replace(forest_case._FOREST_CARBON, **{field: float("nan")})
+    with pytest.raises(ValueError, match=field):
+        validate_carbon_profile(profile)
+
+
+@pytest.mark.parametrize("kwargs", [
+    dict(planting_cost_per_unit=float("nan")),
+    dict(annual_maintenance_per_unit=float("inf")),
+    dict(planting_cost_per_unit=-1.0),
+    dict(maintenance_years=-1),
+    dict(maintenance_years=2.5),
+])
+def test_reject_bad_restoration_cost(kwargs):
+    fields = dict(planting_cost_per_unit=50.0, annual_maintenance_per_unit=10.0,
+                  maintenance_years=10)
+    fields.update(kwargs)
+    eco = forest_case.build_forest_ecosystem(total_trees=100)
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    with pytest.raises(ValueError, match="RestorationCost"):
+        run_restoration(eco, 10, RestorationCost(**fields), recovery)
+
+
+@pytest.mark.parametrize("factory, kwargs", [
+    ("logistic_damage", dict(threshold=0.3, steepness=0.0)),
+    ("logistic_damage", dict(threshold=0.3, steepness=float("nan"))),
+    ("logistic_damage", dict(threshold=1.0)),
+    ("logistic_damage", dict(threshold=0.0)),
+    ("exponential_damage", dict(threshold=0.3, base=1.0)),
+    ("exponential_damage", dict(threshold=0.3, base=0.5)),
+    ("exponential_damage", dict(threshold=1.0)),
+    ("exponential_damage", dict(threshold=0.999999, base=1e6)),
+    ("piecewise_damage", dict(threshold=0.3, pre_slope_ratio=0.3)),
+    ("piecewise_damage", dict(threshold=0.3, pre_slope_ratio=-0.1)),
+    ("piecewise_damage", dict(threshold=float("nan"))),
+])
+def test_damage_factories_reject_bad_parameters(factory, kwargs):
+    """ValueError, not ZeroDivisionError / OverflowError (E8)."""
+    import gaia.damage
+    with pytest.raises(ValueError):
+        getattr(gaia.damage, factory)(**kwargs)
+
+
+@pytest.mark.parametrize("factory, kwargs", [
+    ("logistic_recovery", dict(threshold=0.3, steepness=0.0)),
+    ("logistic_recovery", dict(threshold=1.5)),
+    ("linear_recovery", dict(slope=float("nan"))),
+    ("linear_recovery", dict(slope=1.5)),
+])
+def test_recovery_factories_reject_bad_parameters(factory, kwargs):
+    import gaia.recovery
+    with pytest.raises(ValueError):
+        getattr(gaia.recovery, factory)(**kwargs)
+
+
+def test_damage_factories_record_their_threshold():
+    from gaia.damage import exponential_damage, piecewise_damage
+    for fn in (logistic_damage(0.3), exponential_damage(0.25), piecewise_damage(0.4)):
+        assert fn.threshold in (0.3, 0.25, 0.4)
+
+
+@pytest.mark.parametrize("bad_fn, match", [
+    (lambda x: float("nan"), "finite"),
+    (lambda x: 0.5 * x, "1.0"),
+    (lambda x: x ** 0.5, "accelerate"),            # concave: never accelerates
+    (lambda x: x, "accelerate"),                   # linear: no knee
+])
+def test_validate_ecosystem_runs_damage_invariants(bad_fn, match):
+    """validate_ecosystem (hence every run) checks the damage invariants."""
+    eco = _ecosystem([1.0])
+    eco.agents[0] = dataclasses.replace(eco.agents[0], damage_function=bad_fn)
+    with pytest.raises(ValueError, match=match):
+        validate_ecosystem(eco)
+    with pytest.raises(ValueError, match=match):
+        run_extraction(eco, 10)
+
+
+def test_damage_invariant_uses_function_threshold():
+    """A curve whose knee is at its own threshold passes even when the
+    resource threshold differs (agents may have their own thresholds)."""
+    eco = _ecosystem([1.0])
+    eco.agents[0] = dataclasses.replace(eco.agents[0],
+                                        damage_function=logistic_damage(threshold=0.7))
+    validate_ecosystem(eco, threshold_health_warning=None)
+
+
+def test_damage_invariant_convexity_past_threshold():
+    """Invariant 6: a curve that saturates right after its threshold fails."""
+    def concave_past_threshold(x):
+        return 0.1 * x / 0.3 if x <= 0.3 else 0.1 + 0.9 * ((x - 0.3) / 0.7) ** 0.5
+    with pytest.raises(ValueError, match="convex"):
+        validate_damage_function(concave_past_threshold, threshold=0.3)
