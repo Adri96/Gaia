@@ -264,6 +264,8 @@ class TestVersion:
         import subprocess
         import sys
 
+        pytest.importorskip("setuptools")  # not in Python 3.12+ venvs by default
+
         import gaia
         root = pathlib.Path(gaia.__file__).resolve().parent.parent
         out = subprocess.run(
