@@ -42,6 +42,24 @@ material, Table 8.1, temperate forests) put it at Int$152/ha/yr, hence
 
 Dependency weight sum: 0.20 + 0.30 + 0.15 + 0.35 = 1.00
 
+Calibration regime: B, direct effects only (CalibrationRegime.DIRECT_ONLY;
+PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
+    The four damage curves are the same placeholder logistic (steepness 12,
+    inflection just past the safe threshold), not fitted to field data on
+    total impact, so Option A — curves that already embed the indirect
+    pathways — cannot be claimed. The curves are read as each agent's direct
+    dependency on the forest, and the two interaction edges add the indirect
+    part. B is what an uncalibrated curve implies, not a claim of lab or
+    first-principles calibration. Incoming strengths are at most 0.20,
+    within the in-degree cap of 1.0 (Step 3.8).
+
+    Health at the 30% safe threshold is below 0.8 (≈0.73), so validation
+    issues a CalibrationWarning. That is honest and has nothing to do with
+    the edges (≈0.75 without them): the logistic alone puts ~21% direct
+    damage at the threshold and trophic amplification multiplies it for
+    Animal Populations. Fixing it means calibrating the curves (Step 8), not
+    tuning parameters to silence the warning.
+
 CLI usage:
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000 --mode restore
@@ -67,6 +85,7 @@ from gaia.damage import logistic_damage
 from gaia.models import (
     Agent,
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DiscountConfig,
     Ecosystem,
@@ -291,6 +310,7 @@ def build_forest_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
             scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA)
             if with_pricing else None

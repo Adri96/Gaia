@@ -49,6 +49,7 @@
           "trophic_level": -1
         }
       ],
+      "calibration_regime": "B",
       "has_pricing": false,
       "interactions": [
         {

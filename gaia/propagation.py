@@ -9,17 +9,46 @@ This module implements the two cascade mechanisms introduced in v0.3:
 2. Interaction propagation — a single-pass propagation of damage through
    agent-to-agent edges, with keystone species amplification (Foundation F6).
 
-All functions use primitive types (float, int, list, dict) for Cython compatibility.
+Step 3.8 (S2): validation caps each agent's incoming edge strengths,
+keystone multipliers included, at MAX_INCOMING_EDGE_STRENGTH = 1.
+
+The constants live in gaia.constants. All propagation functions use
+primitive types (float, int, list, dict) for Cython compatibility; the
+ecosystem-level helpers at the end are for validation, not the hot loop.
 No third-party dependencies.
 
 Scientific foundations used: F3 (Trophic Pyramids), F6 (Keystone Species), F10 (Coevolution).
 """
 
+from gaia.constants import (
+    KEYSTONE_EDGE_MULTIPLIER,
+    MAX_EDGE_STRENGTH,
+    RECOVERY_CASCADE_FACTOR,
+    TROPHIC_AMPLIFICATION_EXPONENT,
+    TROPHIC_TRANSFER_EFFICIENCY,
+)
+
+
+def trophic_amplification_factor(
+    trophic_level: int,
+    transfer_efficiency: float = TROPHIC_TRANSFER_EFFICIENCY,
+) -> float:
+    """
+    Trophic amplification factor for an agent: 1.0 for producers and abiotic
+    services (level <= 0), else
+        (1 / transfer_efficiency) ** (TROPHIC_AMPLIFICATION_EXPONENT * level)
+    i.e. 1.6× / 2.6× / 4.2× for levels 1 / 2 / 3 at the default efficiency.
+    Both engines and the text report use this one function.
+    """
+    if trophic_level <= 0:
+        return 1.0
+    return (1.0 / transfer_efficiency) ** (trophic_level * TROPHIC_AMPLIFICATION_EXPONENT)
+
 
 def compute_trophic_amplification(
     direct_damage: float,
     trophic_level: int,
-    transfer_efficiency: float = 0.15,
+    transfer_efficiency: float = TROPHIC_TRANSFER_EFFICIENCY,
 ) -> float:
     """
     Apply trophic energy pyramid amplification to direct damage.
@@ -27,17 +56,14 @@ def compute_trophic_amplification(
     Higher trophic levels are inherently more sensitive to changes at the base
     because energy transfer between levels is only 5-20% efficient.
 
-    Amplification factor = (1 / transfer_efficiency) ^ (trophic_level * 0.25)
-
-    The 0.25 scaling factor tames the raw trophic pyramid math to a realistic
-    range (1.5x-3.4x) for a single-resource model.
-    [PLACEHOLDER — scaling factor needs ecological validation]
+    Amplified damage = direct_damage × trophic_amplification_factor(level),
+    capped at 1.0. The constants (both PLACEHOLDER) are documented in
+    gaia.constants.
 
     Args:
         direct_damage: Raw damage from the agent's damage function (0.0 to 1.0).
         trophic_level: -1=abiotic, 0=producer, 1-3=consumers.
         transfer_efficiency: Energy transfer efficiency between levels.
-            Default 0.15 (15%, middle of 5-20% range). [PLACEHOLDER]
 
     Returns:
         Amplified damage, capped at 1.0.
@@ -45,11 +71,20 @@ def compute_trophic_amplification(
     if trophic_level <= 0:
         # Producers and abiotic services: no amplification
         return direct_damage
-    amplification: float = (1.0 / transfer_efficiency) ** (trophic_level * 0.25)
+    amplification: float = trophic_amplification_factor(trophic_level, transfer_efficiency)
     result: float = direct_damage * amplification
     if result > 1.0:
         return 1.0
     return result
+
+
+def keystone_boosted_strength(strength: float) -> float:
+    """Strength of an edge whose keystone source has crossed its threshold:
+    strength × KEYSTONE_EDGE_MULTIPLIER, capped at MAX_EDGE_STRENGTH."""
+    boosted: float = strength * KEYSTONE_EDGE_MULTIPLIER
+    if boosted > MAX_EDGE_STRENGTH:
+        return MAX_EDGE_STRENGTH
+    return boosted
 
 
 def propagate_interactions(
@@ -61,7 +96,7 @@ def propagate_interactions(
     agent_is_keystone: list,
     agent_keystone_thresholds: list,
     recovery_mode: bool = False,
-    recovery_cascade_factor: float = 0.5,
+    recovery_cascade_factor: float = RECOVERY_CASCADE_FACTOR,
 ) -> tuple:
     """
     Single-pass propagation of damage through interaction edges.
@@ -93,11 +128,13 @@ def propagate_interactions(
     The builder of each ecosystem case is responsible for choosing one
     interpretation and applying it consistently across all agents. Mixing
     empirical functions for some agents with theoretical functions for others
-    will produce incoherent results. This trade-off is documented in V03_SPEC.md.
+    will produce incoherent results. Each Ecosystem declares its choice in
+    calibration_regime (gaia.models.CalibrationRegime); this trade-off is
+    documented in PROJECT_DEFINITION.md and V03_SPEC.md.
 
     Keystone effect: when a keystone agent's health (1 - direct_damage) drops
-    below its keystone_threshold, ALL its outgoing edges have strength doubled
-    (capped at 1.0).
+    below its keystone_threshold, ALL its outgoing edges are boosted to
+    keystone_boosted_strength() (× KEYSTONE_EDGE_MULTIPLIER, capped at 1.0).
 
     Args:
         agent_names: List of agent name strings, in ecosystem order.
@@ -111,8 +148,7 @@ def propagate_interactions(
             Not used by run_restoration since Step 3.3, which reverses the
             extraction's effective damage instead of propagating recoveries.
         recovery_cascade_factor: Strength multiplier for recovery cascades.
-            Default 0.5 — recovery cascades are weaker than damage cascades
-            (entropy asymmetry). [PLACEHOLDER]
+            Default RECOVERY_CASCADE_FACTOR (gaia.constants). [PLACEHOLDER]
 
     Returns:
         Tuple of (effective_damages, cascade_damages, keystone_triggered):
@@ -145,13 +181,12 @@ def propagate_interactions(
             agent_health: float = 1.0 - direct_damages[i]
             if agent_health < agent_keystone_thresholds[i]:
                 keystone_triggered.append(agent_names[i])
-                # Double outgoing edge strengths for this keystone agent
+                # Boost outgoing edge strengths for this keystone agent
                 for e in range(n_edges):
                     if edge_sources[e] == agent_names[i]:
-                        doubled: float = edge_strengths[e] * 2.0
-                        if doubled > 1.0:
-                            doubled = 1.0
-                        effective_strengths[e] = doubled
+                        effective_strengths[e] = keystone_boosted_strength(
+                            edge_strengths[e]
+                        )
 
     # Apply recovery mode scaling
     if recovery_mode:
@@ -176,3 +211,67 @@ def propagate_interactions(
             cascade[i] = 0.0
 
     return (effective, cascade, keystone_triggered)
+
+
+# ── Ecosystem-level helpers (validation; not used by the hot loops) ─────────
+
+
+def worst_case_incoming_strengths(agents: list, interactions: list) -> dict:
+    """
+    Sum of incoming edge strengths per target agent, at their worst case:
+    an edge whose source is a keystone agent counts at
+    keystone_boosted_strength(), because the boost applies exactly when the
+    source is collapsing and the cascade matters most.
+
+    Returns:
+        {target agent name: summed strength}, for agents with incoming edges.
+    """
+    keystones: set = {a.name for a in agents if a.is_keystone}
+    totals: dict = {}
+    for edge in interactions:
+        strength: float = (
+            keystone_boosted_strength(edge.strength)
+            if edge.source in keystones else edge.strength
+        )
+        totals[edge.target] = totals.get(edge.target, 0.0) + strength
+    return totals
+
+
+def effective_damages_at(ecosystem, depletion_ratio: float) -> list:
+    """
+    Every agent's effective damage at one depletion ratio — the same
+    computation as one step of the extraction loop (damage function, trophic
+    amplification, interaction propagation), without running the loop.
+    """
+    agents: list = ecosystem.agents
+    direct: list = [
+        compute_trophic_amplification(a.damage_function(depletion_ratio), a.trophic_level)
+        for a in agents
+    ]
+    interactions: list = ecosystem.interactions
+    if not interactions:
+        return direct
+    effective, _, _ = propagate_interactions(
+        agent_names=[a.name for a in agents],
+        direct_damages=direct,
+        edge_sources=[e.source for e in interactions],
+        edge_targets=[e.target for e in interactions],
+        edge_strengths=[e.strength for e in interactions],
+        agent_is_keystone=[a.is_keystone for a in agents],
+        agent_keystone_thresholds=[a.keystone_threshold for a in agents],
+    )
+    return effective
+
+
+def ecosystem_health_at(ecosystem, depletion_ratio: float) -> float:
+    """Ecosystem health, 1 − Σ weight × effective damage clamped to [0, 1],
+    at one depletion ratio (as in the extraction loop)."""
+    damages: list = effective_damages_at(ecosystem, depletion_ratio)
+    health: float = 1.0 - sum(
+        a.dependency_weight * d for a, d in zip(ecosystem.agents, damages)
+    )
+    if health < 0.0:
+        return 0.0
+    if health > 1.0:
+        return 1.0
+    return health

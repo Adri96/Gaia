@@ -50,7 +50,12 @@ from gaia.models import (
     SubstrateState,
     SuccessionCurve,
 )
-from gaia.propagation import compute_trophic_amplification, propagate_interactions
+from gaia.constants import KEYSTONE_EDGE_MULTIPLIER, MAX_EDGE_STRENGTH
+from gaia.propagation import (
+    compute_trophic_amplification,
+    propagate_interactions,
+    trophic_amplification_factor,
+)
 from gaia.resilience import compute_resilience_zone
 from gaia.substrate import (
     _T_HA_TO_MM_FACTOR,
@@ -238,11 +243,14 @@ def _run_extraction_cython(
         dep_weights=dep_weights,
         annual_values=annual_values,
         trophic_levels=trophic_levels,
+        trophic_amp_factors=[trophic_amplification_factor(lvl) for lvl in trophic_levels],
         is_keystone=is_keystone,
         keystone_thresholds=keystone_thresholds,
         edge_src_idx=edge_src_idx,
         edge_tgt_idx=edge_tgt_idx,
         edge_strengths=edge_strengths,
+        keystone_edge_multiplier=KEYSTONE_EDGE_MULTIPLIER,
+        max_edge_strength=MAX_EDGE_STRENGTH,
         has_trophic=has_trophic,
         has_interactions=has_interactions,
         has_resilience=has_resilience,

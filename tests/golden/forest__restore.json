@@ -67,6 +67,7 @@
           "trophic_level": -1
         }
       ],
+      "calibration_regime": "B",
       "interactions": [
         {
           "description": "Vegetation loss reduces food and habitat for animals",

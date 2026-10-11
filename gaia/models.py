@@ -20,11 +20,14 @@ v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
                 Ecosystem + pricing; SimulationStep + price fields
 Step 3.7: DestroyThenRestorePenalty; RestorationResult.restoration_cost_ratio
                 (the three "prevention advantage" variants are gone)
+Step 3.8: CalibrationRegime; Ecosystem.calibration_regime
 """
 
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, List, Optional, Tuple, Union
+
+from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
 DamageFunc = Callable[[float], float]
@@ -652,7 +655,7 @@ class Agent:
     # v0.3: Trophic cascade fields (defaults preserve v0.1/v0.2 behavior)
     trophic_level: int = -1             # -1=abiotic, 0=producer, 1-3=consumers
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
-    keystone_threshold: float = 0.3     # health below this triggers keystone cascade
+    keystone_threshold: float = DEFAULT_KEYSTONE_THRESHOLD  # health below this triggers keystone cascade
 
     # v0.4: Agent-specific succession curve (None → use ecosystem default)
     succession_curve: Optional[SuccessionCurve] = None
@@ -695,6 +698,31 @@ class InteractionEdge:
     description: str
 
 
+class CalibrationRegime(str, Enum):
+    """What an ecosystem's damage curves represent, and so what its
+    interaction edges may add (PROJECT_DEFINITION.md, "Critical Modelling
+    Assumption: Damage Function Calibration Regime").
+
+    EMPIRICAL ("A") — damage curves fitted to field observations of total
+        impact, which already embed every indirect pathway. Cascading on top
+        would double count, so validation allows only keystone (regime-shift)
+        edges from keystone agents.
+    DIRECT_ONLY ("B") — damage curves describe each agent's direct
+        dependency on the resource only (first-principles, lab-derived, or
+        assumed shapes not fitted to field data); interaction edges add the
+        indirect part. Single-pass propagation makes the result a structural
+        lower bound for chains longer than one hop.
+
+    A ``str`` subclass serialized as its value ("A" or "B").
+    """
+
+    EMPIRICAL = "A"
+    DIRECT_ONLY = "B"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass
 class Ecosystem:
     """
@@ -705,6 +733,11 @@ class Ecosystem:
         resource: The shared natural asset.
         agents: List of Agent instances dependent on the resource.
                 Typed as list (not List[Agent]) for Cython compatibility.
+        interactions: InteractionEdge list (v0.3).
+        pricing: Optional endogenous pricing config (v0.7).
+        calibration_regime: What the damage curves represent (Step 3.8).
+            Required when there are interaction edges, since it decides
+            whether cascades double count; None only without edges.
     """
 
     name: str
@@ -716,6 +749,9 @@ class Ecosystem:
 
     # v0.7: Endogenous pricing (None → use static Agent annual values)
     pricing: Optional[PricingConfig] = None
+
+    # Step 3.8: Option A / B of the calibration-regime rule
+    calibration_regime: Optional[CalibrationRegime] = None
 
 
 @dataclass

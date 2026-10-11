@@ -18,7 +18,7 @@ Performance profile of the pure-Python version (Amazon, 80K steps):
 
 This module eliminates the function call overhead by:
     1. Pre-computing all indices (int arrays, not string dicts)
-    2. Inlining trophic amplification (no function call per agent)
+    2. Inlining trophic amplification (factors precomputed by the caller)
     3. Inlining interaction propagation (no per-step dict rebuild)
     4. Using C-level math (libc.math.exp instead of Python math.exp)
     5. Using typed memoryviews / C arrays for hot-path data
@@ -48,12 +48,16 @@ def extraction_loop_cy(
     list dep_weights,         # dependency_weight per agent
     list annual_values,       # €/yr lost at full damage per agent (€/ha/yr × area_ha)
     list trophic_levels,      # trophic_level per agent (int)
+    list trophic_amp_factors, # propagation.trophic_amplification_factor per agent
     list is_keystone,         # bool per agent
     list keystone_thresholds, # float per agent
     # Per-edge flat arrays (length n_edges):
     list edge_src_idx,        # int index of source agent
     list edge_tgt_idx,        # int index of target agent
     list edge_strengths,      # float strength [0, 1]
+    # Keystone boost (gaia.constants, passed so the values have one source):
+    double keystone_edge_multiplier,
+    double max_edge_strength,
     # Feature flags:
     bint has_trophic,
     bint has_interactions,
@@ -169,14 +173,9 @@ def extraction_loop_cy(
     cdef list c_edge_tgt = [<int>edge_tgt_idx[i] for i in range(n_edges)]
     cdef list c_edge_str = [<double>edge_strengths[i] for i in range(n_edges)]
 
-    # Transfer efficiency constant for trophic amplification
-    cdef double transfer_eff = 0.15
-
-    # Pre-compute trophic amplification factors per agent
-    cdef list trophic_amp = [1.0] * n_agents
-    for i in range(n_agents):
-        if c_trophic[i] >= 1:
-            trophic_amp[i] = pow(1.0 / transfer_eff, <double>c_trophic[i] * 0.25)
+    # Trophic amplification factors per agent, computed by the caller with
+    # gaia.propagation.trophic_amplification_factor (constants in gaia.constants)
+    cdef list trophic_amp = [<double>trophic_amp_factors[i] for i in range(n_agents)]
 
     # Output accumulator
     cdef list result_steps = []
@@ -242,7 +241,7 @@ def extraction_loop_cy(
             cascade_damages = [0.0] * n_agents
             keystone_triggered = []
 
-            # Compute effective edge strengths with keystone doubling
+            # Compute effective edge strengths with keystone boost
             eff_strengths = list(c_edge_str)
             for i in range(n_agents):
                 if c_is_keystone[i]:
@@ -251,9 +250,9 @@ def extraction_loop_cy(
                         keystone_triggered.append(i)
                         for e in range(n_edges):
                             if c_edge_src[e] == i:
-                                doubled = c_edge_str[e] * 2.0
-                                if doubled > 1.0:
-                                    doubled = 1.0
+                                doubled = c_edge_str[e] * keystone_edge_multiplier
+                                if doubled > max_edge_strength:
+                                    doubled = max_edge_strength
                                 eff_strengths[e] = doubled
 
             # Single-pass propagation

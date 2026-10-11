@@ -99,6 +99,12 @@ def _resource_metadata(resource) -> Dict[str, Any]:
     return d
 
 
+def _calibration_regime(ecosystem) -> Optional[str]:
+    """Ecosystem.calibration_regime as "A" / "B" (None when undeclared)."""
+    regime = ecosystem.calibration_regime
+    return regime.value if regime is not None else None
+
+
 def _interaction_metadata(interactions: list) -> List[Dict[str, Any]]:
     """Serialize interaction edges."""
     return [
@@ -310,6 +316,7 @@ def simulation_result_to_dict(
             "resource": _resource_metadata(eco.resource),
             "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
+            "calibration_regime": _calibration_regime(eco),
             "has_pricing": eco.pricing is not None,
         },
         "summary": {
@@ -367,6 +374,7 @@ def restoration_result_to_dict(
             "resource": _resource_metadata(eco.resource),
             "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
+            "calibration_regime": _calibration_regime(eco),
         },
         "restoration_cost": {
             "planting_cost_per_unit_eur": (

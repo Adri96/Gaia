@@ -92,6 +92,28 @@ rates are never tuned to produce an outcome.
 
 Dependency weights sum: (0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.08) / 0.91 = 1.00 ✓
 
+Calibration regime: B, direct effects only (CalibrationRegime.DIRECT_ONLY;
+PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
+    All 10 damage curves are the same placeholder logistic (steepness 12,
+    inflection just past the 20% threshold), not fitted to field data on
+    total impact (the agent impacts are a user specification), so Option A —
+    curves that already embed the indirect pathways — cannot be claimed. The
+    curves are read as each agent's direct dependency on the meadow, and the
+    15 interaction edges add the indirect part; single-pass propagation makes
+    the result a structural lower bound for chains longer than one hop. B is
+    what an uncalibrated curve implies, not a claim of lab or
+    first-principles calibration.
+
+    In-degree cap (Step 3.8, S2): every agent's incoming strengths sum to at
+    most 0.80 with the Posidonia keystone boost (Coastal Protection), within
+    the cap of 1.0, so no edge was changed.
+
+    Health at the safe threshold is below 0.8, so validation issues a
+    CalibrationWarning. That is honest: the logistic alone puts ~17% direct
+    damage at the threshold, trophic amplification multiplies it for
+    consumers, and fixing it means calibrating the curves (Step 8), not
+    tuning edges to silence the warning.
+
 CLI usage:
     python -m gaia.cases.posidonia
     python -m gaia.cases.posidonia --hectares 5000 --threshold 0.20 --units 1500
@@ -115,6 +137,7 @@ from gaia.damage import logistic_damage
 from gaia.models import (
     Agent,
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DiscountConfig,
     Ecosystem,
@@ -475,6 +498,7 @@ def build_posidonia_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
             scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA)
             if with_pricing else None

@@ -27,6 +27,7 @@ from gaia.cases.posidonia import build_posidonia_ecosystem
 from gaia.damage import exponential_damage, logistic_damage, piecewise_damage
 from gaia.models import (
     Agent,
+    CalibrationRegime,
     CarbonProfile,
     DiscountConfig,
     Ecosystem,
@@ -169,6 +170,7 @@ def _synthetic(
             InteractionEdge(s, t, k, "dependency", f"{s}->{t}")
             for s, t, k in edges
         ] if interactions else [],
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
     )
 
 

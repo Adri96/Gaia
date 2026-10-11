@@ -23,6 +23,7 @@ v0.7: Price Decomposition section in extraction report
 
 from gaia.carbon import carbon_price_label
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
+from gaia.propagation import trophic_amplification_factor
 from gaia.resilience import compute_confidence_band
 from gaia.simulation import substrate_after_extraction
 from gaia.substrate import compute_substrate_recovery_years
@@ -162,8 +163,8 @@ def format_report(result: SimulationResult) -> str:
 
             # Show trophic amplification for consumers
             if agent.trophic_level >= 1:
-                # Compute the raw amplification factor (not capped damage)
-                amp: float = (1.0 / 0.15) ** (agent.trophic_level * 0.25)
+                # The raw amplification factor (not capped damage)
+                amp: float = trophic_amplification_factor(agent.trophic_level)
                 level_names = {
                     1: "primary consumer",
                     2: "secondary consumer",

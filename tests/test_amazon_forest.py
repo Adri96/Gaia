@@ -26,6 +26,7 @@ from gaia.cases.amazon_forest import (
     run_amazon,
 )
 from gaia.damage import logistic_damage
+from gaia.propagation import keystone_boosted_strength
 from gaia.report import format_report
 from gaia.simulation import run_extraction
 
@@ -322,12 +323,19 @@ def test_amazon_keystone_warning_in_report():
 
 def test_amazon_mycorrhizal_keystone_edge_is_strongest():
     """
-    The Mycorrhizal → Canopy Trees edge (0.40) should be the strongest
-    interaction in the ecosystem, reflecting the absolute dependency of
-    canopy trees on mycorrhizal nutrient access on P-depleted Oxisol.
+    The Mycorrhizal → Canopy Trees edge should be the strongest interaction
+    in the ecosystem at its worst case (keystone boost applied), reflecting
+    the absolute dependency of canopy trees on mycorrhizal nutrient access on
+    P-depleted Oxisol. Its base strength is 0.40 / 2.10 since Step 3.8 (the
+    in-degree cap), and the keystone boost doubles it.
     """
     eco = build_amazon_ecosystem()
-    max_edge = max(eco.interactions, key=lambda e: e.strength)
+    keystones = {a.name for a in eco.agents if a.is_keystone}
+
+    def worst_case(e):
+        return keystone_boosted_strength(e.strength) if e.source in keystones else e.strength
+
+    max_edge = max(eco.interactions, key=worst_case)
     assert max_edge.source == "Mycorrhizal Fungi", (
         f"Strongest edge should originate from Mycorrhizal Fungi, "
         f"but got {max_edge.source} → {max_edge.target} ({max_edge.strength})"
@@ -336,7 +344,7 @@ def test_amazon_mycorrhizal_keystone_edge_is_strongest():
         f"Strongest edge should target Canopy Trees, "
         f"but got {max_edge.source} → {max_edge.target}"
     )
-    assert max_edge.strength == 0.40
+    assert max_edge.strength == 0.190
 
 
 def test_amazon_max_externality_matches_per_hectare_calibration():

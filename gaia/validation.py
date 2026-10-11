@@ -10,12 +10,22 @@ v0.4: Added validation for SuccessionCurve, CarbonProfile, ResilienceConfig.
 v0.5: Added validation for SubstrateProfile.
 v0.6: Added validation for DiscountConfig.
 v0.7: Added validation for ScarcityFunction, AnchorPoint, PricingConfig.
+Step 3.8: Incoming edge-strength cap, calibration regime, and a
+      CalibrationWarning when health at the safe threshold is low.
 """
 
 import math
+import warnings
+from typing import Optional
 
+from gaia.constants import (
+    MAX_EDGE_STRENGTH,
+    MAX_INCOMING_EDGE_STRENGTH,
+    THRESHOLD_HEALTH_WARNING_LEVEL,
+)
 from gaia.models import (
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DamageFunc,
     DiscountConfig,
@@ -29,6 +39,7 @@ from gaia.models import (
     SubstrateType,
     SuccessionCurve,
 )
+from gaia.propagation import ecosystem_health_at, worst_case_incoming_strengths
 
 # Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
 _VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
@@ -42,6 +53,10 @@ _DAMAGE_BOUNDARY_TOLERANCE: float = 1e-4
 
 # Number of points used when checking damage function invariants
 _INVARIANT_CHECK_POINTS: int = 100
+
+
+class CalibrationWarning(UserWarning):
+    """A valid ecosystem whose parameters look miscalibrated (Step 3.8)."""
 
 
 def validate_resource(resource: Resource) -> None:
@@ -89,9 +104,18 @@ def validate_resource(resource: Resource) -> None:
         validate_discount_config(resource.discount)
 
 
-def validate_ecosystem(ecosystem: Ecosystem) -> None:
+def validate_ecosystem(
+    ecosystem: Ecosystem,
+    threshold_health_warning: Optional[float] = THRESHOLD_HEALTH_WARNING_LEVEL,
+) -> None:
     """
     Validate an Ecosystem and all its agents.
+
+    Args:
+        ecosystem: The ecosystem to validate.
+        threshold_health_warning: Warn (CalibrationWarning) when ecosystem
+            health at the safe-threshold depletion is below this level, in
+            (0, 1]; None disables the check. See check_threshold_health.
 
     Raises:
         ValueError: If any constraint is violated.
@@ -142,6 +166,8 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
     agent_names = {a.name for a in ecosystem.agents}
     for edge in ecosystem.interactions:
         _validate_interaction_edge(edge, agent_names)
+    _validate_incoming_edge_strengths(ecosystem)
+    _validate_calibration_regime(ecosystem)
 
     # v0.4: Validate agent-specific succession curves
     for agent in ecosystem.agents:
@@ -154,6 +180,9 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
     # v0.7: Validate optional pricing config
     if ecosystem.pricing is not None:
         validate_pricing_config(ecosystem.pricing, agent_names)
+
+    if threshold_health_warning is not None:
+        check_threshold_health(ecosystem, threshold_health_warning)
 
 
 def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
@@ -248,10 +277,10 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
             f"InteractionEdge cannot be a self-loop: "
             f"source and target are both '{edge.source}'"
         )
-    if not (0.0 < edge.strength <= 1.0):
+    if not (0.0 < edge.strength <= MAX_EDGE_STRENGTH):
         raise ValueError(
             f"InteractionEdge '{edge.source}' → '{edge.target}' strength "
-            f"must be in (0.0, 1.0], got {edge.strength}"
+            f"must be in (0.0, {MAX_EDGE_STRENGTH}], got {edge.strength}"
         )
     if edge.interaction_type not in _VALID_INTERACTION_TYPES:
         raise ValueError(
@@ -259,6 +288,120 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
             f"must be one of {sorted(_VALID_INTERACTION_TYPES)}, "
             f"got '{edge.interaction_type}'"
         )
+
+
+def _validate_incoming_edge_strengths(ecosystem: Ecosystem) -> None:
+    """
+    Reject an agent whose incoming edge strengths sum above
+    MAX_INCOMING_EDGE_STRENGTH (S2). Edges from keystone agents count at
+    their boosted strength (× KEYSTONE_EDGE_MULTIPLIER, capped at 1): the
+    boost fires exactly when the source collapses, which is when an
+    over-strong in-degree would saturate the target. Nothing is rescaled
+    silently: the case must bring its edges within the cap.
+
+    Raises:
+        ValueError: If any agent's worst-case incoming strength exceeds the cap.
+    """
+    totals: dict = worst_case_incoming_strengths(
+        ecosystem.agents, ecosystem.interactions
+    )
+    for target, total in totals.items():
+        if total > MAX_INCOMING_EDGE_STRENGTH + _WEIGHT_SUM_TOLERANCE:
+            keystones = {a.name for a in ecosystem.agents if a.is_keystone}
+            edges = ", ".join(
+                f"{e.source} {e.strength:g}" + (" (keystone ×)" if e.source in keystones else "")
+                for e in ecosystem.interactions if e.target == target
+            )
+            raise ValueError(
+                f"Incoming interaction strengths into '{target}' sum to "
+                f"{total:.3f} counting keystone boosts, above the cap of "
+                f"{MAX_INCOMING_EDGE_STRENGTH} (edges: {edges}). Scale them "
+                f"down: a larger in-degree saturates the target's damage."
+            )
+
+
+def _validate_calibration_regime(ecosystem: Ecosystem) -> None:
+    """
+    Check Ecosystem.calibration_regime (PROJECT_DEFINITION, Option A / B).
+
+    It must be a CalibrationRegime, and is required when there are
+    interaction edges. Under Option A (EMPIRICAL) the damage curves already
+    embed indirect effects, so only keystone edges from keystone agents
+    (regime shifts) are allowed.
+
+    Raises:
+        ValueError: If the regime is missing, of the wrong type, or the
+            edges contradict it.
+    """
+    regime = ecosystem.calibration_regime
+    if regime is not None and not isinstance(regime, CalibrationRegime):
+        raise ValueError(
+            f"Ecosystem '{ecosystem.name}' calibration_regime must be a "
+            f"CalibrationRegime (EMPIRICAL = 'A' or DIRECT_ONLY = 'B'), "
+            f"got {regime!r}"
+        )
+    if regime is None:
+        if ecosystem.interactions:
+            raise ValueError(
+                f"Ecosystem '{ecosystem.name}' has interaction edges but no "
+                f"calibration_regime: declare CalibrationRegime.EMPIRICAL ('A', "
+                f"curves fitted to total observed impact) or "
+                f"CalibrationRegime.DIRECT_ONLY ('B', curves are direct effects "
+                f"only), since it decides whether cascades double count."
+            )
+        return
+    if regime is CalibrationRegime.EMPIRICAL:
+        keystones = {a.name for a in ecosystem.agents if a.is_keystone}
+        for edge in ecosystem.interactions:
+            if edge.interaction_type != "keystone" or edge.source not in keystones:
+                raise ValueError(
+                    f"Ecosystem '{ecosystem.name}' is calibration regime A "
+                    f"(empirical curves already include indirect effects), so "
+                    f"only 'keystone' edges from keystone agents are allowed; "
+                    f"got '{edge.source}' → '{edge.target}' "
+                    f"({edge.interaction_type})"
+                )
+
+
+def check_threshold_health(
+    ecosystem: Ecosystem,
+    min_health: float = THRESHOLD_HEALTH_WARNING_LEVEL,
+) -> float:
+    """
+    Ecosystem health at the safe-threshold depletion, warning when it is low.
+
+    A single evaluation of the extraction step at
+    depletion = resource.safe_threshold_ratio (no simulation run). Health
+    below ``min_health`` there means the model puts heavy damage inside the
+    "safe" zone — over-strong interaction edges or over-steep damage curves —
+    so a CalibrationWarning is issued.
+
+    Args:
+        ecosystem: A validated ecosystem.
+        min_health: Warning level, in (0, 1].
+
+    Returns:
+        The health at the safe threshold.
+
+    Raises:
+        ValueError: If min_health is not in (0, 1].
+    """
+    if not (isinstance(min_health, (int, float)) and 0.0 < min_health <= 1.0):
+        raise ValueError(
+            f"threshold health warning level must be in (0.0, 1.0], got {min_health!r}"
+        )
+    threshold: float = ecosystem.resource.safe_threshold_ratio
+    health: float = ecosystem_health_at(ecosystem, threshold)
+    if health < min_health:
+        warnings.warn(
+            f"{ecosystem.name}: ecosystem health at the safe threshold "
+            f"({threshold:.0%} depletion) is {health:.2f}, below {min_health:.2f}. "
+            f"The damage curves or interaction edges put heavy damage inside "
+            f"the 'safe' zone (over-steep curves or over-strong edges).",
+            CalibrationWarning,
+            stacklevel=1,
+        )
+    return health
 
 
 # ── v0.4: New validation functions ─────────────────────────────────────────────

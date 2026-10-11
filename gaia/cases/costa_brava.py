@@ -73,6 +73,30 @@ Agent values (decisions D1, D2):
 
 Dependency weights sum: 0.12+0.08+0.13+0.10+0.10+0.08+0.07+0.04+0.12+0.10+0.06 = 1.00 ✓
 
+Calibration regime: B, direct effects only (CalibrationRegime.DIRECT_ONLY;
+PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
+    Ten damage curves are the same placeholder logistic (steepness 12,
+    inflection just past the 25% threshold) and Fire & Microclimate uses a
+    placeholder exponential; none is fitted to field data on total impact,
+    so Option A — curves that already embed the indirect pathways — cannot
+    be claimed. The curves are read as each agent's direct dependency on the
+    canopy, and the 17 interaction edges add the indirect part; single-pass
+    propagation makes the result a structural lower bound for chains longer
+    than one hop. B is what an uncalibrated curve implies, not a claim of
+    lab or first-principles calibration.
+
+    In-degree cap (Step 3.8, S2): the strengths into Understory & Matorral
+    summed to 0.80, and to 1.35 once the Mycorrhizal and Pollinator keystone
+    boosts fire, above the cap of 1.0. Its three incoming edges are divided
+    by 1.35 (rounded down to 3 decimals) [PLACEHOLDER] — a mechanical
+    rescaling that keeps their ratios, not a fit to any outcome.
+
+    Health at the safe threshold is below 0.8, so validation issues a
+    CalibrationWarning. That is honest: the logistic alone puts ~20% direct
+    damage at the threshold, trophic amplification multiplies it for
+    consumers, and fixing it means calibrating the curves (Step 8), not
+    tuning edges to silence the warning.
+
 CLI usage:
     python -m gaia.cases.costa_brava
     python -m gaia.cases.costa_brava --trees 10000 --threshold 0.25 --units 4000
@@ -96,6 +120,7 @@ from gaia.damage import exponential_damage, logistic_damage
 from gaia.models import (
     Agent,
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DiscountConfig,
     Ecosystem,
@@ -387,20 +412,23 @@ def build_costa_brava_ecosystem(
         # Mycorrhizal network is the backbone — its collapse cascades everywhere
         InteractionEdge("Mycorrhizal Fungi", "Canopy Trees", 0.35, "keystone",
             "Mycorrhizal collapse cuts nutrient/water supply to remaining trees"),
-        InteractionEdge("Mycorrhizal Fungi", "Understory & Matorral", 0.25, "dependency",
+        InteractionEdge("Mycorrhizal Fungi", "Understory & Matorral", 0.185, "dependency",
             "Understory plants lose mycorrhizal nutrient access"),
+            # was 0.25; ÷ 1.35 to the in-degree cap (Step 3.8) [PLACEHOLDER]
         InteractionEdge("Mycorrhizal Fungi", "Soil Microbiome", 0.30, "dependency",
             "Mycorrhizal network supports bacterial communities and nutrient cycling"),
 
         # Pollinator collapse hits vegetation reproduction
-        InteractionEdge("Pollinators & Insects", "Understory & Matorral", 0.30, "keystone",
+        InteractionEdge("Pollinators & Insects", "Understory & Matorral", 0.222, "keystone",
             "Pollinator loss collapses plant reproduction"),
+            # was 0.30; ÷ 1.35 to the in-degree cap (Step 3.8) [PLACEHOLDER]
         InteractionEdge("Pollinators & Insects", "Forest Birds", 0.20, "trophic",
             "Insect decline reduces food for insectivorous birds"),
 
         # Canopy loss affects microclimate-dependent agents
-        InteractionEdge("Canopy Trees", "Understory & Matorral", 0.25, "dependency",
+        InteractionEdge("Canopy Trees", "Understory & Matorral", 0.185, "dependency",
             "Canopy loss removes shade \u2192 understory heat/drought stress"),
+            # was 0.25; ÷ 1.35 to the in-degree cap (Step 3.8) [PLACEHOLDER]
         InteractionEdge("Canopy Trees", "Soil Microbiome", 0.20, "dependency",
             "Canopy loss exposes soil to UV and drying \u2192 biocrust collapse"),
         InteractionEdge("Canopy Trees", "Watershed & Water Cycle", 0.30, "dependency",
@@ -440,6 +468,7 @@ def build_costa_brava_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
             scale_anchors(_COSTA_BRAVA_OAK_PRICING, area_ha / COSTA_BRAVA_AREA_HA)
             if with_pricing else None

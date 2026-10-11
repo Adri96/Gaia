@@ -70,6 +70,30 @@ Agent values (decisions D1, D2):
 
 Dependency weights sum: 0.15+0.08+0.15+0.10+0.09+0.08+0.07+0.05+0.03+0.10+0.10 = 1.00 ✓
 
+Calibration regime: B, direct effects only (CalibrationRegime.DIRECT_ONLY;
+PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
+    All 11 damage curves are the same placeholder logistic (steepness 12,
+    inflection just past the 20% threshold), not fitted to field data on
+    total impact, so Option A — curves that already embed the indirect
+    pathways — cannot be claimed. The curves are read as each agent's direct
+    dependency on the canopy, and the 34 interaction edges add the indirect
+    part; single-pass propagation makes the result a structural lower bound
+    for chains longer than one hop. B is what an uncalibrated curve implies,
+    not a claim of lab or first-principles calibration.
+
+    In-degree cap (Step 3.8, S2): the spec §3 strengths into Canopy Trees
+    summed to 1.40 (2.10 once the Mycorrhizal and Pollinator keystone
+    boosts fire) and into Understory to 1.05 (1.45), above the cap of 1.0.
+    Every edge into those two agents is divided by the same factor (2.10,
+    1.45; rounded down to 3 decimals) [PLACEHOLDER] — a mechanical
+    rescaling that keeps their ratios, not a fit to any outcome.
+
+    Health at the safe threshold is below 0.8, so validation issues a
+    CalibrationWarning. That is honest: the logistic alone puts ~17% direct
+    damage at the threshold, trophic amplification multiplies it for
+    consumers, and fixing it means calibrating the curves (Step 8), not
+    tuning edges to silence the warning.
+
 CLI usage:
     python -m gaia.cases.amazon_forest
     python -m gaia.cases.amazon_forest --trees 400000 --threshold 0.20 --cut 80000
@@ -92,6 +116,7 @@ from gaia.damage import exponential_damage, logistic_damage
 from gaia.models import (
     Agent,
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DiscountConfig,
     Ecosystem,
@@ -407,16 +432,21 @@ def build_amazon_ecosystem(
     # ── Interaction edges ───────────────────────────────────────────────────
     # Derived from spec §3 interaction matrix, selecting edges with strength ≥ 0.10.
     # Reading: (source, target, strength) — "source's damage propagates to target"
+    # Edges into Canopy Trees and Understory are scaled to the in-degree cap
+    # (Step 3.8, see the module docstring); the spec value is noted on each.
     interactions = [
         # Mycorrhizal network is the nutrient gateway — backbone of the system
-        InteractionEdge("Mycorrhizal Fungi", "Canopy Trees", 0.40, "keystone",
+        InteractionEdge("Mycorrhizal Fungi", "Canopy Trees", 0.190, "keystone",
             "Mycorrhizal collapse cuts phosphorus supply to canopy on P-depleted Oxisol"),
-        InteractionEdge("Mycorrhizal Fungi", "Understory", 0.25, "dependency",
+            # spec §3: 0.40; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
+        InteractionEdge("Mycorrhizal Fungi", "Understory", 0.172, "dependency",
             "Understory loses mycorrhizal nutrient access"),
+            # spec §3: 0.25; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
 
         # Canopy Trees support nearly everything
-        InteractionEdge("Canopy Trees", "Understory", 0.30, "dependency",
+        InteractionEdge("Canopy Trees", "Understory", 0.206, "dependency",
             "Canopy loss removes shade → understory heat/drought stress"),
+            # spec §3: 0.30; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
         InteractionEdge("Canopy Trees", "Epiphytes & Bromeliads", 0.35, "dependency",
             "Epiphytes lose structural substrate when canopy trees fall"),
         InteractionEdge("Canopy Trees", "Herbivores", 0.25, "dependency",
@@ -447,26 +477,32 @@ def build_amazon_ecosystem(
             "Understory litter feeds decomposer community"),
 
         # Soil Decomposers → nutrient cycling
-        InteractionEdge("Soil Decomposers", "Canopy Trees", 0.15, "dependency",
+        InteractionEdge("Soil Decomposers", "Canopy Trees", 0.071, "dependency",
             "Decomposer decline reduces nutrient availability for trees"),
-        InteractionEdge("Soil Decomposers", "Understory", 0.10, "dependency",
+            # spec §3: 0.15; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
+        InteractionEdge("Soil Decomposers", "Understory", 0.068, "dependency",
             "Reduced decomposition limits understory nutrient access"),
+            # spec §3: 0.10; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
         InteractionEdge("Soil Decomposers", "Mycorrhizal Fungi", 0.20, "dependency",
             "Decomposers feed mycorrhizal nutrient pool"),
 
         # Pollinator → vegetation reproduction
-        InteractionEdge("Pollinators", "Canopy Trees", 0.30, "keystone",
+        InteractionEdge("Pollinators", "Canopy Trees", 0.142, "keystone",
             "Pollinator loss blocks reproduction for 90%+ of canopy species"),
-        InteractionEdge("Pollinators", "Understory", 0.15, "keystone",
+            # spec §3: 0.30; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
+        InteractionEdge("Pollinators", "Understory", 0.103, "keystone",
             "Pollinator loss collapses understory plant reproduction"),
+            # spec §3: 0.15; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
         InteractionEdge("Pollinators", "Epiphytes & Bromeliads", 0.10, "dependency",
             "Some epiphyte reproduction depends on specialist pollinators"),
 
         # Seed Dispersers → forest regeneration
-        InteractionEdge("Seed Dispersers", "Canopy Trees", 0.20, "dependency",
+        InteractionEdge("Seed Dispersers", "Canopy Trees", 0.095, "dependency",
             "Loss of dispersers reduces tree recruitment and genetic connectivity"),
-        InteractionEdge("Seed Dispersers", "Understory", 0.10, "dependency",
+            # spec §3: 0.20; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
+        InteractionEdge("Seed Dispersers", "Understory", 0.068, "dependency",
             "Understory seed dispersal decline"),
+            # spec §3: 0.10; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
         InteractionEdge("Seed Dispersers", "Mesopredators", 0.10, "trophic",
             "Seed dispersers are prey for some mesopredators"),
 
@@ -485,16 +521,19 @@ def build_amazon_ecosystem(
             "Caiman and aquatic mesopredator population dynamics"),
 
         # Aquatic System → various
-        InteractionEdge("Aquatic System", "Canopy Trees", 0.15, "dependency",
+        InteractionEdge("Aquatic System", "Canopy Trees", 0.071, "dependency",
             "Riparian nutrient transport supports floodplain forest"),
+            # spec §3: 0.15; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
         InteractionEdge("Aquatic System", "Mesopredators", 0.10, "dependency",
             "Aquatic system decline reduces food for aquatic mesopredators"),
 
         # Epiphytes → canopy microhabitat
-        InteractionEdge("Epiphytes & Bromeliads", "Canopy Trees", 0.20, "dependency",
+        InteractionEdge("Epiphytes & Bromeliads", "Canopy Trees", 0.095, "dependency",
             "Epiphytes contribute to canopy water retention and microhabitat"),
-        InteractionEdge("Epiphytes & Bromeliads", "Understory", 0.15, "dependency",
+            # spec §3: 0.20; ÷ 2.10 to the in-degree cap [PLACEHOLDER]
+        InteractionEdge("Epiphytes & Bromeliads", "Understory", 0.103, "dependency",
             "Bromeliad water reservoirs support understory moisture"),
+            # spec §3: 0.15; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
     ]
 
     return Ecosystem(
@@ -502,6 +541,7 @@ def build_amazon_ecosystem(
         resource=resource,
         agents=agents,
         interactions=interactions,
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
         pricing=(
             scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA)
             if with_pricing else None

@@ -12,6 +12,7 @@ from gaia.damage import logistic_damage, piecewise_damage
 from gaia.discount import DEFAULT_DISCOUNT, compute_extraction_npv
 from gaia.models import (
     Agent,
+    CalibrationRegime,
     DiscountConfig,
     Ecosystem,
     InteractionEdge,
@@ -477,6 +478,7 @@ def test_cascade_increases_total_externality():
     eco_cascade = Ecosystem(
         name="E", resource=resource, agents=agents,
         interactions=[InteractionEdge("A", "B", 0.3, "dependency", "test")],
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
     )
 
     result_plain = run_extraction(eco_plain, 80)
@@ -502,6 +504,7 @@ def test_effective_damage_geq_direct_damage():
     eco = Ecosystem(
         name="E", resource=resource, agents=agents,
         interactions=[InteractionEdge("A", "B", 0.3, "dependency", "test")],
+        calibration_regime=CalibrationRegime.DIRECT_ONLY,
     )
     result = run_extraction(eco, 100)
     for step in result.steps:

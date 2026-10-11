@@ -133,6 +133,7 @@
           "trophic_level": -1
         }
       ],
+      "calibration_regime": "B",
       "interactions": [
         {
           "description": "Posidonia loss \u2192 sedimentation \u2192 coralligenous suffocation",
