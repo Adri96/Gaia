@@ -1,5 +1,5 @@
 """
-Gaia v0.7 — Simulation engine.
+Gaia — Simulation engine.
 
 The simulation extracts (or restores) units one at a time, computing externality
 costs (or recovered service values) at each step. Damage/recovery functions return

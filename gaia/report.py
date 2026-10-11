@@ -1,5 +1,5 @@
 """
-Gaia v0.7 — Text report generation.
+Gaia — Text report generation.
 
 Produces plain-text reports from simulation results.
 No dependencies — pure string formatting with the standard library only.

@@ -12,6 +12,7 @@ Pure stdlib — no numpy or third-party dependencies.
 import json
 from typing import Any, Dict, List, Optional
 
+from gaia import __version__
 from gaia.models import (
     CarbonBreakeven,
     ExtractionNPV,
@@ -25,7 +26,7 @@ from gaia.models import (
     SimulationStep,
 )
 
-GAIA_VERSION = "0.8.1"
+GAIA_VERSION = __version__
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────

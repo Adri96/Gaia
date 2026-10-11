@@ -1,5 +1,5 @@
 """
-Gaia v0.7 — Core data models.
+Gaia — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.

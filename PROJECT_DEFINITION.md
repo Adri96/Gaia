@@ -612,7 +612,7 @@ Full specification: `V081_SPEC.md`
 
 ## License
 
-TBD
+MIT
 
 ## Contributing
 

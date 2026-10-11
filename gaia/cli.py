@@ -10,12 +10,19 @@ import sys
 import warnings
 from typing import List, Optional
 
+from gaia import __version__
+
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
-    Adds: --mode, --format, --output, --with-pricing, --summary-only.
+    Adds: --version, --mode, --format, --output, --with-pricing, --summary-only.
     """
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"Gaia {__version__}",
+    )
     parser.add_argument(
         "--mode",
         choices=["extract", "restore"],

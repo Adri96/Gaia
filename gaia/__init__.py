@@ -1,2 +1,3 @@
-# Gaia — Externality Computation Framework
-# v0.5: Physical substrate & derived carrying capacity
+"""Gaia — Externality Computation Framework."""
+
+__version__ = "0.8.1"

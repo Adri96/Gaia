@@ -696,4 +696,4 @@ As the project matures, parameters will be replaced with values sourced from pee
 
 ## License
 
-TBD
+MIT

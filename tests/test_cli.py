@@ -198,3 +198,33 @@ class TestPosidoniMainJson:
         assert "notes" in parsed
         assert len(parsed["notes"]) > 0
         assert "ANNUAL" in parsed["notes"][0]
+
+
+# ── Version: single source of truth ──────────────────────────────────────────
+
+
+class TestVersion:
+    def test_serialization_uses_package_version(self):
+        import gaia
+        from gaia.serialization import GAIA_VERSION
+        assert GAIA_VERSION == gaia.__version__
+
+    def test_setup_reads_package_version(self):
+        import pathlib
+        import subprocess
+        import sys
+
+        import gaia
+        root = pathlib.Path(gaia.__file__).resolve().parent.parent
+        out = subprocess.run(
+            [sys.executable, "setup.py", "--version"],
+            cwd=root, capture_output=True, text=True, check=True,
+        )
+        assert out.stdout.strip().splitlines()[-1] == gaia.__version__
+
+    def test_cli_version_flag(self, capsys):
+        import gaia
+        with pytest.raises(SystemExit) as exc:
+            forest_parse(["--version"])
+        assert exc.value.code == 0
+        assert capsys.readouterr().out.strip() == f"Gaia {gaia.__version__}"
