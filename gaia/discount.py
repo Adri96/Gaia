@@ -7,15 +7,51 @@ become discountable to present value using Ramsey-based discount rates.
 All functions use primitive types for Cython compatibility.
 No third-party dependencies.
 
+Year convention (one convention everywhere in Gaia):
+    The extraction (or the replanting) happens at year 0. One-off amounts
+    at that moment — revenue, the carbon release, planting cost — are
+    valued at year 0, undiscounted. A yearly flow is valued at the END of
+    each year t = 1..H (H = DiscountConfig.horizon_years):
+
+        PV = Σ_{t=1}^{H} flow(t) × discount_factor(t) × scarcity_factor(t)
+
+    where flow(t) uses the succession service fraction s(t) at t years
+    since restoration and the carbon price of year t. Maintenance costs
+    (years 1..N), the maturation timeline (years 1..H), the maturation gap,
+    carbon absorption (gaia.carbon) and the carbon payback all use the
+    same years.
+
+Convergence (C3): gaia.validation.validate_discount_config rejects any
+configuration whose scarcity rate or carbon price growth is not strictly
+below the discount rate in every year of the horizon, so the PV of a
+permanent flow converges as the horizon grows. One approach is used for
+the whole code base: a constant relative price change ("scarcity uplift")
+strictly below the discount rate, taken from the empirical relative-price
+literature — not a scarcity uplift above the discount rate truncated after
+an arbitrary period, which would need an invented cut-off year.
+
+Scarcity (relative price change of ecosystem services):
+    Drupp, Turk, Groom & Heckenhahn (2024), "Global evidence on the income
+    elasticity of willingness to pay, relative price changes and public
+    natural capital values", arXiv:2308.04400v3, Table 10: relative price
+    change 1.66%/yr for aggregate ecosystem services (95% CI 1.40-1.92%),
+    1.28%/yr for forest ecosystem services (95% CI 0.85-1.70%), from an
+    income elasticity of WTP of ~0.6 (735 estimates, 396 CV studies) times
+    the growth gap between consumption and ecosystem services. The same
+    paper (§1) reports the Dutch government default of 1%/yr for all
+    ecosystem services (after Baumgärtner et al. 2015) and summarises
+    Drupp & Hänsel (2021) as 2-4%/yr in a DICE setting.
+
 Scientific foundations:
     - Ramsey (1928): r = delta + eta * g
     - Stern (2006) vs Nordhaus (2007) debate on delta
     - Drupp et al. (2018): median SDR 2.0% from 200+ economists
     - Weitzman (1998, 2001): declining rates under growth uncertainty
-    - Drupp & Hansel (2021): relative price effect ~2-4%/yr
+    - Drupp et al. (2024): relative price change 1.3-1.7%/yr (above)
     - UK HM Treasury Green Book: declining schedule 3.5% -> 2.5%
 """
 
+import dataclasses
 from typing import Optional
 
 from gaia.carbon import compute_carbon_release, pv_absorption, pv_carbon_release
@@ -29,6 +65,7 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.succession import succession_service
+from gaia.validation import validate_discount_config
 
 
 # ── Preconfigured discount profiles ──────────────────────────────────────────
@@ -51,14 +88,25 @@ DISCOUNT_CENTRAL = DiscountConfig(
     rate_schedule=0.023,
     scarcity_rate=0.02,
 )
-"""Central / consensus (Drupp et al. 2018). 2.3%, 2% scarcity uplift."""
+"""Central / consensus (Drupp et al. 2018). 2.3%, 2% scarcity uplift.
+
+The 2% uplift predates the relative-price evidence in the module docstring
+and is above its 95% CIs (to be recalibrated in Step 8); it is below the
+discount rate, so the PV converges."""
 
 DISCOUNT_ENVIRONMENTAL = DiscountConfig(
     delta=0.001, eta=1.0, g=0.013,
     rate_schedule=0.014,
-    scarcity_rate=0.03,
+    scarcity_rate=0.01,
 )
-"""Environmental / Stern-adjacent. 1.4%, 3% scarcity uplift."""
+"""Environmental / Stern-adjacent. 1.4%, 1% scarcity uplift.
+
+The discount rate is kept; the uplift was 3%, above it, so the PV grew
+without bound with the horizon (C3). 1% is the Dutch government default
+relative price change for ecosystem services (Drupp et al. 2024, §1). The
+aggregate estimate of the same paper, 1.66%/yr, is itself above 1.4%: with
+constant rates, a Stern-adjacent discount rate and the central relative
+price change cannot be combined without a divergent PV."""
 
 DISCOUNT_GREEN_BOOK = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
@@ -78,6 +126,31 @@ consensus profile: 2.3% discount rate, 2% scarcity uplift, 100-year horizon.
 Its scarcity growth is below the discount rate, so the PV converges as the
 horizon grows.
 """
+
+
+SENSITIVITY_HORIZONS: tuple = (50, 100, 200)
+"""Horizons (years) at which each headline PV is also reported, so readers
+can see whether the horizon drives the result."""
+
+
+def horizon_variants(discount: DiscountConfig) -> dict:
+    """``discount`` at each of SENSITIVITY_HORIZONS: {horizon: config or None}.
+
+    Validation only checks the schedule segments in force within a config's
+    own horizon, so a variant with a longer horizon is validated again; a
+    variant that fails validation (its PV would not converge) maps to None.
+    """
+    variants: dict = {}
+    for horizon in SENSITIVITY_HORIZONS:
+        config: Optional[DiscountConfig] = dataclasses.replace(
+            discount, horizon_years=horizon
+        )
+        try:
+            validate_discount_config(config)
+        except ValueError:
+            config = None
+        variants[horizon] = config
+    return variants
 
 
 # ── NPV computation functions ────────────────────────────────────────────────
@@ -131,7 +204,7 @@ def compute_extraction_npv(
 
     # Direct ecosystem service loss: the annual flow, every year of the horizon
     npv_direct: float = 0.0
-    for year in range(horizon):
+    for year in range(1, horizon + 1):
         df: float = discount.discount_factor(year)
         sf: float = discount.scarcity_factor(year)
         npv_direct += annual_externality * df * sf
@@ -202,8 +275,8 @@ def compute_restoration_npv(
     """
     horizon: int = discount.horizon_years
 
-    # Costs (discounted)
-    # Planting: assume 75% at year 0, 25% spread over years 1-5
+    # Costs: planting at year 0 (undiscounted), maintenance at the end of
+    # years 1..N
     planting_cost: float = restoration_cost_total - (
         maintenance_cost_per_year * maintenance_years
     )
@@ -217,7 +290,7 @@ def compute_restoration_npv(
 
     # Service benefits: recovery over succession curve
     npv_services: float = 0.0
-    for year in range(horizon):
+    for year in range(1, horizon + 1):
         if succession_curve is not None:
             service_fraction: float = succession_service(succession_curve, float(year))
         else:
@@ -246,14 +319,14 @@ def compute_restoration_npv(
         annual_abs_full: float = (
             units_restored * carbon_profile.annual_absorption_tonnes
         )
-        for year in range(horizon):
+        for year in range(1, horizon + 1):
             if succession_curve is not None:
                 sfrac: float = succession_service(succession_curve, float(year))
             else:
                 sfrac = 1.0
             cumulative += annual_abs_full * min(sfrac, substrate_ceiling)
             if cumulative >= carbon_released:
-                carbon_payback_years = year + 1
+                carbon_payback_years = year
                 break
 
     npv_benefits: float = npv_services + npv_carbon
@@ -429,7 +502,7 @@ def compute_prevention_advantage_v06(
     # (temporary). The permanent shortfall above the ceiling is the
     # substrate term below — each counted once.
     npv_maturation_gap: float = 0.0
-    for year in range(horizon):
+    for year in range(1, horizon + 1):
         if succession_curve is not None:
             sfrac: float = succession_service(succession_curve, float(year))
         else:
@@ -457,7 +530,7 @@ def compute_prevention_advantage_v06(
     if substrate_ceiling < 1.0:
         permanent_gap: float = 1.0 - substrate_ceiling
         annual_loss: float = max_recovered_value * permanent_gap
-        for year in range(horizon):
+        for year in range(1, horizon + 1):
             df = discount.discount_factor(year)
             sf = discount.scarcity_factor(year)
             npv_substrate += annual_loss * df * sf

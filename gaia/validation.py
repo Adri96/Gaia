@@ -550,6 +550,13 @@ def validate_discount_config(
         - horizon_years > 0
         - carbon_price_current >= 0
         - carbon_price_growth >= 0
+        - convergence (C3): scarcity_rate and carbon_price_growth are each
+          strictly below the discount rate in every year of the horizon
+          (1..horizon_years); for a declining schedule, below the rate of
+          every segment in force within the horizon (see
+          _rate_segments_in_horizon). Otherwise the present value of a
+          permanent flow grows without bound as the horizon grows, and the
+          arbitrary horizon decides the answer.
 
     Raises:
         ValueError: If any constraint is violated.
@@ -610,6 +617,57 @@ def validate_discount_config(
             f"{name}: carbon_price_growth must be >= 0.0, "
             f"got {config.carbon_price_growth}"
         )
+
+    # C3: every growing value stream must be discounted faster than it grows
+    for start, end, rate in _rate_segments_in_horizon(config):
+        where: str = (
+            f"the discount rate ({rate:.2%}/yr)"
+            if isinstance(config.rate_schedule, (int, float))
+            else f"the discount rate of the schedule segment for years "
+                 f"{start}-{end} ({rate:.2%}/yr)"
+        )
+        if config.scarcity_rate >= rate:
+            raise ValueError(
+                f"{name}: scarcity_rate ({config.scarcity_rate:.2%}/yr) must be "
+                f"below {where}. Ecosystem services would gain value faster "
+                f"than they are discounted, so their present value would grow "
+                f"without bound with the horizon."
+            )
+        if config.carbon_price_growth >= rate:
+            raise ValueError(
+                f"{name}: carbon_price_growth ({config.carbon_price_growth:.2%}/yr) "
+                f"must be below {where}. Carbon would gain value faster than it "
+                f"is discounted, so its present value would grow without bound "
+                f"with the horizon."
+            )
+
+
+def _rate_segments_in_horizon(config: DiscountConfig) -> list:
+    """Discount-rate segments in force during the horizon, as (start, end, rate).
+
+    Flows fall in years 1..horizon_years (gaia.discount's convention), and the
+    discount factor of year t compounds the rates of years 1..t, so these are
+    the years whose rates matter. A constant rate is one segment. For a
+    declining schedule, every segment that applies to at least one of those
+    years is returned (the first segment also covers years before its
+    threshold, as DiscountConfig.rate_at_year does); segments starting after
+    the horizon are never used and are not returned. The last segment in force
+    is the one that would apply forever if the horizon were extended.
+    """
+    horizon: int = config.horizon_years
+    if isinstance(config.rate_schedule, (int, float)):
+        return [(1, horizon, float(config.rate_schedule))]
+    schedule: list = config.rate_schedule
+    segments: list = []
+    for i, (threshold, rate) in enumerate(schedule):
+        start: int = 1 if i == 0 else max(int(threshold), 1)
+        end: int = (
+            int(schedule[i + 1][0]) - 1 if i + 1 < len(schedule) else horizon
+        )
+        end = min(end, horizon)
+        if start <= end:
+            segments.append((start, end, float(rate)))
+    return segments
 
 
 # ── v0.7: Pricing validation ────────────────────────────────────────────────

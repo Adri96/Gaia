@@ -31,6 +31,20 @@ _DOUBLE_LINE: str = "=" * _WIDTH
 _SINGLE_LINE: str = "-" * _WIDTH
 
 
+def _horizon_sensitivity_lines(by_horizon: dict) -> list:
+    """Lines showing a headline PV at each sensitivity horizon."""
+    if not by_horizon:
+        return []
+    lines: list = ["    Horizon sensitivity (\u20ac PV):"]
+    for horizon, value in by_horizon.items():
+        label: str = f"{horizon}-year horizon:"
+        if value is None:
+            lines.append(f"      {label:<34} {'n/a (does not converge)':>16}")
+        else:
+            lines.append(f"      {label:<34} \u20ac{value:>14,.0f}")
+    return lines
+
+
 def format_report(result: SimulationResult) -> str:
     """
     Format a SimulationResult into a human-readable plain-text externality report.
@@ -192,6 +206,7 @@ def format_report(result: SimulationResult) -> str:
             f"    (services and carbon over "
             f"{result.extraction_npv.horizon} years; see NPV Analysis)"
         )
+    lines.extend(_horizon_sensitivity_lines(result.pv_externality_by_horizon))
     lines.append(f"  {_SINGLE_LINE}")
 
     # Net social cost: PV of externality - one-off revenue
@@ -583,6 +598,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.append(
         "    (PV of recovered services and carbon \u2212 PV of restoration costs)"
     )
+    lines.extend(_horizon_sensitivity_lines(result.net_restoration_pv_by_horizon))
     lines.append("")
 
     # Prevention advantage

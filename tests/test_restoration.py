@@ -519,3 +519,24 @@ def test_recovery_efficiency_outside_unit_interval_rejected():
     fns = [lambda r: 1.5 * r for _ in eco.agents]
     with pytest.raises(ValueError, match=r"efficiency must be in \[0, 1\]"):
         run_restoration(eco, 100, RESTORATION_COST, fns)
+
+
+def test_restoration_horizon_sensitivity():
+    """net_restoration_pv is also reported at 50/100/200 years (text and JSON)."""
+    import json
+
+    from gaia.report import format_restoration_report
+    from gaia.serialization import to_json
+
+    eco = build_forest_ecosystem(total_trees=1000)
+    cost = RestorationCost(50.0, 10.0, 10)
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    result = run_restoration(eco, 500, cost, recovery)
+    by_h = result.net_restoration_pv_by_horizon
+    assert list(by_h) == [50, 100, 200]
+    assert eco.resource.discount.horizon_years == 100
+    assert by_h[100] == pytest.approx(result.net_restoration_pv, rel=1e-12)
+    summary = json.loads(to_json(result, include_steps=False))["summary"]
+    for h in (50, 100, 200):
+        assert summary[f"net_restoration_value_h{h}_eur_pv"] == round(by_h[h], 2)
+    assert "50-year horizon:" in format_restoration_report(result)

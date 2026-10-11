@@ -767,6 +767,9 @@ class SimulationResult:
         extraction_npv: Breakdown of pv_externality. Uses the resource's
             DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT if it has none.
         discount_is_default: True when DEFAULT_DISCOUNT was used.
+        pv_externality_by_horizon: pv_externality recomputed at each of
+            gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV}; None
+            for a horizon at which the DiscountConfig fails validation.
     """
 
     ecosystem: Ecosystem
@@ -779,6 +782,7 @@ class SimulationResult:
     final_ecosystem_health: float
     extraction_npv: Optional[ExtractionNPV] = None
     discount_is_default: bool = False
+    pv_externality_by_horizon: dict = field(default_factory=dict)
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────
@@ -879,6 +883,9 @@ class RestorationResult:
             annual_damage_reversal, so never more than it.
         net_restoration_pv: restoration_npv.net_present_value (€ PV):
             PV of recovered services and carbon minus PV of restoration costs.
+        net_restoration_pv_by_horizon: net_restoration_pv recomputed at each
+            of gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV};
+            None for a horizon at which the DiscountConfig fails validation.
         prevention_advantage: (foregone_revenue + total_restoration_cost)
             / foregone_revenue — a ratio of two one-off amounts.
         final_ecosystem_health: Ecosystem health after all restoration.
@@ -936,3 +943,6 @@ class RestorationResult:
     depletion_after: float = 0.0
     initial_ecosystem_health: float = 1.0
     annual_damage_reversal: float = 0.0
+
+    # Step 3.6: horizon sensitivity of the headline PV
+    net_restoration_pv_by_horizon: dict = field(default_factory=dict)

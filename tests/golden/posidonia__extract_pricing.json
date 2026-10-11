@@ -252,14 +252,14 @@
     ],
     "npv_analysis": {
       "carbon_absorption_lost_tco2_yr": 630.6667,
-      "carbon_foregone_eur_pv": 12650566.29,
+      "carbon_foregone_eur_pv": 12595810.0,
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 17299947.47,
       "carbon_released_tco2": 104000.0,
       "horizon_years": 200,
-      "services_eur_pv": 851400279.29,
-      "substrate_unrecoverable_eur_pv": 54519.13,
-      "total_eur_pv": 881350793.05
+      "services_eur_pv": 95538359.04,
+      "substrate_unrecoverable_eur_pv": 6117.77,
+      "total_eur_pv": 125434116.51
     },
     "pricing": {
       "converged": false,
@@ -306,9 +306,12 @@
       "annual_externality_eur_yr": 1020772.82,
       "discount_is_default": false,
       "final_ecosystem_health": 0.031057,
-      "net_social_cost_eur_pv": 880350793.05,
+      "net_social_cost_eur_pv": 124434116.51,
       "num_steps": 400,
-      "pv_externality_eur_pv": 881350793.05,
+      "pv_externality_eur_pv": 125434116.51,
+      "pv_externality_h100_eur_pv": 87160031.29,
+      "pv_externality_h200_eur_pv": 125434116.51,
+      "pv_externality_h50_eur_pv": 59585154.72,
       "revenue_eur": 1000000.0,
       "total_units_extracted": 400
     }
@@ -330,18 +333,23 @@
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 630.6666666666666,
-      "carbon_foregone": 12650566.289769733,
+      "carbon_foregone": 12595809.999631114,
       "carbon_price": 166.3456487480301,
       "carbon_release": 17299947.46979513,
       "carbon_released_t": 104000.0,
-      "direct": 851400279.2878078,
+      "direct": 95538359.03794406,
       "horizon": 200,
-      "substrate_unrecoverable": 54519.12610738777,
-      "total": 881350793.0473727
+      "substrate_unrecoverable": 6117.7661919956,
+      "total": 125434116.5073703
     },
     "final_ecosystem_health": 0.031057130170233926,
-    "net_social_cost": 880350793.0473727,
-    "pv_externality": 881350793.0473727,
+    "net_social_cost": 124434116.5073703,
+    "pv_externality": 125434116.5073703,
+    "pv_externality_by_horizon": {
+      "100": 87160031.2942906,
+      "200": 125434116.5073703,
+      "50": 59585154.71580932
+    },
     "revenue": 1000000.0,
     "total_units_extracted": 400
   },

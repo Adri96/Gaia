@@ -14,11 +14,11 @@
   ],
   "cli_summary_json": {
     "carbon_breakeven": {
-      "breakeven_price_eur_per_t": 172.96,
+      "breakeven_price_eur_per_t": 172.08,
       "current_price_eur_per_t": 166.35,
-      "gap_to_current_eur_per_t": 6.61,
+      "gap_to_current_eur_per_t": 5.73,
       "profitable_at_current": false,
-      "projected_breakeven_year": 4
+      "projected_breakeven_year": 3
     },
     "ecosystem": {
       "agents": [
@@ -397,7 +397,7 @@
     },
     "gaia_version": "<gaia_version>",
     "maturation": {
-      "maturation_gap_eur_pv": 64539.31,
+      "maturation_gap_eur_pv": 47782.4,
       "timeline": [
         {
           "annual_carbon_absorbed": 0.0,
@@ -1306,22 +1306,22 @@
     },
     "mode": "restoration",
     "npv_analysis": {
-      "carbon_benefits_eur_pv": 31970.21,
+      "carbon_benefits_eur_pv": 32269.11,
       "carbon_payback_years": null,
       "cost_eur_pv": 16710.21,
       "horizon_years": 100,
-      "net_present_value_eur_pv": 247146.57,
-      "roi": 15.7902,
-      "service_benefits_eur_pv": 231886.57,
-      "total_benefits_eur_pv": 263856.78
+      "net_present_value_eur_pv": 99066.58,
+      "roi": 6.9285,
+      "service_benefits_eur_pv": 83507.68,
+      "total_benefits_eur_pv": 115776.79
     },
     "prevention_advantage_v06": {
-      "pa_full": 274.6512,
+      "pa_full": 258.2474,
       "pa_simple": 17.6667,
-      "pa_with_carbon": 274.5917,
-      "pa_with_substrate": 70.5085,
+      "pa_with_carbon": 258.2212,
+      "pa_with_substrate": 54.77,
       "prevention_cost_eur": 1200.0,
-      "restoration_total_eur_pv": 328381.41
+      "restoration_total_eur_pv": 308696.88
     },
     "restoration_cost": {
       "annual_maintenance_per_unit_eur_yr": 1.0,
@@ -1341,7 +1341,10 @@
       "depletion_before": 0.2,
       "final_ecosystem_health": 0.999914,
       "initial_ecosystem_health": 0.639702,
-      "net_restoration_value_eur_pv": 247146.57,
+      "net_restoration_value_eur_pv": 99066.58,
+      "net_restoration_value_h100_eur_pv": 99066.58,
+      "net_restoration_value_h200_eur_pv": 166206.82,
+      "net_restoration_value_h50_eur_pv": 31167.76,
       "num_steps": 800,
       "prevention_advantage": 17.6667,
       "total_restoration_cost_eur": 20000.0,
@@ -1477,29 +1480,34 @@
     "annual_damage_reversal": 2089.727477590154,
     "annual_recovered_value": 2089.227654827925,
     "carbon_breakeven": {
-      "breakeven_price": 172.95845597125913,
+      "breakeven_price": 172.07890415650274,
       "current_price": 166.3456487480301,
-      "gap_to_current": 6.6128072232290265,
-      "npv_absorption_per_euro": 96.61402634155998,
+      "gap_to_current": 5.733255408472644,
+      "npv_absorption_per_euro": 97.1078523722183,
       "npv_cost": 16710.21282120277,
       "profitable_at_current": false,
-      "projected_breakeven_year": 4
+      "projected_breakeven_year": 3
     },
     "depletion_after": 0.0,
     "depletion_before": 0.2,
     "extraction_npv": null,
     "final_ecosystem_health": 0.9999138236616846,
     "initial_ecosystem_health": 0.6397021590361802,
-    "maturation_gap_pv": 64539.307067970505,
-    "net_restoration_pv": 247146.5690136075,
+    "maturation_gap_pv": 47782.39583871704,
+    "net_restoration_pv": 99066.5798633547,
+    "net_restoration_pv_by_horizon": {
+      "100": 99066.5798633547,
+      "200": 166206.8212994185,
+      "50": 31167.757144885207
+    },
     "prevention_advantage": 17.666666666666668,
     "prevention_advantage_v06": {
       "npv_prevention_cost": 1200.0,
-      "npv_restoration_total": 328381.4130653121,
-      "pa_full": 274.65117755442674,
+      "npv_restoration_total": 308696.87998490984,
+      "pa_full": 258.24739998742484,
       "pa_simple": 17.666666666666668,
-      "pa_with_carbon": 274.59166407598224,
-      "pa_with_substrate": 70.50846976511214
+      "pa_with_carbon": 258.22122533502306,
+      "pa_with_substrate": 54.77001520233498
     },
     "prevention_advantage_with_substrate": 17.667162242027207,
     "restoration_cost": {
@@ -1508,14 +1516,14 @@
       "planting_cost_per_unit": 5.0
     },
     "restoration_npv": {
-      "carbon_benefits": 31970.208249950636,
+      "carbon_benefits": 32269.111033857997,
       "carbon_payback_years": null,
       "cost": 16710.21282120277,
       "horizon": 100,
-      "net_present_value": 247146.5690136075,
-      "roi": 15.790150889042856,
-      "service_benefits": 231886.57358485967,
-      "total_benefits": 263856.7818348103
+      "net_present_value": 99066.5798633547,
+      "roi": 6.928504976169661,
+      "service_benefits": 83507.68165069948,
+      "total_benefits": 115776.79268455747
     },
     "substrate_ceiling": 0.9997608191653746,
     "substrate_recovery_cost": 0.0,

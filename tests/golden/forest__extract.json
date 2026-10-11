@@ -92,22 +92,25 @@
     "mode": "extraction",
     "npv_analysis": {
       "carbon_absorption_lost_tco2_yr": 110.0,
-      "carbon_foregone_eur_pv": 1170979.73,
+      "carbon_foregone_eur_pv": 1159533.2,
       "carbon_price_eur_per_t": 166.35,
       "carbon_release_eur_pv": 727762.21,
       "carbon_released_tco2": 4375.0,
       "horizon_years": 100,
-      "services_eur_pv": 8398063.97,
-      "substrate_unrecoverable_eur_pv": 2452.95,
-      "total_eur_pv": 10296805.91
+      "services_eur_pv": 8373436.21,
+      "substrate_unrecoverable_eur_pv": 2445.75,
+      "total_eur_pv": 10260731.63
     },
     "summary": {
       "annual_externality_eur_yr": 96773.19,
       "discount_is_default": false,
       "final_ecosystem_health": 0.150516,
-      "net_social_cost_eur_pv": 9796805.91,
+      "net_social_cost_eur_pv": 9760731.63,
       "num_steps": 5000,
-      "pv_externality_eur_pv": 10296805.91,
+      "pv_externality_eur_pv": 10260731.63,
+      "pv_externality_h100_eur_pv": 10260731.63,
+      "pv_externality_h200_eur_pv": 16937391.37,
+      "pv_externality_h50_eur_pv": 5940675.89,
       "revenue_eur": 500000.0,
       "total_units_extracted": 5000
     }
@@ -123,18 +126,23 @@
     "discount_is_default": false,
     "extraction_npv": {
       "carbon_absorption_lost_t_yr": 110.0,
-      "carbon_foregone": 1170979.727612353,
+      "carbon_foregone": 1159533.200460717,
       "carbon_price": 166.3456487480301,
       "carbon_release": 727762.2132726316,
       "carbon_released_t": 4375.0,
-      "direct": 8398063.966739953,
+      "direct": 8373436.213171803,
       "horizon": 100,
-      "substrate_unrecoverable": 2452.9465147122705,
-      "total": 10296805.907624938
+      "substrate_unrecoverable": 2445.7531231735256,
+      "total": 10260731.626905153
     },
     "final_ecosystem_health": 0.15051625519675782,
-    "net_social_cost": 9796805.907624938,
-    "pv_externality": 10296805.907624938,
+    "net_social_cost": 9760731.626905153,
+    "pv_externality": 10260731.626905153,
+    "pv_externality_by_horizon": {
+      "100": 10260731.626905153,
+      "200": 16937391.365813006,
+      "50": 5940675.893609814
+    },
     "revenue": 500000.0,
     "total_units_extracted": 5000
   },

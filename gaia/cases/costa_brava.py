@@ -175,12 +175,17 @@ _HOLM_OAK_SUBSTRATE = SubstrateProfile(
 )
 
 # v0.6: Costa Brava Holm Oak discount configuration
-# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023
+# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023. Carbon price: the
+# default, the social cost of carbon.
+# Scarcity: 1.28%/yr, the relative price change of forest ecosystem services
+# (Drupp et al. 2024, Table 10; see gaia.discount). It was 2.5% ("holm oak
+# more threatened"), above the discount rate, so the PV grew without bound
+# with the horizon (C3); no source supported a holm-oak-specific rate.
 _COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=0.023,
-    scarcity_rate=0.025,  # Higher: Mediterranean holm oak more threatened
-    horizon_years=100,  # carbon price: the default, social cost of carbon
+    scarcity_rate=0.0128,
+    horizon_years=100,
 )
 
 # v0.7: Costa Brava Holm Oak pricing configuration. Anchor values are €/yr

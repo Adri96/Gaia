@@ -66,7 +66,11 @@ from gaia.succession import (
     compute_maturation_timeline,
     find_years_to_threshold,
 )
-from gaia.validation import validate_ecosystem, validate_extraction
+from gaia.validation import (
+    validate_discount_config,
+    validate_ecosystem,
+    validate_extraction,
+)
 
 _PYX_PATH: Path = Path(__file__).resolve().parent / "cy" / "simulation_cy.pyx"
 
@@ -304,6 +308,20 @@ def _run_extraction_cython(
     return _extraction_result(ecosystem, steps, units_to_extract)
 
 
+def _resolve_discount(resource):
+    """The resource's DiscountConfig, or DEFAULT_DISCOUNT, validated.
+
+    Every run path that discounts (extraction, restoration, and the CLI,
+    which runs them after any --carbon-price change) goes through here, so
+    no present value is computed with a config that validation rejects.
+    """
+    from gaia.discount import DEFAULT_DISCOUNT
+
+    discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
+    validate_discount_config(discount)
+    return discount
+
+
 def _extraction_result(
     ecosystem: Ecosystem, steps: list, units_to_extract: int
 ) -> SimulationResult:
@@ -312,12 +330,13 @@ def _extraction_result(
     The annual externality (€/yr) is the final step's flow. Its present value,
     plus the carbon and substrate streams, comes from compute_extraction_npv
     with the resource's DiscountConfig, or DEFAULT_DISCOUNT when it has none,
-    so revenue (one-off) is only ever compared with a present value.
+    so revenue (one-off) is only ever compared with a present value. The
+    PV is also recomputed at each of SENSITIVITY_HORIZONS.
     """
-    from gaia.discount import DEFAULT_DISCOUNT, compute_extraction_npv
+    from gaia.discount import compute_extraction_npv, horizon_variants
 
     resource = ecosystem.resource
-    discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
+    discount = _resolve_discount(resource)
 
     if steps:
         final_step: SimulationStep = steps[-1]
@@ -333,13 +352,20 @@ def _extraction_result(
         health = 1.0
         substrate_ceiling = 1.0
 
-    extraction_npv = compute_extraction_npv(
-        annual_externality=annual_externality,
-        discount=discount,
-        carbon_profile=resource.carbon_profile,
-        units_extracted=units_to_extract,
-        substrate_ceiling=substrate_ceiling,
-    )
+    def pv_externality(config) -> float:
+        return compute_extraction_npv(
+            annual_externality=annual_externality,
+            discount=config,
+            carbon_profile=resource.carbon_profile,
+            units_extracted=units_to_extract,
+            substrate_ceiling=substrate_ceiling,
+        )
+
+    extraction_npv = pv_externality(discount)
+    by_horizon: dict = {
+        horizon: (pv_externality(config).total if config is not None else None)
+        for horizon, config in horizon_variants(discount).items()
+    }
 
     return SimulationResult(
         ecosystem=ecosystem,
@@ -352,6 +378,7 @@ def _extraction_result(
         final_ecosystem_health=health,
         extraction_npv=extraction_npv,
         discount_is_default=resource.discount is None,
+        pv_externality_by_horizon=by_horizon,
     )
 
 
@@ -879,14 +906,12 @@ def run_restoration(
     total_cost: float = final_step.restoration_cost_so_far  # €, one-off
 
     from gaia.discount import (
-        DEFAULT_DISCOUNT,
         compute_carbon_breakeven,
         compute_prevention_advantage_v06,
         compute_restoration_npv,
+        horizon_variants,
     )
-    discount = (
-        resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
-    )
+    discount = _resolve_discount(resource)
 
     # Prevention advantage: how many times cheaper it would have been to not
     # destroy the units vs. destroying them and then restoring them.
@@ -954,18 +979,28 @@ def run_restoration(
             ecosystem.resource.carbon_profile, units_to_restore
         )
 
-    restoration_npv_result = compute_restoration_npv(
-        restoration_cost_total=total_cost,
-        maintenance_cost_per_year=maintenance_total_per_year,
-        maintenance_years=restoration_cost.maintenance_years,
-        max_recovered_value=annual_recovered_potential,
-        discount=discount,
-        succession_curve=succession_curve,
-        carbon_profile=ecosystem.resource.carbon_profile,
-        units_restored=units_to_restore,
-        substrate_ceiling=substrate_ceiling,
-        carbon_released=carbon_released,
-    )
+    def restoration_npv(config):
+        return compute_restoration_npv(
+            restoration_cost_total=total_cost,
+            maintenance_cost_per_year=maintenance_total_per_year,
+            maintenance_years=restoration_cost.maintenance_years,
+            max_recovered_value=annual_recovered_potential,
+            discount=config,
+            succession_curve=succession_curve,
+            carbon_profile=ecosystem.resource.carbon_profile,
+            units_restored=units_to_restore,
+            substrate_ceiling=substrate_ceiling,
+            carbon_released=carbon_released,
+        )
+
+    restoration_npv_result = restoration_npv(discount)
+    net_pv_by_horizon: dict = {
+        horizon: (
+            restoration_npv(config).net_present_value
+            if config is not None else None
+        )
+        for horizon, config in horizon_variants(discount).items()
+    }
 
     carbon_breakeven_result = compute_carbon_breakeven(
         restoration_cost_total=total_cost,
@@ -1019,4 +1054,5 @@ def run_restoration(
         depletion_after=(missing - units_to_restore) / total_units,
         initial_ecosystem_health=start_step.ecosystem_health,
         annual_damage_reversal=annual_damage_reversal,
+        net_restoration_pv_by_horizon=net_pv_by_horizon,
     )

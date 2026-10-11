@@ -152,11 +152,11 @@ class TestCarbonPresentValues:
             10.0 * SOCIAL_COST_OF_CARBON_EUR)
 
     def test_absorption_pv_closed_form(self):
-        """Constant flow, constant rates: a growing annuity over t = 0..H-1."""
+        """Constant flow, constant rates: a growing annuity over t = 1..H."""
         config = DiscountConfig(rate_schedule=0.05, carbon_price_current=100.0,
                                 carbon_price_growth=0.01, horizon_years=30)
         q = 1.01 / 1.05
-        expected = 2.0 * 100.0 * (1 - q ** 30) / (1 - q)
+        expected = 2.0 * 100.0 * q * (1 - q ** 30) / (1 - q)
         assert pv_absorption(2.0, config) == pytest.approx(expected, rel=1e-12)
 
     def test_absorption_and_shortfall_sum_to_full_flow(self):

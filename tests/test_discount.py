@@ -190,6 +190,19 @@ class TestPreconfiguredProfiles:
         assert isinstance(DISCOUNT_ENVIRONMENTAL.rate_schedule, float)
         assert abs(DISCOUNT_ENVIRONMENTAL.rate_schedule - 0.014) < 1e-6
 
+    @pytest.mark.parametrize("profile", [
+        DISCOUNT_MARKET, DISCOUNT_CENTRAL, DISCOUNT_ENVIRONMENTAL, DISCOUNT_GREEN_BOOK,
+    ])
+    def test_profiles_converge(self, profile):
+        """Every built-in profile passes validation: scarcity and carbon price
+        growth below the discount rate in every year of the horizon (C3)."""
+        from gaia.validation import validate_discount_config
+        validate_discount_config(profile)
+
+    def test_discount_environmental_scarcity_below_rate(self):
+        assert DISCOUNT_ENVIRONMENTAL.scarcity_rate == 0.01
+        assert DISCOUNT_ENVIRONMENTAL.scarcity_rate < DISCOUNT_ENVIRONMENTAL.rate_schedule
+
     def test_discount_green_book(self):
         """DISCOUNT_GREEN_BOOK has declining schedule, not a single float."""
         assert isinstance(DISCOUNT_GREEN_BOOK.rate_schedule, list)
@@ -713,7 +726,7 @@ class TestComputePreventionAdvantageV06:
         expected = sum(
             5000.0 * (1.0 - min(succession_service(succession, float(t)), 0.85))
             * config.discount_factor(t) * config.scarcity_factor(t)
-            for t in range(config.horizon_years)
+            for t in range(1, config.horizon_years + 1)
         )
         assert result.npv_restoration_total == pytest.approx(expected, rel=1e-12)
 
@@ -922,7 +935,7 @@ class TestEdgeCases:
         assert result.carbon_foregone == 0.0
 
     def test_single_year_horizon(self):
-        """Horizon of 1 year: only year 0 contributes to direct NPV."""
+        """Horizon of 1 year: only the year-1 flow contributes, discounted once."""
         config = _default_discount(horizon_years=1)
 
         result = compute_extraction_npv(
@@ -932,8 +945,8 @@ class TestEdgeCases:
             units_extracted=10,
         )
 
-        # Only year 0 in range(1): factor=1.0, scarcity=1.0
-        assert abs(result.direct - 1000.0) < 1e-6
+        expected = 1000.0 * config.discount_factor(1) * config.scarcity_factor(1)
+        assert result.direct == pytest.approx(expected, rel=1e-12)
 
     def test_carbon_price_growth_zero(self):
         """With zero carbon price growth, carbon price stays constant."""
@@ -995,3 +1008,55 @@ class TestEdgeCases:
 
         # The late regime (2.5%) should discount less per year than mid regime (3.0%)
         assert ratio_late > ratio_early
+
+
+# ── 8. One year convention (C3 / S7 off-by-one) ──────────────────────────────
+
+
+class TestYearConvention:
+    """Every yearly flow is valued at the end of years t = 1..H (gaia.discount)."""
+
+    def test_direct_pv_is_end_of_year_annuity(self):
+        config = DiscountConfig(rate_schedule=0.04, scarcity_rate=0.01,
+                                horizon_years=30)
+        q = 1.01 / 1.04
+        result = compute_extraction_npv(1000.0, config, None, 0)
+        assert result.direct == pytest.approx(
+            1000.0 * q * (1 - q ** 30) / (1 - q), rel=1e-12)
+
+    def test_immediate_restoration_matches_extraction_years(self):
+        """Without succession, restored services cover the same years as the loss."""
+        config = _default_discount()
+        restored = compute_restoration_npv(0.0, 0.0, 0, 1000.0, config,
+                                           None, None, 0)
+        lost = compute_extraction_npv(1000.0, config, None, 0)
+        assert restored.service_benefits == pytest.approx(lost.direct, rel=1e-12)
+
+    def test_maturation_timeline_and_npv_share_years(self):
+        """Delivered (NPV) + gap (timeline) = the capped mature flow every year 1..H."""
+        from gaia.succession import compute_maturation_gap, compute_maturation_timeline
+        config = _default_discount()
+        curve = _succession_curve()
+        ceiling = 0.8
+        npv = compute_restoration_npv(0.0, 0.0, 0, 5000.0, config, curve,
+                                      None, 0, substrate_ceiling=ceiling)
+        timeline = compute_maturation_timeline(curve, 5000.0, config.horizon_years,
+                                               0, substrate_ceiling=ceiling)
+        assert [s.year for s in timeline] == list(range(1, config.horizon_years + 1))
+        gap = compute_maturation_gap(timeline, 5000.0 * ceiling, config)
+        mature = compute_extraction_npv(5000.0 * ceiling, config, None, 0).direct
+        assert npv.service_benefits + gap == pytest.approx(mature, rel=1e-12)
+
+    def test_carbon_payback_matches_carbon_module(self):
+        """Payback year t counts the absorption of years 1..t, as in gaia.carbon."""
+        from gaia.carbon import compute_carbon_payback_period
+        config = _default_discount()
+        curve = _succession_curve()
+        # Release = 100 units × 0.025 t = 2.5 t, recaptured by absorption
+        profile = CarbonProfile(stored_carbon_tonnes=0.025,
+                                annual_absorption_tonnes=0.025,
+                                soil_carbon_tonnes=0.0, soil_release_fraction=0.0)
+        npv = compute_restoration_npv(0.0, 0.0, 0, 0.0, config, curve, profile,
+                                      100, carbon_released=2.5)
+        expected = compute_carbon_payback_period(profile, 100, 100, curve)
+        assert npv.carbon_payback_years == int(expected)

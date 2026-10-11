@@ -281,12 +281,13 @@ def test_net_social_cost_is_pv_of_flow_minus_revenue():
 
     With a 5% discount rate, no scarcity uplift, a 10-year horizon and no
     carbon or substrate, the PV is the annual flow times the 10-year annuity
-    factor Σ_{t=0}^{9} 1.05^-t. The flow itself is never compared to revenue.
+    factor Σ_{t=1}^{10} 1.05^-t (flows at the end of each year). The flow
+    itself is never compared to revenue.
     """
     discount = DiscountConfig(rate_schedule=0.05, scarcity_rate=0.0, horizon_years=10)
     eco = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=200_000.0, discount=discount)
     result = run_extraction(eco, 800)  # 80%
-    annuity = sum(1.05 ** -t for t in range(10))
+    annuity = sum(1.05 ** -t for t in range(1, 11))
     assert result.pv_externality == pytest.approx(
         result.annual_externality * annuity, rel=1e-12)
     assert result.net_social_cost == pytest.approx(
@@ -509,3 +510,43 @@ def test_effective_damage_geq_direct_damage():
                 f"Step {step.step}, agent {i}: effective ({step.agent_damages[i]:.6f}) "
                 f"< direct ({step.agent_direct_damages[i]:.6f})"
             )
+
+
+def test_horizon_sensitivity_of_headline_pv():
+    """pv_externality is also reported at 50/100/200 years, in the text and JSON."""
+    import dataclasses
+    import json
+
+    from gaia.report import format_report
+    from gaia.serialization import to_json
+
+    discount = DiscountConfig(rate_schedule=0.05, scarcity_rate=0.01, horizon_years=100)
+    eco = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=200_000.0,
+                               discount=discount)
+    result = run_extraction(eco, 800)
+    assert list(result.pv_externality_by_horizon) == [50, 100, 200]
+    assert result.pv_externality_by_horizon[100] == pytest.approx(
+        result.pv_externality, rel=1e-12)
+    eco200 = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=200_000.0,
+                                  discount=dataclasses.replace(discount, horizon_years=200))
+    assert result.pv_externality_by_horizon[200] == pytest.approx(
+        run_extraction(eco200, 800).pv_externality, rel=1e-12)
+    pv = result.pv_externality_by_horizon
+    assert pv[50] < pv[100] < pv[200]
+
+    summary = json.loads(to_json(result, include_steps=False))["summary"]
+    for h in (50, 100, 200):
+        assert summary[f"pv_externality_h{h}_eur_pv"] == round(pv[h], 2)
+    assert "200-year horizon:" in format_report(result)
+
+
+def test_horizon_sensitivity_none_when_extended_schedule_diverges():
+    """A segment past the config's horizon is unchecked there, but not at 200 years."""
+    discount = DiscountConfig(rate_schedule=[(0, 0.05), (150, 0.005)],
+                              scarcity_rate=0.01, horizon_years=100)
+    eco = _one_agent_ecosystem(unit_value=50.0, annual_value_per_ha=1_000.0,
+                               discount=discount)
+    result = run_extraction(eco, 100)
+    assert result.pv_externality_by_horizon[100] == pytest.approx(
+        result.pv_externality, rel=1e-12)
+    assert result.pv_externality_by_horizon[200] is None

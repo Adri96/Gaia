@@ -5,11 +5,24 @@ Verifies that validation raises descriptive errors on bad inputs and
 passes cleanly on valid inputs. Validation failures must never silently default.
 """
 
+import dataclasses
+
 import pytest
+from gaia.cases import forest as forest_case
 from gaia.damage import logistic_damage
-from gaia.models import Agent, Ecosystem, InteractionEdge, Resource
+from gaia.models import (
+    Agent,
+    DiscountConfig,
+    Ecosystem,
+    InteractionEdge,
+    Resource,
+    RestorationCost,
+)
+from gaia.recovery import logistic_recovery
+from gaia.simulation import run_extraction, run_restoration
 from gaia.validation import (
     validate_damage_function,
+    validate_discount_config,
     validate_ecosystem,
     validate_extraction,
     validate_resource,
@@ -330,3 +343,105 @@ def test_reject_edge_bad_interaction_type():
     )
     with pytest.raises(ValueError, match="interaction_type"):
         validate_ecosystem(eco)
+
+
+# ── DiscountConfig convergence (C3) ────────────────────────────────────────────
+
+def _discount(**kwargs) -> DiscountConfig:
+    defaults = dict(rate_schedule=0.03, scarcity_rate=0.01, horizon_years=100,
+                    carbon_price_current=100.0, carbon_price_growth=0.01)
+    defaults.update(kwargs)
+    return DiscountConfig(**defaults)
+
+
+def test_discount_below_rate_passes():
+    validate_discount_config(_discount(scarcity_rate=0.0299, carbon_price_growth=0.0299))
+
+
+@pytest.mark.parametrize("scarcity", [0.03, 0.05])
+def test_reject_scarcity_at_or_above_constant_rate(scarcity):
+    with pytest.raises(ValueError, match=r"scarcity_rate \(\d\.\d\d%/yr\) must be below "
+                                         r"the discount rate \(3\.00%/yr\)"):
+        validate_discount_config(_discount(scarcity_rate=scarcity))
+
+
+@pytest.mark.parametrize("growth", [0.03, 0.04])
+def test_reject_carbon_growth_at_or_above_constant_rate(growth):
+    with pytest.raises(ValueError, match=r"carbon_price_growth .* must be below "
+                                         r"the discount rate \(3\.00%/yr\)"):
+        validate_discount_config(_discount(carbon_price_growth=growth))
+
+
+def test_reject_zero_rate_with_zero_growth():
+    """An undiscounted permanent flow grows linearly with the horizon."""
+    with pytest.raises(ValueError, match="scarcity_rate"):
+        validate_discount_config(_discount(rate_schedule=0.0, scarcity_rate=0.0,
+                                           carbon_price_growth=0.0))
+
+
+def test_reject_scarcity_above_a_schedule_segment_within_horizon():
+    """The offending segment and its years are named in the message."""
+    config = _discount(rate_schedule=[(0, 0.03), (31, 0.02), (101, 0.01)],
+                       scarcity_rate=0.015, horizon_years=200)
+    with pytest.raises(ValueError, match=r"segment for years 101-200 \(1\.00%/yr\)"):
+        validate_discount_config(config)
+
+
+def test_reject_carbon_growth_above_a_schedule_segment_within_horizon():
+    config = _discount(rate_schedule=[(0, 0.03), (31, 0.012)],
+                       carbon_price_growth=0.013, horizon_years=100)
+    with pytest.raises(ValueError, match=r"carbon_price_growth .* segment for "
+                                         r"years 31-100 \(1\.20%/yr\)"):
+        validate_discount_config(config)
+
+
+def test_schedule_segment_after_horizon_is_not_checked():
+    """Documented choice: segments starting after the horizon are never used."""
+    config = _discount(rate_schedule=[(0, 0.03), (101, 0.005)],
+                       scarcity_rate=0.01, horizon_years=100)
+    validate_discount_config(config)
+    with pytest.raises(ValueError, match="years 101-101"):
+        validate_discount_config(dataclasses.replace(config, horizon_years=101))
+
+
+def test_first_segment_covers_years_before_its_threshold():
+    config = _discount(rate_schedule=[(5, 0.005), (50, 0.03)], scarcity_rate=0.01)
+    with pytest.raises(ValueError, match="years 1-49"):
+        validate_discount_config(config)
+
+
+_DIVERGENT = DiscountConfig(rate_schedule=0.014, scarcity_rate=0.03)
+
+
+def test_run_extraction_rejects_divergent_discount():
+    eco = _ecosystem()
+    eco.resource = dataclasses.replace(eco.resource, discount=_DIVERGENT)
+    with pytest.raises(ValueError, match="scarcity_rate"):
+        run_extraction(eco, 10)
+
+
+def test_run_restoration_rejects_divergent_discount():
+    eco = _ecosystem()
+    eco.resource = dataclasses.replace(eco.resource, discount=_DIVERGENT)
+    cost = RestorationCost(50.0, 10.0, 10)
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    with pytest.raises(ValueError, match="scarcity_rate"):
+        run_restoration(eco, 10, cost, recovery, units_lost=10)
+
+
+def test_default_discount_is_validated(monkeypatch):
+    """A resource without a DiscountConfig runs on DEFAULT_DISCOUNT, validated too."""
+    import gaia.discount
+    monkeypatch.setattr(gaia.discount, "DEFAULT_DISCOUNT", _DIVERGENT)
+    with pytest.raises(ValueError, match="scarcity_rate"):
+        run_extraction(_ecosystem(), 10)
+
+
+@pytest.mark.parametrize("mode", ["extract", "restore"])
+def test_cli_rejects_divergent_discount(monkeypatch, capsys, mode):
+    monkeypatch.setattr(forest_case, "_OAK_VALLEY_DISCOUNT", _DIVERGENT)
+    with pytest.raises(SystemExit) as exc:
+        forest_case.main(["--mode", mode, "--trees", "100", "--units", "10",
+                          "--carbon-price", "ets"])
+    assert exc.value.code == 1
+    assert "scarcity_rate (3.00%/yr) must be below" in capsys.readouterr().err

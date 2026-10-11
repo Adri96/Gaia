@@ -188,13 +188,19 @@ _POSIDONIA_SUBSTRATE = SubstrateProfile(
 )
 
 # v0.6: Posidonia discount configuration
-# Declining rate schedule: near-term 2.3%, mid-term 1.8%, long-term 1.4%
+# Declining rate schedule: near-term 2.3%, mid-term 1.8%, long-term 1.4%.
+# Carbon price: the DiscountConfig default, the social cost of carbon.
+# Scarcity: 1%/yr, the Dutch government default relative price change for
+# ecosystem services (Drupp et al. 2024, §1; see gaia.discount). It was 3%
+# ("Posidonia declining 34%+ since 1960s"), above every rate of the
+# schedule, so the PV grew without bound with the horizon (C3). The
+# aggregate estimate of Drupp et al. (1.66%/yr) is above the long-term
+# 1.4%, which the schedule reaches within the 200-year horizon.
 _POSIDONIA_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=[(0, 0.023), (31, 0.018), (101, 0.014)],
-    scarcity_rate=0.03,  # Higher: Posidonia declining 34%+ since 1960s
+    scarcity_rate=0.01,
     horizon_years=200,  # Longer horizon for marine ecosystems
-    # carbon price: the DiscountConfig default, the social cost of carbon
 )
 
 # ── Reference area ───────────────────────────────────────────────────────────

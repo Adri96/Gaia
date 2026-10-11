@@ -184,13 +184,14 @@ def pv_absorption(
 ) -> float:
     """Present value of an annual CO₂ absorption flow (€ PV).
 
-        PV = Σ_{t=0}^{H−1} annual_tonnes × f(t) × price(t) × df(t)
+        PV = Σ_{t=1}^{H} annual_tonnes × f(t) × price(t) × df(t)
 
     with f(t) = min(s(t), substrate_ceiling), s(t) the succession service
     fraction (1 without a curve), or f(t) = 1 − min(s(t), substrate_ceiling)
     when ``shortfall`` is True (absorption not yet — or never — recovered).
-    The year convention (t = 0..H−1) is the one of the service streams in
-    gaia.discount, so carbon and services cover the same years.
+    The year convention (a flow valued at the end of each year t = 1..H) is
+    the one of every stream in gaia.discount, so carbon and services cover
+    the same years.
 
     Extraction's foregone absorption is ``pv_absorption(units × absorption,
     discount)``: f = 1 every year of the horizon, like the direct service
@@ -211,7 +212,7 @@ def pv_absorption(
     pv: float = 0.0
     if annual_tonnes == 0.0:
         return pv
-    for year in range(discount.horizon_years):
+    for year in range(1, discount.horizon_years + 1):
         frac: float = _absorption_fraction(year, succession_curve, substrate_ceiling)
         if shortfall:
             frac = 1.0 - frac

@@ -157,7 +157,6 @@ DISCOUNT_CONFIGS = {
     "green_book": DISCOUNT_GREEN_BOOK,
     **{f"case_{c}": build(c, 100)[0].resource.discount for c in CASES},
 }
-_DIVERGENT = {"environmental", "case_costa_brava", "case_posidonia", "case_amazon_forest"}
 
 
 def _npv_at(discount, horizon):
@@ -165,24 +164,18 @@ def _npv_at(discount, horizon):
     return compute_extraction_npv(1.0, config, None, 0).total
 
 
-@pytest.mark.parametrize("name", [
-    pytest.param(n, marks=pytest.mark.xfail(strict=True, reason=(
-        "C3: scarcity growth >= discount rate, NPV grows without bound "
-        "with the horizon and validation accepts it")))
-    if n in _DIVERGENT else n
-    for n in DISCOUNT_CONFIGS
-])
+@pytest.mark.parametrize("name", list(DISCOUNT_CONFIGS))
 def test_npv_bounded_as_horizon_grows(name):
-    """Every config validation accepts has a finite NPV that converges in the horizon.
+    """Every built-in config is valid and its NPV converges in the horizon.
 
+    Validation checks the schedule segments in force within a config's own
+    horizon, so the config is validated again at the longest horizon used.
     Doubling a 1,000-year horizon may add at most 10% (the slowest valid
     built-in, r − s ≈ 0.3%, adds ~5%).
     """
     discount = DISCOUNT_CONFIGS[name]
-    try:
-        validate_discount_config(discount)
-    except ValueError:
-        return  # invalid configs are out of scope
+    validate_discount_config(discount)
+    validate_discount_config(dataclasses.replace(discount, horizon_years=2000))
     npv_1000 = _npv_at(discount, 1000)
     npv_2000 = _npv_at(discount, 2000)
     assert math.isfinite(npv_2000)
@@ -253,7 +246,7 @@ def _carbon_at_stake(eco, units):
 
     Computed independently of gaia.carbon: tonnes from the carbon profile,
     priced at SOCIAL_COST_OF_CARBON_EUR growing at the DiscountConfig's rate,
-    over the years t = 0..H−1 of the service streams.
+    over the years t = 1..H of every stream (gaia.discount's convention).
     """
     cp = eco.resource.carbon_profile
     discount = eco.resource.discount
@@ -264,7 +257,7 @@ def _carbon_at_stake(eco, units):
     foregone = sum(
         absorption * SOCIAL_COST_OF_CARBON_EUR
         * (1 + discount.carbon_price_growth) ** t * discount.discount_factor(t)
-        for t in range(discount.horizon_years)
+        for t in range(1, discount.horizon_years + 1)
     )
     return release * SOCIAL_COST_OF_CARBON_EUR, foregone
 

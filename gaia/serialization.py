@@ -40,6 +40,16 @@ GAIA_VERSION = __version__
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 
+def _by_horizon(name: str, by_horizon: dict) -> Dict[str, Any]:
+    """Horizon sensitivity as ``{name}_h{H}_eur_pv`` keys (None → null)."""
+    return {
+        f"{name}_h{horizon}_eur_pv": (
+            round(value, 2) if value is not None else None
+        )
+        for horizon, value in by_horizon.items()
+    }
+
+
 def _agent_metadata(agents: list, area_ha: float) -> List[Dict[str, Any]]:
     """Serialize agent metadata (no callables)."""
     return [
@@ -305,6 +315,7 @@ def simulation_result_to_dict(
             "annual_externality_eur_yr": round(result.annual_externality, 2),
             "pv_externality_eur_pv": round(result.pv_externality, 2),
             "net_social_cost_eur_pv": round(result.net_social_cost, 2),
+            **_by_horizon("pv_externality", result.pv_externality_by_horizon),
             "discount_is_default": result.discount_is_default,
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
@@ -374,6 +385,9 @@ def restoration_result_to_dict(
             "annual_damage_reversal_eur_yr": round(result.annual_damage_reversal, 2),
             "annual_recovered_value_eur_yr": round(result.annual_recovered_value, 2),
             "net_restoration_value_eur_pv": round(result.net_restoration_pv, 2),
+            **_by_horizon(
+                "net_restoration_value", result.net_restoration_pv_by_horizon,
+            ),
             "prevention_advantage": round(result.prevention_advantage, 4),
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
