@@ -53,7 +53,3 @@ MAX_INCOMING_EDGE_STRENGTH: float = 1.0
 # edges put heavy damage inside the "safe" zone, so validation warns.
 THRESHOLD_HEALTH_WARNING_LEVEL: float = 0.8
 
-# PLACEHOLDER. Strength multiplier for recovery cascades in
-# propagate_interactions(recovery_mode=True), weaker than damage cascades
-# (entropy asymmetry). Unused by run_restoration since Step 3.3.
-RECOVERY_CASCADE_FACTOR: float = 0.5

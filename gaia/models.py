@@ -8,19 +8,22 @@ All models are Cython-compatible.
 v0.2 additions: RestorationCost, RestorationStep, RestorationResult
 v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
                 SimulationStep cascade fields
-v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep,
-                RestorationConfig; Resource + carbon/resilience; Agent + succession;
-                SimulationStep + resilience fields; RestorationResult + maturation
+v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep;
+                Resource + carbon/resilience; SimulationStep + resilience fields;
+                RestorationResult + maturation
 v0.5 additions: SubstrateProfile, SubstrateState; Resource + substrate;
                 SimulationStep + substrate fields; RestorationResult + substrate ceiling
 v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven;
-                Resource + discount;
-                SimulationStep + discount fields; RestorationResult + NPV
+                Resource + discount; RestorationResult + NPV
 v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
                 Ecosystem + pricing; SimulationStep + price fields
 Step 3.7: DestroyThenRestorePenalty; RestorationResult.restoration_cost_ratio
                 (the three "prevention advantage" variants are gone)
 Step 3.8: CalibrationRegime; Ecosystem.calibration_regime
+Step 6.4: dead fields removed (never set or never read): RestorationConfig,
+                Agent.succession_curve, SubstrateProfile.water_availability_mm_yr
+                and water_clarity_kd, the SimulationStep discount fields,
+                RestorationResult.substrate_recovery_cost and extraction_npv
 """
 
 from dataclasses import dataclass, field
@@ -73,8 +76,6 @@ class SubstrateProfile:
             or "marine_matte" (see SubstrateType). Terrestrial profiles must set
             soil_depth_cm; marine profiles must set sediment_stability.
         soil_depth_cm: Terrestrial: productive soil depth in cm.
-        water_availability_mm_yr: Terrestrial: effective annual precipitation in mm/yr.
-        water_clarity_kd: Marine: diffuse attenuation coefficient in m^-1.
         sediment_stability: Marine: 0.0 (mobile) to 1.0 (rock/consolidated matte).
         erosion_rate_unprotected: Erosion rate when vegetation removed (t/ha/yr or mm/yr).
         erosion_rate_protected: Erosion rate under intact vegetation (t/ha/yr or mm/yr).
@@ -93,8 +94,6 @@ class SubstrateProfile:
 
     substrate_type: str
     soil_depth_cm: Optional[float] = None
-    water_availability_mm_yr: Optional[float] = None
-    water_clarity_kd: Optional[float] = None
     sediment_stability: Optional[float] = None
     erosion_rate_unprotected: float = 0.0
     erosion_rate_protected: float = 0.0
@@ -119,24 +118,18 @@ class SubstrateState:
     Attributes:
         profile: The SubstrateProfile defining physical properties and rates.
         current_soil_depth_cm: Current soil depth (terrestrial).
-        current_water_clarity_kd: Current water clarity (marine).
         current_sediment_stability: Current sediment stability (marine).
         pristine_soil_depth_cm: Original soil depth before any degradation.
-        pristine_water_clarity_kd: Original water clarity.
         pristine_sediment_stability: Original sediment stability.
         capacity_fraction: Derived carrying capacity as fraction of pristine (0.0 to 1.0).
-        years_to_recover: Estimated years for substrate to return to pristine.
     """
 
     profile: SubstrateProfile
     current_soil_depth_cm: Optional[float] = None
-    current_water_clarity_kd: Optional[float] = None
     current_sediment_stability: Optional[float] = None
     pristine_soil_depth_cm: Optional[float] = None
-    pristine_water_clarity_kd: Optional[float] = None
     pristine_sediment_stability: Optional[float] = None
     capacity_fraction: float = 1.0
-    years_to_recover: float = 0.0
 
 
 # ── v0.6: Discount & NPV models ────────────────────────────────────────────────
@@ -562,25 +555,6 @@ class MaturationStep:
     cumulative_carbon_absorbed: float
 
 
-@dataclass
-class RestorationConfig:
-    """Configuration for time-aware restoration simulation.
-
-    Attributes:
-        units_to_restore: Number of units to replant.
-        planting_schedule: "immediate" or "phased".
-        planting_years: If phased, how many years to spread planting over.
-        time_horizon_years: How many years to simulate post-restoration.
-        succession_curve: Ecosystem-level default succession curve.
-    """
-
-    units_to_restore: int
-    planting_schedule: str
-    planting_years: int
-    time_horizon_years: int
-    succession_curve: SuccessionCurve
-
-
 # ── Core models ────────────────────────────────────────────────────────────────
 
 
@@ -663,9 +637,6 @@ class Agent:
     trophic_level: int = -1             # -1=abiotic, 0=producer, 1-3=consumers
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
     keystone_threshold: float = DEFAULT_KEYSTONE_THRESHOLD  # health below this triggers keystone cascade
-
-    # v0.4: Agent-specific succession curve (None → use ecosystem default)
-    succession_curve: Optional[SuccessionCurve] = None
 
     def annual_value(self, area_ha: float) -> float:
         """€/yr of service lost at full damage over ``area_ha`` hectares."""
@@ -806,11 +777,6 @@ class SimulationStep:
     substrate_erosion: float = 0.0            # Erosion applied this step (mm or equivalent)
     effective_k: int = 0                      # Current effective carrying capacity
     k_fraction: float = 1.0                   # effective_k / total_units
-
-    # v0.6: Discount fields (defaults preserve v0.5 behavior)
-    discount_factor_at_step: float = 1.0      # Discount factor at this step's time
-    npv_externality: float = 0.0              # Externality * discount_factor
-    carbon_price_used: float = 0.0            # Carbon price at this step's year
 
     # v0.7: Endogenous pricing fields (defaults preserve v0.6 behavior)
     agent_prices: list = field(default_factory=list)  # Per-agent dynamic price
@@ -1039,10 +1005,8 @@ class RestorationResult:
     # v0.5: Substrate-constrained restoration fields (defaults preserve v0.4 behavior)
     substrate_ceiling: float = 1.0              # Max recoverable fraction (K_current/K_pristine)
     substrate_recovery_years: float = 0.0       # Years for substrate to return to pristine
-    substrate_recovery_cost: float = 0.0        # Cost of substrate stabilization
 
     # v0.6: NPV and carbon breakeven (defaults preserve v0.5 behavior)
-    extraction_npv: Optional[ExtractionNPV] = None
     restoration_npv: Optional[RestorationNPV] = None
     carbon_breakeven: Optional[CarbonBreakeven] = None
     destroy_then_restore_penalty: Optional[DestroyThenRestorePenalty] = None

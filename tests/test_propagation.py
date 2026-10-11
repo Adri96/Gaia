@@ -315,21 +315,3 @@ def test_keystone_only_doubles_own_edges():
     effective, cascade, triggered = propagate_interactions(**args)
     # Pressure on B: 0.8*0.4 + 0.6*0.2 = 0.44; B = 0.1 + 0.9 * 0.44 = 0.496
     assert effective[2] == pytest.approx(0.496)
-
-
-# ── Recovery mode ──────────────────────────────────────────────────────────────
-
-def test_recovery_mode_reduces_cascade():
-    """In recovery mode, cascade strength is halved (0.5×)."""
-    base_args = _make_propagation_args(
-        names=["A", "B"],
-        damages=[0.5, 0.2],
-        edges=[("A", "B", 0.4)],
-    )
-    eff_normal, _, _ = propagate_interactions(**base_args)
-    eff_recovery, _, _ = propagate_interactions(**base_args, recovery_mode=True)
-
-    # Normal: B = 0.2 + 0.8 * (0.5 * 0.4) = 0.36
-    # Recovery: B = 0.2 + 0.8 * (0.5 * 0.4 * 0.5) = 0.28
-    assert eff_normal[1] == pytest.approx(0.36)
-    assert eff_recovery[1] == pytest.approx(0.28)

@@ -177,7 +177,7 @@ Gaia/
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState`, v0.6: `DiscountConfig`, `ExtractionNPV`, `RestorationNPV`, `CarbonBreakeven`, `DestroyThenRestorePenalty`, v0.7: `ScarcityFunction`, `AnchorPoint`, `PricingConfig`, `PriceResult` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, v0.5: `SubstrateProfile`, `SubstrateState`, v0.6: `DiscountConfig`, `ExtractionNPV`, `RestorationNPV`, `CarbonBreakeven`, `DestroyThenRestorePenalty`, v0.7: `ScarcityFunction`, `AnchorPoint`, `PricingConfig`, `PriceResult` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
 | `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |

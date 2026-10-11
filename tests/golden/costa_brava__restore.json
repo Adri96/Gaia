@@ -1398,7 +1398,6 @@
       "substrate_loss": 5796.415751124815,
       "total": 6091115.011704319
     },
-    "extraction_npv": null,
     "final_ecosystem_health": 0.999420974602516,
     "initial_ecosystem_health": 0.23561216671186025,
     "maturation_gap_pv": 4204483.791846833,
@@ -1425,7 +1424,6 @@
       "total_benefits": 3784707.697990655
     },
     "substrate_ceiling": 0.9992424978888096,
-    "substrate_recovery_cost": 0.0,
     "substrate_recovery_years": 5.701200100012027,
     "total_restoration_cost": 1220000.0,
     "total_units_restored": 4000,

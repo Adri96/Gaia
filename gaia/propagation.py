@@ -27,7 +27,6 @@ Scientific foundations used: F3 (Trophic Pyramids), F6 (Keystone Species), F10 (
 from gaia.constants import (
     KEYSTONE_EDGE_MULTIPLIER,
     MAX_EDGE_STRENGTH,
-    RECOVERY_CASCADE_FACTOR,
     TROPHIC_AMPLIFICATION_EXPONENT,
     TROPHIC_TRANSFER_EFFICIENCY,
 )
@@ -99,8 +98,6 @@ def propagate_interactions(
     edge_strengths: list,
     agent_is_keystone: list,
     agent_keystone_thresholds: list,
-    recovery_mode: bool = False,
-    recovery_cascade_factor: float = RECOVERY_CASCADE_FACTOR,
 ) -> tuple:
     """
     Single-pass propagation of damage through interaction edges.
@@ -159,11 +156,6 @@ def propagate_interactions(
         edge_strengths: Base strength per edge (0.0 to 1.0).
         agent_is_keystone: Boolean per agent — is this a keystone species?
         agent_keystone_thresholds: Keystone threshold per agent.
-        recovery_mode: If True, multiply edge strengths by recovery_cascade_factor.
-            Not used by run_restoration since Step 3.3, which reverses the
-            extraction's effective damage instead of propagating recoveries.
-        recovery_cascade_factor: Strength multiplier for recovery cascades.
-            Default RECOVERY_CASCADE_FACTOR (gaia.constants). [PLACEHOLDER]
 
     Returns:
         Tuple of (effective_damages, cascade_damages, keystone_triggered):
@@ -202,11 +194,6 @@ def propagate_interactions(
                         effective_strengths[e] = keystone_boosted_strength(
                             edge_strengths[e]
                         )
-
-    # Apply recovery mode scaling
-    if recovery_mode:
-        for e in range(n_edges):
-            effective_strengths[e] = effective_strengths[e] * recovery_cascade_factor
 
     # Single-pass propagation: cascade pressure from the frozen direct damages
     pressure: list = [0.0] * n_agents

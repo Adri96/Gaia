@@ -593,3 +593,14 @@ def test_damage_invariant_convexity_past_threshold():
         return 0.1 * x / 0.3 if x <= 0.3 else 0.1 + 0.9 * ((x - 0.3) / 0.7) ** 0.5
     with pytest.raises(ValueError, match="convex"):
         validate_damage_function(concave_past_threshold, threshold=0.3)
+
+
+def test_run_restoration_validates_succession_curve():
+    """The succession curve passed to run_restoration is validated (it was
+    only checked on the removed Agent.succession_curve field)."""
+    bad = dataclasses.replace(forest_case._FOREST_SUCCESSION, pioneer_end_year=-1.0)
+    eco = forest_case.build_forest_ecosystem(total_trees=100)
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    with pytest.raises(ValueError, match="pioneer_end_year"):
+        run_restoration(eco, 10, RestorationCost(50.0, 10.0, 10), recovery,
+                        succession_curve=bad, time_horizon_years=10)

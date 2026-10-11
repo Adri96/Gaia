@@ -177,16 +177,17 @@ def handle_deprecated_alias(
     old_attr: str,
     new_attr: str,
     old_flag: str,
+    new_flag: str,
 ) -> None:
-    """Resolve a deprecated CLI alias.
+    """Resolve a deprecated CLI alias (one implementation for every case).
 
     If the old attribute was explicitly set (is not None), copy its value
-    to the new attribute and emit a deprecation warning.
+    to the new attribute and emit a DeprecationWarning naming both flags.
     """
     old_val = getattr(args, old_attr, None)
     if old_val is not None:
         warnings.warn(
-            f"{old_flag} is deprecated, use --units instead",
+            f"{old_flag} is deprecated, use {new_flag} instead",
             DeprecationWarning,
             stacklevel=3,
         )

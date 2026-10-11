@@ -84,13 +84,10 @@ def create_substrate_state(profile: SubstrateProfile) -> SubstrateState:
     return SubstrateState(
         profile=profile,
         current_soil_depth_cm=profile.soil_depth_cm,
-        current_water_clarity_kd=profile.water_clarity_kd,
         current_sediment_stability=profile.sediment_stability,
         pristine_soil_depth_cm=profile.soil_depth_cm,
-        pristine_water_clarity_kd=profile.water_clarity_kd,
         pristine_sediment_stability=profile.sediment_stability,
         capacity_fraction=1.0,
-        years_to_recover=0.0,
     )
 
 
@@ -362,15 +359,12 @@ def compute_substrate_recovery_years(state: SubstrateState) -> float:
             and state.pristine_soil_depth_cm is not None):
         deficit_cm: float = state.pristine_soil_depth_cm - state.current_soil_depth_cm
         if deficit_cm <= 0.0:
-            state.years_to_recover = 0.0
             return 0.0
         # formation_rate is in t/ha/yr -> convert to cm/yr
         formation_cm_yr: float = profile.formation_rate * _T_HA_TO_MM_FACTOR / 10.0
         if formation_cm_yr <= 0.0:
-            state.years_to_recover = float("inf")
             return float("inf")
         years: float = deficit_cm / formation_cm_yr
-        state.years_to_recover = years
         return years
 
     if (is_marine(profile)
@@ -378,16 +372,12 @@ def compute_substrate_recovery_years(state: SubstrateState) -> float:
             and state.pristine_sediment_stability is not None):
         deficit: float = state.pristine_sediment_stability - state.current_sediment_stability
         if deficit <= 0.0:
-            state.years_to_recover = 0.0
             return 0.0
         # formation_rate in mm/yr -> stability gain per year
         formation_per_yr: float = profile.formation_rate / 100.0
         if formation_per_yr <= 0.0:
-            state.years_to_recover = float("inf")
             return float("inf")
         years = deficit / formation_per_yr
-        state.years_to_recover = years
         return years
 
-    state.years_to_recover = 0.0
     return 0.0

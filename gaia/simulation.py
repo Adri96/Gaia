@@ -72,6 +72,7 @@ from gaia.validation import (
     validate_ecosystem,
     validate_extraction,
     validate_restoration_cost,
+    validate_succession_curve,
 )
 
 _PYX_PATH: Path = Path(__file__).resolve().parent / "cy" / "simulation_cy.pyx"
@@ -873,6 +874,8 @@ def run_restoration(
     """
     validate_ecosystem(ecosystem)
     validate_restoration_cost(restoration_cost)
+    if succession_curve is not None:
+        validate_succession_curve(succession_curve)
 
     n_agents: int = len(ecosystem.agents)
     if len(recovery_functions) != n_agents:

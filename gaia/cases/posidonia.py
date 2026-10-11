@@ -123,7 +123,6 @@ CLI usage:
 
 import argparse
 import sys
-import warnings
 from typing import Optional
 
 from gaia.cli import (
@@ -131,6 +130,7 @@ from gaia.cli import (
     add_restoration_arguments,
     apply_carbon_price_view,
     drop_pricing_in_restore_mode,
+    handle_deprecated_alias,
     output_result,
     warn_unused_restoration_args,
 )
@@ -196,12 +196,12 @@ _POSIDONIA_RESILIENCE = ResilienceConfig(
 )
 
 # v0.5: Posidonia substrate profile
-# Marine matte — sediment stability and water clarity constrain capacity.
+# Marine matte — sediment stability constrains capacity. Water clarity (pristine
+# light attenuation Kd ≈ 0.06 m⁻¹) is not modelled.
 # Logistic capacity function: light-limited S-curve (Kd attenuation).
 # [PLACEHOLDER — pending calibration against EMODnet and IFREMER data]
 _POSIDONIA_SUBSTRATE = SubstrateProfile(
     substrate_type="marine_matte",
-    water_clarity_kd=0.06,           # m⁻¹ — pristine light attenuation coefficient
     sediment_stability=0.85,         # 0-1 scale — pristine matte integrity
     erosion_rate_unprotected=5.0,    # arbitrary units/yr — matte degradation rate
     erosion_rate_protected=0.0,      # no erosion under intact meadow
@@ -664,20 +664,8 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
-    if args.destroy is not None:
-        warnings.warn(
-            "--destroy is deprecated, use --units instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.units = args.destroy
-    if args.revenue is not None:
-        warnings.warn(
-            "--revenue is deprecated, use --unit-value instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.unit_value = args.revenue
+    handle_deprecated_alias(args, "destroy", "units", "--destroy", "--units")
+    handle_deprecated_alias(args, "revenue", "unit_value", "--revenue", "--unit-value")
     return args
 
 

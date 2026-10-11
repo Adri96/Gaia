@@ -17,11 +17,14 @@ Performance profile of the pure-Python version (Amazon, 80K steps):
     Total: 5.2M function calls in ~2.1s
 
 This module eliminates the function call overhead by:
-    1. Pre-computing all indices (int arrays, not string dicts)
+    1. Pre-computing all indices (int lists, not string dicts)
     2. Inlining trophic amplification (factors precomputed by the caller)
     3. Inlining interaction propagation (no per-step dict rebuild)
     4. Using C-level math (libc.math.exp instead of Python math.exp)
-    5. Using typed memoryviews / C arrays for hot-path data
+    5. Typing the scalar loop variables as C doubles / ints
+The per-agent and per-edge data are still Python lists (not typed
+memoryviews or C arrays), so element access goes through the Python object
+layer; the measured speed-up is ~2-3x on the shipped cases.
 
 Usage from simulation.py: see simulation._load_cython_loop(), which only
 uses this module when PYX_SOURCE_SHA256 matches the current .pyx source.

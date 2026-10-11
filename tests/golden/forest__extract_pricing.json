@@ -296,15 +296,12 @@
       2308416.40299167
     ],
     "annual_externality": 96253821.91829294,
-    "carbon_price_used": 0.0,
     "depletion_ratio": 250.25,
-    "discount_factor_at_step": 1000.0,
     "ecosystem_health": 724.5265141061616,
     "effective_k": 1999000.0,
     "k_fraction": 999.9053772345821,
     "marginal_annual_externality": 798618.9468590997,
     "model_confidence": 732.6642857142843,
-    "npv_externality": 0.0,
     "revenue": 50050000.0,
     "step": 500500.0,
     "substrate_erosion": 0.013154972596153853,
@@ -343,9 +340,7 @@
         1528.070778406059
       ],
       "annual_externality": 1.1439873847277424,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.0005,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.999940981128957,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -353,7 +348,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 1.1439873847277424,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8333268999182262,
@@ -421,9 +415,7 @@
         1537.7979944669357
       ],
       "annual_externality": 158.90435313859814,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.0505,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9918867610041803,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -431,7 +423,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 2.0986994728245634,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8324436868850201,
@@ -499,9 +490,7 @@
         1555.5223919154912
       ],
       "annual_externality": 449.15267645131144,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.1005,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9774954873033048,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -509,7 +498,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 3.8720481893727765,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8308391491403389,
@@ -577,9 +565,7 @@
         1587.8191936942173
       ],
       "annual_externality": 987.5032531610896,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.1505,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9521787051787933,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -587,7 +573,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 7.219355482274523,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8279312630248276,
@@ -655,9 +640,7 @@
         1646.6706056200107
       ],
       "annual_externality": 2001.3282537467423,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.2005,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9088402876737544,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -665,7 +648,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 13.729759104173127,
       "model_confidence": 0.8985000000000002,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8226845038927627,
@@ -733,9 +715,7 @@
         1753.9141743562334
       ],
       "annual_externality": 3967.1253324030135,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.2505,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8380092406147603,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -743,7 +723,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 27.135196351125614,
       "model_confidence": 0.7485000000000004,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.8132925059988182,
@@ -811,9 +790,7 @@
         1946.7640938533775
       ],
       "annual_externality": 7951.595404715123,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.3,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.7318590379762228,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -821,7 +798,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 57.56526757418487,
       "model_confidence": 0.6,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.7969320956691154,
@@ -889,9 +865,7 @@
         2300.8519287566505
       ],
       "annual_externality": 17333.614253736298,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.35,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.5865043376964909,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -899,7 +873,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 147.34328170490335,
       "model_confidence": 0.5785714285714286,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.7685458001742483,
@@ -967,9 +940,7 @@
         2946.3788888191916
       ],
       "annual_externality": 48804.64922848835,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.4,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.41639661209317536,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -977,7 +948,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 647.6476402761837,
       "model_confidence": 0.5571428571428572,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.7216820860312291,
@@ -1045,9 +1015,7 @@
         4123.72538217946
       ],
       "annual_externality": 612163.879087305,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.45,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.25196634200962476,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -1055,7 +1023,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 1281.8668360867305,
       "model_confidence": 0.5357142857142857,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.6494541271401679,
@@ -1123,9 +1090,7 @@
         6272.7157523239875
       ],
       "annual_externality": 798618.9468590997,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.5,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.1656443621911362,
       "effective_k": 1999,
       "irreversibility_warning": false,
@@ -1133,7 +1098,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 2605.9927506359527,
       "model_confidence": 0.5142857142857142,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Animal Populations": 0.5491379351097437,

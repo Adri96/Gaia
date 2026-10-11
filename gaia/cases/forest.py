@@ -70,7 +70,6 @@ CLI usage:
 
 import argparse
 import sys
-import warnings
 from typing import Optional
 
 from gaia.cli import (
@@ -154,7 +153,7 @@ _FOREST_RESILIENCE = ResilienceConfig(
 _OAK_VALLEY_SUBSTRATE = SubstrateProfile(
     substrate_type="terrestrial_soil",
     soil_depth_cm=45.0,
-    water_availability_mm_yr=800.0,
+    # (mean annual precipitation ~800 mm/yr; not used by the model)
     erosion_rate_unprotected=15.0,   # t/ha/yr — moderate for temperate forest
     erosion_rate_protected=0.5,      # t/ha/yr — minimal under full canopy
     formation_rate=0.8,              # t/ha/yr — ~0.06 mm/yr
@@ -242,7 +241,6 @@ def build_forest_ecosystem(
     # All thresholds match the resource threshold (agents degrade together).
     # [PLACEHOLDER — each agent may have a different threshold in future versions]
     steepness: float = 12.0
-    fn_logistic = logistic_damage(threshold=safe_threshold_ratio, steepness=steepness)
 
     agents = [
         Agent(
@@ -473,20 +471,8 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
-    if args.cut is not None:
-        warnings.warn(
-            "--cut is deprecated, use --units instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.units = args.cut
-    if args.tree_value is not None:
-        warnings.warn(
-            "--tree-value is deprecated, use --unit-value instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.unit_value = args.tree_value
+    handle_deprecated_alias(args, "cut", "units", "--cut", "--units")
+    handle_deprecated_alias(args, "tree_value", "unit_value", "--tree-value", "--unit-value")
     return args
 
 

@@ -46,7 +46,6 @@ def _terrestrial_profile(**kwargs) -> SubstrateProfile:
     defaults = dict(
         substrate_type="terrestrial_soil",
         soil_depth_cm=30.0,
-        water_availability_mm_yr=550.0,
         erosion_rate_unprotected=25.0,
         erosion_rate_protected=1.0,
         formation_rate=0.4,
@@ -62,7 +61,6 @@ def _marine_profile(**kwargs) -> SubstrateProfile:
     """Create a marine substrate profile with sensible defaults."""
     defaults = dict(
         substrate_type="marine_matte",
-        water_clarity_kd=0.06,
         sediment_stability=0.85,
         erosion_rate_unprotected=5.0,
         erosion_rate_protected=0.0,
@@ -80,7 +78,6 @@ def _threshold_profile(**kwargs) -> SubstrateProfile:
     defaults = dict(
         substrate_type="terrestrial_soil",
         soil_depth_cm=30.0,
-        water_availability_mm_yr=550.0,
         erosion_rate_unprotected=25.0,
         erosion_rate_protected=1.0,
         formation_rate=0.4,
@@ -106,7 +103,6 @@ def test_create_state_terrestrial():
     assert state.current_soil_depth_cm == 30.0
     assert state.pristine_soil_depth_cm == 30.0
     assert state.capacity_fraction == 1.0
-    assert state.years_to_recover == 0.0
 
 
 def test_create_state_marine():
@@ -117,7 +113,6 @@ def test_create_state_marine():
     assert state.profile is profile
     assert state.current_sediment_stability == 0.85
     assert state.pristine_sediment_stability == 0.85
-    assert state.current_water_clarity_kd == 0.06
     assert state.capacity_fraction == 1.0
 
 
@@ -590,7 +585,6 @@ def test_valid_substrate_profiles_accepted(profile):
     (_terrestrial_profile(substrate_type="Terrestrial_Soil"), "substrate_type must be one of"),
     (_marine_profile(substrate_type="terrestrial_soil"), "requires soil_depth_cm"),
     (_terrestrial_profile(sediment_stability=0.5), "must not set marine properties"),
-    (_terrestrial_profile(water_clarity_kd=0.1), "must not set marine properties"),
     (_terrestrial_profile(substrate_type="marine_matte"), "requires sediment_stability"),
     (_marine_profile(soil_depth_cm=10.0), "must not set soil_depth_cm"),
     (_marine_profile(capacity_function="threshold"), "not supported"),

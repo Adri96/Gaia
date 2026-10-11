@@ -241,12 +241,6 @@ def _simulation_step_to_dict(step: SimulationStep, agents: list) -> Dict[str, An
         d["substrate_erosion"] = round(step.substrate_erosion, 6)
         d["effective_k"] = step.effective_k
         d["k_fraction"] = round(step.k_fraction, 6)
-    # Discount (v0.6)
-    if step.discount_factor_at_step != 1.0:
-        d["discount_factor"] = round(step.discount_factor_at_step, 6)
-        d["npv_externality_eur_pv"] = round(step.npv_externality, 2)
-    if step.carbon_price_used > 0:
-        d["carbon_price_used_eur_per_t"] = round(step.carbon_price_used, 2)
     # Pricing (v0.7): agent prices are €/yr at full damage
     if step.agent_prices:
         d["agent_prices_eur_yr"] = {

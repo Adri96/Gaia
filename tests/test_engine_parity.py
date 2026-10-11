@@ -90,7 +90,6 @@ def _terrestrial(capacity_function: str, **overrides) -> SubstrateProfile:
 def _marine(substrate_type: str, capacity_function: str, **overrides) -> SubstrateProfile:
     fields = dict(
         substrate_type=substrate_type,
-        water_clarity_kd=0.06,
         sediment_stability=0.85,
         erosion_rate_unprotected=60.0,
         erosion_rate_protected=0.5,

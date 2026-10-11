@@ -203,14 +203,6 @@ def validate_ecosystem(
     _validate_incoming_edge_strengths(ecosystem)
     _validate_calibration_regime(ecosystem)
 
-    # v0.4: Validate agent-specific succession curves
-    for agent in ecosystem.agents:
-        if agent.succession_curve is not None:
-            validate_succession_curve(
-                agent.succession_curve,
-                name=f"Agent '{agent.name}' succession_curve",
-            )
-
     # v0.7: Validate optional pricing config
     if ecosystem.pricing is not None:
         validate_pricing_config(ecosystem.pricing, agent_names)
@@ -690,10 +682,10 @@ def validate_substrate_profile(
             raise ValueError(
                 f"{name}: substrate_type '{substrate_type.value}' requires soil_depth_cm"
             )
-        if profile.sediment_stability is not None or profile.water_clarity_kd is not None:
+        if profile.sediment_stability is not None:
             raise ValueError(
                 f"{name}: substrate_type '{substrate_type.value}' must not set "
-                f"marine properties (sediment_stability, water_clarity_kd)"
+                f"marine properties (sediment_stability)"
             )
     else:
         if profile.sediment_stability is None:
@@ -711,15 +703,6 @@ def validate_substrate_profile(
     if profile.soil_depth_cm is not None and profile.soil_depth_cm < 0.0:
         raise ValueError(
             f"{name}: soil_depth_cm must be >= 0.0, got {profile.soil_depth_cm}"
-        )
-    if profile.water_availability_mm_yr is not None and profile.water_availability_mm_yr < 0.0:
-        raise ValueError(
-            f"{name}: water_availability_mm_yr must be >= 0.0, "
-            f"got {profile.water_availability_mm_yr}"
-        )
-    if profile.water_clarity_kd is not None and profile.water_clarity_kd < 0.0:
-        raise ValueError(
-            f"{name}: water_clarity_kd must be >= 0.0, got {profile.water_clarity_kd}"
         )
     if profile.sediment_stability is not None:
         if not (0.0 <= profile.sediment_stability <= 1.0):

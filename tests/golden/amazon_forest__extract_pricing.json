@@ -709,15 +709,12 @@
       15917019.14479893
     ],
     "annual_externality": 2019638.5458791591,
-    "carbon_price_used": 0.0,
     "depletion_ratio": 80.09999999999998,
-    "discount_factor_at_step": 800.0,
     "ecosystem_health": 712.519534696438,
     "effective_k": 3199200.0,
     "k_fraction": 799.9556583549552,
     "marginal_annual_externality": 17303.486227354388,
     "model_confidence": 659.8499999999985,
-    "npv_externality": 0.0,
     "revenue": 480600.0,
     "step": 320400.0,
     "substrate_erosion": 0.003660931142222736,
@@ -791,9 +788,7 @@
         11548.41847241327
       ],
       "annual_externality": 1.089823555267908,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.00025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9998796393051772,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -801,7 +796,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 1.089823555267908,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.47486011747542506,
@@ -932,9 +926,7 @@
         11912.684403135449
       ],
       "annual_externality": 102.21016372847927,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.02025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9890705968204985,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -942,7 +934,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 1.4536571595982934,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.46806089399275125,
@@ -1073,9 +1064,7 @@
         12399.070221098027
       ],
       "annual_externality": 238.06100497266905,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.04025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9755819526841276,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1083,7 +1072,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 1.9665661953592064,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.4593054368355561,
@@ -1214,9 +1202,7 @@
         13058.322670743028
       ],
       "annual_externality": 423.6080628079077,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.06025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9588308028946614,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1224,7 +1210,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 2.7109050855494274,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.4479899940924675,
@@ -1355,9 +1340,7 @@
         13970.161200860082
       ],
       "annual_externality": 682.7028283028976,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.08025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9381536090352428,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1365,7 +1348,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 3.832957370692384,
       "model_confidence": 0.9,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.43329726190540196,
@@ -1496,9 +1478,7 @@
         15267.06365544051
       ],
       "annual_externality": 1055.620806698472,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.10025,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9128216542961372,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1506,7 +1486,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 5.61255515942571,
       "model_confidence": 0.8992500000000001,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.4141021597932979,
@@ -1637,9 +1616,7 @@
         17156.70417059541
       ],
       "annual_externality": 1607.103647203179,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.12,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8824955251273157,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1647,7 +1624,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 8.589566860531022,
       "model_confidence": 0.84,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.3891844902417425,
@@ -1778,9 +1754,7 @@
         20148.551753493048
       ],
       "annual_externality": 2497.1151956914428,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.14,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8456813311078986,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1788,7 +1762,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 14.23330490473927,
       "model_confidence": 0.7799999999999999,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.3556563382941285,
@@ -1919,9 +1892,7 @@
         25284.181788343947
       ],
       "annual_externality": 4065.140050372329,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.16,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8021080816169519,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -1929,7 +1900,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 26.599267099332337,
       "model_confidence": 0.7199999999999999,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.3103831803226369,
@@ -2060,9 +2030,7 @@
         35611.488971942585
       ],
       "annual_externality": 7344.578397755483,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.18,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.7513907774417169,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -2070,7 +2038,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 61.962882969774,
       "model_confidence": 0.6600000000000001,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.24800577834762091,
@@ -2201,9 +2168,7 @@
         64764.53190613575
       ],
       "annual_externality": 17303.486227354388,
-      "carbon_price_used": 0.0,
       "depletion_ratio": 0.2,
-      "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.6935221566210474,
       "effective_k": 3999,
       "irreversibility_warning": false,
@@ -2211,7 +2176,6 @@
       "keystone_triggered": [],
       "marginal_annual_externality": 241.68338406183466,
       "model_confidence": 0.6,
-      "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
           "Apex Predators": 0.15946859963393073,

@@ -287,7 +287,7 @@ _NON_MONETARY_KEYS = {
     "total_units_extracted", "final_ecosystem_health", "num_steps", "step",
     "units_extracted", "depletion_ratio", "ecosystem_health", "agent_damages",
     "agent_direct_damages", "agent_cascade_damages", "model_confidence",
-    "substrate_erosion", "effective_k", "k_fraction", "discount_factor",
+    "substrate_erosion", "effective_k", "k_fraction",
     # restoration
     "total_units_restored", "units_restored", "recovery_ratio",
     "units_lost", "depletion_before", "depletion_after",

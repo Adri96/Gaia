@@ -104,7 +104,6 @@ CLI usage:
 
 import argparse
 import sys
-import warnings
 from typing import Optional
 
 from gaia.cli import (
@@ -112,6 +111,7 @@ from gaia.cli import (
     add_restoration_arguments,
     apply_carbon_price_view,
     drop_pricing_in_restore_mode,
+    handle_deprecated_alias,
     output_result,
     warn_unused_restoration_args,
 )
@@ -196,7 +196,7 @@ _AMAZON_RESILIENCE = ResilienceConfig(
 _AMAZON_SUBSTRATE = SubstrateProfile(
     substrate_type="terrestrial_soil",
     soil_depth_cm=20.0,
-    water_availability_mm_yr=2200.0,
+    # (mean annual precipitation ~2,200 mm/yr; not used by the model)
     erosion_rate_unprotected=90.0,    # t/ha/yr — extreme for bare tropical slope
     erosion_rate_protected=0.015,     # t/ha/yr — intact forest, negligible erosion
     formation_rate=0.4,               # t/ha/yr — organic layer rebuilding
@@ -707,20 +707,8 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
-    if args.cut is not None:
-        warnings.warn(
-            "--cut is deprecated, use --units instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.units = args.cut
-    if args.tree_value is not None:
-        warnings.warn(
-            "--tree-value is deprecated, use --unit-value instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        args.unit_value = args.tree_value
+    handle_deprecated_alias(args, "cut", "units", "--cut", "--units")
+    handle_deprecated_alias(args, "tree_value", "unit_value", "--tree-value", "--unit-value")
     return args
 
 
