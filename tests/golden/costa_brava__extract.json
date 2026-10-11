@@ -13,6 +13,461 @@
     "Human Communities"
   ],
   "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 14,
+      "n_medium": 4,
+      "n_params": 55,
+      "n_placeholder": 37,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.2\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "placeholder",
+          "name": "resource.area_ha",
+          "note": "Units / reference density of 100 trees/ha. Chosen so the per-tree absorption gives ~1.8 t CO2/ha/yr.",
+          "source": null,
+          "unit": "ha",
+          "value": 100.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Revenue per holm oak felled (one-off). Rated Medium in the case docstring, but no market source is cited.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "\u20ac/tree",
+          "value": 60.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "Safe extraction threshold, lower than temperate forest for drought and fire (stated rationale, no cited source); also the inflection of every damage curve.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "ratio",
+          "value": 0.25
+        },
+        {
+          "confidence": "low",
+          "name": "agents.annual_value_per_ha",
+          "note": "Every agent; the dependency weights split it. Figure partly from memory, to be checked against the paper (Step 8); 2007 Int$ used as \u20ac with no currency or price-year conversion; a global woodland mean, not a Mediterranean holm-oak valuation.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: woodlands Int$1,588/ha/yr; minus climate regulation Int$7 (SM Table 9.1)",
+          "unit": "\u20ac/ha/yr",
+          "value": 1593.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mycorrhizal Fungi].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.13
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Soil Microbiome].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Canopy Trees].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Understory & Matorral].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Pollinators & Insects].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Forest Birds].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Forest Mammals].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.07
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Raptors & Apex Predators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.04
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Watershed & Water Cycle].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fire & Microclimate Regulation].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.06
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.exponential_base",
+          "note": "Exponential damage of Fire & Microclimate Regulation (fire feedback, no plateau); not fitted to fire data.",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 2.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Mycorrhizal Fungi].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Pollinators & Insects].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.185
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Soil Microbiome].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators & Insects \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.222
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators & Insects \u2192 Forest Birds].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.185
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Soil Microbiome].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Watershed & Water Cycle].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Forest Mammals \u2192 Raptors & Apex Predators].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Forest Birds \u2192 Raptors & Apex Predators].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory & Matorral \u2192 Forest Mammals].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory & Matorral \u2192 Pollinators & Insects].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Microbiome \u2192 Canopy Trees].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Microbiome \u2192 Watershed & Water Cycle].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Fire & Microclimate Regulation].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Watershed & Water Cycle \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fire & Microclimate Regulation \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.5
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree/yr",
+          "value": 0.018
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.soil_depth_cm",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "cm",
+          "value": 30.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 25.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 1.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "exponent",
+          "value": 2.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.critical_minimum",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "cm",
+          "value": 8.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.residual_fraction",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+          "unit": "1/yr",
+          "value": 0.0128
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 100.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 51 of 55 recorded parameters are placeholders (37) or low-confidence (14). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
     "ecosystem": {
       "agents": [
         {

@@ -25,6 +25,11 @@ Scientific context:
 
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
+    Summary only. The gaia.provenance.Param objects in this module are the
+    authoritative provenance and what every output reports (Step 5). Where
+    they differ from the table, the Params apply: an owner specification
+    or 'Spec' entry with no cited source is 'low', not 'Medium'.
+
     | Parameter                     | Value         | Unit    | Source        | Confidence |
     |-------------------------------|---------------|---------|---------------|------------|
     | total_units                   | configurable  | trees   | Placeholder   | Low        |
@@ -138,9 +143,29 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.pricing import anchor_every_agent, scale_anchors
+from gaia.provenance import (
+    IDENTICAL_CURVES_NOTE,
+    RAMSEY_SOURCE,
+    HORIZON_NOTE,
+    Confidence,
+    Param,
+    anchor_params,
+    area_param,
+    edge_params,
+    keystone_params,
+    named,
+    restoration_params,
+    unwrap,
+    user_or_default,
+    weight_params,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# Parameter provenance (Step 5): every value below is a gaia.provenance.Param
+# (value, unit, source, confidence, note); the model receives param.value and
+# every output lists the provenance (Ecosystem.provenance).
 
 # ── Reference area ───────────────────────────────────────────────────────────
 # [PLACEHOLDER] 10,000 trees on 100 ha = 100 trees/ha, so the per-tree
@@ -148,33 +173,68 @@ from gaia.simulation import run_extraction, run_restoration
 # explicit area, a forest of N trees covers N / COSTA_BRAVA_TREES_PER_HA ha.
 COSTA_BRAVA_TOTAL_TREES: int = 10_000
 COSTA_BRAVA_AREA_HA: float = 100.0
-COSTA_BRAVA_TREES_PER_HA: float = COSTA_BRAVA_TOTAL_TREES / COSTA_BRAVA_AREA_HA
+_DENSITY = Param(
+    COSTA_BRAVA_TOTAL_TREES / COSTA_BRAVA_AREA_HA, "trees/ha", None,
+    Confidence.PLACEHOLDER,
+    "Chosen so the per-tree absorption gives ~1.8 t CO2/ha/yr.",
+)
+COSTA_BRAVA_TREES_PER_HA: float = _DENSITY.value
+
+_OWNER_SPEC = "owner specification (case docstring), no external source"
+_UNIT_VALUE = Param(
+    60.0, "€/tree", _OWNER_SPEC, Confidence.LOW,
+    "Revenue per holm oak felled (one-off). Rated Medium in the case "
+    "docstring, but no market source is cited.",
+    name="resource.unit_value",
+)
+_THRESHOLD = Param(
+    0.25, "ratio", _OWNER_SPEC, Confidence.LOW,
+    "Safe extraction threshold, lower than temperate forest for drought and "
+    "fire (stated rationale, no cited source); also the inflection of every "
+    "damage curve.",
+    name="resource.safe_threshold_ratio",
+)
 
 # € / ha / yr of service lost at full damage, every agent (see module
 # docstring): the de Groot (2012) woodland total without its climate
-# regulation (carbon) component, €1,600 − €7 [PLACEHOLDER].
-_CB_VALUE_PER_HA_YR: float = 1_600.0 - 7.0
+# regulation (carbon) component, €1,600 − €7.
+_VALUE_PER_HA = Param(
+    1_600.0 - 7.0, "€/ha/yr",
+    "de Groot et al. (2012), Ecosystem Services 1:50-61: woodlands "
+    "Int$1,588/ha/yr; minus climate regulation Int$7 (SM Table 9.1)",
+    Confidence.LOW,
+    "Every agent; the dependency weights split it. Figure partly from "
+    "memory, to be checked against the paper (Step 8); 2007 Int$ used as € "
+    "with no currency or price-year conversion; a global woodland mean, not a "
+    "Mediterranean holm-oak valuation.",
+    name="agents.annual_value_per_ha",
+)
+_CB_VALUE_PER_HA_YR: float = _VALUE_PER_HA.value
 
 # v0.4: Costa Brava Mediterranean succession curve
 # Slower than temperate forest due to drought stress and fire risk.
 # [PLACEHOLDER — pending calibration against Mediterranean oak succession data]
-_CB_SUCCESSION = SuccessionCurve(
-    pioneer_end_year=12.0,
-    intermediate_end_year=35.0,
-    climax_approach_year=80.0,
-    pioneer_service=0.03,
-    intermediate_service=0.30,
-    maturation_delay=3.0,
-)
+_SUCCESSION_NOTE = "Pending calibration against Mediterranean oak succession data."
+_SUCCESSION_P = {
+    "pioneer_end_year": Param(12.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_end_year": Param(35.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "climax_approach_year": Param(80.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "pioneer_service": Param(0.03, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_service": Param(0.30, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "maturation_delay": Param(3.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+}
+_CB_SUCCESSION = SuccessionCurve(**unwrap(_SUCCESSION_P))
 
 # v0.4: Costa Brava carbon profile (per tree)
 # [PLACEHOLDER — pending calibration against Mediterranean carbon data]
-_CB_CARBON = CarbonProfile(
-    stored_carbon_tonnes=0.5,
-    annual_absorption_tonnes=0.018,
-    soil_carbon_tonnes=0.35,
-    soil_release_fraction=0.25,
-)
+_CARBON_NOTE = "Pending calibration against Mediterranean carbon data."
+_CARBON_P = {
+    "stored_carbon_tonnes": Param(0.5, "tCO2/tree", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "annual_absorption_tonnes": Param(0.018, "tCO2/tree/yr", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "soil_carbon_tonnes": Param(0.35, "tCO2/tree", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "soil_release_fraction": Param(0.25, "fraction", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+}
+_CB_CARBON = CarbonProfile(**unwrap(_CARBON_P))
 
 # v0.4: Costa Brava resilience configuration
 _CB_RESILIENCE = ResilienceConfig(
@@ -189,18 +249,27 @@ _CB_RESILIENCE = ResilienceConfig(
 # Mediterranean soil — thin, high erosion under drought, very slow formation.
 # Threshold capacity function: below ~8cm soil, holm oak cannot regenerate.
 # [PLACEHOLDER — pending calibration against Mediterranean soil surveys]
+# (mean annual precipitation ~550 mm/yr; not used by the model)
+_SOIL_NOTE = "Pending calibration against Mediterranean soil surveys."
+_SUBSTRATE_P = {
+    "soil_depth_cm": Param(30.0, "cm", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # high for degraded Mediterranean
+    "erosion_rate_unprotected": Param(25.0, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # some erosion even under cover
+    "erosion_rate_protected": Param(1.0, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # ~0.03 mm/yr, very slow
+    "formation_rate": Param(0.4, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    "erosion_alpha": Param(2.0, "exponent", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # below this, holm oak can't regenerate
+    "critical_minimum": Param(8.0, "cm", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # near-zero capacity below critical minimum
+    "residual_fraction": Param(0.05, "fraction", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+}
 _HOLM_OAK_SUBSTRATE = SubstrateProfile(
     substrate_type="terrestrial_soil",
-    soil_depth_cm=30.0,
-    # (mean annual precipitation ~550 mm/yr; not used by the model)
-    erosion_rate_unprotected=25.0,   # t/ha/yr — high for degraded Mediterranean
-    erosion_rate_protected=1.0,      # t/ha/yr — some erosion even under cover
-    formation_rate=0.4,              # t/ha/yr — ~0.03 mm/yr, very slow
     capacity_function="threshold",
-    erosion_alpha=2.0,
-    critical_minimum=8.0,            # cm — below this, holm oak can't regenerate
-    residual_fraction=0.05,          # near-zero capacity below critical minimum
     confidence="medium",
+    **unwrap(_SUBSTRATE_P),
 )
 
 # v0.6: Costa Brava Holm Oak discount configuration
@@ -210,12 +279,31 @@ _HOLM_OAK_SUBSTRATE = SubstrateProfile(
 # (Drupp et al. 2024, Table 10; see gaia.discount). It was 2.5% ("holm oak
 # more threatened"), above the discount rate, so the PV grew without bound
 # with the horizon (C3); no source supported a holm-oak-specific rate.
+_DISCOUNT_P = {
+    "rate_schedule": Param(0.023, "1/yr", RAMSEY_SOURCE, Confidence.MEDIUM),
+    "scarcity_rate": Param(
+        0.0128, "1/yr",
+        "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: "
+        "relative price change of forest ecosystem services, 1.28%/yr "
+        "(CI 0.85-1.70)",
+        Confidence.MEDIUM,
+    ),
+    "horizon_years": Param(100, "years", None, Confidence.PLACEHOLDER, HORIZON_NOTE),
+}
 _COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
-    rate_schedule=0.023,
-    scarcity_rate=0.0128,
-    horizon_years=100,
+    rate_schedule=_DISCOUNT_P["rate_schedule"].value,
+    scarcity_rate=_DISCOUNT_P["scarcity_rate"].value,
+    horizon_years=int(_DISCOUNT_P["horizon_years"].value),
 )
+
+# Restoration cost defaults (CLI and run_costa_brava_restoration) [PLACEHOLDER]
+_RESTORATION_NOTE = "No cost survey behind it."
+_RESTORATION_P = {
+    "planting_cost_per_unit": Param(80.0, "€/tree", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "annual_maintenance_per_unit": Param(15.0, "€/tree/yr", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "maintenance_years": Param(15, "years", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+}
 
 # v0.7: Costa Brava Holm Oak pricing configuration (EXPERIMENTAL, decision
 # D4). Anchor values are €/yr for the COSTA_BRAVA_AREA_HA reference forest
@@ -231,7 +319,8 @@ _COSTA_BRAVA_OAK_PRICING = PricingConfig(
             agent_name="Watershed & Water Cycle",
             anchor_value=25_000.0,
             source="Municipal water treatment cost avoided: ~€2.50/m³ × 100 m³/ha/yr × 100 ha",
-            confidence="medium",
+            # was "medium"; no cited source for the cost or the volume
+            confidence="low",
             description="Watershed: €2.50/m³ × 10,000 m³/yr recharge",
         ),
     ],
@@ -254,13 +343,35 @@ _COSTA_BRAVA_OAK_PRICING = PricingConfig(
 # Shared steepness for all logistic agents.
 # 12.0 gives a clear S-curve with an observable knee at the threshold.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
-_STEEPNESS: float = 12.0
+_STEEPNESS_P = Param(
+    12.0, "dimensionless", None, Confidence.PLACEHOLDER, IDENTICAL_CURVES_NOTE,
+    name="damage.logistic_steepness",
+)
+_STEEPNESS: float = _STEEPNESS_P.value
+# Fire & Microclimate Regulation: exponential damage [PLACEHOLDER]
+_FIRE_BASE = Param(
+    2.0, "dimensionless", None, Confidence.PLACEHOLDER,
+    "Exponential damage of Fire & Microclimate Regulation (fire feedback, no "
+    "plateau); not fitted to fire data.",
+    name="damage.exponential_base",
+)
+
+# Edges divided by 1.35 to the in-degree cap (Step 3.8, S2): (source, target)
+# -> strength before the rescaling
+_RETUNED_NOTE = (
+    "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+)
+_RETUNED_EDGES = {
+    ("Mycorrhizal Fungi", "Understory & Matorral"): 0.25,
+    ("Pollinators & Insects", "Understory & Matorral"): 0.30,
+    ("Canopy Trees", "Understory & Matorral"): 0.25,
+}
 
 
 def build_costa_brava_ecosystem(
     total_trees: int = COSTA_BRAVA_TOTAL_TREES,
-    safe_threshold_ratio: float = 0.25,
-    tree_value: float = 60.0,
+    safe_threshold_ratio: float = _THRESHOLD.value,
+    tree_value: float = _UNIT_VALUE.value,
     with_pricing: bool = False,
     area_ha: Optional[float] = None,
 ) -> Ecosystem:
@@ -287,8 +398,10 @@ def build_costa_brava_ecosystem(
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    derived_area = total_trees / COSTA_BRAVA_TREES_PER_HA
+    area_given = area_ha is not None and area_ha != derived_area
     if area_ha is None:
-        area_ha = total_trees / COSTA_BRAVA_TREES_PER_HA
+        area_ha = derived_area
     resource = Resource(
         name="Costa Brava Holm Oak Forest",
         total_units=total_trees,
@@ -397,7 +510,7 @@ def build_costa_brava_ecosystem(
         Agent(
             name="Fire & Microclimate Regulation",
             dependency_weight=0.10,
-            damage_function=exponential_damage(threshold=t, base=2.0),
+            damage_function=exponential_damage(threshold=t, base=_FIRE_BASE.value),
             annual_value_per_ha=_CB_VALUE_PER_HA_YR,
             description="Fire risk amplification, loss of shade and moisture buffering — self-reinforcing, no plateau",
             # v0.3: Abiotic process
@@ -471,18 +584,41 @@ def build_costa_brava_ecosystem(
             "Loss of fire and microclimate regulation increases fire risk and heat stress"),
     ]
 
+    pricing = (
+        anchor_every_agent(
+            scale_anchors(_COSTA_BRAVA_OAK_PRICING, area_ha / COSTA_BRAVA_AREA_HA), agents, area_ha
+        )
+        if with_pricing else None
+    )
+    provenance = [
+        area_param(area_ha, area_given, _DENSITY, "trees"),
+        user_or_default(_UNIT_VALUE, tree_value, "--unit-value / tree_value"),
+        user_or_default(_THRESHOLD, safe_threshold_ratio, "--threshold"),
+        _VALUE_PER_HA,
+        *weight_params(
+            agents, _OWNER_SPEC, Confidence.LOW,
+            "Rated Medium in the case docstring; an expert judgement with no "
+            "cited source.",
+        ),
+        _STEEPNESS_P,
+        _FIRE_BASE,
+        *keystone_params(agents, None, Confidence.PLACEHOLDER),
+        *edge_params(
+            interactions, None, Confidence.PLACEHOLDER, retuned=_RETUNED_EDGES, retuned_note=_RETUNED_NOTE,
+        ),
+        *named("carbon", _CARBON_P),
+        *named("substrate", _SUBSTRATE_P),
+        *named("discount", _DISCOUNT_P),
+        *(anchor_params(pricing) if pricing is not None else []),
+    ]
     return Ecosystem(
         name="Costa Brava Holm Oak Forest",
         resource=resource,
         agents=agents,
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
-        pricing=(
-            anchor_every_agent(
-                scale_anchors(_COSTA_BRAVA_OAK_PRICING, area_ha / COSTA_BRAVA_AREA_HA), agents, area_ha
-            )
-            if with_pricing else None
-        ),
+        pricing=pricing,
+        provenance=provenance,
     )
 
 
@@ -558,6 +694,9 @@ def run_costa_brava_restoration(
         annual_maintenance_per_unit=annual_maintenance_per_tree,
         maintenance_years=maintenance_years,
     )
+    ecosystem.provenance.extend(restoration_params(
+        cost, _RESTORATION_P, _SUCCESSION_P if time_horizon_years > 0 else None,
+    ))
     recovery_fns = [
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
@@ -597,7 +736,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.25,
+        default=_THRESHOLD.value,
         metavar="RATIO",
         help="Safe extraction threshold ratio, 0.0 < threshold < 1.0 (default: 0.25)",
     )
@@ -616,7 +755,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--unit-value",
         type=float,
-        default=60.0,
+        default=_UNIT_VALUE.value,
         metavar="EUROS",
         help="Revenue per unit extracted in euros (default: 60.0)",
     )
@@ -628,9 +767,9 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     add_common_arguments(parser)
     add_restoration_arguments(
         parser,
-        planting_cost_default=80.0,
-        maintenance_cost_default=15.0,
-        maintenance_years_default=15,
+        planting_cost_default=_RESTORATION_P["planting_cost_per_unit"].value,
+        maintenance_cost_default=_RESTORATION_P["annual_maintenance_per_unit"].value,
+        maintenance_years_default=int(_RESTORATION_P["maintenance_years"].value),
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
@@ -660,6 +799,10 @@ def main(argv: Optional[List[str]] = None) -> None:
                 annual_maintenance_per_unit=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
             )
+            ecosystem.provenance.extend(restoration_params(
+                cost, _RESTORATION_P,
+                _SUCCESSION_P if args.time_horizon > 0 else None,
+            ))
             recovery_fns = [
                 logistic_recovery(threshold=args.threshold)
                 for _ in ecosystem.agents

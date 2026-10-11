@@ -43,6 +43,11 @@ Scientific context:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
+    Summary only. The gaia.provenance.Param objects in this module are the
+    authoritative provenance and what every output reports (Step 5). Where
+    they differ from the table, the Params apply: an owner specification
+    or 'Spec' entry with no cited source is 'low', not 'Medium'.
+
 Agent values are yearly flows per hectare (decisions D1, D2). They restate
 the user-specified maximum annual impact of each agent for the 5,000 ha
 reference meadow per hectare and per unit of dependency weight:
@@ -155,21 +160,42 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.pricing import anchor_every_agent, scale_anchors
+from gaia.provenance import (
+    IDENTICAL_CURVES_NOTE,
+    RAMSEY_SOURCE,
+    HORIZON_NOTE,
+    Confidence,
+    Param,
+    anchor_params,
+    edge_params,
+    keystone_params,
+    named,
+    restoration_params,
+    unwrap,
+    user_or_default,
+    weight_params,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
 
+# Parameter provenance (Step 5): every value below is a gaia.provenance.Param
+# (value, unit, source, confidence, note); the model receives param.value and
+# every output lists the provenance (Ecosystem.provenance).
+
 # v0.4: Posidonia succession curve
 # Extremely slow — 1-6 cm/year horizontal growth, decades to re-establish.
 # [PLACEHOLDER — pending calibration against Mediterranean seagrass studies]
-_POSIDONIA_SUCCESSION = SuccessionCurve(
-    pioneer_end_year=20.0,
-    intermediate_end_year=50.0,
-    climax_approach_year=120.0,
-    pioneer_service=0.02,
-    intermediate_service=0.25,
-    maturation_delay=5.0,
-)
+_SUCCESSION_NOTE = "Pending calibration against Mediterranean seagrass studies."
+_SUCCESSION_P = {
+    "pioneer_end_year": Param(20.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_end_year": Param(50.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "climax_approach_year": Param(120.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "pioneer_service": Param(0.02, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_service": Param(0.25, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "maturation_delay": Param(5.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+}
+_POSIDONIA_SUCCESSION = SuccessionCurve(**unwrap(_SUCCESSION_P))
 
 # v0.4: Posidonia carbon profile (per hectare)
 # Blue carbon — millennia of stored matte carbon.
@@ -181,12 +207,22 @@ _POSIDONIA_SUCCESSION = SuccessionCurve(
 # 5.9 t CO₂/ha/yr (1.6 t C/ha/yr) is near the older global seagrass mean of
 # Duarte et al. (2013), 1.38 t C/ha/yr, which later syntheses revised down.
 # [PLACEHOLDER — stocks pending calibration against IPCC Blue Carbon data]
-_POSIDONIA_CARBON = CarbonProfile(
-    stored_carbon_tonnes=130.0,
-    annual_absorption_tonnes=0.43 * 44.0 / 12.0,
-    soil_carbon_tonnes=2600.0,
-    soil_release_fraction=0.05,
-)
+_CARBON_NOTE = "Stocks pending calibration against IPCC Blue Carbon data."
+_CARBON_P = {
+    "stored_carbon_tonnes": Param(130.0, "tCO2/ha", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "annual_absorption_tonnes": Param(
+        0.43 * 44.0 / 12.0, "tCO2/ha/yr",
+        "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation "
+        "rate 0.43 t C/ha/yr (Posidonia oceanica cores) × 44/12",
+        Confidence.MEDIUM,
+        "A global Tier 1 default, not a Costa Brava measurement. Alternative: "
+        "European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, "
+        "ETC-BE working paper for the EEA), not verified.",
+    ),
+    "soil_carbon_tonnes": Param(2600.0, "tCO2/ha", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "soil_release_fraction": Param(0.05, "fraction", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+}
+_POSIDONIA_CARBON = CarbonProfile(**unwrap(_CARBON_P))
 
 # v0.4: Posidonia resilience configuration
 # Widest warning zone — Posidonia is most fragile.
@@ -203,15 +239,24 @@ _POSIDONIA_RESILIENCE = ResilienceConfig(
 # light attenuation Kd ≈ 0.06 m⁻¹) is not modelled.
 # Logistic capacity function: light-limited S-curve (Kd attenuation).
 # [PLACEHOLDER — pending calibration against EMODnet and IFREMER data]
+_MATTE_NOTE = "Pending calibration against EMODnet and IFREMER data."
+_SUBSTRATE_P = {
+    # pristine matte integrity
+    "sediment_stability": Param(0.85, "0-1 scale", None, Confidence.PLACEHOLDER, _MATTE_NOTE),
+    # matte degradation rate
+    "erosion_rate_unprotected": Param(5.0, "arbitrary units/yr", None, Confidence.PLACEHOLDER, _MATTE_NOTE),
+    # no erosion under intact meadow
+    "erosion_rate_protected": Param(0.0, "arbitrary units/yr", None, Confidence.PLACEHOLDER, _MATTE_NOTE),
+    # Posidonia matte accretion
+    "formation_rate": Param(1.0, "mm/yr", None, Confidence.PLACEHOLDER, _MATTE_NOTE),
+    # steeper nonlinearity for marine systems
+    "erosion_alpha": Param(3.0, "exponent", None, Confidence.PLACEHOLDER, _MATTE_NOTE),
+}
 _POSIDONIA_SUBSTRATE = SubstrateProfile(
     substrate_type="marine_matte",
-    sediment_stability=0.85,         # 0-1 scale — pristine matte integrity
-    erosion_rate_unprotected=5.0,    # arbitrary units/yr — matte degradation rate
-    erosion_rate_protected=0.0,      # no erosion under intact meadow
-    formation_rate=1.0,              # mm/yr — Posidonia matte accretion
     capacity_function="logistic",
-    erosion_alpha=3.0,               # steeper nonlinearity for marine systems
     confidence="low-medium",
+    **unwrap(_SUBSTRATE_P),
 )
 
 # v0.6: Posidonia discount configuration
@@ -223,12 +268,41 @@ _POSIDONIA_SUBSTRATE = SubstrateProfile(
 # schedule, so the PV grew without bound with the horizon (C3). The
 # aggregate estimate of Drupp et al. (1.66%/yr) is above the long-term
 # 1.4%, which the schedule reaches within the 200-year horizon.
+_STEP_NOTE = "Step of the declining schedule; no cited source for the value or the year."
+_DISCOUNT_P = {
+    "rate_schedule[year 0]": Param(0.023, "1/yr", RAMSEY_SOURCE, Confidence.MEDIUM),
+    "rate_schedule[year 31]": Param(0.018, "1/yr", None, Confidence.PLACEHOLDER, _STEP_NOTE),
+    "rate_schedule[year 101]": Param(0.014, "1/yr", None, Confidence.PLACEHOLDER, _STEP_NOTE),
+    "scarcity_rate": Param(
+        0.01, "1/yr",
+        "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, §1: Dutch "
+        "government default relative price change for ecosystem services",
+        Confidence.MEDIUM,
+        "Chosen below the paper's aggregate estimate (1.66%/yr), which exceeds "
+        "the schedule's long-term 1.4% and would make the PV diverge.",
+    ),
+    # Longer horizon for marine ecosystems
+    "horizon_years": Param(200, "years", None, Confidence.PLACEHOLDER, HORIZON_NOTE),
+}
 _POSIDONIA_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
-    rate_schedule=[(0, 0.023), (31, 0.018), (101, 0.014)],
-    scarcity_rate=0.01,
-    horizon_years=200,  # Longer horizon for marine ecosystems
+    rate_schedule=[
+        (0, _DISCOUNT_P["rate_schedule[year 0]"].value),
+        (31, _DISCOUNT_P["rate_schedule[year 31]"].value),
+        (101, _DISCOUNT_P["rate_schedule[year 101]"].value),
+    ],
+    scarcity_rate=_DISCOUNT_P["scarcity_rate"].value,
+    horizon_years=int(_DISCOUNT_P["horizon_years"].value),
 )
+
+# Restoration cost defaults (CLI and run_posidonia_restoration): specialist
+# diving cost and annual monitoring per hectare [PLACEHOLDER]
+_RESTORATION_NOTE = "No cost survey behind it."
+_RESTORATION_P = {
+    "planting_cost_per_unit": Param(50_000.0, "€/ha", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "annual_maintenance_per_unit": Param(5_000.0, "€/ha/yr", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "maintenance_years": Param(30, "years", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+}
 
 # ── Reference area ───────────────────────────────────────────────────────────
 # Posidonia's unit is the hectare: area_ha always equals total_hectares.
@@ -247,14 +321,16 @@ _POSIDONIA_PRICING = PricingConfig(
             agent_name="Human Communities",
             anchor_value=500000.0,
             source="Costa Brava tourism revenue attributable to coastal water quality per ~5 km",
-            confidence="medium",
+            # was "medium"; no cited source for the figure
+            confidence="low",
             description="Tourism: attributable water quality value for ~5 km coastline",
         ),
         AnchorPoint(
             agent_name="Fish Populations",
             anchor_value=75000.0,
             source="Artisanal catch value: ~15 boats × €5,000/yr/boat",
-            confidence="medium",
+            # was "medium"; no cited source for the boat count or the catch value
+            confidence="low",
             description="Fishing: 15 artisanal boats × €5,000/yr",
         ),
     ],
@@ -275,12 +351,67 @@ _POSIDONIA_PRICING = PricingConfig(
 
 # Shared steepness for all logistic agents.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
-_STEEPNESS: float = 12.0
+_STEEPNESS_P = Param(
+    12.0, "dimensionless", None, Confidence.PLACEHOLDER, IDENTICAL_CURVES_NOTE,
+    name="damage.logistic_steepness",
+)
+_STEEPNESS: float = _STEEPNESS_P.value
 
 # Sum of the user-specified weights without the removed Blue Carbon agent
 # (1 − 0.09). Weights are divided by it and per-ha values multiplied by it,
 # which keeps every agent's weight × value (its maximum annual impact).
 _WEIGHT_RENORM: float = 0.91
+
+_OWNER_SPEC = "owner specification (case docstring), no external source"
+_AREA = Param(
+    POSIDONIA_AREA_HA, "ha", _OWNER_SPEC, Confidence.LOW,
+    "Plausible extent for a major Costa Brava stretch; needs GIS "
+    "verification (EMODnet Posidonia maps).",
+    name="resource.area_ha",
+)
+_UNIT_VALUE = Param(
+    2_500.0, "€/ha", _OWNER_SPEC, Confidence.LOW,
+    "Private gain per hectare destroyed (coastal development, marinas, "
+    "trawling permits), one-off; not the value of Posidonia.",
+    name="resource.unit_value",
+)
+_THRESHOLD = Param(
+    0.20, "ratio", _OWNER_SPEC, Confidence.LOW,
+    "Safe destruction threshold, lower than forest for slow recovery "
+    "(stated rationale, no cited source); also the inflection of every "
+    "damage curve.",
+    name="resource.safe_threshold_ratio",
+)
+
+# Per-agent € / ha / yr at full damage: the owner-specified maximum annual
+# impact for 5,000 ha restated per ha and per unit of weight, × 0.91 after
+# the Blue Carbon agent was removed (module docstring).
+_VALUE_SOURCE = (
+    "owner specification of each agent's maximum annual impact for 5,000 ha "
+    "(case docstring table), no external source"
+)
+_VALUE_NOTE = (
+    "Global meta-analyses value seagrass and coastal systems ~25× higher "
+    "(Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: "
+    "Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific "
+    "valuation is pending (Step 8)."
+)
+_VALUES_P = {
+    name: Param(value, "€/ha/yr", _VALUE_SOURCE, Confidence.LOW, _VALUE_NOTE,
+                name=f"agent[{name}].annual_value_per_ha")
+    for name, value in [
+        ("Posidonia Meadow", 1_600.0 * _WEIGHT_RENORM),
+        ("Coralligenous & Red Coral", 1_200.0 * _WEIGHT_RENORM),
+        ("Epiphytes & Algae", 714.2 * _WEIGHT_RENORM),
+        ("Marine Invertebrates", 777.8 * _WEIGHT_RENORM),
+        ("Fish Populations", 1_000.0 * _WEIGHT_RENORM),
+        ("Marine Megafauna", 1_000.0 * _WEIGHT_RENORM),
+        ("Seabirds", 720.0 * _WEIGHT_RENORM),
+        ("Coastal Protection", 1_384.6 * _WEIGHT_RENORM),
+        ("Water Quality", 1_181.8 * _WEIGHT_RENORM),
+        ("Human Communities", 1_750.0 * _WEIGHT_RENORM),
+    ]
+}
 
 # Annual externality note appended to the report to flag the time-flow asymmetry.
 _ANNUAL_NOTE: str = (
@@ -293,8 +424,8 @@ _ANNUAL_NOTE: str = (
 
 def build_posidonia_ecosystem(
     total_hectares: int = 5_000,
-    safe_threshold_ratio: float = 0.20,
-    revenue_per_hectare: float = 2_500.0,
+    safe_threshold_ratio: float = _THRESHOLD.value,
+    revenue_per_hectare: float = _UNIT_VALUE.value,
     with_pricing: bool = False,
     area_ha: Optional[float] = None,
 ) -> Ecosystem:
@@ -356,7 +487,7 @@ def build_posidonia_ecosystem(
             name="Posidonia Meadow",
             dependency_weight=0.10 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_600.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Posidonia Meadow"].value,
             description="Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
             # v0.3: Producer, KEYSTONE foundation species
             trophic_level=0,
@@ -368,7 +499,7 @@ def build_posidonia_ecosystem(
             name="Coralligenous & Red Coral",
             dependency_weight=0.10 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_200.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Coralligenous & Red Coral"].value,
             description="Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
             # v0.3: Producer (biogenic)
             trophic_level=0,
@@ -378,7 +509,7 @@ def build_posidonia_ecosystem(
             name="Epiphytes & Algae",
             dependency_weight=0.07 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=714.2 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Epiphytes & Algae"].value,
             description="Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
             # v0.3: Producer
             trophic_level=0,
@@ -388,7 +519,7 @@ def build_posidonia_ecosystem(
             name="Marine Invertebrates",
             dependency_weight=0.09 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=777.8 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Marine Invertebrates"].value,
             description="Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
             # v0.3: Primary consumer
             trophic_level=1,
@@ -398,7 +529,7 @@ def build_posidonia_ecosystem(
             name="Fish Populations",
             dependency_weight=0.14 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_000.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Fish Populations"].value,
             description="Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
             # v0.3: Secondary consumer
             trophic_level=2,
@@ -408,7 +539,7 @@ def build_posidonia_ecosystem(
             name="Marine Megafauna",
             dependency_weight=0.04 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_000.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Marine Megafauna"].value,
             description="Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
             # v0.3: Tertiary consumer — apex marine predator
             trophic_level=3,
@@ -418,7 +549,7 @@ def build_posidonia_ecosystem(
             name="Seabirds",
             dependency_weight=0.05 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=720.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Seabirds"].value,
             description="Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
             # v0.3: Secondary consumer (fish-dependent)
             trophic_level=2,
@@ -428,7 +559,7 @@ def build_posidonia_ecosystem(
             name="Coastal Protection",
             dependency_weight=0.13 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_384.6 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Coastal Protection"].value,
             description="Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -437,7 +568,7 @@ def build_posidonia_ecosystem(
             name="Water Quality",
             dependency_weight=0.11 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_181.8 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Water Quality"].value,
             description="Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -447,7 +578,7 @@ def build_posidonia_ecosystem(
             name="Human Communities",
             dependency_weight=0.08 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_750.0 * _WEIGHT_RENORM,
+            annual_value_per_ha=_VALUES_P["Human Communities"].value,
             description="Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
             # v0.3: External beneficiary
             trophic_level=-1,
@@ -501,18 +632,38 @@ def build_posidonia_ecosystem(
             "Degraded water quality triggers beach closures and tourism loss"),
     ]
 
+    pricing = (
+        anchor_every_agent(
+            scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA), agents, area_ha
+        )
+        if with_pricing else None
+    )
+    provenance = [
+        user_or_default(_AREA, area_ha, "--hectares / total_hectares"),
+        user_or_default(_UNIT_VALUE, revenue_per_hectare, "--unit-value / revenue_per_hectare"),
+        user_or_default(_THRESHOLD, safe_threshold_ratio, "--threshold"),
+        *_VALUES_P.values(),
+        *weight_params(
+            agents, _OWNER_SPEC, Confidence.LOW,
+            "Owner-specified weights renormalised by 1/0.91 after the Blue "
+            "Carbon agent was removed.",
+        ),
+        _STEEPNESS_P,
+        *keystone_params(agents, None, Confidence.PLACEHOLDER),
+        *edge_params(interactions, None, Confidence.PLACEHOLDER),
+        *named("carbon", _CARBON_P),
+        *named("substrate", _SUBSTRATE_P),
+        *named("discount", _DISCOUNT_P),
+        *(anchor_params(pricing) if pricing is not None else []),
+    ]
     return Ecosystem(
         name="Costa Brava Posidonia Meadow",
         resource=resource,
         agents=agents,
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
-        pricing=(
-            anchor_every_agent(
-                scale_anchors(_POSIDONIA_PRICING, area_ha / POSIDONIA_AREA_HA), agents, area_ha
-            )
-            if with_pricing else None
-        ),
+        pricing=pricing,
+        provenance=provenance,
     )
 
 
@@ -591,6 +742,9 @@ def run_posidonia_restoration(
         annual_maintenance_per_unit=annual_maintenance_per_hectare,
         maintenance_years=maintenance_years,
     )
+    ecosystem.provenance.extend(restoration_params(
+        cost, _RESTORATION_P, _SUCCESSION_P if time_horizon_years > 0 else None,
+    ))
     recovery_fns = [
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
@@ -630,7 +784,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.20,
+        default=_THRESHOLD.value,
         metavar="RATIO",
         help="Safe destruction threshold ratio, 0.0 < threshold < 1.0 (default: 0.20)",
     )
@@ -649,7 +803,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--unit-value",
         type=float,
-        default=2_500.0,
+        default=_UNIT_VALUE.value,
         metavar="EUROS",
         help="One-time revenue per hectare destroyed in euros (default: 2500.0)",
     )
@@ -661,9 +815,9 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     add_common_arguments(parser)
     add_restoration_arguments(
         parser,
-        planting_cost_default=50_000.0,
-        maintenance_cost_default=5_000.0,
-        maintenance_years_default=30,
+        planting_cost_default=_RESTORATION_P["planting_cost_per_unit"].value,
+        maintenance_cost_default=_RESTORATION_P["annual_maintenance_per_unit"].value,
+        maintenance_years_default=int(_RESTORATION_P["maintenance_years"].value),
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
@@ -702,6 +856,10 @@ def main(argv: Optional[List[str]] = None) -> None:
                 annual_maintenance_per_unit=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
             )
+            ecosystem.provenance.extend(restoration_params(
+                cost, _RESTORATION_P,
+                _SUCCESSION_P if args.time_horizon > 0 else None,
+            ))
             recovery_fns = [
                 logistic_recovery(threshold=args.threshold)
                 for _ in ecosystem.agents

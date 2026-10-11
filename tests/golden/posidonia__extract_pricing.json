@@ -12,6 +12,581 @@
     "Human Communities"
   ],
   "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 24,
+      "n_medium": 5,
+      "n_params": 70,
+      "n_placeholder": 40,
+      "n_user_supplied": 1,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.2\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "user-supplied",
+          "name": "resource.area_ha",
+          "note": "replaces the case default 5000 ha (low)",
+          "source": "user-supplied (--hectares / total_hectares)",
+          "unit": "ha",
+          "value": 1000.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Private gain per hectare destroyed (coastal development, marinas, trawling permits), one-off; not the value of Posidonia.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "\u20ac/ha",
+          "value": 2500.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "Safe destruction threshold, lower than forest for slow recovery (stated rationale, no cited source); also the inflection of every damage curve.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "ratio",
+          "value": 0.2
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Posidonia Meadow].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1456.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coralligenous & Red Coral].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1092.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Algae].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 649.922
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Invertebrates].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 707.798
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fish Populations].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 910.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Megafauna].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 910.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seabirds].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 655.2
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coastal Protection].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1259.9859999999999
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Water Quality].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1075.438
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1592.5
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Posidonia Meadow].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.10989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coralligenous & Red Coral].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.10989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Algae].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.07692307692307693
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Invertebrates].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.0989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fish Populations].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.15384615384615385
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Megafauna].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.04395604395604395
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seabirds].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.054945054945054944
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coastal Protection].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.14285714285714285
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Water Quality].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12087912087912088
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.0879120879120879
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Posidonia Meadow].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Coralligenous & Red Coral].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Epiphytes & Algae].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Coastal Protection].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Water Quality].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coralligenous & Red Coral \u2192 Marine Invertebrates].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coralligenous & Red Coral \u2192 Fish Populations].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Algae \u2192 Marine Invertebrates].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Marine Invertebrates \u2192 Fish Populations].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Marine Megafauna].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Seabirds].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Marine Invertebrates \u2192 Water Quality].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Water Quality \u2192 Coralligenous & Red Coral].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coastal Protection \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Water Quality \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "tCO2/ha",
+          "value": 130.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified.",
+          "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) \u00d7 44/12",
+          "unit": "tCO2/ha/yr",
+          "value": 1.5766666666666664
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "tCO2/ha",
+          "value": 2600.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.sediment_stability",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "0-1 scale",
+          "value": 0.85
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "arbitrary units/yr",
+          "value": 5.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "arbitrary units/yr",
+          "value": 0.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "mm/yr",
+          "value": 1.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "exponent",
+          "value": 3.0
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule[year 0]",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.rate_schedule[year 31]",
+          "note": "Step of the declining schedule; no cited source for the value or the year.",
+          "source": null,
+          "unit": "1/yr",
+          "value": 0.018
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.rate_schedule[year 101]",
+          "note": "Step of the declining schedule; no cited source for the value or the year.",
+          "source": null,
+          "unit": "1/yr",
+          "value": 0.014
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "Chosen below the paper's aggregate estimate (1.66%/yr), which exceeds the schedule's long-term 1.4% and would make the PV diverge.",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, \u00a71: Dutch government default relative price change for ecosystem services",
+          "unit": "1/yr",
+          "value": 0.01
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 200.0
+        },
+        {
+          "confidence": "low",
+          "name": "pricing.anchor[Human Communities]",
+          "note": "EXPERIMENTAL pricing (quarantined). Tourism: attributable water quality value for ~5 km coastline",
+          "source": "Costa Brava tourism revenue attributable to coastal water quality per ~5 km",
+          "unit": "\u20ac/yr",
+          "value": 100000.0
+        },
+        {
+          "confidence": "low",
+          "name": "pricing.anchor[Fish Populations]",
+          "note": "EXPERIMENTAL pricing (quarantined). Fishing: 15 artisanal boats \u00d7 \u20ac5,000/yr",
+          "source": "Artisanal catch value: ~15 boats \u00d7 \u20ac5,000/yr/boat",
+          "unit": "\u20ac/yr",
+          "value": 15000.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Posidonia Meadow]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 1456000.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Coralligenous & Red Coral]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 1092000.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Epiphytes & Algae]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 649922.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Marine Invertebrates]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 707798.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Marine Megafauna]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 910000.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Seabirds]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 655200.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Coastal Protection]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 1259985.9999999998
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.anchor[Water Quality]",
+          "note": "EXPERIMENTAL pricing (quarantined). No documented anchor: the agent's own direct annual value.",
+          "source": null,
+          "unit": "\u20ac/yr",
+          "value": 1075438.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "pricing.default_scarcity.max_multiplier",
+          "note": "EXPERIMENTAL pricing. Scarcity functions (\u03b1, threshold, maximum multiplier per agent) are hand-set; this is the default maximum.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 50.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 64 of 70 recorded parameters are placeholders (40) or low-confidence (24); 1 user-supplied, not assessed. Results are not real-world estimates.",
+      "status": "illustrative"
+    },
     "ecosystem": {
       "agents": [
         {

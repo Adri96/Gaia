@@ -58,6 +58,7 @@ from gaia.propagation import (
     propagate_interactions,
     trophic_amplification_factor,
 )
+from gaia.provenance import calibration_status
 from gaia.resilience import compute_confidence_band, compute_resilience_zone
 from gaia.substrate import (
     _T_HA_TO_MM_FACTOR,
@@ -619,6 +620,7 @@ def _extraction_result(
         annual_externality_band=band,
         final_model_confidence=confidence,
         substrate_recovery_years=substrate_years,
+        calibration=calibration_status(ecosystem, discount),
     )
 
 
@@ -1155,10 +1157,11 @@ def run_restoration(
 
     from gaia.discount import restoration_cost_ratio
 
+    discount = _resolve_discount(resource)
     npv_result, net_pv_by_horizon, breakeven, penalty = _restoration_money(
         ecosystem, restoration_cost, units_to_restore, total_cost,
         annual_recovered_potential, annual_damage_reversal,
-        succession_curve, substrate_ceiling, _resolve_discount(resource),
+        succession_curve, substrate_ceiling, discount,
     )
 
     return RestorationResult(
@@ -1189,4 +1192,5 @@ def run_restoration(
         initial_ecosystem_health=start_step.ecosystem_health,
         annual_damage_reversal=annual_damage_reversal,
         net_restoration_pv_by_horizon=net_pv_by_horizon,
+        calibration=calibration_status(ecosystem, discount),
     )

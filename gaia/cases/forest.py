@@ -10,6 +10,11 @@ but are not calibrated against specific published studies.
 
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
+    Summary only. The gaia.provenance.Param objects in this module are the
+    authoritative provenance and what every output reports (Step 5). Where
+    they differ from the table, the Params apply: an owner specification
+    or 'Spec' entry with no cited source is 'low', not 'Medium'.
+
     | Parameter               | Value         | Unit       | Source       | Confidence |
     |-------------------------|---------------|------------|--------------|------------|
     | total_units             | configurable  | trees      | Placeholder  | Low        |
@@ -102,9 +107,29 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.pricing import anchor_every_agent, scale_anchors
+from gaia.provenance import (
+    IDENTICAL_CURVES_NOTE,
+    RAMSEY_SOURCE,
+    SCARCITY_2PCT_PARAM,
+    HORIZON_NOTE,
+    Confidence,
+    Param,
+    anchor_params,
+    area_param,
+    edge_params,
+    named,
+    restoration_params,
+    unwrap,
+    user_or_default,
+    weight_params,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
+
+# Parameter provenance (Step 5): every value below is a gaia.provenance.Param
+# (value, unit, source, confidence, note); the model receives param.value and
+# every output lists the provenance (Ecosystem.provenance).
 
 # ── Reference area ───────────────────────────────────────────────────────────
 # [PLACEHOLDER] 10,000 trees on 40 ha = 250 trees/ha, so the per-tree carbon
@@ -113,33 +138,70 @@ from gaia.simulation import run_extraction, run_restoration
 # a forest of N trees covers N / FOREST_TREES_PER_HA hectares.
 FOREST_TOTAL_TREES: int = 10_000
 FOREST_AREA_HA: float = 40.0
-FOREST_TREES_PER_HA: float = FOREST_TOTAL_TREES / FOREST_AREA_HA
+_DENSITY = Param(
+    FOREST_TOTAL_TREES / FOREST_AREA_HA, "trees/ha", None, Confidence.PLACEHOLDER,
+    "Chosen so the per-tree carbon gives ~200 t CO2/ha.",
+)
+FOREST_TREES_PER_HA: float = _DENSITY.value
+
+_UNIT_VALUE = Param(
+    100.0, "€/tree", None, Confidence.PLACEHOLDER,
+    "Revenue per tree felled (one-off); no market source.",
+    name="resource.unit_value",
+)
+_THRESHOLD = Param(
+    0.3, "ratio", None, Confidence.PLACEHOLDER,
+    "Safe extraction threshold; also the inflection of every damage curve.",
+    name="resource.safe_threshold_ratio",
+)
 
 # € / ha / yr of service lost at full damage, every agent (see module
 # docstring): the de Groot (2012) temperate-forest total without its climate
-# regulation (carbon) component, €3,000 − €152 [PLACEHOLDER].
-_FOREST_VALUE_PER_HA_YR: float = 3_000.0 - 152.0
+# regulation (carbon) component, €3,000 − €152.
+_VALUE_PER_HA = Param(
+    3_000.0 - 152.0, "€/ha/yr",
+    "de Groot et al. (2012), Ecosystem Services 1:50-61: temperate forest "
+    "Int$3,013/ha/yr; Costanza et al. (2014), Global Environmental Change "
+    "26:152-158: $3,137/ha/yr (2007); minus climate regulation Int$152 "
+    "(de Groot 2012, SM Table 8.1)",
+    Confidence.LOW,
+    "Every agent; the dependency weights split it. Figures partly from "
+    "memory, to be checked against the papers (Step 8); 2007 Int$ used as € "
+    "with no currency or price-year conversion; a global biome mean, not a "
+    "site valuation.",
+    name="agents.annual_value_per_ha",
+)
+_FOREST_VALUE_PER_HA_YR: float = _VALUE_PER_HA.value
+
+_STEEPNESS = Param(
+    12.0, "dimensionless", None, Confidence.PLACEHOLDER, IDENTICAL_CURVES_NOTE,
+    name="damage.logistic_steepness",
+)
 
 
 # v0.4: Oak Valley Forest succession curve
 # [PLACEHOLDER — pending calibration against temperate oak succession studies]
-_FOREST_SUCCESSION = SuccessionCurve(
-    pioneer_end_year=8.0,
-    intermediate_end_year=25.0,
-    climax_approach_year=60.0,
-    pioneer_service=0.05,
-    intermediate_service=0.35,
-    maturation_delay=2.0,
-)
+_SUCCESSION_NOTE = "Pending calibration against temperate oak succession studies."
+_SUCCESSION_P = {
+    "pioneer_end_year": Param(8.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_end_year": Param(25.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "climax_approach_year": Param(60.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "pioneer_service": Param(0.05, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_service": Param(0.35, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "maturation_delay": Param(2.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+}
+_FOREST_SUCCESSION = SuccessionCurve(**unwrap(_SUCCESSION_P))
 
 # v0.4: Oak Valley carbon profile (per tree)
 # [PLACEHOLDER — pending calibration against IPCC forest carbon data]
-_FOREST_CARBON = CarbonProfile(
-    stored_carbon_tonnes=0.8,
-    annual_absorption_tonnes=0.022,
-    soil_carbon_tonnes=0.3,
-    soil_release_fraction=0.25,
-)
+_CARBON_NOTE = "Pending calibration against IPCC forest carbon data."
+_CARBON_P = {
+    "stored_carbon_tonnes": Param(0.8, "tCO2/tree", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "annual_absorption_tonnes": Param(0.022, "tCO2/tree/yr", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "soil_carbon_tonnes": Param(0.3, "tCO2/tree", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+    "soil_release_fraction": Param(0.25, "fraction", None, Confidence.PLACEHOLDER, _CARBON_NOTE),
+}
+_FOREST_CARBON = CarbonProfile(**unwrap(_CARBON_P))
 
 # v0.4: Oak Valley resilience configuration
 _FOREST_RESILIENCE = ResilienceConfig(
@@ -153,27 +215,48 @@ _FOREST_RESILIENCE = ResilienceConfig(
 # v0.5: Oak Valley Forest substrate profile
 # Temperate forest soil — deep, moderate erosion, slow formation.
 # [PLACEHOLDER — pending calibration against regional soil survey data]
+# (mean annual precipitation ~800 mm/yr; not used by the model)
+_SOIL_NOTE = "Pending calibration against regional soil survey data."
+_SUBSTRATE_P = {
+    "soil_depth_cm": Param(45.0, "cm", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # moderate for temperate forest
+    "erosion_rate_unprotected": Param(15.0, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # minimal under full canopy
+    "erosion_rate_protected": Param(0.5, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # ~0.06 mm/yr
+    "formation_rate": Param(0.8, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    "erosion_alpha": Param(2.0, "exponent", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+}
 _OAK_VALLEY_SUBSTRATE = SubstrateProfile(
     substrate_type="terrestrial_soil",
-    soil_depth_cm=45.0,
-    # (mean annual precipitation ~800 mm/yr; not used by the model)
-    erosion_rate_unprotected=15.0,   # t/ha/yr — moderate for temperate forest
-    erosion_rate_protected=0.5,      # t/ha/yr — minimal under full canopy
-    formation_rate=0.8,              # t/ha/yr — ~0.06 mm/yr
     capacity_function="linear",
-    erosion_alpha=2.0,
     confidence="medium",
+    **unwrap(_SUBSTRATE_P),
 )
 
 # v0.6: Oak Valley discount configuration
 # Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023. Carbon price: the
 # DiscountConfig default, the social cost of carbon (gaia.carbon).
+# Scarcity 2%: above the Drupp et al. (2024) estimates, kept until Step 8.
+_DISCOUNT_P = {
+    "rate_schedule": Param(0.023, "1/yr", RAMSEY_SOURCE, Confidence.MEDIUM),
+    "scarcity_rate": SCARCITY_2PCT_PARAM,
+    "horizon_years": Param(100, "years", None, Confidence.PLACEHOLDER, HORIZON_NOTE),
+}
 _OAK_VALLEY_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
-    rate_schedule=0.023,
-    scarcity_rate=0.02,
-    horizon_years=100,
+    rate_schedule=_DISCOUNT_P["rate_schedule"].value,
+    scarcity_rate=_DISCOUNT_P["scarcity_rate"].value,
+    horizon_years=int(_DISCOUNT_P["horizon_years"].value),
 )
+
+# Restoration cost defaults (CLI and run_forest_restoration) [PLACEHOLDER]
+_RESTORATION_NOTE = "No cost survey behind it."
+_RESTORATION_P = {
+    "planting_cost_per_unit": Param(50.0, "€/tree", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "annual_maintenance_per_unit": Param(10.0, "€/tree/yr", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "maintenance_years": Param(10, "years", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+}
 
 # v0.7: Oak Valley pricing configuration (EXPERIMENTAL, decision D4). Anchor
 # values are €/yr for the FOREST_AREA_HA reference forest and are scaled with
@@ -189,7 +272,7 @@ _OAK_VALLEY_PRICING = PricingConfig(
             anchor_value=7_640.0,
             source="de Groot et al. 2012, temperate forests, (fresh) water supply Int$191/ha/yr × 40 ha",
             confidence="low",
-            description="Water supply: €191/ha/yr × 40 ha [PLACEHOLDER]",
+            description="Water supply: €191/ha/yr × 40 ha (figure from memory, verify)",
         ),
     ],
     scarcity_functions={
@@ -204,8 +287,8 @@ _OAK_VALLEY_PRICING = PricingConfig(
 
 def build_forest_ecosystem(
     total_trees: int = FOREST_TOTAL_TREES,
-    safe_threshold_ratio: float = 0.3,
-    tree_value: float = 100.0,
+    safe_threshold_ratio: float = _THRESHOLD.value,
+    tree_value: float = _UNIT_VALUE.value,
     with_pricing: bool = False,
     area_ha: Optional[float] = None,
 ) -> Ecosystem:
@@ -225,8 +308,10 @@ def build_forest_ecosystem(
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    derived_area = total_trees / FOREST_TREES_PER_HA
+    area_given = area_ha is not None and area_ha != derived_area
     if area_ha is None:
-        area_ha = total_trees / FOREST_TREES_PER_HA
+        area_ha = derived_area
     resource = Resource(
         name="Oak Valley Forest",
         total_units=total_trees,
@@ -243,7 +328,7 @@ def build_forest_ecosystem(
     # Steepness of 12.0 gives a clear S-curve with an observable knee.
     # All thresholds match the resource threshold (agents degrade together).
     # [PLACEHOLDER — each agent may have a different threshold in future versions]
-    steepness: float = 12.0
+    steepness: float = _STEEPNESS.value
 
     agents = [
         Agent(
@@ -310,18 +395,33 @@ def build_forest_ecosystem(
         ),
     ]
 
+    pricing = (
+        anchor_every_agent(
+            scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA), agents, area_ha
+        )
+        if with_pricing else None
+    )
+    provenance = [
+        area_param(area_ha, area_given, _DENSITY, "trees"),
+        user_or_default(_UNIT_VALUE, tree_value, "--unit-value / tree_value"),
+        user_or_default(_THRESHOLD, safe_threshold_ratio, "--threshold"),
+        _VALUE_PER_HA,
+        *weight_params(agents, None, Confidence.PLACEHOLDER),
+        _STEEPNESS,
+        *edge_params(interactions, None, Confidence.PLACEHOLDER),
+        *named("carbon", _CARBON_P),
+        *named("substrate", _SUBSTRATE_P),
+        *named("discount", _DISCOUNT_P),
+        *(anchor_params(pricing) if pricing is not None else []),
+    ]
     return Ecosystem(
         name="Oak Valley Forest",
         resource=resource,
         agents=agents,
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
-        pricing=(
-            anchor_every_agent(
-                scale_anchors(_OAK_VALLEY_PRICING, area_ha / FOREST_AREA_HA), agents, area_ha
-            )
-            if with_pricing else None
-        ),
+        pricing=pricing,
+        provenance=provenance,
     )
 
 
@@ -398,6 +498,9 @@ def run_forest_restoration(
         annual_maintenance_per_unit=annual_maintenance_per_tree,
         maintenance_years=maintenance_years,
     )
+    ecosystem.provenance.extend(restoration_params(
+        cost, _RESTORATION_P, _SUCCESSION_P if time_horizon_years > 0 else None,
+    ))
     recovery_fns = [
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
@@ -437,7 +540,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.3,
+        default=_THRESHOLD.value,
         metavar="RATIO",
         help="Safe extraction threshold ratio, 0.0 < threshold < 1.0 (default: 0.3)",
     )
@@ -456,7 +559,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--unit-value",
         type=float,
-        default=100.0,
+        default=_UNIT_VALUE.value,
         metavar="EUROS",
         help="Revenue per unit extracted in euros (default: 100.0)",
     )
@@ -468,9 +571,9 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     add_common_arguments(parser)
     add_restoration_arguments(
         parser,
-        planting_cost_default=50.0,
-        maintenance_cost_default=10.0,
-        maintenance_years_default=10,
+        planting_cost_default=_RESTORATION_P["planting_cost_per_unit"].value,
+        maintenance_cost_default=_RESTORATION_P["annual_maintenance_per_unit"].value,
+        maintenance_years_default=int(_RESTORATION_P["maintenance_years"].value),
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
@@ -500,6 +603,10 @@ def main(argv: Optional[List[str]] = None) -> None:
                 annual_maintenance_per_unit=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
             )
+            ecosystem.provenance.extend(restoration_params(
+                cost, _RESTORATION_P,
+                _SUCCESSION_P if args.time_horizon > 0 else None,
+            ))
             recovery_fns = [
                 logistic_recovery(threshold=args.threshold)
                 for _ in ecosystem.agents

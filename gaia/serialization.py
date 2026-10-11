@@ -15,6 +15,12 @@ Every monetary key carries its unit as a suffix (decision D1):
     *_eur      — an undiscounted one-off amount (€) or an undiscounted sum
     *_eur_per_t — a price per tonne of CO₂
 Ratios carry no currency suffix (e.g. ``restoration_cost_ratio``, ``roi``).
+A parameter in the ``calibration`` block states its unit in a sibling
+``"unit"`` string next to its ``"value"``.
+
+Every output starts with a ``calibration`` block (Step 5): the headline
+statement, the calibration regime, counts per confidence level and every
+recorded parameter with value, unit, source, confidence and note.
 
 The output is strict JSON (``allow_nan=False``): a non-finite number (±inf,
 NaN) is written as ``null`` and a sibling key ``<key>_null_reason`` says why,
@@ -29,6 +35,7 @@ import math
 from typing import Any, Dict, List, Optional
 
 from gaia import __version__
+from gaia.provenance import Confidence
 from gaia.models import (
     CarbonBreakeven,
     ExtractionNPV,
@@ -173,6 +180,42 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         d["carbon_price_growth"] = discount.carbon_price_growth
         d["carbon_price_basis"] = carbon_price_label(discount)
     return d
+
+
+def _calibration_to_dict(calibration) -> Dict[str, Any]:
+    """The "calibration" block (Step 5): what a reader must know first."""
+    if calibration is None:
+        return {
+            "status": "illustrative",
+            "statement": (
+                "ILLUSTRATIVE: no calibration status recorded. Results are "
+                "not real-world estimates."
+            ),
+        }
+    return {
+        "status": calibration.status,
+        "statement": calibration.headline,
+        "calibration_regime": calibration.calibration_regime,
+        "calibration_regime_meaning": calibration.regime_meaning,
+        "ecosystem_provenance_recorded": calibration.ecosystem_documented,
+        "n_params": calibration.n_params,
+        "n_placeholder": calibration.n_placeholder,
+        "n_low": calibration.n_low,
+        "n_medium": calibration.count(Confidence.MEDIUM),
+        "n_high": calibration.count(Confidence.HIGH),
+        "n_user_supplied": calibration.count(Confidence.USER),
+        "parameters": [
+            {
+                "name": p.name,
+                "value": p.value,
+                "unit": p.unit,
+                "source": p.source,
+                "confidence": p.confidence.value,
+                "note": p.note,
+            }
+            for p in calibration.params
+        ],
+    }
 
 
 def _calibration_regime(ecosystem) -> Optional[str]:
@@ -461,6 +504,7 @@ def simulation_result_to_dict(
     d: Dict[str, Any] = {
         "gaia_version": GAIA_VERSION,
         "mode": "extraction",
+        "calibration": _calibration_to_dict(result.calibration),
         "ecosystem": {
             "name": eco.name,
             "resource": _resource_metadata(eco.resource),
@@ -546,6 +590,7 @@ def restoration_result_to_dict(
     d: Dict[str, Any] = {
         "gaia_version": GAIA_VERSION,
         "mode": "restoration",
+        "calibration": _calibration_to_dict(result.calibration),
         "ecosystem": {
             "name": eco.name,
             "resource": _resource_metadata(eco.resource),

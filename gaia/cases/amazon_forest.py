@@ -28,6 +28,11 @@ Scientific context:
 
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
+    Summary only. The gaia.provenance.Param objects in this module are the
+    authoritative provenance and what every output reports (Step 5). Where
+    they differ from the table, the Params apply: an owner specification
+    or 'Spec' entry with no cited source is 'low', not 'Medium'.
+
     | Parameter                     | Value         | Unit    | Source        | Confidence |
     |-------------------------------|---------------|---------|---------------|------------|
     | total_units                   | 400,000       | trees   | Spec §2       | Medium     |
@@ -136,6 +141,22 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.pricing import anchor_every_agent, scale_anchors
+from gaia.provenance import (
+    IDENTICAL_CURVES_NOTE,
+    RAMSEY_SOURCE,
+    HORIZON_NOTE,
+    Confidence,
+    Param,
+    anchor_params,
+    area_param,
+    edge_params,
+    keystone_params,
+    named,
+    restoration_params,
+    unwrap,
+    user_or_default,
+    weight_params,
+)
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report, format_restoration_report
 from gaia.simulation import run_extraction, run_restoration
@@ -145,25 +166,74 @@ from gaia.simulation import run_extraction, run_restoration
 # 66 yr to 90% (Poorter 2016). Faster than Mediterranean but slower to full
 # climax than temperate deciduous forest.
 # [PLACEHOLDER — pending calibration against Poorter 2016 and Nature Comms 2021]
-_AMAZON_SUCCESSION = SuccessionCurve(
-    pioneer_end_year=5.0,
-    intermediate_end_year=20.0,
-    climax_approach_year=66.0,
-    pioneer_service=0.05,
-    intermediate_service=0.40,
-    maturation_delay=2.0,
+# Parameter provenance (Step 5): every value below is a gaia.provenance.Param
+# (value, unit, source, confidence, note); the model receives param.value and
+# every output lists the provenance (Ecosystem.provenance).
+_SUCCESSION_NOTE = "Pending calibration against Poorter 2016 and Nature Comms 2021."
+_POORTER = (
+    "Poorter et al. (2016), Biomass resilience of Neotropical secondary "
+    "forests, via AMAZON_FOREST.md §7"
 )
+_SUCCESSION_P = {
+    "pioneer_end_year": Param(5.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_end_year": Param(
+        20.0, "years", _POORTER, Confidence.LOW,
+        "Read as 20 years to 80% biomass; the literature review says ~70% "
+        "(audit S4).",
+    ),
+    "climax_approach_year": Param(
+        66.0, "years", _POORTER, Confidence.LOW,
+        "Median 66 years to 90% biomass recovery; citation not checked.",
+    ),
+    "pioneer_service": Param(0.05, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "intermediate_service": Param(0.40, "fraction", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+    "maturation_delay": Param(2.0, "years", None, Confidence.PLACEHOLDER, _SUCCESSION_NOTE),
+}
+_AMAZON_SUCCESSION = SuccessionCurve(**unwrap(_SUCCESSION_P))
 
 # ── Reference area ───────────────────────────────────────────────────────────
 # 400,000 trees on 1,000 ha = 400 trees/ha (terra firme, DBH ≥ 10 cm: ~400–600
 # stems/ha). Every per-hectare quantity in this module is scaled by this area.
 AMAZON_TOTAL_TREES: int = 400_000
 AMAZON_AREA_HA: float = 1_000.0
-AMAZON_TREES_PER_HA: float = AMAZON_TOTAL_TREES / AMAZON_AREA_HA
+_SPEC = "AMAZON_FOREST.md (case spec)"
+_DENSITY = Param(
+    AMAZON_TOTAL_TREES / AMAZON_AREA_HA, "trees/ha", _SPEC + " §2", Confidence.LOW,
+    "Terra firme, DBH >= 10 cm: ~400-600 stems/ha, stated without a citation; "
+    "sets the per-tree carbon.",
+)
+AMAZON_TREES_PER_HA: float = _DENSITY.value
+_UNIT_VALUE = Param(
+    1.50, "€/tree", "case author's choice ('Calibrated' in the docstring)",
+    Confidence.LOW,
+    "Selective-logging revenue per tree (one-off); no market source.",
+    name="resource.unit_value",
+)
+_THRESHOLD = Param(
+    0.20, "ratio",
+    "Lovejoy & Nobre (2018): Amazon tipping point at 20-25% deforestation "
+    "(via AMAZON_FOREST.md §6)",
+    Confidence.LOW,
+    "A basin-scale tipping point applied to a 1,000 ha patch, a scale "
+    "mismatch (audit S4); also the inflection of every damage curve.",
+    name="resource.safe_threshold_ratio",
+)
 # € / ha / yr of service lost at full damage, every agent: the non-carbon
 # spec §8 anchors, (150k + 20k + 410k) / 1,000 ha [PLACEHOLDER]. Without an
 # explicit area, a forest of N trees covers N / AMAZON_TREES_PER_HA ha.
-_SERVICE_VALUE_PER_HA_YR: float = (150_000.0 + 20_000.0 + 410_000.0) / AMAZON_AREA_HA
+_VALUE_PER_HA = Param(
+    (150_000.0 + 20_000.0 + 410_000.0) / AMAZON_AREA_HA, "€/ha/yr",
+    "sum of the non-carbon anchors of AMAZON_FOREST.md §8 for 1,000 ha: water "
+    "cycling €150k, fisheries €20k, biodiversity/habitat €410k (Brouwer et "
+    "al. 2022 meta-analysis, $410/ha/yr)",
+    Confidence.LOW,
+    "Every agent; the dependency weights split it. The anchors' sources are "
+    "partly unverified (web pages and authorless citations in the literature "
+    "review, audit S4). For scale, de Groot et al. (2012): tropical forest "
+    "Int$5,264/ha/yr, of which climate regulation Int$2,044.",
+    name="agents.annual_value_per_ha",
+)
+_SERVICE_VALUE_PER_HA_YR: float = _VALUE_PER_HA.value
 
 # ── Carbon profile (per tree) ─────────────────────────────────────────────────
 # From spec §2: 173 Mg C/ha total biomass (above + below), 400 trees/ha.
@@ -171,12 +241,34 @@ _SERVICE_VALUE_PER_HA_YR: float = (150_000.0 + 20_000.0 + 410_000.0) / AMAZON_AR
 # Annual absorption: 0.62 t C/ha/yr × 3.67 / 400 ≈ 0.0057 t CO₂/tree/yr.
 # Soil carbon: ~40 t C/ha in roots → 40 × 3.67 / 400 ≈ 0.367 t CO₂/tree.
 # [PLACEHOLDER — pending calibration against eddy covariance data]
-_AMAZON_CARBON = CarbonProfile(
-    stored_carbon_tonnes=1.587,
-    annual_absorption_tonnes=0.006,
-    soil_carbon_tonnes=0.367,
-    soil_release_fraction=0.30,
-)
+_CARBON_P = {
+    "stored_carbon_tonnes": Param(
+        1.587, "tCO2/tree",
+        "173 ± 12 Mg C/ha total biomass (AMAZON_FOREST.md §2, citing 'Phil "
+        "Trans R Soc B, 227 plots', author not given) × 3.67 / 400 trees/ha",
+        Confidence.MEDIUM,
+        "Matches the literature per the audit (S4); full citation pending "
+        "(Step 8). Per tree at the 400 trees/ha reference density.",
+    ),
+    "annual_absorption_tonnes": Param(
+        0.006, "tCO2/tree/yr",
+        "0.62 t C/ha/yr old-growth net accumulation (AMAZON_FOREST.md §2, "
+        "citing Wikipedia, 1975-1996 data) × 3.67 / 400",
+        Confidence.LOW,
+        "The literature review calls 0.62 a historic peak and recommends "
+        "~0.30-0.40 t C/ha/yr; not yet applied (audit S4).",
+    ),
+    "soil_carbon_tonnes": Param(
+        0.367, "tCO2/tree", None, Confidence.PLACEHOLDER,
+        "~40 t C/ha 'in roots' × 3.67 / 400, no cited source; the name is "
+        "misleading (root, not soil carbon; audit S4).",
+    ),
+    "soil_release_fraction": Param(
+        0.30, "fraction", None, Confidence.PLACEHOLDER,
+        "Pending calibration against eddy covariance data.",
+    ),
+}
+_AMAZON_CARBON = CarbonProfile(**unwrap(_CARBON_P))
 
 # ── Resilience configuration ──────────────────────────────────────────────────
 # Amazon tipping point at 20-25% deforestation (Lovejoy & Nobre 2018).
@@ -196,18 +288,40 @@ _AMAZON_RESILIENCE = ResilienceConfig(
 # Erosion asymmetry is extreme: 90 t/ha/yr (cultivated) vs 0.015 t/ha/yr (intact).
 # From spec §4: destruction:recovery ratio ~3000:1.
 # [PLACEHOLDER — pending calibration against RUSLE data for Central Amazon]
+# (mean annual precipitation ~2,200 mm/yr; not used by the model)
+_SOIL_NOTE = "Pending calibration against RUSLE data for Central Amazon."
+_SUBSTRATE_P = {
+    "soil_depth_cm": Param(20.0, "cm", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # extreme for bare tropical slope
+    "erosion_rate_unprotected": Param(
+        90.0, "t/ha/yr",
+        "cultivated tropical slope, Ivory Coast analog (worldrainforests.com, "
+        "via AMAZON_FOREST.md §4)",
+        Confidence.LOW,
+        "A web source and an analog site; to be replaced by a primary source.",
+    ),
+    # intact forest, negligible erosion
+    "erosion_rate_protected": Param(
+        0.015, "t/ha/yr",
+        "RUSLE analysis cited as 'ScienceDirect 2023' (no author) in "
+        "AMAZON_FOREST.md §4",
+        Confidence.LOW,
+        "Matches the literature per the audit (S4); full citation pending.",
+    ),
+    # organic layer rebuilding
+    "formation_rate": Param(0.4, "t/ha/yr", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # higher than Mediterranean: sharper response
+    "erosion_alpha": Param(2.5, "exponent", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # below this, laterite exposed
+    "critical_minimum": Param(5.0, "cm", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+    # near-zero: laterite cannot support forest
+    "residual_fraction": Param(0.02, "fraction", None, Confidence.PLACEHOLDER, _SOIL_NOTE),
+}
 _AMAZON_SUBSTRATE = SubstrateProfile(
     substrate_type="terrestrial_soil",
-    soil_depth_cm=20.0,
-    # (mean annual precipitation ~2,200 mm/yr; not used by the model)
-    erosion_rate_unprotected=90.0,    # t/ha/yr — extreme for bare tropical slope
-    erosion_rate_protected=0.015,     # t/ha/yr — intact forest, negligible erosion
-    formation_rate=0.4,               # t/ha/yr — organic layer rebuilding
     capacity_function="threshold",
-    erosion_alpha=2.5,                # Higher than Mediterranean: sharper response
-    critical_minimum=5.0,             # cm — below this, laterite exposed
-    residual_fraction=0.02,           # near-zero: laterite cannot support forest
     confidence="medium",
+    **unwrap(_SUBSTRATE_P),
 )
 
 # ── Discount configuration ────────────────────────────────────────────────────
@@ -217,12 +331,32 @@ _AMAZON_SUBSTRATE = SubstrateProfile(
 # (Drupp et al. 2024, Table 10; see gaia.discount). It was 3% ("acute
 # deforestation pressure"), above the discount rate, so the PV grew without
 # bound with the horizon (C3).
+_DISCOUNT_P = {
+    "rate_schedule": Param(0.023, "1/yr", RAMSEY_SOURCE, Confidence.MEDIUM),
+    "scarcity_rate": Param(
+        0.0128, "1/yr",
+        "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: "
+        "relative price change of forest ecosystem services, 1.28%/yr "
+        "(CI 0.85-1.70)",
+        Confidence.MEDIUM,
+    ),
+    "horizon_years": Param(100, "years", None, Confidence.PLACEHOLDER, HORIZON_NOTE),
+}
 _AMAZON_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
-    rate_schedule=0.023,
-    scarcity_rate=0.0128,
-    horizon_years=100,
+    rate_schedule=_DISCOUNT_P["rate_schedule"].value,
+    scarcity_rate=_DISCOUNT_P["scarcity_rate"].value,
+    horizon_years=int(_DISCOUNT_P["horizon_years"].value),
 )
+
+# Restoration cost defaults (CLI and run_amazon_restoration): planting is
+# cheaper than temperate for rapid tropical growth [PLACEHOLDER]
+_RESTORATION_NOTE = "No cost survey behind it."
+_RESTORATION_P = {
+    "planting_cost_per_unit": Param(5.0, "€/tree", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "annual_maintenance_per_unit": Param(1.0, "€/tree/yr", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+    "maintenance_years": Param(20, "years", None, Confidence.PLACEHOLDER, _RESTORATION_NOTE),
+}
 
 # ── v0.7: Amazon pricing configuration ────────────────────────────────────────
 # From spec §8, for the AMAZON_AREA_HA = 1,000 ha reference area; the builder
@@ -239,21 +373,24 @@ _AMAZON_PRICING = PricingConfig(
             agent_name="Canopy Trees",
             anchor_value=150_000.0,
             source="Rainfall recycling service: $15-20/ha/yr × 1,000 ha + downwind agricultural value",
-            confidence="medium",
+            # was "medium"; no cited source
+            confidence="low",
             description="Water cycling / rainfall: €150k/yr",
         ),
         AnchorPoint(
             agent_name="Aquatic System",
             anchor_value=20_000.0,
             source="Fisheries: river fish catch value for 1,000 ha watershed",
-            confidence="medium",
+            # was "medium"; no cited source
+            confidence="low",
             description="Fisheries: €20k/yr",
         ),
         AnchorPoint(
             agent_name="Pollinators",
             anchor_value=410_000.0,
             source="Biodiversity/habitat: $410/ha/yr meta-analysis (Brouwer et al. 2022) × 1,000 ha",
-            confidence="medium",
+            # was "medium"; citation from the literature review, not checked
+            confidence="low",
             description="Biodiversity/habitat: €410k/yr",
         ),
     ],
@@ -288,13 +425,37 @@ _AMAZON_PRICING = PricingConfig(
 # Shared steepness for all logistic agents.
 # 12.0 gives a clear S-curve with an observable knee at the threshold.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
-_STEEPNESS: float = 12.0
+_STEEPNESS_P = Param(
+    12.0, "dimensionless", None, Confidence.PLACEHOLDER, IDENTICAL_CURVES_NOTE,
+    name="damage.logistic_steepness",
+)
+_STEEPNESS: float = _STEEPNESS_P.value
+
+# Edges into Canopy Trees and Understory divided to the in-degree cap
+# (Step 3.8, S2): (source, target) -> spec §3 strength before the rescaling
+_RETUNED_NOTE = (
+    "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+)
+_RETUNED_EDGES = {
+    ("Mycorrhizal Fungi", "Canopy Trees"): 0.40,
+    ("Mycorrhizal Fungi", "Understory"): 0.25,
+    ("Canopy Trees", "Understory"): 0.30,
+    ("Soil Decomposers", "Canopy Trees"): 0.15,
+    ("Soil Decomposers", "Understory"): 0.10,
+    ("Pollinators", "Canopy Trees"): 0.30,
+    ("Pollinators", "Understory"): 0.15,
+    ("Seed Dispersers", "Canopy Trees"): 0.20,
+    ("Seed Dispersers", "Understory"): 0.10,
+    ("Aquatic System", "Canopy Trees"): 0.15,
+    ("Epiphytes & Bromeliads", "Canopy Trees"): 0.20,
+    ("Epiphytes & Bromeliads", "Understory"): 0.15,
+}
 
 
 def build_amazon_ecosystem(
     total_trees: int = AMAZON_TOTAL_TREES,
-    safe_threshold_ratio: float = 0.20,
-    tree_value: float = 1.50,
+    safe_threshold_ratio: float = _THRESHOLD.value,
+    tree_value: float = _UNIT_VALUE.value,
     with_pricing: bool = False,
     area_ha: Optional[float] = None,
 ) -> Ecosystem:
@@ -323,8 +484,10 @@ def build_amazon_ecosystem(
     Returns:
         A fully configured Ecosystem ready for simulation.
     """
+    derived_area = total_trees / AMAZON_TREES_PER_HA
+    area_given = area_ha is not None and area_ha != derived_area
     if area_ha is None:
-        area_ha = total_trees / AMAZON_TREES_PER_HA
+        area_ha = derived_area
     resource = Resource(
         name="Central Amazon Old-Growth Lowland Forest",
         total_units=total_trees,
@@ -546,18 +709,41 @@ def build_amazon_ecosystem(
             # spec §3: 0.15; ÷ 1.45 to the in-degree cap [PLACEHOLDER]
     ]
 
+    pricing = (
+        anchor_every_agent(
+            scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA), agents, area_ha
+        )
+        if with_pricing else None
+    )
+    provenance = [
+        area_param(area_ha, area_given, _DENSITY, "trees"),
+        user_or_default(_UNIT_VALUE, tree_value, "--unit-value / tree_value"),
+        user_or_default(_THRESHOLD, safe_threshold_ratio, "--threshold"),
+        _VALUE_PER_HA,
+        *weight_params(
+            agents, _SPEC + " §3", Confidence.LOW,
+            "Rated Medium in the case docstring; an expert judgement with no "
+            "cited source.",
+        ),
+        _STEEPNESS_P,
+        *keystone_params(agents, None, Confidence.PLACEHOLDER),
+        *edge_params(
+            interactions, _SPEC + " §3 interaction matrix (expert judgement)",
+            Confidence.PLACEHOLDER, retuned=_RETUNED_EDGES, retuned_note=_RETUNED_NOTE,
+        ),
+        *named("carbon", _CARBON_P),
+        *named("substrate", _SUBSTRATE_P),
+        *named("discount", _DISCOUNT_P),
+        *(anchor_params(pricing) if pricing is not None else []),
+    ]
     return Ecosystem(
         name="Central Amazon Old-Growth Lowland Forest",
         resource=resource,
         agents=agents,
         interactions=interactions,
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
-        pricing=(
-            anchor_every_agent(
-                scale_anchors(_AMAZON_PRICING, area_ha / AMAZON_AREA_HA), agents, area_ha
-            )
-            if with_pricing else None
-        ),
+        pricing=pricing,
+        provenance=provenance,
     )
 
 
@@ -634,6 +820,9 @@ def run_amazon_restoration(
         annual_maintenance_per_unit=annual_maintenance_per_tree,
         maintenance_years=maintenance_years,
     )
+    ecosystem.provenance.extend(restoration_params(
+        cost, _RESTORATION_P, _SUCCESSION_P if time_horizon_years > 0 else None,
+    ))
     recovery_fns = [
         logistic_recovery(threshold=safe_threshold_ratio)
         for _ in ecosystem.agents
@@ -673,7 +862,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.20,
+        default=_THRESHOLD.value,
         metavar="RATIO",
         help="Safe extraction threshold ratio, 0.0 < threshold < 1.0 (default: 0.20)",
     )
@@ -692,7 +881,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--unit-value",
         type=float,
-        default=1.50,
+        default=_UNIT_VALUE.value,
         metavar="EUROS",
         help="Revenue per unit extracted in euros (default: 1.50)",
     )
@@ -704,9 +893,9 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     add_common_arguments(parser)
     add_restoration_arguments(
         parser,
-        planting_cost_default=5.0,
-        maintenance_cost_default=1.0,
-        maintenance_years_default=20,
+        planting_cost_default=_RESTORATION_P["planting_cost_per_unit"].value,
+        maintenance_cost_default=_RESTORATION_P["annual_maintenance_per_unit"].value,
+        maintenance_years_default=int(_RESTORATION_P["maintenance_years"].value),
     )
     args = parser.parse_args(argv)
     # Resolve deprecated aliases
@@ -736,6 +925,10 @@ def main(argv: Optional[List[str]] = None) -> None:
                 annual_maintenance_per_unit=args.maintenance_cost,
                 maintenance_years=args.maintenance_years,
             )
+            ecosystem.provenance.extend(restoration_params(
+                cost, _RESTORATION_P,
+                _SUCCESSION_P if args.time_horizon > 0 else None,
+            ))
             recovery_fns = [
                 logistic_recovery(threshold=args.threshold)
                 for _ in ecosystem.agents

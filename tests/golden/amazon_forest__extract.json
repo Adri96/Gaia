@@ -13,6 +13,589 @@
     "Epiphytes & Bromeliads"
   ],
   "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 18,
+      "n_medium": 5,
+      "n_params": 71,
+      "n_placeholder": 48,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.2\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "low",
+          "name": "resource.area_ha",
+          "note": "Units / reference density of 400 trees/ha. Terra firme, DBH >= 10 cm: ~400-600 stems/ha, stated without a citation; sets the per-tree carbon.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a72",
+          "unit": "ha",
+          "value": 10.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Selective-logging revenue per tree (one-off); no market source.",
+          "source": "case author's choice ('Calibrated' in the docstring)",
+          "unit": "\u20ac/tree",
+          "value": 1.5
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "A basin-scale tipping point applied to a 1,000 ha patch, a scale mismatch (audit S4); also the inflection of every damage curve.",
+          "source": "Lovejoy & Nobre (2018): Amazon tipping point at 20-25% deforestation (via AMAZON_FOREST.md \u00a76)",
+          "unit": "ratio",
+          "value": 0.2
+        },
+        {
+          "confidence": "low",
+          "name": "agents.annual_value_per_ha",
+          "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044.",
+          "source": "sum of the non-carbon anchors of AMAZON_FOREST.md \u00a78 for 1,000 ha: water cycling \u20ac150k, fisheries \u20ac20k, biodiversity/habitat \u20ac410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+          "unit": "\u20ac/ha/yr",
+          "value": 580.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Canopy Trees].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.15
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Understory].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mycorrhizal Fungi].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.15
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Soil Decomposers].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Pollinators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.09
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seed Dispersers].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Herbivores].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.07
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mesopredators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.05
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Apex Predators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.03
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Aquatic System].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Bromeliads].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Mycorrhizal Fungi].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Pollinators].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.19
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.172
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.206
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Herbivores].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Soil Decomposers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Pollinators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Seed Dispersers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Herbivores].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Pollinators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Soil Decomposers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.071
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.068
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.142
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.103
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.095
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.068
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Apex Predators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mesopredators \u2192 Apex Predators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mesopredators \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Aquatic System \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.071
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Aquatic System \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Bromeliads \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.095
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Bromeliads \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.103
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Matches the literature per the audit (S4); full citation pending (Step 8). Per tree at the 400 trees/ha reference density.",
+          "source": "173 \u00b1 12 Mg C/ha total biomass (AMAZON_FOREST.md \u00a72, citing 'Phil Trans R Soc B, 227 plots', author not given) \u00d7 3.67 / 400 trees/ha",
+          "unit": "tCO2/tree",
+          "value": 1.587
+        },
+        {
+          "confidence": "low",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "The literature review calls 0.62 a historic peak and recommends ~0.30-0.40 t C/ha/yr; not yet applied (audit S4).",
+          "source": "0.62 t C/ha/yr old-growth net accumulation (AMAZON_FOREST.md \u00a72, citing Wikipedia, 1975-1996 data) \u00d7 3.67 / 400",
+          "unit": "tCO2/tree/yr",
+          "value": 0.006
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "~40 t C/ha 'in roots' \u00d7 3.67 / 400, no cited source; the name is misleading (root, not soil carbon; audit S4).",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.367
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Pending calibration against eddy covariance data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.soil_depth_cm",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "cm",
+          "value": 20.0
+        },
+        {
+          "confidence": "low",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "A web source and an analog site; to be replaced by a primary source.",
+          "source": "cultivated tropical slope, Ivory Coast analog (worldrainforests.com, via AMAZON_FOREST.md \u00a74)",
+          "unit": "t/ha/yr",
+          "value": 90.0
+        },
+        {
+          "confidence": "low",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Matches the literature per the audit (S4); full citation pending.",
+          "source": "RUSLE analysis cited as 'ScienceDirect 2023' (no author) in AMAZON_FOREST.md \u00a74",
+          "unit": "t/ha/yr",
+          "value": 0.015
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "exponent",
+          "value": 2.5
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.critical_minimum",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "cm",
+          "value": 5.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.residual_fraction",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.02
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+          "unit": "1/yr",
+          "value": 0.0128
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 100.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 66 of 71 recorded parameters are placeholders (48) or low-confidence (18). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
     "ecosystem": {
       "agents": [
         {

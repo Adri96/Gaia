@@ -24,9 +24,14 @@ Step 3.7: Restoration Cost Ratio and Destroy-then-Restore Penalty replace
       the prevention-advantage sections.
 v0.7: Price Decomposition section in extraction report
       (endogenous pricing with scarcity and demand multipliers).
+Step 5: calibration banner at the top and Parameter Provenance section at
+      the end of both reports (result.calibration).
 """
 
+import textwrap
+
 from gaia.carbon import carbon_price_label
+from gaia.provenance import CalibrationStatus, Confidence, group_flagged
 from gaia.models import (
     Agent,
     Ecosystem,
@@ -75,6 +80,85 @@ def _horizon_sensitivity_lines(by_horizon: dict) -> list:
             lines.append(f"      {label:<34} {'n/a (does not converge)':>16}")
         else:
             lines.append(f"      {label:<34} \u20ac{value:>14,.0f}")
+    return lines
+
+
+def _wrap(text: str, indent: str) -> list:
+    """``text`` wrapped to the report width with ``indent`` on every line."""
+    return textwrap.wrap(
+        text, width=_WIDTH + 2, initial_indent=indent, subsequent_indent=indent,
+    )
+
+
+def _value_text(value: float) -> str:
+    """A parameter value: thousands separators, at most 4 significant digits."""
+    if abs(value) >= 1000:
+        return f"{value:,.0f}"
+    if value == int(value):
+        return f"{int(value)}"
+    return f"{value:.4g}"
+
+
+def _calibration_banner(calibration) -> list:
+    """The first lines of every report: what the numbers are not."""
+    if calibration is None:
+        headline = (
+            "ILLUSTRATIVE: no calibration status recorded. Results are not "
+            "real-world estimates."
+        )
+    else:
+        headline = calibration.headline + ' See "Parameter Provenance" at the end.'
+    return [_DOUBLE_LINE, *_wrap(headline, "  ")]
+
+
+def _provenance_lines(calibration: CalibrationStatus) -> list:
+    """The Parameter Provenance section: counts, regime, flagged parameters.
+
+    Placeholder and low-confidence parameters are listed (grouped when they
+    share a name pattern, source and note, e.g. every edge strength); the
+    full list with sources is in the JSON "calibration" block.
+    """
+    lines: list = ["", "  \u2500\u2500 Parameter Provenance \u2500" + "\u2500" * 39]
+    if calibration.regime_meaning is not None:
+        lines.extend(_wrap(f"Calibration regime: {calibration.regime_meaning}.", "  "))
+    counts = ", ".join(
+        f"{calibration.count(c)} {c.value}" for c in Confidence
+    )
+    lines.extend(_wrap(
+        f"{calibration.n_params} parameters recorded: {counts}.", "  ",
+    ))
+    if not calibration.ecosystem_documented:
+        lines.extend(_wrap(
+            "The ecosystem records no provenance: only model-wide parameters "
+            "are listed.", "  ",
+        ))
+    groups = group_flagged(calibration)
+    if not groups:
+        return lines
+    lines.extend(_wrap(
+        "Placeholders and low-confidence values (full list with sources: "
+        "--format json, \"calibration\"):", "  ",
+    ))
+    for label, params in groups:
+        first = params[0]
+        tag = f"[{first.confidence.value}]"
+        if len(params) == 1:
+            what = f"{first.name} = {_value_text(first.value)} {first.unit}"
+        elif "[" in label:
+            lo = min(p.value for p in params)
+            hi = max(p.value for p in params)
+            span = _value_text(lo) if lo == hi else f"{_value_text(lo)}-{_value_text(hi)}"
+            what = f"{len(params)} \u00d7 {label} = {span} {first.unit}"
+        else:
+            what = f"{label}: " + "; ".join(
+                f"{p.name[len(label) + 1:]} = {_value_text(p.value)} {p.unit}"
+                for p in params
+            )
+        lines.extend(_wrap(f"{tag} {what}", "    "))
+        if first.confidence == Confidence.LOW and first.source:
+            lines.extend(_wrap(f"Source: {first.source}.", "        "))
+        if first.note:
+            lines.extend(_wrap(first.note, "        "))
     return lines
 
 
@@ -139,6 +223,7 @@ def format_report(result: SimulationResult) -> str:
     lines: list = []
 
     # Header
+    lines.extend(_calibration_banner(result.calibration))
     lines.append(_DOUBLE_LINE)
     title: str = f"GAIA \u2014 Externality Report: {ecosystem.name}"
     lines.append(f"  {title}")
@@ -503,6 +588,8 @@ def format_report(result: SimulationResult) -> str:
                     f"{demand_m:>10.2f}x"
                 )
 
+    if result.calibration is not None:
+        lines.extend(_provenance_lines(result.calibration))
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)
@@ -550,6 +637,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines: list = []
 
     # Header
+    lines.extend(_calibration_banner(result.calibration))
     lines.append(_DOUBLE_LINE)
     title: str = f"GAIA \u2014 Restoration Report: {ecosystem.name}"
     lines.append(f"  {title}")
@@ -831,6 +919,8 @@ def format_restoration_report(result: RestorationResult) -> str:
             ratio_label: str = "Penalty per \u20ac of foregone revenue:"
             lines.append(f"    {ratio_label:<38} {pen.ratio:>15.2f}")
 
+    if result.calibration is not None:
+        lines.extend(_provenance_lines(result.calibration))
     lines.append(f"  {_DOUBLE_LINE}")
 
     return "\n".join(lines)

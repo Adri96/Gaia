@@ -13,7 +13,8 @@ Snapshot layout (one JSON file per scenario):
     scenario   — case name and CLI argv
     agents     — agent names, in model order
     result     — every scalar/nested field of the result object except
-                 the ecosystem and the per-step / per-year arrays
+                 the ecosystem, the per-step / per-year arrays and the
+                 calibration status (in cli_summary_json)
     per_agent  — final per-agent cost (extract) or service value (restore)
     steps      — ~11 evenly sampled steps, every field
     step_sums  — sum over ALL steps of every numeric step field
@@ -104,7 +105,8 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
 
 CASES = sorted({case for case, _ in SCENARIOS.values()})
 
-_SKIP_RESULT_FIELDS = {"ecosystem", "steps", "maturation_timeline"}
+# calibration (Step 5) is pinned through the CLI JSON's "calibration" block.
+_SKIP_RESULT_FIELDS = {"ecosystem", "steps", "maturation_timeline", "calibration"}
 
 
 # ── Normalisation ─────────────────────────────────────────────────────────────

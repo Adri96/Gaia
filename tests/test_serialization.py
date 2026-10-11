@@ -304,6 +304,9 @@ _NON_MONETARY_KEYS = {
     # Step 6.3: trophic factors, extraction substrate, discounting used
     "trophic_amplification", "capacity_lost_units",
     "rate_schedule", "delta", "eta", "g", "scarcity_rate",
+    # Step 5: calibration block counts (a parameter's "value" carries its
+    # unit in a sibling "unit" string: see _numeric_keys)
+    "n_params", "n_placeholder", "n_low", "n_medium", "n_high", "n_user_supplied",
 }
 _UNIT_SUFFIXES = ("_eur_yr", "_eur_per_ha_yr", "_eur_pv", "_eur", "_eur_per_t")
 
@@ -315,6 +318,10 @@ def _numeric_keys(obj, key, agent_names, out):
         out.add(key)
     elif isinstance(obj, dict):
         for k, v in obj.items():
+            # A "value" with a sibling "unit" string (calibration parameters)
+            # is labelled by that unit
+            if k == "value" and isinstance(obj.get("unit"), str) and obj["unit"]:
+                continue
             # Per-agent maps are keyed by agent name: keep the parent key
             _numeric_keys(v, key if k in agent_names else k, agent_names, out)
     elif isinstance(obj, list):

@@ -365,10 +365,29 @@ def _json_numbers(obj, out):
     return out
 
 
+def _json_strings(obj, out):
+    if isinstance(obj, str):
+        out.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _json_strings(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _json_strings(v, out)
+    return out
+
+
 def _text_only_figures(result, text, include_steps):
-    numbers = _json_numbers(json.loads(to_json(result, include_steps=include_steps)), [])
+    """€ figures of the text that are neither a JSON number nor quoted in a
+    JSON string (literature figures in the Parameter Provenance notes are
+    quoted verbatim in the JSON "calibration" block)."""
+    parsed = json.loads(to_json(result, include_steps=include_steps))
+    numbers = _json_numbers(parsed, [])
+    quoted = " ".join(_json_strings(parsed, []))
     missing = []
     for match in _EURO.finditer(text):
+        if match.group(0) in quoted:
+            continue
         figure_text = match.group(1) or match.group(2)
         decimals = len(figure_text.split(".")[1]) if "." in figure_text else 0
         figure = float(figure_text.replace(",", ""))

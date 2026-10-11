@@ -6,6 +6,317 @@
     "Watershed & Local Climate"
   ],
   "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 2,
+      "n_medium": 3,
+      "n_params": 37,
+      "n_placeholder": 32,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.2\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "placeholder",
+          "name": "resource.area_ha",
+          "note": "Units / reference density of 250 trees/ha. Chosen so the per-tree carbon gives ~200 t CO2/ha.",
+          "source": null,
+          "unit": "ha",
+          "value": 4.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "resource.unit_value",
+          "note": "Revenue per tree felled (one-off); no market source.",
+          "source": null,
+          "unit": "\u20ac/tree",
+          "value": 100.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "resource.safe_threshold_ratio",
+          "note": "Safe extraction threshold; also the inflection of every damage curve.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.3
+        },
+        {
+          "confidence": "low",
+          "name": "agents.annual_value_per_ha",
+          "note": "Every agent; the dependency weights split it. Figures partly from memory, to be checked against the papers (Step 8); 2007 Int$ used as \u20ac with no currency or price-year conversion; a global biome mean, not a site valuation.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: temperate forest Int$3,013/ha/yr; Costanza et al. (2014), Global Environmental Change 26:152-158: $3,137/ha/yr (2007); minus climate regulation Int$152 (de Groot 2012, SM Table 8.1)",
+          "unit": "\u20ac/ha/yr",
+          "value": 2848.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Human Communities].dependency_weight",
+          "note": "",
+          "source": null,
+          "unit": "share",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Animal Populations].dependency_weight",
+          "note": "",
+          "source": null,
+          "unit": "share",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Vegetation & Flora].dependency_weight",
+          "note": "",
+          "source": null,
+          "unit": "share",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Watershed & Local Climate].dependency_weight",
+          "note": "",
+          "source": null,
+          "unit": "share",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Vegetation & Flora \u2192 Animal Populations].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Animal Populations \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Pending calibration against IPCC forest carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.8
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "Pending calibration against IPCC forest carbon data.",
+          "source": null,
+          "unit": "tCO2/tree/yr",
+          "value": 0.022
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "Pending calibration against IPCC forest carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Pending calibration against IPCC forest carbon data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.soil_depth_cm",
+          "note": "Pending calibration against regional soil survey data.",
+          "source": null,
+          "unit": "cm",
+          "value": 45.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "Pending calibration against regional soil survey data.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 15.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Pending calibration against regional soil survey data.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.5
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against regional soil survey data.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.8
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against regional soil survey data.",
+          "source": null,
+          "unit": "exponent",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "low",
+          "name": "discount.scarcity_rate",
+          "note": "2% relative price change of ecosystem services. Above the estimates of Drupp et al. (2024), 1.28%/yr for forests (CI 0.85-1.70) and 1.66%/yr aggregate (CI 1.40-1.92); kept until Step 8. Below the discount rate, so the PV converges.",
+          "source": null,
+          "unit": "1/yr",
+          "value": 0.02
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 100.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.planting_cost_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree",
+          "value": 50.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.annual_maintenance_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree/yr",
+          "value": 10.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.maintenance_years",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "years",
+          "value": 10.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "recovery.logistic_steepness",
+          "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 7.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.pioneer_end_year",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "years",
+          "value": 8.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.intermediate_end_year",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "years",
+          "value": 25.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.climax_approach_year",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "years",
+          "value": 60.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.pioneer_service",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.intermediate_service",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.maturation_delay",
+          "note": "Pending calibration against temperate oak succession studies.",
+          "source": null,
+          "unit": "years",
+          "value": 2.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 34 of 37 recorded parameters are placeholders (32) or low-confidence (2). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
     "carbon_breakeven": {
       "breakeven_price_eur_per_t": 345.7,
       "current_price_eur_per_t": 166.35,

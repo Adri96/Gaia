@@ -28,7 +28,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
@@ -716,6 +716,9 @@ class Ecosystem:
         calibration_regime: What the damage curves represent (Step 3.8).
             Required when there are interaction edges, since it decides
             whether cascades double count; None only without edges.
+        provenance: gaia.provenance.Param list, the source and confidence
+            of each parameter the case set (Step 5). Never read by the
+            engines; every result reports it in ``calibration``.
     """
 
     name: str
@@ -730,6 +733,9 @@ class Ecosystem:
 
     # Step 3.8: Option A / B of the calibration-regime rule
     calibration_regime: Optional[CalibrationRegime] = None
+
+    # Step 5: parameter provenance (List[gaia.provenance.Param])
+    provenance: list = field(default_factory=list)
 
 
 @dataclass
@@ -833,6 +839,8 @@ class SimulationResult:
             ended in to return to pristine (gaia.substrate, from the actual
             soil depth / sediment state, whatever the capacity function);
             inf when it never recovers; None without a substrate profile.
+        calibration: gaia.provenance.CalibrationStatus of the run — the
+            source and confidence of every recorded parameter (Step 5).
     """
 
     ecosystem: Ecosystem
@@ -853,6 +861,7 @@ class SimulationResult:
     annual_externality_band: Optional[Tuple[float, float]] = None
     final_model_confidence: float = 1.0
     substrate_recovery_years: Optional[float] = None
+    calibration: Optional[Any] = None  # gaia.provenance.CalibrationStatus
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────
@@ -983,6 +992,7 @@ class RestorationResult:
             annual externality at depletion_after, with the extraction's
             damage and propagation model at static agent values (€/yr, a
             flow): the most restoration could recover (Foundation #2).
+        calibration: gaia.provenance.CalibrationStatus of the run (Step 5).
     """
 
     ecosystem: Ecosystem
@@ -1020,3 +1030,6 @@ class RestorationResult:
 
     # Step 3.6: horizon sensitivity of the headline PV
     net_restoration_pv_by_horizon: dict = field(default_factory=dict)
+
+    # Step 5: gaia.provenance.CalibrationStatus of the run
+    calibration: Optional[Any] = None
