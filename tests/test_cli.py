@@ -169,6 +169,28 @@ class TestForestMainJson:
         assert parsed["ecosystem"]["has_pricing"] is True
         assert "pricing" in parsed
 
+    def test_carbon_price_defaults_to_scc(self, capsys):
+        forest_main(["--trees", "100", "--units", "50", "--format", "json"])
+        parsed = json.loads(capsys.readouterr().out)
+        resource = parsed["ecosystem"]["resource"]
+        assert resource["carbon_price_eur_per_t"] == pytest.approx(166.35)
+        assert resource["carbon_price_basis"].startswith("social cost of carbon")
+
+    def test_carbon_price_ets_view(self, capsys):
+        forest_main(["--trees", "100", "--units", "50", "--format", "json"])
+        scc = json.loads(capsys.readouterr().out)["npv_analysis"]
+        forest_main([
+            "--trees", "100", "--units", "50",
+            "--format", "json", "--carbon-price", "ets",
+        ])
+        parsed = json.loads(capsys.readouterr().out)
+        assert parsed["ecosystem"]["resource"]["carbon_price_eur_per_t"] == 80.0
+        assert parsed["ecosystem"]["resource"]["carbon_price_basis"].startswith("market/ETS")
+        ets = parsed["npv_analysis"]
+        assert ets["carbon_release_eur_pv"] == pytest.approx(
+            scc["carbon_release_eur_pv"] * 80.0 / 166.3456487, rel=1e-6)
+        assert ets["services_eur_pv"] == scc["services_eur_pv"]
+
     def test_output_to_file(self, tmp_path, capsys):
         outfile = str(tmp_path / "out.json")
         forest_main([

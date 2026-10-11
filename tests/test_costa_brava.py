@@ -167,16 +167,16 @@ def test_costa_brava_marginal_cost_curve_shape():
     )
 
 
-def test_costa_brava_carbon_uses_exponential():
+def test_costa_brava_fire_regulation_uses_exponential():
     """
-    Carbon & Climate uses an exponential damage function, not logistic.
+    Fire & Microclimate Regulation uses an exponential damage function, not logistic.
 
     Exponential damage accumulates continuously without saturating — appropriate
-    for CO₂ release which has no plateau. At the same depletion level, an
+    for the fire feedback, which has no plateau. At the same depletion level, an
     exponential function crosses above a logistic with the same threshold because
     it doesn't have the initial slow region of the S-curve.
 
-    We verify this by comparing Carbon & Climate's damage at 80% depletion
+    We verify this by comparing Fire & Microclimate Regulation's damage at 80% depletion
     against what a logistic function would produce: exponential should be higher
     in the upper depletion range where it diverges from logistic saturation.
     """
@@ -184,7 +184,7 @@ def test_costa_brava_carbon_uses_exponential():
         total_trees=TOTAL_TREES,
         safe_threshold_ratio=THRESHOLD,
     )
-    carbon_agent = next(a for a in eco.agents if "Carbon" in a.name)
+    carbon_agent = next(a for a in eco.agents if a.name == "Fire & Microclimate Regulation")
 
     # At 80% depletion, compare exponential vs logistic with same threshold
     depletion = 0.80
@@ -243,7 +243,7 @@ def test_costa_brava_report_contains_all_agents():
         "Forest Mammals",
         "Raptors & Apex Predators",
         "Watershed & Water Cycle",
-        "Carbon & Climate",
+        "Fire & Microclimate Regulation",
         "Human Communities",
     ]
     for agent_name in expected_agents:

@@ -17,15 +17,15 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | tree density            | 250           | trees/ha   | Placeholder  | Low        |
     | safe_threshold_ratio    | configurable  | ratio      | Placeholder  | Low        |
     | unit_value              | 100.0 €/tree  | €/tree     | Placeholder  | Low        |
-    | annual_value_per_ha     | 3,000         | €/ha/yr    | de Groot 2012| Low        |
+    | annual_value_per_ha     | 2,848         | €/ha/yr    | de Groot 2012| Low        |
     |   (every agent)         |               |            |              |            |
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
 
 Agent values are yearly flows per hectare (decisions D1, D2): every agent
 uses the biome-level value below, and the dependency weights split it, so
-sum(weight × value) = €3,000/ha/yr × area_ha at full damage
-(€120,000/yr for the 40 ha reference forest).
+sum(weight × value) = €2,848/ha/yr × area_ha at full damage
+(€113,920/yr for the 40 ha reference forest).
 
 The value is the order of magnitude of global meta-analyses for temperate
 forests: de Groot et al. (2012), Ecosystem Services 1:50-61, Int$3,013/ha/yr
@@ -33,9 +33,12 @@ forests: de Groot et al. (2012), Ecosystem Services 1:50-61, Int$3,013/ha/yr
 26:152-158, $3,137/ha/yr (2007) — both figures to be re-checked against the
 papers in Step 8. It is used at face value as €; currency and price-year
 conversion, and a site-specific value, are pending (Step 8).
-Both totals include climate regulation, which overlaps gaia.carbon (C5,
-Step 3.4). Rates are never tuned to produce an outcome (an earlier version
-was back-solved so that externality < revenue at 30% and > revenue at 50%).
+Carbon is valued only by gaia.carbon (decision D3), so the climate-regulation
+service is taken out of the biome total: de Groot et al. (2012, supporting
+material, Table 8.1, temperate forests) put it at Int$152/ha/yr, hence
+€3,000 − €152 = €2,848/ha/yr. Rates are never tuned to produce an outcome
+(an earlier version was back-solved so that externality < revenue at 30% and
+> revenue at 50%).
 
 Dependency weight sum: 0.20 + 0.30 + 0.15 + 0.35 = 1.00
 
@@ -55,6 +58,7 @@ from typing import Optional
 from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
+    apply_carbon_price_view,
     handle_deprecated_alias,
     output_result,
     warn_unused_restoration_args,
@@ -89,8 +93,10 @@ FOREST_TOTAL_TREES: int = 10_000
 FOREST_AREA_HA: float = 40.0
 FOREST_TREES_PER_HA: float = FOREST_TOTAL_TREES / FOREST_AREA_HA
 
-# € / ha / yr of service lost at full damage, every agent (see module docstring)
-_FOREST_VALUE_PER_HA_YR: float = 3_000.0
+# € / ha / yr of service lost at full damage, every agent (see module
+# docstring): the de Groot (2012) temperate-forest total without its climate
+# regulation (carbon) component, €3,000 − €152 [PLACEHOLDER].
+_FOREST_VALUE_PER_HA_YR: float = 3_000.0 - 152.0
 
 
 # v0.4: Oak Valley Forest succession curve
@@ -111,7 +117,6 @@ _FOREST_CARBON = CarbonProfile(
     annual_absorption_tonnes=0.022,
     soil_carbon_tonnes=0.3,
     soil_release_fraction=0.25,
-    carbon_price_per_tonne=80.0,
 )
 
 # v0.4: Oak Valley resilience configuration
@@ -139,13 +144,12 @@ _OAK_VALLEY_SUBSTRATE = SubstrateProfile(
 )
 
 # v0.6: Oak Valley discount configuration
-# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023
+# Ramsey formula: r = 0.005 + 1.35 × 0.013 ≈ 0.023. Carbon price: the
+# DiscountConfig default, the social cost of carbon (gaia.carbon).
 _OAK_VALLEY_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=0.023,
     scarcity_rate=0.02,
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
     horizon_years=100,
 )
 
@@ -153,19 +157,21 @@ _OAK_VALLEY_DISCOUNT = DiscountConfig(
 # FOREST_AREA_HA reference forest and are scaled with area_ha by the builder.
 _OAK_VALLEY_PRICING = PricingConfig(
     anchors=[
+        # The former carbon anchor (€80/t × 1,000 t/yr) is gone: carbon is
+        # valued only by gaia.carbon (decision D3).
         AnchorPoint(
-            agent_name="General Biosphere",
-            anchor_value=80000.0,
-            source="EU ETS carbon price × estimated 1,000 t CO₂/yr sequestration",
-            confidence="medium",
-            description="Carbon: €80/t × 1,000 t CO₂/yr",
+            agent_name="Watershed & Local Climate",
+            anchor_value=7_640.0,
+            source="de Groot et al. 2012, temperate forests, (fresh) water supply Int$191/ha/yr × 40 ha",
+            confidence="low",
+            description="Water supply: €191/ha/yr × 40 ha [PLACEHOLDER]",
         ),
     ],
     scarcity_functions={
         "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
         "Animal Populations": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
         "Vegetation & Flora": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
-        "General Biosphere": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Watershed & Local Climate": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
     },
     default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
 )
@@ -254,14 +260,15 @@ def build_forest_ecosystem(
             trophic_level=0,
         ),
         Agent(
-            name="General Biosphere",
+            name="Watershed & Local Climate",
             dependency_weight=0.35,
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
             annual_value_per_ha=_FOREST_VALUE_PER_HA_YR,
-            # [PLACEHOLDER — carbon release, watershed, climate impact]
-            description="Carbon release, watershed degradation, climate impact",
+            # [PLACEHOLDER — watershed, local climate; formerly "General
+            # Biosphere", whose carbon component is now valued by gaia.carbon]
+            description="Watershed degradation, loss of local cooling and humidity regulation",
             # v0.3: Abiotic service — not in trophic chain
             trophic_level=-1,
         ),
@@ -468,6 +475,7 @@ def main(argv: list = None) -> None:
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
         )
+        apply_carbon_price_view(ecosystem, args.carbon_price)
         if args.mode == "restore":
             cost = RestorationCost(
                 planting_cost_per_unit=args.planting_cost,

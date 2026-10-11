@@ -50,14 +50,20 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
 Agent values (decisions D1, D2):
-    Every agent uses €840/ha/yr (spec §8 total annual ecosystem service value)
-    and the dependency weights split it, so sum(weight × value) =
-    €840/ha/yr × area_ha at full damage (€840,000/yr for the 1,000 ha
-    reference area). The spec §8 anchors, summed as written, give
-    ~€1,160/ha/yr and include carbon; the €840 figure is kept until carbon
-    leaves the anchors and agent values (Step 3.4) — see the note in
-    definitions/AMAZON_FOREST.md. For scale, de Groot et al. (2012) report a
-    global tropical-forest mean of Int$5,264/ha/yr (2007).
+    Every agent uses €580/ha/yr and the dependency weights split it, so
+    sum(weight × value) = €580/ha/yr × area_ha at full damage (€580,000/yr
+    for the 1,000 ha reference area) [PLACEHOLDER].
+
+    €580/ha/yr is the sum of the non-carbon spec §8 anchors for 1,000 ha:
+    water cycling €150k + fisheries €20k + biodiversity/habitat €410k =
+    €580k/yr. Carbon is valued only by gaia.carbon (decision D3), so the
+    carbon anchors (stock protection €508k, sequestration €88k, REDD+) are
+    gone. The former €840/ha/yr had no derivation of its own (the anchors,
+    carbon included, summed to ~€1,160/ha/yr), so the agent value was
+    brought to the documented anchors, not the reverse — see
+    definitions/AMAZON_FOREST.md §8. For scale, de Groot et
+    al. (2012) report a global tropical-forest mean of Int$5,264/ha/yr
+    (2007), of which climate regulation is Int$2,044.
 
     Revenue (€1.50/tree) is one-off; it is compared with the present value of
     the yearly externality, never with the €/yr figure.
@@ -78,6 +84,7 @@ from typing import Optional
 from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
+    apply_carbon_price_view,
     output_result,
     warn_unused_restoration_args,
 )
@@ -122,9 +129,10 @@ _AMAZON_SUCCESSION = SuccessionCurve(
 AMAZON_TOTAL_TREES: int = 400_000
 AMAZON_AREA_HA: float = 1_000.0
 AMAZON_TREES_PER_HA: float = AMAZON_TOTAL_TREES / AMAZON_AREA_HA
-# € / ha / yr of service lost at full damage, every agent (spec §8). Without
-# an explicit area, a forest of N trees covers N / AMAZON_TREES_PER_HA ha.
-_SERVICE_VALUE_PER_HA_YR: float = 840.0
+# € / ha / yr of service lost at full damage, every agent: the non-carbon
+# spec §8 anchors, (150k + 20k + 410k) / 1,000 ha [PLACEHOLDER]. Without an
+# explicit area, a forest of N trees covers N / AMAZON_TREES_PER_HA ha.
+_SERVICE_VALUE_PER_HA_YR: float = (150_000.0 + 20_000.0 + 410_000.0) / AMAZON_AREA_HA
 
 # ── Carbon profile (per tree) ─────────────────────────────────────────────────
 # From spec §2: 173 Mg C/ha total biomass (above + below), 400 trees/ha.
@@ -137,7 +145,6 @@ _AMAZON_CARBON = CarbonProfile(
     annual_absorption_tonnes=0.006,
     soil_carbon_tonnes=0.367,
     soil_release_fraction=0.30,
-    carbon_price_per_tonne=80.0,
 )
 
 # ── Resilience configuration ──────────────────────────────────────────────────
@@ -178,30 +185,17 @@ _AMAZON_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=0.023,
     scarcity_rate=0.03,  # Higher: Amazon under acute deforestation pressure
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
-    horizon_years=100,
+    horizon_years=100,  # carbon price: the default, social cost of carbon
 )
 
 # ── v0.7: Amazon pricing configuration ────────────────────────────────────────
 # From spec §8, for the AMAZON_AREA_HA = 1,000 ha reference area; the builder
-# scales the anchors with area_ha.
+# scales the anchors with area_ha. The carbon stock (€508k) and sequestration
+# (€88k) anchors are gone: the stock was capitalised a second time by the NPV
+# and carbon is valued only by gaia.carbon (C5, decision D3). The remaining
+# anchors sum to the agent value, €580k/yr.
 _AMAZON_PRICING = PricingConfig(
     anchors=[
-        AnchorPoint(
-            agent_name="Canopy Trees",
-            anchor_value=508_000.0,
-            source="Carbon stock protection: 635 t CO₂/ha × 1,000 ha × €80/t ÷ 100 yr amortized",
-            confidence="high",
-            description="Carbon stock: €508k/yr (amortized stock protection)",
-        ),
-        AnchorPoint(
-            agent_name="Canopy Trees",
-            anchor_value=88_000.0,
-            source="Carbon sequestration: 11 Mg C/ha × 1,000 ha × 3.67 × €80/t × 0.027",
-            confidence="high",
-            description="Carbon sequestration: €88k/yr",
-        ),
         AnchorPoint(
             agent_name="Canopy Trees",
             anchor_value=150_000.0,
@@ -312,7 +306,7 @@ def build_amazon_ecosystem(
             dependency_weight=0.15,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             annual_value_per_ha=_SERVICE_VALUE_PER_HA_YR,
-            description="Emergent + canopy layer (400+ species/ha) — primary biomass, carbon stock, rainfall recycling",
+            description="Emergent + canopy layer (400+ species/ha) — primary biomass, rainfall recycling",
             trophic_level=0,
         ),
         Agent(
@@ -687,6 +681,7 @@ def main(argv: list = None) -> None:
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
         )
+        apply_carbon_price_view(ecosystem, args.carbon_price)
         if args.mode == "restore":
             cost = RestorationCost(
                 planting_cost_per_unit=args.planting_cost,

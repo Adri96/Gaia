@@ -1,20 +1,36 @@
 """
 Tests for gaia.carbon — Carbon accounting module.
 
-Covers carbon release, absorption foregone, monetized carbon cost,
-annual absorption during maturation, and carbon payback period.
+Covers the carbon price (social cost of carbon, market/ETS view), carbon
+release, carbon present values, monetized carbon cost, annual absorption
+during maturation, and carbon payback period.
 """
+
+import dataclasses
 
 import pytest
 
 from gaia.carbon import (
+    ETS_CARBON_PRICE_EUR,
+    SCC_GROWTH_RATE,
+    SCC_USD_2020_PER_T,
+    SOCIAL_COST_OF_CARBON_EUR,
+    USD_PER_EUR_2020,
     compute_annual_absorption,
     compute_carbon_cost,
     compute_carbon_payback_period,
     compute_carbon_release,
-    compute_absorption_foregone,
+    pv_absorption,
+    pv_carbon_release,
+    with_carbon_price_view,
 )
-from gaia.models import CarbonProfile, SuccessionCurve
+from gaia.discount import (
+    DISCOUNT_CENTRAL,
+    DISCOUNT_ENVIRONMENTAL,
+    DISCOUNT_GREEN_BOOK,
+    DISCOUNT_MARKET,
+)
+from gaia.models import CarbonProfile, DiscountConfig, SuccessionCurve
 
 
 # ── Test fixtures ──────────────────────────────────────────────────────────────
@@ -24,15 +40,13 @@ _FOREST_CARBON = CarbonProfile(
     annual_absorption_tonnes=0.022,
     soil_carbon_tonnes=0.3,
     soil_release_fraction=0.25,
-    carbon_price_per_tonne=80.0,
 )
 
 _POSIDONIA_CARBON = CarbonProfile(
     stored_carbon_tonnes=130.0,
-    annual_absorption_tonnes=5.9,
+    annual_absorption_tonnes=1.58,
     soil_carbon_tonnes=2600.0,
     soil_release_fraction=0.05,
-    carbon_price_per_tonne=80.0,
 )
 
 _FOREST_SUCCESSION = SuccessionCurve(
@@ -52,6 +66,52 @@ _POSIDONIA_SUCCESSION = SuccessionCurve(
     intermediate_service=0.25,
     maturation_delay=5.0,
 )
+
+
+# ── Tests: carbon price ───────────────────────────────────────────────────────
+
+
+class TestCarbonPrice:
+    """The default carbon price is the social cost of carbon (decision D3)."""
+
+    def test_scc_is_epa_central_estimate_in_euros(self):
+        assert SCC_USD_2020_PER_T == 190.0
+        assert USD_PER_EUR_2020 == 1.1422
+        assert SOCIAL_COST_OF_CARBON_EUR == pytest.approx(190.0 / 1.1422)
+        assert SOCIAL_COST_OF_CARBON_EUR == pytest.approx(166.35, abs=0.01)
+
+    def test_scc_growth_matches_epa_trajectory(self):
+        """$190 (2020) → $410 (2080) at the 2% near-term rate: ~1.29%/yr."""
+        assert SCC_GROWTH_RATE == pytest.approx((410 / 190) ** (1 / 60) - 1, abs=5e-4)
+
+    def test_default_discount_config_uses_scc(self):
+        config = DiscountConfig()
+        assert config.carbon_price_current == SOCIAL_COST_OF_CARBON_EUR
+        assert config.carbon_price_growth == SCC_GROWTH_RATE
+
+    @pytest.mark.parametrize("profile", [
+        DISCOUNT_MARKET, DISCOUNT_CENTRAL, DISCOUNT_ENVIRONMENTAL, DISCOUNT_GREEN_BOOK,
+    ])
+    def test_builtin_profiles_use_scc_growing_slower_than_discount(self, profile):
+        assert profile.carbon_price_current == SOCIAL_COST_OF_CARBON_EUR
+        min_rate = min(profile.rate_at_year(t) for t in range(profile.horizon_years))
+        assert profile.carbon_price_growth < min_rate
+
+    def test_explicit_price_is_kept(self):
+        config = DiscountConfig(carbon_price_current=120.0, carbon_price_growth=0.0)
+        assert config.carbon_price_current == 120.0
+        assert config.carbon_price_growth == 0.0
+
+    def test_ets_view_is_optional_and_labelled(self):
+        ets = with_carbon_price_view(DISCOUNT_CENTRAL, "ets")
+        assert ets.carbon_price_current == ETS_CARBON_PRICE_EUR == 80.0
+        assert ets.carbon_price_growth == DISCOUNT_CENTRAL.carbon_price_growth
+        scc = with_carbon_price_view(ets, "scc")
+        assert scc.carbon_price_current == SOCIAL_COST_OF_CARBON_EUR
+
+    def test_unknown_view_rejected(self):
+        with pytest.raises(ValueError, match="carbon price view"):
+            with_carbon_price_view(DISCOUNT_CENTRAL, "market")
 
 
 # ── Tests: carbon release ─────────────────────────────────────────────────────
@@ -79,42 +139,77 @@ class TestCarbonRelease:
         assert release_per_unit < total_stored
 
 
-# ── Tests: absorption foregone ─────────────────────────────────────────────────
 
 
-class TestAbsorptionForegone:
-    """Tests for compute_absorption_foregone."""
+# ── Tests: carbon present values ──────────────────────────────────────────────
 
-    def test_scales_with_years(self):
-        """Foregone absorption scales linearly with remaining years."""
-        f10 = compute_absorption_foregone(_FOREST_CARBON, 1, 10.0)
-        f100 = compute_absorption_foregone(_FOREST_CARBON, 1, 100.0)
-        assert abs(f100 - f10 * 10) < 1e-6
+
+class TestCarbonPresentValues:
+    """Release is a stock at the year-0 price; absorption a flow → PV."""
+
+    def test_release_valued_at_year0_price(self):
+        assert pv_carbon_release(10.0, DISCOUNT_CENTRAL) == pytest.approx(
+            10.0 * SOCIAL_COST_OF_CARBON_EUR)
+
+    def test_absorption_pv_closed_form(self):
+        """Constant flow, constant rates: a growing annuity over t = 0..H-1."""
+        config = DiscountConfig(rate_schedule=0.05, carbon_price_current=100.0,
+                                carbon_price_growth=0.01, horizon_years=30)
+        q = 1.01 / 1.05
+        expected = 2.0 * 100.0 * (1 - q ** 30) / (1 - q)
+        assert pv_absorption(2.0, config) == pytest.approx(expected, rel=1e-12)
+
+    def test_absorption_and_shortfall_sum_to_full_flow(self):
+        full = pv_absorption(3.0, DISCOUNT_CENTRAL)
+        got = pv_absorption(3.0, DISCOUNT_CENTRAL, _FOREST_SUCCESSION, 0.8)
+        missing = pv_absorption(3.0, DISCOUNT_CENTRAL, _FOREST_SUCCESSION, 0.8,
+                                shortfall=True)
+        assert got + missing == pytest.approx(full, rel=1e-12)
+        assert 0.0 < got < full
+
+    def test_unpriced_absorption_is_discounted_tonnes(self):
+        config = dataclasses.replace(DISCOUNT_CENTRAL, carbon_price_growth=0.0)
+        priced = pv_absorption(1.0, config)
+        tonnes = pv_absorption(1.0, config, priced=False)
+        assert priced == pytest.approx(tonnes * config.carbon_price_current)
+
+    def test_absorption_pv_converges_with_horizon(self):
+        """SCC growth < discount rate: doubling a long horizon adds little."""
+        pv_500 = pv_absorption(
+            1.0, dataclasses.replace(DISCOUNT_CENTRAL, horizon_years=500))
+        pv_1000 = pv_absorption(
+            1.0, dataclasses.replace(DISCOUNT_CENTRAL, horizon_years=1000))
+        assert pv_1000 < 1.01 * pv_500
 
 
 # ── Tests: carbon cost ─────────────────────────────────────────────────────────
 
 
 class TestCarbonCost:
-    """Tests for compute_carbon_cost."""
+    """Tests for compute_carbon_cost (S7: a stock is never added to a flow)."""
 
     def test_cost_equals_tonnes_times_price(self):
-        """Release cost = release tonnes × price exactly."""
-        result = compute_carbon_cost(_FOREST_CARBON, 100, 80.0)
+        """Release cost = release tonnes × year-0 price exactly."""
+        result = compute_carbon_cost(_FOREST_CARBON, 100, DISCOUNT_CENTRAL)
         release = compute_carbon_release(_FOREST_CARBON, 100)
-        expected_cost = release * 80.0
-        assert abs(result["release_cost"] - expected_cost) < 1e-4
+        expected_cost = release * DISCOUNT_CENTRAL.carbon_price_current
+        assert abs(result["release_cost_eur"] - expected_cost) < 1e-4
 
-    def test_double_externality_greater_than_release_only(self):
-        """Total cost (release + foregone) should exceed release cost alone."""
-        result = compute_carbon_cost(_FOREST_CARBON, 100, 80.0)
-        assert result["total_cost"] > result["release_cost"]
+    def test_total_adds_two_present_values(self):
+        """The total is release (stock) + PV of foregone absorption (stock)."""
+        result = compute_carbon_cost(_FOREST_CARBON, 100, DISCOUNT_CENTRAL)
+        assert result["foregone_cost_pv_eur"] == pytest.approx(
+            pv_absorption(100 * 0.022, DISCOUNT_CENTRAL))
+        assert result["total_cost_pv_eur"] == pytest.approx(
+            result["release_cost_eur"] + result["foregone_cost_pv_eur"])
+        assert "total_cost" not in result
+        assert "foregone_cost_per_year" not in result
 
     def test_zero_units(self):
         """Zero extraction should give zero cost."""
-        result = compute_carbon_cost(_FOREST_CARBON, 0, 80.0)
-        assert result["release_cost"] == 0.0
-        assert result["foregone_cost_per_year"] == 0.0
+        result = compute_carbon_cost(_FOREST_CARBON, 0, DISCOUNT_CENTRAL)
+        assert result["release_cost_eur"] == 0.0
+        assert result["foregone_cost_pv_eur"] == 0.0
 
 
 # ── Tests: annual absorption ──────────────────────────────────────────────────
@@ -165,7 +260,6 @@ class TestCarbonPaybackPeriod:
             annual_absorption_tonnes=0.022,
             soil_carbon_tonnes=0.0,
             soil_release_fraction=0.0,
-            carbon_price_per_tonne=80.0,
         )
         period = compute_carbon_payback_period(
             zero_profile, 100, 100, _FOREST_SUCCESSION

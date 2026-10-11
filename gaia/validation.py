@@ -325,7 +325,6 @@ def validate_carbon_profile(
     Checks:
         - All tonnage values >= 0
         - soil_release_fraction in [0.0, 1.0]
-        - carbon_price_per_tonne >= 0
 
     Raises:
         ValueError: If any constraint is violated.
@@ -349,11 +348,6 @@ def validate_carbon_profile(
         raise ValueError(
             f"{name}: soil_release_fraction must be in [0.0, 1.0], "
             f"got {profile.soil_release_fraction}"
-        )
-    if profile.carbon_price_per_tonne < 0.0:
-        raise ValueError(
-            f"{name}: carbon_price_per_tonne must be >= 0.0, "
-            f"got {profile.carbon_price_per_tonne}"
         )
 
 

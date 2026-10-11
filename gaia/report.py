@@ -19,7 +19,7 @@ v0.7: Price Decomposition section in extraction report
       (endogenous pricing with scarcity and demand multipliers).
 """
 
-from gaia.carbon import compute_carbon_cost, compute_carbon_payback_period
+from gaia.carbon import carbon_price_label
 from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
 from gaia.resilience import compute_confidence_band
 from gaia.substrate import compute_substrate_recovery_years, create_substrate_state
@@ -260,30 +260,32 @@ def format_report(result: SimulationResult) -> str:
                     f"    Ecosystem damage may be partially irreversible."
                 )
 
-    # v0.4: Carbon Accounting
-    if resource.carbon_profile is not None and result.total_units_extracted > 0:
+    # v0.4: Carbon Accounting — every figure comes from extraction_npv
+    # (gaia.carbon), so the text and the JSON output agree
+    npv_c = result.extraction_npv
+    if (resource.carbon_profile is not None and result.total_units_extracted > 0
+            and npv_c is not None):
         lines.append("")
         lines.append(f"  \u2500\u2500 Carbon Accounting \u2500" + "\u2500" * 42)
-        carbon = compute_carbon_cost(
-            resource.carbon_profile,
-            result.total_units_extracted,
-            remaining_years=80.0,  # default estimate
-        )
         lines.append(
             f"  {'Carbon released (biomass+soil):':<40} "
-            f"{carbon['release_tonnes']:>10,.0f} t CO\u2082"
+            f"{npv_c.carbon_released_t:>10,.0f} t CO\u2082"
         )
         lines.append(
-            f"  {'Future absorption foregone:':<40} "
-            f"{carbon['foregone_tonnes_per_year']:>10,.1f} t CO\u2082/yr"
+            f"  {'Future absorption lost:':<40} "
+            f"{npv_c.carbon_absorption_lost_t_yr:>10,.1f} t CO\u2082/yr"
+        )
+        lines.append(
+            f"  {'Carbon price (year 0):':<40} "
+            f"{npv_c.carbon_price:>10,.2f}\u20ac/t CO\u2082"
         )
         lines.append(
             f"  {'Carbon externality (release):':<40} "
-            f"{carbon['release_cost']:>14,.2f}\u20ac (one-off)"
+            f"{npv_c.carbon_release:>14,.2f}\u20ac (one-off)"
         )
         lines.append(
-            f"  {'Carbon externality (foregone):':<40} "
-            f"{carbon['foregone_cost_per_year']:>14,.2f}\u20ac/yr"
+            f"  {'Carbon externality (absorption lost):':<40} "
+            f"{npv_c.carbon_foregone:>14,.2f}\u20ac (PV)"
         )
 
     # v0.4: Confidence band on total externality
@@ -393,6 +395,7 @@ def format_report(result: SimulationResult) -> str:
                 f"  Carbon price: \u20ac{discount.carbon_price_current:,.0f}/t "
                 f"growing at {discount.carbon_price_growth:.1%}/yr"
             )
+            lines.append(f"    ({carbon_price_label(discount)})")
         else:
             lines.append(f"     ) \u2500" + "\u2500" * 49)
 
@@ -407,7 +410,7 @@ def format_report(result: SimulationResult) -> str:
             f"\u20ac{npv.carbon_release:>14,.0f}"
         )
         lines.append(
-            f"    {'Foregone absorption (annual flow):':<36} "
+            f"    {'Absorption lost (annual flow):':<36} "
             f"\u20ac{npv.carbon_foregone:>14,.0f}"
         )
         lines.append(
@@ -739,7 +742,7 @@ def format_restoration_report(result: RestorationResult) -> str:
             f"\u20ac{cb.breakeven_price:>12,.2f}/t CO\u2082"
         )
         lines.append(
-            f"  {'Current EU ETS price:':<40} "
+            f"  {'Carbon price (year 0):':<40} "
             f"\u20ac{cb.current_price:>12,.2f}/t CO\u2082"
         )
         lines.append(

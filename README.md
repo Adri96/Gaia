@@ -181,16 +181,16 @@ Gaia/
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
 | `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |
 | `gaia/succession.py` | Succession curve evaluation (pioneer → intermediate → climax), maturation timeline, maturation gap (v0.4) |
-| `gaia/carbon.py` | Double carbon externality: release + foregone absorption, monetized cost, payback period (v0.4) |
+| `gaia/carbon.py` | Single owner of carbon value (Step 3.4): release (stock) + PV of foregone absorption, priced at the social cost of carbon (US EPA 2023, $190 → €166/t CO₂, +1.3%/yr; optional market/ETS view at €80/t, `--carbon-price ets`), payback period |
 | `gaia/resilience.py` | Resilience zone computation (green/yellow/red), confidence interpolation, confidence bands (v0.4) |
 | `gaia/substrate.py` | Physical substrate computation: capacity functions (linear/threshold/logistic), degradation, recovery, recovery year estimation (v0.5) |
 | `gaia/discount.py` | NPV computation engine (v0.6): Ramsey-based discounting, scarcity uplift, carbon price trajectories, 4 preconfigured profiles (Market/Central/Environmental/Green Book), `compute_extraction_npv()`, `compute_restoration_npv()`, `compute_carbon_breakeven()`, `compute_prevention_advantage_v06()` |
 | `gaia/pricing.py` | Endogenous pricing engine (v0.7): Leontief-Hannon value system V = (I-SW)⁻¹A, scarcity functions (smooth/threshold), pure Python matrix math (no numpy), Gaussian elimination with partial pivoting, spectral radius validation via power iteration, `solve_prices()` with fallback to static rates |
 | `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging, substrate degradation, NPV computation, and dynamic pricing; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with maturation pass, substrate ceiling, restoration NPV, and carbon breakeven |
 | `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact, NPV analysis, price decomposition; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling, investment analysis, carbon breakeven, prevention advantage v0.6 |
-| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%, 2% scarcity), 1 price anchor (Carbon €80k) |
-| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical), central discount (2.3%, 2.5% scarcity), 2 price anchors (Carbon €136k, Watershed €250k) |
-| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount (2.3%→1.4%, 3% scarcity, 200yr), 3 price anchors (Blue Carbon €136k, Tourism €500k, Fishing €75k) |
+| `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%, 2% scarcity), 1 price anchor (Water supply €7.6k); carbon valued by `carbon.py` at the social cost of carbon |
+| `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical), central discount (2.3%, 2.5% scarcity), 1 price anchor (Watershed €25k); carbon valued by `carbon.py` |
+| `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 10 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount (2.3%→1.4%, 3% scarcity, 200yr), 2 price anchors (Tourism €500k, Fishing €75k); blue carbon valued by `carbon.py` |
 
 ---
 
@@ -402,7 +402,7 @@ print(report)
 
 ### CLI — Costa Brava Holm Oak Forest
 
-A Mediterranean forest ecosystem with **11 agents** spanning the full biological web: the underground mycorrhizal network (the invisible foundation everything else depends on), understory shrubs and aromatic plants, pollinators, birds, mammals, apex raptors (all four European vulture species nest in Catalonia), the watershed, carbon cycle, and the Costa Brava's coastal tourism economy.
+A Mediterranean forest ecosystem with **11 agents** spanning the full biological web: the underground mycorrhizal network (the invisible foundation everything else depends on), understory shrubs and aromatic plants, pollinators, birds, mammals, apex raptors (all four European vulture species nest in Catalonia), the watershed, fire and microclimate regulation, and the Costa Brava's coastal tourism economy.
 
 What makes this case different from the generic forest: the safe threshold is **25%** instead of 30% — Mediterranean forests are more fragile. Summer drought is the defining constraint, regeneration is slower, and fire risk creates positive feedback loops once canopy cover is lost. The mycorrhizal fungi carry the highest dependency weight (0.13) because they are the underground infrastructure that conditions tree regeneration, soil nutrient cycling, and water access for all remaining trees.
 
@@ -434,9 +434,9 @@ Mediterranean forest restoration is harder than temperate: holm oak grows at max
 
 ### CLI — Costa Brava Posidonia Meadow
 
-*Posidonia oceanica* is a seagrass that forms the foundation of Mediterranean coastal ecosystems. It absorbs **15× more CO₂ per hectare than the Amazon rainforest**, stores carbon in its sediment matte for millennia, filters bathing water, nurseries fish (the Medes Islands MPA proved fish biomass reaches 80× higher inside protected meadows), and physically protects Costa Brava beaches from erosion through wave attenuation and leaf-litter cushions. It grows at 1–6 cm per year — any significant destruction is effectively irreversible on a human timescale.
+*Posidonia oceanica* is a seagrass that forms the foundation of Mediterranean coastal ecosystems. It stores carbon in its sediment matte for millennia, filters bathing water, nurseries fish (the Medes Islands MPA proved fish biomass reaches 80× higher inside protected meadows), and physically protects Costa Brava beaches from erosion through wave attenuation and leaf-litter cushions. It grows at 1–6 cm per year — any significant destruction is effectively irreversible on a human timescale.
 
-This case has **11 agents**: the meadow itself, coralligenous reefs and red coral (centuries-old biogenic habitats), epiphytic algae, marine invertebrates, fish populations, marine megafauna (dolphins, sea turtles), seabirds including the Mediterranean-endemic Audouin's gull, coastal protection, water quality, blue carbon, and human communities whose tourism economy depends on all of the above.
+This case has **10 agents**: the meadow itself, coralligenous reefs and red coral (centuries-old biogenic habitats), epiphytic algae, marine invertebrates, fish populations, marine megafauna (dolphins, sea turtles), seabirds including the Mediterranean-endemic Audouin's gull, coastal protection, water quality, and human communities (its blue carbon is valued by `carbon.py`, not by an agent) whose tourism economy depends on all of the above.
 
 **The marine economics are inverted from the forest case.** Private revenue from Posidonia destruction (coastal development, marina construction, trawling permits) is a **one-time gain**. Ecosystem service losses are **annual recurring costs** — every year the meadow is gone, the losses compound. The report flags this explicitly: at 40% destruction, the one-time revenue of €5M is fully offset by annual ecosystem losses within **1.3 years**, after which society loses ~€4M every year, indefinitely.
 

@@ -9,16 +9,15 @@
     "Seabirds",
     "Coastal Protection",
     "Water Quality",
-    "Blue Carbon",
     "Human Communities"
   ],
   "cli_summary_json": {
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 1600.0,
-          "annual_value_eur_yr": 1600000.0,
-          "dependency_weight": 0.1,
+          "annual_value_eur_per_ha_yr": 1456.0,
+          "annual_value_eur_yr": 1456000.0,
+          "dependency_weight": 0.10989010989010989,
           "description": "Posidonia meadow integrity \u2014 self-reinforcing fragmentation and turbidity feedback loop",
           "is_keystone": true,
           "keystone_threshold": 0.3,
@@ -26,9 +25,9 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 1200.0,
-          "annual_value_eur_yr": 1200000.0,
-          "dependency_weight": 0.1,
+          "annual_value_eur_per_ha_yr": 1092.0,
+          "annual_value_eur_yr": 1092000.0,
+          "dependency_weight": 0.10989010989010989,
           "description": "Coralligenous reefs and red coral \u2014 centuries-old biogenic habitat, irreplaceable on human timescales",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -36,9 +35,9 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 714.2,
-          "annual_value_eur_yr": 714200.0,
-          "dependency_weight": 0.07,
+          "annual_value_eur_per_ha_yr": 649.922,
+          "annual_value_eur_yr": 649922.0,
+          "dependency_weight": 0.07692307692307693,
           "description": "Epiphytic algae and plant community \u2014 primary productivity, oxygen production, food web base",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -46,9 +45,9 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 777.8,
-          "annual_value_eur_yr": 777800.0,
-          "dependency_weight": 0.09,
+          "annual_value_eur_per_ha_yr": 707.798,
+          "annual_value_eur_yr": 707798.0,
+          "dependency_weight": 0.0989010989010989,
           "description": "Sponges, urchins, octopus, lobsters, shellfish \u2014 filter feeders, grazers, urchin barren risk",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -56,9 +55,9 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 1000.0,
-          "annual_value_eur_yr": 1000000.0,
-          "dependency_weight": 0.14,
+          "annual_value_eur_per_ha_yr": 910.0,
+          "annual_value_eur_yr": 910000.0,
+          "dependency_weight": 0.15384615384615385,
           "description": "Fish nursery and feeding habitat \u2014 artisanal fisheries, grouper apex predator, Medes Islands model",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -66,9 +65,9 @@
           "trophic_level": 2
         },
         {
-          "annual_value_eur_per_ha_yr": 1000.0,
-          "annual_value_eur_yr": 1000000.0,
-          "dependency_weight": 0.04,
+          "annual_value_eur_per_ha_yr": 910.0,
+          "annual_value_eur_yr": 910000.0,
+          "dependency_weight": 0.04395604395604395,
           "description": "Dolphins, sea turtles, cetaceans \u2014 apex indicators, ecotourism, extreme K-strategy vulnerability",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -76,9 +75,9 @@
           "trophic_level": 3
         },
         {
-          "annual_value_eur_per_ha_yr": 720.0,
-          "annual_value_eur_yr": 720000.0,
-          "dependency_weight": 0.05,
+          "annual_value_eur_per_ha_yr": 655.2,
+          "annual_value_eur_yr": 655200.0,
+          "dependency_weight": 0.054945054945054944,
           "description": "Seabirds and coastal birds \u2014 fish-dependent breeders, Audouin's gull, migratory corridor",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -86,9 +85,9 @@
           "trophic_level": 2
         },
         {
-          "annual_value_eur_per_ha_yr": 1384.6,
-          "annual_value_eur_yr": 1384600.0,
-          "dependency_weight": 0.13,
+          "annual_value_eur_per_ha_yr": 1259.9859999999999,
+          "annual_value_eur_yr": 1259985.9999999998,
+          "dependency_weight": 0.14285714285714285,
           "description": "Wave attenuation, beach erosion prevention, sediment stabilization \u2014 Costa Brava beach economy",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -96,9 +95,9 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 1181.8,
-          "annual_value_eur_yr": 1181800.0,
-          "dependency_weight": 0.11,
+          "annual_value_eur_per_ha_yr": 1075.438,
+          "annual_value_eur_yr": 1075438.0,
+          "dependency_weight": 0.12087912087912088,
           "description": "Nutrient filtration, pathogen reduction, bathing water standards \u2014 direct tourism dependency",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -106,19 +105,9 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 1111.2,
-          "annual_value_eur_yr": 1111200.0,
-          "dependency_weight": 0.09,
-          "description": "Blue carbon \u2014 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
-          "is_keystone": false,
-          "keystone_threshold": null,
-          "name": "Blue Carbon",
-          "trophic_level": -1
-        },
-        {
-          "annual_value_eur_per_ha_yr": 1750.0,
-          "annual_value_eur_yr": 1750000.0,
-          "dependency_weight": 0.08,
+          "annual_value_eur_per_ha_yr": 1592.5,
+          "annual_value_eur_yr": 1592500.0,
+          "dependency_weight": 0.0879120879120879,
           "description": "Dive/beach tourism economy, artisanal fishing, coastal property \u2014 perception threshold sensitive",
           "is_keystone": false,
           "keystone_threshold": null,
@@ -199,13 +188,6 @@
           "target": "Seabirds"
         },
         {
-          "description": "Meadow loss releases millennia of stored matte carbon",
-          "interaction_type": "dependency",
-          "source": "Posidonia Meadow",
-          "strength": 0.35,
-          "target": "Blue Carbon"
-        },
-        {
           "description": "Filter feeder loss reduces water purification capacity",
           "interaction_type": "dependency",
           "source": "Marine Invertebrates",
@@ -244,8 +226,10 @@
       "name": "Costa Brava Posidonia Meadow",
       "resource": {
         "area_ha": 1000.0,
-        "carbon_absorption_per_unit_yr": 5.9,
-        "carbon_price_eur_per_t": 80.0,
+        "carbon_absorption_per_unit_yr": 1.5766666666666664,
+        "carbon_price_basis": "social cost of carbon, US EPA 2023",
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
         "carbon_stored_per_unit": 130.0,
         "discount_horizon_years": 200,
         "discount_rate": 0.023,
@@ -267,17 +251,19 @@
       "Marine externality costs are ANNUAL (\u20ac/yr) \u2014 they recur every year the damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively permanent on human timescales. The net social cost compares the one-off revenue with the present value of these annual losses."
     ],
     "npv_analysis": {
-      "carbon_foregone_eur_pv": 22147826.08,
-      "carbon_release_eur_pv": 8320000.0,
+      "carbon_absorption_lost_tco2_yr": 630.6667,
+      "carbon_foregone_eur_pv": 12650566.29,
+      "carbon_price_eur_per_t": 166.35,
+      "carbon_release_eur_pv": 17299947.47,
+      "carbon_released_tco2": 104000.0,
       "horizon_years": 200,
-      "services_eur_pv": 918353947.87,
-      "substrate_damage_eur_pv": 58806.48,
-      "total_eur_pv": 948880580.44
+      "services_eur_pv": 851400279.29,
+      "substrate_damage_eur_pv": 54519.13,
+      "total_eur_pv": 881405312.17
     },
     "pricing": {
       "converged": false,
       "demand_multipliers": {
-        "Blue Carbon": 1.0,
         "Coastal Protection": 1.0,
         "Coralligenous & Red Coral": 1.0,
         "Epiphytes & Algae": 1.0,
@@ -291,20 +277,18 @@
       },
       "iterations": 0,
       "prices_eur_yr": {
-        "Blue Carbon": 1111200.0,
-        "Coastal Protection": 1384600.0,
-        "Coralligenous & Red Coral": 1200000.0,
-        "Epiphytes & Algae": 714200.0,
-        "Fish Populations": 1000000.0,
-        "Human Communities": 1750000.0,
-        "Marine Invertebrates": 777800.0,
-        "Marine Megafauna": 1000000.0,
-        "Posidonia Meadow": 1600000.0,
-        "Seabirds": 720000.0,
-        "Water Quality": 1181800.0
+        "Coastal Protection": 1259986.0,
+        "Coralligenous & Red Coral": 1092000.0,
+        "Epiphytes & Algae": 649922.0,
+        "Fish Populations": 910000.0,
+        "Human Communities": 1592500.0,
+        "Marine Invertebrates": 707798.0,
+        "Marine Megafauna": 910000.0,
+        "Posidonia Meadow": 1456000.0,
+        "Seabirds": 655200.0,
+        "Water Quality": 1075438.0
       },
       "scarcity_multipliers": {
-        "Blue Carbon": 5.0676,
         "Coastal Protection": 40.0,
         "Coralligenous & Red Coral": 50.0,
         "Epiphytes & Algae": 50.0,
@@ -319,43 +303,45 @@
       "spectral_radius": 3.645602
     },
     "summary": {
-      "annual_externality_eur_yr": 1101045.85,
+      "annual_externality_eur_yr": 1020772.82,
       "discount_is_default": false,
-      "final_ecosystem_health": 0.046022,
-      "net_social_cost_eur_pv": 947880580.44,
+      "final_ecosystem_health": 0.031057,
+      "net_social_cost_eur_pv": 880405312.17,
       "num_steps": 400,
-      "pv_externality_eur_pv": 948880580.44,
+      "pv_externality_eur_pv": 881405312.17,
       "revenue_eur": 1000000.0,
       "total_units_extracted": 400
     }
   },
   "per_agent": {
-    "Blue Carbon": 80273.03566836691,
-    "Coastal Protection": 179998.0,
+    "Coastal Protection": 179997.99999999997,
     "Coralligenous & Red Coral": 120000.0,
-    "Epiphytes & Algae": 49994.00000000001,
+    "Epiphytes & Algae": 49994.0,
     "Fish Populations": 140000.0,
     "Human Communities": 140000.0,
     "Marine Invertebrates": 70002.0,
     "Marine Megafauna": 40000.0,
-    "Posidonia Meadow": 114780.8184721393,
+    "Posidonia Meadow": 114780.81847213928,
     "Seabirds": 36000.0,
     "Water Quality": 129998.0
   },
   "result": {
-    "annual_externality": 1101045.8541405061,
+    "annual_externality": 1020772.8184721393,
     "discount_is_default": false,
     "extraction_npv": {
-      "carbon_foregone": 22147826.082906634,
-      "carbon_release": 8320000.0,
-      "direct": 918353947.8716009,
+      "carbon_absorption_lost_t_yr": 630.6666666666666,
+      "carbon_foregone": 12650566.289769733,
+      "carbon_price": 166.3456487480301,
+      "carbon_release": 17299947.46979513,
+      "carbon_released_t": 104000.0,
+      "direct": 851400279.2878078,
       "horizon": 200,
-      "substrate_damage": 58806.481408616324,
-      "total": 948880580.4359161
+      "substrate_damage": 54519.12610738778,
+      "total": 881405312.17348
     },
-    "final_ecosystem_health": 0.04602203554961504,
-    "net_social_cost": 947880580.4359161,
-    "pv_externality": 948880580.4359161,
+    "final_ecosystem_health": 0.031057130170233926,
+    "net_social_cost": 880405312.17348,
+    "pv_externality": 881405312.17348,
     "revenue": 1000000.0,
     "total_units_extracted": 400
   },
@@ -376,13 +362,12 @@
       7292607.560428913,
       2854547.546908405,
       4690134.0,
-      18130294.823855482,
-      46199903.735163294,
-      46363318.174046494,
-      10611471.926017595,
+      18995708.597643383,
+      50504070.03864099,
+      50710151.839611545,
+      10611471.926017594,
       8235110.537932129,
-      3666461.920945494,
-      17357090.88192302
+      18151338.001655836
     ],
     "agent_cascade_damages": [
       0.0,
@@ -394,7 +379,6 @@
       22.834095487422907,
       39.76068122895579,
       52.224471894740134,
-      36.49258069484556,
       75.23079817299187
     ],
     "agent_damages": [
@@ -407,7 +391,6 @@
       228.8664214233881,
       139.05568345581023,
       151.51947412159456,
-      93.27828184939732,
       174.52580039984636
     ],
     "agent_direct_damages": [
@@ -420,30 +403,28 @@
       206.03232593596522,
       99.29500222685445,
       99.29500222685445,
-      56.78570115455175,
       99.29500222685445
     ],
     "agent_prices": [
-      107200000.0,
-      80400000.0,
-      47851400.0,
-      52112600.0,
-      133383659.1491243,
-      1156086916.991932,
-      928714257.3415582,
-      92768200.0,
-      79180600.0,
-      85718655.68112244,
-      264210742.7960553
+      97552000.0,
+      73164000.0,
+      43544774.0,
+      47422466.0,
+      127353659.1491243,
+      1150056916.991932,
+      924372657.3415582,
+      84419061.99999999,
+      72054346.0,
+      253658242.7960553
     ],
-    "annual_externality": 172133580.7082957,
+    "annual_externality": 178777779.64991355,
     "carbon_price_used": 0.0,
     "depletion_ratio": 80.20000000000002,
     "discount_factor_at_step": 400.0,
-    "ecosystem_health": 239.34858830294087,
+    "ecosystem_health": 232.68531172460098,
     "effective_k": 399600.0,
     "k_fraction": 399.9948493962337,
-    "marginal_annual_externality": 1101045.8541405061,
+    "marginal_annual_externality": 1020772.8184721393,
     "model_confidence": 269.81249999999983,
     "npv_externality": 0.0,
     "revenue": 200500000.0,
@@ -458,13 +439,12 @@
         0.0,
         0.0,
         0.0,
-        1.6997415255574055,
-        0.2699247039238045,
-        0.1920863489592019,
+        1.8678478302828634,
+        0.2966205537624225,
+        0.2110838999551669,
         0.0,
         0.0,
-        1.7583257885132801,
-        4.013416526279771
+        4.410347831076671
       ],
       "agent_cascade_damages": [
         0.0,
@@ -476,7 +456,6 @@
         0.00019676836532865865,
         0.00010161074693044688,
         0.00013743578151342075,
-        8.890940356414106e-05,
         0.0002327896571495526
       ],
       "agent_damages": [
@@ -489,7 +468,6 @@
         0.0008526629164241874,
         0.00035563761425656413,
         0.000391462648839538,
-        0.0007177547964643905,
         0.00048681652447566987
       ],
       "agent_direct_damages": [
@@ -502,7 +480,6 @@
         0.0006558945510955288,
         0.00025402686732611725,
         0.00025402686732611725,
-        0.0006288453929002494,
         0.00025402686732611725
       ],
       "agent_prices": [
@@ -515,24 +492,22 @@
         4505.563576395569,
         0.0,
         0.0,
-        27219.5369532057,
         103052.59590875787
       ],
-      "annual_externality": 7.933494893233464,
+      "annual_externality": 6.7859001150771245,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.001,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9994666988497046,
+      "ecosystem_health": 0.9994849415180072,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.99999999999999,
       "keystone_triggered": [],
-      "marginal_annual_externality": 7.933494893233464,
+      "marginal_annual_externality": 6.7859001150771245,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -546,7 +521,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.3502513946184558,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.5324975960191,
           "Epiphytes & Algae": 1.3500960518018703,
@@ -560,7 +534,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 27219.5369532057,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -573,7 +546,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.000718270338445,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.0005527629337745,
           "Epiphytes & Algae": 1.0002744337196294,
@@ -585,7 +557,7 @@
           "Seabirds": 1.0004266042898486,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.11133777065826209
+        "spectral_radius": 0.11133777065826206
       },
       "resilience_zone": "green",
       "revenue": 2500.0,
@@ -599,13 +571,12 @@
         0.0,
         0.0,
         0.0,
-        92.13035611626691,
-        15.134660145561686,
-        10.645660424538857,
+        101.24214957831529,
+        16.631494665452397,
+        11.698527939053688,
         0.0,
         0.0,
-        77.93789077370471,
-        214.14084116665813
+        235.31960567764625
       ],
       "agent_cascade_damages": [
         0.0,
@@ -617,7 +588,6 @@
         0.010225379558961703,
         0.0052803632987344536,
         0.007142067926467533,
-        0.004620317886392646,
         0.012097283004708921
       ],
       "agent_damages": [
@@ -630,7 +600,6 @@
         0.04430997808883404,
         0.01848127154557059,
         0.02034297617330367,
-        0.030855030544647333,
         0.025298191251545057
       ],
       "agent_direct_damages": [
@@ -643,7 +612,6 @@
         0.034084598529872334,
         0.013200908246836136,
         0.013200908246836136,
-        0.026234712658254687,
         0.013200908246836136
       ],
       "agent_prices": [
@@ -656,24 +624,22 @@
         4805.0849419045535,
         0.0,
         0.0,
-        28065.976564152275,
         105808.37530903505
       ],
-      "annual_externality": 409.9894086267303,
+      "annual_externality": 364.89177786046764,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.041,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9728661426091947,
+      "ecosystem_health": 0.9732341707233109,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999926541012,
       "keystone_triggered": [],
-      "marginal_annual_externality": 12.468592005915298,
+      "marginal_annual_externality": 11.437983574245777,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -687,7 +653,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.3611430807887241,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.5483905870747499,
           "Epiphytes & Algae": 1.3550713316855538,
@@ -701,7 +666,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 28065.976564152275,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -714,7 +678,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.031837373682069,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.0294146355256608,
           "Epiphytes & Algae": 1.0144895191015821,
@@ -726,7 +689,7 @@
           "Seabirds": 1.0229195388095158,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.1124178404261111
+        "spectral_radius": 0.11241784042611101
       },
       "resilience_zone": "green",
       "revenue": 102500.0,
@@ -740,13 +703,12 @@
         0.0,
         0.0,
         0.0,
-        250.12609199248428,
-        43.542679956858805,
-        29.98695367107897,
+        274.8638373543783,
+        47.84909885369099,
+        32.95269634184502,
         0.0,
         0.0,
-        168.6259447699887,
-        565.9870429081163
+        621.9637834155124
       ],
       "agent_cascade_damages": [
         0.0,
@@ -758,7 +720,6 @@
         0.025894700803413523,
         0.013371965995552591,
         0.018086537620155788,
-        0.01170047024610852,
         0.030635099864494954
       ],
       "agent_damages": [
@@ -771,7 +732,6 @@
         0.1122103701481253,
         0.046801880984434066,
         0.05151645260903726,
-        0.06444403912872292,
         0.06406501485337643
       ],
       "agent_direct_damages": [
@@ -784,7 +744,6 @@
         0.08631566934471177,
         0.033429914988881475,
         0.033429914988881475,
-        0.052743568882614396,
         0.033429914988881475
       ],
       "agent_prices": [
@@ -797,24 +756,22 @@
         5344.774040312702,
         0.0,
         0.0,
-        29073.62160855543,
         110432.16102491214
       ],
-      "annual_externality": 1058.268713298527,
+      "annual_externality": 977.6294159654267,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.081,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9325187311968343,
+      "ecosystem_health": 0.9322183458444169,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999998907102025,
       "keystone_triggered": [],
-      "marginal_annual_externality": 20.559595578824883,
+      "marginal_annual_externality": 19.856736780697474,
       "model_confidence": 0.838,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -828,7 +785,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.3741091015806766,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.5748896234689844,
           "Epiphytes & Algae": 1.3631723576267176,
@@ -842,7 +798,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 29073.62160855543,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -855,7 +810,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.0688831473733613,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.0773791926170768,
           "Epiphytes & Algae": 1.0376353075049076,
@@ -867,7 +821,7 @@
           "Seabirds": 1.0613166221071162,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.11413066146669612
+        "spectral_radius": 0.11413066146669613
       },
       "resilience_zone": "yellow",
       "revenue": 202500.0,
@@ -881,13 +835,12 @@
         0.0,
         0.0,
         0.0,
-        541.8752032943574,
-        104.71122247961547,
-        69.14142678519126,
+        595.4672563674256,
+        115.06727745012688,
+        75.97958987383653,
         0.0,
         0.0,
-        280.29403636110806,
-        1169.3628042540522
+        1285.0140706088487
       ],
       "agent_cascade_damages": [
         0.0,
@@ -899,7 +852,6 @@
         0.049903389345305194,
         0.025769999447156217,
         0.03485576201939211,
-        0.022548749516261693,
         0.059038925677359674
       ],
       "agent_damages": [
@@ -912,7 +864,6 @@
         0.21624802049632247,
         0.09019499806504676,
         0.09928076063728265,
-        0.10273600741910989,
         0.12346392429525022
       ],
       "agent_direct_damages": [
@@ -925,7 +876,6 @@
         0.16634463115101727,
         0.06442499861789054,
         0.06442499861789054,
-        0.0801872579028482,
         0.06442499861789054
       ],
       "agent_prices": [
@@ -938,24 +888,22 @@
         6394.641359167223,
         0.0,
         0.0,
-        30314.378181790093,
         118391.14248645332
       ],
-      "annual_externality": 2165.3846931743246,
+      "annual_externality": 2071.528194300238,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.121,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.8718836392964626,
+      "ecosystem_health": 0.8693734944661345,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999994601340085,
       "keystone_triggered": [],
-      "marginal_annual_externality": 36.27359333953882,
+      "marginal_annual_externality": 36.434591775630906,
       "model_confidence": 0.7579999999999999,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -969,7 +917,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.3900747192509755,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.6199532914355856,
           "Epiphytes & Algae": 1.3764275772344223,
@@ -983,7 +930,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 30314.378181790093,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -996,7 +942,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.11449919785993,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.158478833142564,
           "Epiphytes & Algae": 1.0755073635269212,
@@ -1008,7 +953,7 @@
           "Seabirds": 1.129563562991236,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.11680139470931739
+        "spectral_radius": 0.1168013947093174
       },
       "resilience_zone": "yellow",
       "revenue": 302500.0,
@@ -1022,13 +967,12 @@
         0.0,
         0.0,
         0.0,
-        1140.0784129222038,
-        272.27660065662025,
-        162.37870428381302,
+        1252.8334207936305,
+        299.20505566661564,
+        178.4381365756187,
         0.0,
         0.0,
-        422.81763895496186,
-        2249.253066679492
+        2471.70666668076
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1040,7 +984,6 @@
         0.08560956016196747,
         0.044208586771125574,
         0.059795266308321326,
-        0.03868251342473489,
         0.10128162687910389
       ],
       "agent_damages": [
@@ -1053,7 +996,6 @@
         0.370974760701859,
         0.15473005369893952,
         0.17031673323613528,
-        0.14728125995104183,
         0.21180309380691784
       ],
       "agent_direct_damages": [
@@ -1066,7 +1008,6 @@
         0.2853652005398915,
         0.11052146692781395,
         0.11052146692781395,
-        0.10859874652630694,
         0.11052146692781395
       ],
       "agent_prices": [
@@ -1079,24 +1020,22 @@
         8754.164513866312,
         0.0,
         0.0,
-        31897.973766166244,
         132744.34678052537
       ],
-      "annual_externality": 4246.804423497091,
+      "annual_externality": 4202.183279716624,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.161,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.78282229122859,
+      "ecosystem_health": 0.7759094556309712,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999983145581728,
       "keystone_triggered": [],
-      "marginal_annual_externality": 72.6902747780714,
+      "marginal_annual_externality": 75.43483237305009,
       "model_confidence": 0.6779999999999998,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1110,7 +1049,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.4104518683146392,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.6991538434012752,
           "Epiphytes & Algae": 1.398297595677707,
@@ -1124,7 +1062,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 31897.973766166244,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1137,7 +1074,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.172719623756112,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.2995103246786628,
           "Epiphytes & Algae": 1.1379931305077342,
@@ -1149,7 +1085,7 @@
           "Seabirds": 1.2608573782796602,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.12078691346169092
+        "spectral_radius": 0.1207869134616909
       },
       "resilience_zone": "yellow",
       "revenue": 402500.0,
@@ -1163,13 +1099,12 @@
         0.0,
         0.0,
         0.0,
-        2680.6695406714216,
-        1282.0562872129506,
-        473.59333920547806,
+        2945.7907040345285,
+        1408.8530628713738,
+        520.4322408851407,
         0.0,
         0.0,
-        610.6849732036598,
-        4354.319825785763
+        4784.966841522816
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1181,7 +1116,6 @@
         0.13642614865748837,
         0.07045016023168932,
         0.09528886581077464,
-        0.06164389020272815,
         0.1614009260033483
       ],
       "agent_damages": [
@@ -1194,7 +1128,6 @@
         0.591179977515783,
         0.24657556081091261,
         0.27141426638999794,
-        0.1996560543350202,
         0.3375263265825716
       ],
       "agent_direct_damages": [
@@ -1207,7 +1140,6 @@
         0.45475382885829463,
         0.1761254005792233,
         0.1761254005792233,
-        0.13801216413229206,
         0.1761254005792233
       ],
       "agent_prices": [
@@ -1220,24 +1152,22 @@
         16021.968172723991,
         0.0,
         0.0,
-        33985.38859115178,
         161258.52573756693
       ],
-      "annual_externality": 9401.323966079273,
+      "annual_externality": 9660.042849313859,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.201,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.6570631948095029,
+      "ecosystem_health": 0.6428925710985217,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999959148960752,
       "keystone_triggered": [],
-      "marginal_annual_externality": 242.57779000968185,
+      "marginal_annual_externality": 260.6375375310381,
       "model_confidence": 0.599625,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1251,7 +1181,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.4373119855479088,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 1.846501923437842,
           "Epiphytes & Algae": 1.4349094964818347,
@@ -1265,7 +1194,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 33985.38859115178,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1278,7 +1206,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.2494628158511683,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.5563223574674605,
           "Epiphytes & Algae": 1.2425985613766708,
@@ -1290,7 +1217,7 @@
           "Seabirds": 1.5639898171155402,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.1255364292616721
+        "spectral_radius": 0.12553642926167208
       },
       "resilience_zone": "red",
       "revenue": 502500.0,
@@ -1304,13 +1231,12 @@
         0.0,
         0.0,
         0.0,
-        10419.244260457193,
-        62596.22130228596,
-        3362.1039085514303,
+        11449.718967535378,
+        68787.05637613841,
+        3694.619679726846,
         0.0,
         0.0,
-        856.4591346840132,
-        9467.410780227443
+        10403.748110140046
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1322,7 +1248,6 @@
         0.2024888763458046,
         0.10456480611727387,
         0.14143135722999695,
-        0.09149420535261465,
         0.23955739034781032
       ],
       "agent_damages": [
@@ -1335,7 +1260,6 @@
         0.8774517974984866,
         0.36597682141045856,
         0.40284337252318164,
-        0.25918284953035486,
         0.500969405640995
       ],
       "agent_direct_damages": [
@@ -1348,7 +1272,6 @@
         0.674962921152682,
         0.2614120152931847,
         0.2614120152931847,
-        0.1676886441777402,
         0.2614120152931847
       ],
       "agent_prices": [
@@ -1361,24 +1284,22 @@
         76633.35850781544,
         0.0,
         0.0,
-        36716.212607600144,
         236227.26941063904
       ],
-      "annual_externality": 86701.43938620604,
+      "annual_externality": 94335.14313354068,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.24,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.507176271719125,
+      "ecosystem_health": 0.48406893206248025,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917072513379,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3862.4886479768757,
+      "marginal_annual_externality": 4236.518525659543,
       "model_confidence": 0.585,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1392,7 +1313,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.4724512651713253,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 2.140584873110933,
           "Epiphytes & Algae": 1.495786006215385,
@@ -1406,7 +1326,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 36716.212607600144,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1419,7 +1338,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.3498607576323582,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 2.0436774289524653,
           "Epiphytes & Algae": 1.4165314463296717,
@@ -1431,7 +1349,7 @@
           "Seabirds": 2.856580894684762,
           "Water Quality": 1.0
         },
-        "spectral_radius": 0.13430439038583628
+        "spectral_radius": 0.13430439038583636
       },
       "resilience_zone": "red",
       "revenue": 600000.0,
@@ -1445,13 +1363,12 @@
         -0.0,
         0.0,
         0.0,
-        105000.0,
-        524999.9999999999,
-        562499.9999999999,
+        115384.61538461538,
+        576923.0769230768,
+        618131.8681318681,
         0.0,
         0.0,
-        1196.8349395343837,
-        48331.30603403527
+        53111.32531212667
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1463,7 +1380,6 @@
         0.04703374804441407,
         0.1476328969328674,
         0.19968402142489483,
-        0.129178784816259,
         0.3382261473239846
       ],
       "agent_damages": [
@@ -1476,7 +1392,6 @@
         1.0,
         0.516715139265036,
         0.5687662637570634,
-        0.328364647340457,
         0.7073083896561532
       ],
       "agent_direct_damages": [
@@ -1489,7 +1404,6 @@
         0.9529662519555859,
         0.3690822423321686,
         0.3690822423321686,
-        0.199185862524198,
         0.3690822423321686
       ],
       "agent_prices": [
@@ -1502,24 +1416,22 @@
         11249999.999999998,
         0.0,
         0.0,
-        40498.165994826486,
         854141.3254254409
       ],
-      "annual_externality": 1242028.1409735694,
+      "annual_externality": 1363550.8857516868,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.28,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.36049839212776436,
+      "ecosystem_health": 0.32972660482242366,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999846469455507,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1279.323486147914,
+      "marginal_annual_externality": 1395.0687255642843,
       "model_confidence": 0.57,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1533,7 +1445,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.521116106551076,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": 2.944722491691336,
           "Epiphytes & Algae": 1.6076951569424427,
@@ -1547,7 +1458,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 40498.165994826486,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": -0.0,
           "Epiphytes & Algae": 0.0,
@@ -1560,7 +1470,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.4889031615745032,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 3.155424015322688,
           "Epiphytes & Algae": 1.7362718769784076,
@@ -1582,17 +1491,16 @@
     },
     {
       "agent_annual_costs": [
-        2.5954406452194876e-15,
+        2.8521325771642722e-15,
         0.0,
-        6.729959303288578e-13,
+        7.395559673943491e-13,
         0.0,
-        104999.9999999999,
-        524999.9999999994,
-        562499.9999999994,
-        1.213695607532104e-13,
+        115384.61538461526,
+        576923.0769230762,
+        618131.8681318674,
+        1.333731436848466e-13,
         0.0,
-        1653.068904917923,
-        154146.9933378283
+        169392.30037123986
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1604,7 +1512,6 @@
         0.0,
         0.19575842614881106,
         0.26477723172348283,
-        0.17128862288020966,
         0.3957584261488111
       ],
       "agent_damages": [
@@ -1617,7 +1524,6 @@
         1.0,
         0.6851544915208387,
         0.7541732970955105,
-        0.4030824507570684,
         0.8851544915208388
       ],
       "agent_direct_damages": [
@@ -1630,7 +1536,6 @@
         1.0,
         0.4893960653720277,
         0.4893960653720277,
-        0.23179382787685873,
         0.4893960653720277
       ],
       "agent_prices": [
@@ -1643,24 +1548,22 @@
         11249999.999999987,
         1.3626299139068413e-12,
         0.0,
-        45567.43227686581,
         2176837.4167228537
       ],
-      "annual_externality": 1348300.0622427447,
+      "annual_externality": 1479831.8608107986,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.32,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.2347311093381782,
+      "ecosystem_health": 0.1989104724245212,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999738109493338,
       "keystone_triggered": [],
-      "marginal_annual_externality": 6286.034461782081,
+      "marginal_annual_externality": 6893.416501228465,
       "model_confidence": 0.5549999999999999,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1674,7 +1577,6 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Blue Carbon": 1.5863456359155512,
           "Coastal Protection": 1.4,
           "Coralligenous & Red Coral": -3.9395863620797167,
           "Epiphytes & Algae": 1.8309698719985974,
@@ -1688,7 +1590,6 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 45567.43227686581,
           "Coastal Protection": 1.3626299139068413e-12,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 1.4551915228366852e-11,
@@ -1701,7 +1602,6 @@
           "Water Quality": 0.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.6752732454730077,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 6.390864117558656,
           "Epiphytes & Algae": 2.3741996342817213,
@@ -1723,16 +1623,15 @@
     },
     {
       "agent_annual_costs": [
-        97553.58214590189,
-        106089.5205836683,
+        97553.58214590188,
+        106089.52058366829,
         41150.47881770623,
         70002.0,
         140000.0,
         40000.0,
         36000.0,
-        153645.18469210793,
+        153645.1846921079,
         122143.56379575361,
-        47898.84876021909,
         140000.0
       ],
       "agent_cascade_damages": [
@@ -1745,7 +1644,6 @@
         0.0,
         0.2438839553647547,
         0.3298704420220707,
-        0.21339846094416037,
         0.3902901115881132
       ],
       "agent_damages": [
@@ -1758,7 +1656,6 @@
         1.0,
         0.8535938437766415,
         0.9395803304339575,
-        0.4789501715884638,
         1.0
       ],
       "agent_direct_damages": [
@@ -1771,37 +1668,34 @@
         1.0,
         0.6097098884118868,
         0.6097098884118868,
-        0.26555171064430344,
         0.6097098884118868
       ],
       "agent_prices": [
-        1600000.0,
-        1200000.0,
-        714200.0,
-        777800.0,
-        1000000.0,
-        1000000.0,
-        720000.0,
-        1384600.0,
-        1181800.0,
-        1111200.0,
-        1750000.0
+        1456000.0,
+        1092000.0,
+        649922.0,
+        707798.0,
+        910000.0,
+        910000.0,
+        655200.0,
+        1259985.9999999998,
+        1075438.0,
+        1592500.0
       ],
-      "annual_externality": 994483.178795357,
+      "annual_externality": 946584.3300351378,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.36,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.1355769414025041,
+      "ecosystem_health": 0.09745324928073151,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.999958030986681,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2662.9204961685464,
+      "marginal_annual_externality": 2475.5967895195354,
       "model_confidence": 0.5399999999999999,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 0.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1815,7 +1709,6 @@
         },
         "converged": false,
         "demand_multipliers": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.0,
           "Epiphytes & Algae": 1.0,
@@ -1829,20 +1722,18 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 1111200.0,
-          "Coastal Protection": 1384600.0,
-          "Coralligenous & Red Coral": 1200000.0,
-          "Epiphytes & Algae": 714200.0,
-          "Fish Populations": 1000000.0,
-          "Human Communities": 1750000.0,
-          "Marine Invertebrates": 777800.0,
-          "Marine Megafauna": 1000000.0,
-          "Posidonia Meadow": 1600000.0,
-          "Seabirds": 720000.0,
-          "Water Quality": 1181800.0
+          "Coastal Protection": 1259985.9999999998,
+          "Coralligenous & Red Coral": 1092000.0,
+          "Epiphytes & Algae": 649922.0,
+          "Fish Populations": 910000.0,
+          "Human Communities": 1592500.0,
+          "Marine Invertebrates": 707798.0,
+          "Marine Megafauna": 910000.0,
+          "Posidonia Meadow": 1456000.0,
+          "Seabirds": 655200.0,
+          "Water Quality": 1075438.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 1.9192022441473273,
           "Coastal Protection": 11.222796499969451,
           "Coralligenous & Red Coral": 25.33720598536925,
           "Epiphytes & Algae": 3.997920303067089,
@@ -1864,16 +1755,15 @@
     },
     {
       "agent_annual_costs": [
-        114780.8184721393,
+        114780.81847213928,
         120000.0,
-        49994.00000000001,
+        49994.0,
         70002.0,
         140000.0,
         40000.0,
         36000.0,
-        179998.0,
+        179997.99999999997,
         129998.0,
-        80273.03566836691,
         140000.0
       ],
       "agent_cascade_damages": [
@@ -1886,7 +1776,6 @@
         0.0,
         0.28261988454912945,
         0.28261988454912945,
-        0.5021660808156093,
         0.28261988454912945
       ],
       "agent_damages": [
@@ -1899,7 +1788,6 @@
         1.0,
         1.0,
         1.0,
-        0.8026661433921977,
         1.0
       ],
       "agent_direct_damages": [
@@ -1912,39 +1800,36 @@
         1.0,
         0.7173801154508705,
         0.7173801154508705,
-        0.30050006257658834,
         0.7173801154508705
       ],
       "agent_prices": [
-        1600000.0,
-        1200000.0,
-        714200.0,
-        777800.0,
-        1000000.0,
-        1000000.0,
-        720000.0,
-        1384600.0,
-        1181800.0,
-        1111200.0,
-        1750000.0
+        1456000.0,
+        1092000.0,
+        649922.0,
+        707798.0,
+        910000.0,
+        910000.0,
+        655200.0,
+        1259985.9999999998,
+        1075438.0,
+        1592500.0
       ],
-      "annual_externality": 1101045.8541405061,
+      "annual_externality": 1020772.8184721393,
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.4,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.04602203554961504,
+      "ecosystem_health": 0.031057130170233926,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999359653415277,
       "keystone_triggered": [
         "Posidonia Meadow"
       ],
-      "marginal_annual_externality": 655.0252237899695,
+      "marginal_annual_externality": 393.84290993376635,
       "model_confidence": 0.5249999999999999,
       "npv_externality": 0.0,
       "price_result": {
         "anchor_contributions": {
-          "Blue Carbon": 0.0,
           "Coastal Protection": 0.0,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
@@ -1958,7 +1843,6 @@
         },
         "converged": false,
         "demand_multipliers": {
-          "Blue Carbon": 1.0,
           "Coastal Protection": 1.0,
           "Coralligenous & Red Coral": 1.0,
           "Epiphytes & Algae": 1.0,
@@ -1972,20 +1856,18 @@
         },
         "iterations": 0,
         "prices": {
-          "Blue Carbon": 1111200.0,
-          "Coastal Protection": 1384600.0,
-          "Coralligenous & Red Coral": 1200000.0,
-          "Epiphytes & Algae": 714200.0,
-          "Fish Populations": 1000000.0,
-          "Human Communities": 1750000.0,
-          "Marine Invertebrates": 777800.0,
-          "Marine Megafauna": 1000000.0,
-          "Posidonia Meadow": 1600000.0,
-          "Seabirds": 720000.0,
-          "Water Quality": 1181800.0
+          "Coastal Protection": 1259985.9999999998,
+          "Coralligenous & Red Coral": 1092000.0,
+          "Epiphytes & Algae": 649922.0,
+          "Fish Populations": 910000.0,
+          "Human Communities": 1592500.0,
+          "Marine Invertebrates": 707798.0,
+          "Marine Megafauna": 910000.0,
+          "Posidonia Meadow": 1456000.0,
+          "Seabirds": 655200.0,
+          "Water Quality": 1075438.0
         },
         "scarcity_multipliers": {
-          "Blue Carbon": 5.067554129788701,
           "Coastal Protection": 40.0,
           "Coralligenous & Red Coral": 50.0,
           "Epiphytes & Algae": 50.0,
@@ -1997,7 +1879,7 @@
           "Seabirds": 50.0,
           "Water Quality": 30.0
         },
-        "spectral_radius": 3.6456016993348803
+        "spectral_radius": 3.64560169933488
       },
       "resilience_zone": "red",
       "revenue": 1000000.0,

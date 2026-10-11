@@ -37,6 +37,7 @@ import warnings
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from gaia.carbon import compute_carbon_release
 from gaia.damage import evaluate_kernel
 from gaia.models import (
     Agent,
@@ -926,10 +927,8 @@ def run_restoration(
     # Carbon released during prior extraction
     carbon_released: float = 0.0
     if ecosystem.resource.carbon_profile is not None:
-        cp = ecosystem.resource.carbon_profile
-        carbon_released = units_to_restore * (
-            cp.stored_carbon_tonnes
-            + cp.soil_carbon_tonnes * cp.soil_release_fraction
+        carbon_released = compute_carbon_release(
+            ecosystem.resource.carbon_profile, units_to_restore
         )
 
     restoration_npv_result = compute_restoration_npv(

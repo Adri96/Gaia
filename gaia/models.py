@@ -154,8 +154,12 @@ class DiscountConfig:
             If None, computed from Ramsey formula on init.
         scarcity_rate: Annual relative price change for ecosystem services (2%/yr).
         horizon_years: NPV analysis horizon in years (default 100).
-        carbon_price_current: Current carbon price in euros/tonne CO2.
-        carbon_price_growth: Annual real growth rate of carbon price.
+        carbon_price_current: Carbon price at year 0, € per tonne CO2. The
+            only carbon price in Gaia (decision D3). Default (None): the
+            social cost of carbon, gaia.carbon.SOCIAL_COST_OF_CARBON_EUR.
+        carbon_price_growth: Annual real growth rate of the carbon price.
+            Default (None): gaia.carbon.SCC_GROWTH_RATE, the EPA SCC
+            trajectory.
     """
 
     delta: float = 0.005
@@ -164,12 +168,21 @@ class DiscountConfig:
     rate_schedule: Union[float, list] = None  # type: ignore[assignment]
     scarcity_rate: float = 0.02
     horizon_years: int = 100
-    carbon_price_current: float = 80.0
-    carbon_price_growth: float = 0.03
+    carbon_price_current: float = None  # type: ignore[assignment]
+    carbon_price_growth: float = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.rate_schedule is None:
             object.__setattr__(self, 'rate_schedule', self.delta + self.eta * self.g)
+        if self.carbon_price_current is None or self.carbon_price_growth is None:
+            # Imported here: gaia.carbon imports this module.
+            from gaia.carbon import SCC_GROWTH_RATE, SOCIAL_COST_OF_CARBON_EUR
+            if self.carbon_price_current is None:
+                object.__setattr__(
+                    self, 'carbon_price_current', SOCIAL_COST_OF_CARBON_EUR
+                )
+            if self.carbon_price_growth is None:
+                object.__setattr__(self, 'carbon_price_growth', SCC_GROWTH_RATE)
 
     def rate_at_year(self, year: int) -> float:
         """Return the discount rate applicable at a given year."""
@@ -208,13 +221,21 @@ class DiscountConfig:
 class ExtractionNPV:
     """NPV of extraction externalities.
 
+    Carbon values come from gaia.carbon only (decision D3) and are priced
+    with the DiscountConfig's carbon price (default: social cost of carbon).
+
     Attributes:
         direct: NPV of direct ecosystem service loss.
-        carbon_release: NPV of carbon released at extraction.
-        carbon_foregone: NPV of future absorption capacity foregone.
+        carbon_release: Value of the carbon released at extraction (€, a
+            one-off stock at the year-0 carbon price).
+        carbon_foregone: PV of the absorption flow the extracted units no
+            longer provide, over the horizon.
         substrate_damage: NPV of permanent substrate capacity loss.
         total: Sum of all components.
         horizon: Analysis horizon in years.
+        carbon_released_t: CO₂ released (t, a stock).
+        carbon_absorption_lost_t_yr: Absorption lost (t CO₂/yr, a flow).
+        carbon_price: Carbon price at year 0 (€/t CO₂).
     """
 
     direct: float
@@ -223,6 +244,9 @@ class ExtractionNPV:
     substrate_damage: float
     total: float
     horizon: int
+    carbon_released_t: float = 0.0
+    carbon_absorption_lost_t_yr: float = 0.0
+    carbon_price: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -258,7 +282,8 @@ class CarbonBreakeven:
 
     Attributes:
         breakeven_price: Euro/tonne CO2 where restoration NPV = 0.
-        current_price: Current EU ETS price.
+        current_price: Carbon price at year 0 of the DiscountConfig (the
+            social cost of carbon by default, or the market/ETS view).
         gap_to_current: breakeven_price - current_price.
         profitable_at_current: True if breakeven <= current price.
         projected_breakeven_year: Year when rising carbon prices reach breakeven.
@@ -421,21 +446,23 @@ class SuccessionCurve:
 
 @dataclass
 class CarbonProfile:
-    """Carbon accounting parameters for a resource unit.
+    """Physical carbon parameters for a resource unit (tonnes only).
+
+    The carbon price is not part of the profile: it lives in DiscountConfig
+    (carbon_price_current, carbon_price_growth), so that gaia.carbon values
+    every tonne at one price (decision D3).
 
     Attributes:
         stored_carbon_tonnes: Tonnes CO₂ stored per unit (tree or hectare).
         annual_absorption_tonnes: Tonnes CO₂ absorbed per unit per year at climax.
         soil_carbon_tonnes: Tonnes CO₂ stored in soil beneath each unit.
         soil_release_fraction: Fraction of soil carbon released on extraction (0.0–1.0).
-        carbon_price_per_tonne: € per tonne CO₂ (default: EU ETS price).
     """
 
     stored_carbon_tonnes: float
     annual_absorption_tonnes: float
     soil_carbon_tonnes: float
     soil_release_fraction: float
-    carbon_price_per_tonne: float
 
 
 @dataclass

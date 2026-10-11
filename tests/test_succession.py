@@ -55,7 +55,6 @@ _CARBON = CarbonProfile(
     annual_absorption_tonnes=0.022,
     soil_carbon_tonnes=0.3,
     soil_release_fraction=0.25,
-    carbon_price_per_tonne=80.0,
 )
 
 

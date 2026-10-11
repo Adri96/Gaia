@@ -48,7 +48,6 @@ def _carbon_profile(**kwargs) -> CarbonProfile:
         annual_absorption_tonnes=0.025,
         soil_carbon_tonnes=1.8,
         soil_release_fraction=0.3,
-        carbon_price_per_tonne=80.0,
     )
     defaults.update(kwargs)
     return CarbonProfile(**defaults)

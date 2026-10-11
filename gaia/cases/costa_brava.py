@@ -17,9 +17,11 @@ Scientific context:
     nutrient cycling, and water acquisition. Its collapse cascades into
     every other biological agent.
 
-    Carbon & Climate uses an exponential (not logistic) damage function
-    because CO₂ release does not stabilize: unlike biological populations,
-    atmospheric carbon accumulates continuously and has no "plateau."
+    Fire & Microclimate Regulation uses an exponential (not logistic) damage
+    function: once the canopy opens, drier and hotter stands burn more often
+    and every fire opens the canopy further, a positive feedback with no
+    "plateau." (The agent was "Carbon & Climate"; its carbon component is
+    now valued by gaia.carbon alone, decision D3.)
 
 Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
 
@@ -39,24 +41,31 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Forest Mammals weight         | 0.07          | ratio   | User spec      | Medium     |
     | Raptors & Apex Predators wt   | 0.04          | ratio   | User spec      | Medium     |
     | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
-    | Carbon & Climate weight       | 0.10          | ratio   | User spec      | Medium     |
+    | Fire & Microclimate weight    | 0.10          | ratio   | User spec      | Medium     |
     | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
-    | annual_value_per_ha (all)     | 1,600         | €/ha/yr | de Groot 2012 | Low        |
+    | annual_value_per_ha (all)     | 1,593         | €/ha/yr | de Groot 2012 | Low        |
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
-    | exponential base (carbon)     | 2.0           | –       | Placeholder   | Low        |
+    | exponential base (fire)       | 2.0           | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
 Agent values (decisions D1, D2):
     Every agent uses the same yearly value per hectare and the dependency
-    weights split it, so sum(weight × value) = €1,600/ha/yr × area_ha at full
-    damage (€160,000/yr for the 100 ha reference forest).
+    weights split it, so sum(weight × value) = €1,593/ha/yr × area_ha at full
+    damage (€159,300/yr for the 100 ha reference forest).
 
     €1,600/ha/yr [PLACEHOLDER] is the global mean for woodlands in de Groot
     et al. (2012), Ecosystem Services 1:50-61 (Int$1,588/ha/yr, 2007 price
     level; figure to be checked against the paper in Step 8), used at face value
     as €; a Mediterranean holm-oak valuation and
-    currency/price-year conversion are pending (Step 8). The total includes
-    climate regulation, which overlaps gaia.carbon (C5, Step 3.4).
+    currency/price-year conversion are pending (Step 8). Carbon is valued
+    only by gaia.carbon (decision D3), so the climate-regulation service is
+    taken out of the total: Int$7/ha/yr for woodlands in de Groot et al.
+    (2012, supporting material, Table 9.1; a single estimate), hence
+    €1,600 − €7 = €1,593/ha/yr. The renamed Fire & Microclimate Regulation
+    agent keeps its 0.10 share of that non-carbon total; Soil Microbiome's
+    description no longer lists carbon storage — soil carbon is valued by
+    gaia.carbon through soil_carbon_tonnes × soil_release_fraction, and the
+    agent's value, a share of the non-carbon total, never contained it.
 
     An earlier version back-solved per-agent rates so that externality <
     revenue at 25% and > revenue at 50% ("calibrated", €3.5M in total);
@@ -79,6 +88,7 @@ from typing import Optional
 from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
+    apply_carbon_price_view,
     output_result,
     warn_unused_restoration_args,
 )
@@ -105,15 +115,16 @@ from gaia.simulation import run_extraction, run_restoration
 
 # ── Reference area ───────────────────────────────────────────────────────────
 # [PLACEHOLDER] 10,000 trees on 100 ha = 100 trees/ha, so the per-tree
-# absorption below (0.018 t CO₂/yr) gives ~1.8 t CO₂/ha/yr, matching the
-# 1.7 t CO₂/ha/yr of the carbon anchor. Without an explicit area, a forest of
-# N trees covers N / COSTA_BRAVA_TREES_PER_HA hectares.
+# absorption below (0.018 t CO₂/yr) gives ~1.8 t CO₂/ha/yr. Without an
+# explicit area, a forest of N trees covers N / COSTA_BRAVA_TREES_PER_HA ha.
 COSTA_BRAVA_TOTAL_TREES: int = 10_000
 COSTA_BRAVA_AREA_HA: float = 100.0
 COSTA_BRAVA_TREES_PER_HA: float = COSTA_BRAVA_TOTAL_TREES / COSTA_BRAVA_AREA_HA
 
-# € / ha / yr of service lost at full damage, every agent (see module docstring)
-_CB_VALUE_PER_HA_YR: float = 1_600.0
+# € / ha / yr of service lost at full damage, every agent (see module
+# docstring): the de Groot (2012) woodland total without its climate
+# regulation (carbon) component, €1,600 − €7 [PLACEHOLDER].
+_CB_VALUE_PER_HA_YR: float = 1_600.0 - 7.0
 
 # v0.4: Costa Brava Mediterranean succession curve
 # Slower than temperate forest due to drought stress and fire risk.
@@ -134,7 +145,6 @@ _CB_CARBON = CarbonProfile(
     annual_absorption_tonnes=0.018,
     soil_carbon_tonnes=0.35,
     soil_release_fraction=0.25,
-    carbon_price_per_tonne=80.0,
 )
 
 # v0.4: Costa Brava resilience configuration
@@ -170,9 +180,7 @@ _COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=0.023,
     scarcity_rate=0.025,  # Higher: Mediterranean holm oak more threatened
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
-    horizon_years=100,
+    horizon_years=100,  # carbon price: the default, social cost of carbon
 )
 
 # v0.7: Costa Brava Holm Oak pricing configuration. Anchor values are €/yr
@@ -180,13 +188,8 @@ _COSTA_BRAVA_OAK_DISCOUNT = DiscountConfig(
 # restated per hectare × 100 ha); the builder scales them with area_ha.
 _COSTA_BRAVA_OAK_PRICING = PricingConfig(
     anchors=[
-        AnchorPoint(
-            agent_name="Carbon & Climate",
-            anchor_value=13_600.0,
-            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 100 ha",
-            confidence="high",
-            description="Carbon: €80/t × 170 t CO₂/yr",
-        ),
+        # The former carbon anchor (€80/t × 1.7 t/ha/yr × 100 ha) is gone:
+        # carbon is valued only by gaia.carbon (decision D3).
         AnchorPoint(
             agent_name="Watershed & Water Cycle",
             anchor_value=25_000.0,
@@ -205,7 +208,7 @@ _COSTA_BRAVA_OAK_PRICING = PricingConfig(
         "Forest Mammals": ScarcityFunction("smooth", alpha=0.8, max_multiplier=50.0),
         "Raptors & Apex Predators": ScarcityFunction("smooth", alpha=0.5, max_multiplier=50.0),
         "Watershed & Water Cycle": ScarcityFunction("threshold", threshold=0.4, max_multiplier=30.0, description="Water purification collapses below ~40% forest cover"),
-        "Carbon & Climate": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
+        "Fire & Microclimate Regulation": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
         "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
     },
     default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
@@ -229,7 +232,7 @@ def build_costa_brava_ecosystem(
 
     The ecosystem spans the full dependency web: underground mycorrhizal network,
     soil microbiome, understory vegetation, pollinators, birds, mammals, raptors,
-    watershed, carbon cycle, and local human communities.
+    watershed, fire and microclimate regulation, and local human communities.
 
     Args:
         total_trees: Total number of trees in the forest. [PLACEHOLDER]
@@ -280,7 +283,7 @@ def build_costa_brava_ecosystem(
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
             annual_value_per_ha=_CB_VALUE_PER_HA_YR,
-            description="Soil microbiome and biocrusts — nitrogen fixation, carbon storage, erosion prevention",
+            description="Soil microbiome and biocrusts — nitrogen fixation, nutrient cycling, erosion prevention",
             # v0.3: Abiotic process agent
             trophic_level=-1,
         ),
@@ -354,11 +357,11 @@ def build_costa_brava_ecosystem(
             trophic_level=-1,
         ),
         Agent(
-            name="Carbon & Climate",
+            name="Fire & Microclimate Regulation",
             dependency_weight=0.10,
             damage_function=exponential_damage(threshold=t, base=2.0),
             annual_value_per_ha=_CB_VALUE_PER_HA_YR,
-            description="CO₂ release, lost sequestration, fire risk amplification — exponential accumulation, no plateau",
+            description="Fire risk amplification, loss of shade and moisture buffering — self-reinforcing, no plateau",
             # v0.3: Abiotic process
             trophic_level=-1,
         ),
@@ -416,15 +419,15 @@ def build_costa_brava_ecosystem(
         InteractionEdge("Soil Microbiome", "Watershed & Water Cycle", 0.20, "dependency",
             "Soil degradation reduces water retention capacity"),
 
-        # Carbon depends on living biomass
-        InteractionEdge("Canopy Trees", "Carbon & Climate", 0.35, "dependency",
-            "Tree loss directly reduces carbon sequestration capacity"),
+        # Fire and microclimate regulation depend on the canopy
+        InteractionEdge("Canopy Trees", "Fire & Microclimate Regulation", 0.35, "dependency",
+            "Canopy loss dries and heats the stand, raising fire risk"),
 
         # Human communities depend on multiple services
         InteractionEdge("Watershed & Water Cycle", "Human Communities", 0.25, "dependency",
             "Water quality decline affects human health and tourism"),
-        InteractionEdge("Carbon & Climate", "Human Communities", 0.10, "dependency",
-            "Climate regulation loss increases fire risk and heat stress"),
+        InteractionEdge("Fire & Microclimate Regulation", "Human Communities", 0.10, "dependency",
+            "Loss of fire and microclimate regulation increases fire risk and heat stress"),
     ]
 
     return Ecosystem(
@@ -615,6 +618,7 @@ def main(argv: list = None) -> None:
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
         )
+        apply_carbon_price_view(ecosystem, args.carbon_price)
         if args.mode == "restore":
             cost = RestorationCost(
                 planting_cost_per_unit=args.planting_cost,

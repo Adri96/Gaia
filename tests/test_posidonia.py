@@ -31,10 +31,20 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 
 # ── Structure invariants ───────────────────────────────────────────────────────
 
-def test_posidonia_ecosystem_has_eleven_agents():
-    """The Posidonia ecosystem always has exactly 11 agents."""
+def test_posidonia_ecosystem_has_ten_agents():
+    """The Posidonia ecosystem has 10 agents (Blue Carbon removed, decision D3)."""
     eco = build_posidonia_ecosystem()
-    assert len(eco.agents) == 11
+    assert len(eco.agents) == 10
+    assert "Blue Carbon" not in {a.name for a in eco.agents}
+
+
+def test_posidonia_removing_blue_carbon_kept_other_impacts():
+    """Renormalised weights keep each agent's weight × value (max impact)."""
+    eco = build_posidonia_ecosystem()
+    impact = {a.name: a.dependency_weight * a.annual_value(5_000.0) for a in eco.agents}
+    assert impact["Posidonia Meadow"] == pytest.approx(800_000.0, rel=1e-12)
+    assert impact["Coastal Protection"] == pytest.approx(900_000.0, rel=1e-4)
+    assert sum(impact.values()) == pytest.approx(5_330_000.0, rel=1e-4)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -58,12 +68,11 @@ def test_posidonia_fish_highest_living_weight():
     eco = build_posidonia_ecosystem()
     fish_agent = next(a for a in eco.agents if "Fish" in a.name)
 
-    # Living agents: all except Coastal Protection, Water Quality, Blue Carbon,
+    # Living agents: all except Coastal Protection, Water Quality,
     # Posidonia Meadow (physical/ecosystem agents)
     living_agents = [
         a for a in eco.agents
-        if a.name not in ("Coastal Protection", "Water Quality", "Blue Carbon",
-                          "Posidonia Meadow")
+        if a.name not in ("Coastal Protection", "Water Quality", "Posidonia Meadow")
     ]
     max_living_weight = max(a.dependency_weight for a in living_agents)
 
@@ -91,7 +100,7 @@ def test_posidonia_coastal_protection_highest_physical_cost():
         for i in range(len(eco.agents))
     }
 
-    physical_agents = ["Coastal Protection", "Water Quality", "Blue Carbon"]
+    physical_agents = ["Coastal Protection", "Water Quality"]
     coastal_cost = agent_costs["Coastal Protection"]
 
     for name in physical_agents:
@@ -146,10 +155,11 @@ def test_posidonia_past_threshold():
     # Revenue = 2500 * 2500 = 6,250,000
     assert result_past.revenue == 6_250_000.0
 
-    # Externality at 50% must be substantially larger than at threshold (S-curve accel)
-    assert result_past.annual_externality > 3 * result_threshold.annual_externality, (
+    # Externality at 50% must be substantially larger than at threshold (S-curve
+    # accel). ~3.0× before the exponential Blue Carbon agent left (Step 3.4).
+    assert result_past.annual_externality > 2.5 * result_threshold.annual_externality, (
         f"Externality at 50% ({result_past.annual_externality:.2f}) should be "
-        f">>3× the threshold externality ({result_threshold.annual_externality:.2f})"
+        f">2.5× the threshold externality ({result_threshold.annual_externality:.2f})"
     )
 
 
@@ -201,28 +211,18 @@ def test_posidonia_marginal_cost_curve_shape():
     )
 
 
-def test_posidonia_blue_carbon_uses_exponential():
+def test_posidonia_carbon_valued_by_carbon_profile_only():
     """
-    Blue Carbon uses an exponential damage function, not logistic.
-
-    CO₂ release from Posidonia matte is continuous and non-saturating — unlike
-    biological populations that plateau, atmospheric carbon accumulates. The
-    exponential function encodes this. We verify the Blue Carbon agent produces
-    different damage values than the logistic agents at the same depletion level.
+    Blue carbon is valued by gaia.carbon (release + foregone absorption), not
+    by an agent: the absorption is the single S5 value, IPCC 2013 Tier 1
+    seagrass 0.43 t C/ha/yr = 1.58 t CO₂/ha/yr.
     """
     eco = build_posidonia_ecosystem()
-    carbon_agent = next(a for a in eco.agents if "Carbon" in a.name)
-    other_agent = next(a for a in eco.agents if "Carbon" not in a.name)
-
-    depletion = 0.70
-    carbon_damage = carbon_agent.damage_function(depletion)
-    other_damage = other_agent.damage_function(depletion)
-
-    assert abs(carbon_damage - other_damage) > 1e-6, (
-        f"Blue Carbon (exponential) and a logistic agent should produce different "
-        f"damage values at {depletion:.0%} depletion. "
-        f"Got carbon={carbon_damage:.6f}, other={other_damage:.6f}"
-    )
+    assert eco.resource.carbon_profile.annual_absorption_tonnes == pytest.approx(
+        0.43 * 44 / 12)
+    result = run_extraction(eco, 1_000)
+    assert result.extraction_npv.carbon_absorption_lost_t_yr == pytest.approx(
+        1_000 * 0.43 * 44 / 12)
 
 
 # ── Report tests ───────────────────────────────────────────────────────────────
@@ -268,7 +268,7 @@ def test_posidonia_annual_note_in_report():
 
 
 def test_posidonia_report_contains_all_agents():
-    """The report mentions all 11 agent names."""
+    """The report mentions all 10 agent names."""
     report = run_posidonia(
         total_hectares=TOTAL_HECTARES,
         safe_threshold_ratio=THRESHOLD,
@@ -284,7 +284,6 @@ def test_posidonia_report_contains_all_agents():
         "Seabirds",
         "Coastal Protection",
         "Water Quality",
-        "Blue Carbon",
         "Human Communities",
     ]
     for agent_name in expected_agents:
@@ -296,10 +295,10 @@ def test_posidonia_report_contains_all_agents():
 # ── v0.3: Cascade-specific tests ─────────────────────────────────────────────
 
 def test_posidonia_has_interactions():
-    """Posidonia ecosystem has 16 interaction edges."""
+    """Posidonia ecosystem has 15 interaction edges (Blue Carbon's edge removed)."""
     eco = build_posidonia_ecosystem()
-    assert len(eco.interactions) == 16, (
-        f"Expected 16 interaction edges, got {len(eco.interactions)}"
+    assert len(eco.interactions) == 15, (
+        f"Expected 15 interaction edges, got {len(eco.interactions)}"
     )
 
 

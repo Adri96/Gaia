@@ -1,7 +1,7 @@
 """
 Gaia v0.1 — Costa Brava Posidonia Meadow destruction case.
 
-Marine ecosystem with 11 agents spanning the full web of biological and
+Marine ecosystem with 10 agents spanning the full web of biological and
 physical dependencies: from the Posidonia meadow itself as foundation species,
 through coralligenous reefs, fish nurseries, and apex megafauna, to the
 coastal protection and tourism economy of the Costa Brava.
@@ -26,8 +26,8 @@ with that present value, never with the annual figure.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Scientific context:
     Posidonia oceanica is one of the most biodiverse and carbon-rich ecosystems
-    on Earth. It absorbs 15× more CO₂ per hectare than the Amazon rainforest and
-    stores carbon in its sediment matte for millennia. Growth rate: 1-6 cm/year
+    on Earth: it stores carbon in its sediment matte for millennia (valued by
+    gaia.carbon through the carbon profile below). Growth rate: 1-6 cm/year
     horizontal — any significant destruction is irreversible on human timescales.
 
     34% of Mediterranean Posidonia has been lost in the last 50 years. The Costa
@@ -49,6 +49,12 @@ reference meadow per hectare and per unit of dependency weight:
     annual_value_per_ha = max_annual_impact / (dependency_weight × 5,000 ha)
 so that weight × annual_value_per_ha × area_ha = max_annual_impact at 5,000 ha.
 
+The Blue Carbon agent (weight 0.09, €500,000/yr) was carbon only and is
+removed: carbon is valued by gaia.carbon alone (decision D3). The remaining
+weights are renormalised by 1/0.91 (to sum to 1) and their per-ha values
+scaled by 0.91, so weight × value — each agent's maximum annual impact — is
+unchanged. The table lists the original weights and values.
+
     | Parameter                       | Max Impact | Weight | €/ha/yr    | Source       | Confidence |
     |---------------------------------|------------|--------|------------|--------------|------------|
     | total_units (= area, ha)        | –          | –      | –          | User spec    | Low        |
@@ -63,28 +69,28 @@ so that weight × annual_value_per_ha × area_ha = max_annual_impact at 5,000 ha
     | Seabirds                        | €180,000   | 0.05   | 720.0      | User spec    | Low        |
     | Coastal Protection              | €900,000   | 0.13   | 1,384.6    | User spec    | Low        |
     | Water Quality                   | €650,000   | 0.11   | 1,181.8    | User spec    | Low        |
-    | Blue Carbon                     | €500,000   | 0.09   | 1,111.2    | User spec    | Low        |
     | Human Communities               | €700,000   | 0.08   | 1,750.0    | User spec    | Low        |
     | logistic steepness              | –          | –      | 12.0       | Placeholder  | Low        |
-    | exponential base (carbon)       | –          | –      | 2.0        | Placeholder  | Low        |
     | dependency weight sum           | –          | 1.00   | –          | Verified ✓   | High       |
 
-Total at full damage: sum(weight × annual_value_per_ha) = €1,166/ha/yr
-    (€5,830,000/yr for 5,000 ha) [User spec, PLACEHOLDER].
+Total at full damage: sum(weight × annual_value_per_ha) = €1,066/ha/yr
+    (€5,330,000/yr for 5,000 ha; €1,166/ha/yr before the €500,000/yr Blue
+    Carbon agent was removed) [User spec, PLACEHOLDER].
 
 For scale, global meta-analyses value seagrass / coastal systems far higher:
 Costanza et al. (2014), Global Environmental Change 26:152-158, $28,916/ha/yr
 for seagrass/algae beds; de Groot et al. (2012), Ecosystem Services 1:50-61,
 Int$28,917/ha/yr for coastal systems (2007 price levels). A Posidonia-
-specific valuation is pending (Step 8). The Blue Carbon agent overlaps
-gaia.carbon (C5, Step 3.4).
+specific valuation is pending (Step 8). Both totals include climate
+regulation (Int$479/ha/yr for coastal systems in de Groot 2012), which
+gaia.carbon values separately.
 
 An earlier version of this docstring claimed the rates were set so that the
 externality stays below revenue at the 20% threshold "at annual scale" (a
 flow compared with a one-off amount, and contradicted by its own numbers);
 rates are never tuned to produce an outcome.
 
-Dependency weights sum: 0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.09+0.08 = 1.00 ✓
+Dependency weights sum: (0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.08) / 0.91 = 1.00 ✓
 
 CLI usage:
     python -m gaia.cases.posidonia
@@ -101,10 +107,11 @@ from typing import Optional
 from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
+    apply_carbon_price_view,
     output_result,
     warn_unused_restoration_args,
 )
-from gaia.damage import exponential_damage, logistic_damage
+from gaia.damage import logistic_damage
 from gaia.models import (
     Agent,
     AnchorPoint,
@@ -138,14 +145,20 @@ _POSIDONIA_SUCCESSION = SuccessionCurve(
 )
 
 # v0.4: Posidonia carbon profile (per hectare)
-# Blue carbon — 15× Amazon CO₂ rate, millennia of stored matte carbon.
-# [PLACEHOLDER — pending calibration against IPCC Blue Carbon data]
+# Blue carbon — millennia of stored matte carbon.
+# Absorption (S5: the one value used for Posidonia): the IPCC 2013 Wetlands
+# Supplement Tier 1 seagrass carbon accumulation rate, 0.43 t C/ha/yr (based
+# on Posidonia oceanica cores) × 44/12 = 1.58 t CO₂/ha/yr. Alternatives:
+# the European Posidonia median, 0.31 t C/ha/yr = 1.13 t CO₂/ha/yr
+# (Krause-Jensen et al. 2026, ETC-BE working paper, 43 cores); the former
+# 5.9 t CO₂/ha/yr (1.6 t C/ha/yr) is near the older global seagrass mean of
+# Duarte et al. (2013), 1.38 t C/ha/yr, which later syntheses revised down.
+# [PLACEHOLDER — stocks pending calibration against IPCC Blue Carbon data]
 _POSIDONIA_CARBON = CarbonProfile(
     stored_carbon_tonnes=130.0,
-    annual_absorption_tonnes=5.9,
+    annual_absorption_tonnes=0.43 * 44.0 / 12.0,
     soil_carbon_tonnes=2600.0,
     soil_release_fraction=0.05,
-    carbon_price_per_tonne=80.0,
 )
 
 # v0.4: Posidonia resilience configuration
@@ -180,9 +193,8 @@ _POSIDONIA_DISCOUNT = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=[(0, 0.023), (31, 0.018), (101, 0.014)],
     scarcity_rate=0.03,  # Higher: Posidonia declining 34%+ since 1960s
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
     horizon_years=200,  # Longer horizon for marine ecosystems
+    # carbon price: the DiscountConfig default, the social cost of carbon
 )
 
 # ── Reference area ───────────────────────────────────────────────────────────
@@ -191,17 +203,10 @@ POSIDONIA_AREA_HA: float = 5_000.0
 
 # v0.7: Posidonia pricing configuration. Anchor values are €/yr for the
 # POSIDONIA_AREA_HA reference meadow and are scaled with area_ha by the
-# builder. (The Blue Carbon anchor's formula is written for 1,000 ha; carbon
-# leaves the anchors in Step 3.4.)
+# builder. The former Blue Carbon anchor (€80/t × 1.7 t CO₂/ha/yr × 1,000 ha)
+# is gone: carbon is valued only by gaia.carbon (decision D3).
 _POSIDONIA_PRICING = PricingConfig(
     anchors=[
-        AnchorPoint(
-            agent_name="Blue Carbon",
-            anchor_value=136000.0,
-            source="EU ETS €80/t × 1.7 t CO₂/ha/yr × 1,000 ha",
-            confidence="high",
-            description="Carbon: €80/t × 1,700 t CO₂/yr",
-        ),
         AnchorPoint(
             agent_name="Human Communities",
             anchor_value=500000.0,
@@ -227,7 +232,6 @@ _POSIDONIA_PRICING = PricingConfig(
         "Seabirds": ScarcityFunction("smooth", alpha=0.5, max_multiplier=50.0),
         "Coastal Protection": ScarcityFunction("threshold", threshold=0.3, max_multiplier=40.0, description="Beach nourishment cost replacement"),
         "Water Quality": ScarcityFunction("threshold", threshold=0.3, max_multiplier=30.0, description="Turbidity collapse threshold"),
-        "Blue Carbon": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
         "Human Communities": ScarcityFunction("smooth", alpha=1.0, max_multiplier=50.0),
     },
     default_scarcity=ScarcityFunction("smooth", alpha=1.0, threshold=0.3, max_multiplier=50.0),
@@ -236,6 +240,11 @@ _POSIDONIA_PRICING = PricingConfig(
 # Shared steepness for all logistic agents.
 # [PLACEHOLDER — per-agent steepness could be differentiated once calibrated]
 _STEEPNESS: float = 12.0
+
+# Sum of the user-specified weights without the removed Blue Carbon agent
+# (1 − 0.09). Weights are divided by it and per-ha values multiplied by it,
+# which keeps every agent's weight × value (its maximum annual impact).
+_WEIGHT_RENORM: float = 0.91
 
 # Annual externality note appended to the report to flag the time-flow asymmetry.
 _ANNUAL_NOTE: str = (
@@ -254,11 +263,12 @@ def build_posidonia_ecosystem(
     area_ha: Optional[float] = None,
 ) -> Ecosystem:
     """
-    Build the Costa Brava Posidonia Meadow ecosystem with 11 agents.
+    Build the Costa Brava Posidonia Meadow ecosystem with 10 agents.
 
     The ecosystem spans the full marine dependency web: seagrass foundation,
     coralligenous reefs, epiphytes, invertebrates, fish, megafauna, seabirds,
-    coastal protection, water quality, blue carbon, and human coastal communities.
+    coastal protection, water quality, and human coastal communities. Carbon
+    (the meadow's blue carbon) is valued by gaia.carbon, not by an agent.
 
     Args:
         total_hectares: Total hectares of Posidonia meadow. Default 5,000 ha —
@@ -307,9 +317,9 @@ def build_posidonia_ecosystem(
         # ── Foundation species ──────────────────────────────────────────────
         Agent(
             name="Posidonia Meadow",
-            dependency_weight=0.10,
+            dependency_weight=0.10 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_600.0,
+            annual_value_per_ha=1_600.0 * _WEIGHT_RENORM,
             description="Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
             # v0.3: Producer, KEYSTONE foundation species
             trophic_level=0,
@@ -319,9 +329,9 @@ def build_posidonia_ecosystem(
         # ── Biogenic habitat builders ───────────────────────────────────────
         Agent(
             name="Coralligenous & Red Coral",
-            dependency_weight=0.10,
+            dependency_weight=0.10 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_200.0,
+            annual_value_per_ha=1_200.0 * _WEIGHT_RENORM,
             description="Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
             # v0.3: Producer (biogenic)
             trophic_level=0,
@@ -329,9 +339,9 @@ def build_posidonia_ecosystem(
         # ── Primary producers ───────────────────────────────────────────────
         Agent(
             name="Epiphytes & Algae",
-            dependency_weight=0.07,
+            dependency_weight=0.07 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=714.2,
+            annual_value_per_ha=714.2 * _WEIGHT_RENORM,
             description="Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
             # v0.3: Producer
             trophic_level=0,
@@ -339,9 +349,9 @@ def build_posidonia_ecosystem(
         # ── Invertebrates ───────────────────────────────────────────────────
         Agent(
             name="Marine Invertebrates",
-            dependency_weight=0.09,
+            dependency_weight=0.09 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=777.8,
+            annual_value_per_ha=777.8 * _WEIGHT_RENORM,
             description="Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
             # v0.3: Primary consumer
             trophic_level=1,
@@ -349,9 +359,9 @@ def build_posidonia_ecosystem(
         # ── Fish ────────────────────────────────────────────────────────────
         Agent(
             name="Fish Populations",
-            dependency_weight=0.14,
+            dependency_weight=0.14 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_000.0,
+            annual_value_per_ha=1_000.0 * _WEIGHT_RENORM,
             description="Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
             # v0.3: Secondary consumer
             trophic_level=2,
@@ -359,9 +369,9 @@ def build_posidonia_ecosystem(
         # ── Megafauna ───────────────────────────────────────────────────────
         Agent(
             name="Marine Megafauna",
-            dependency_weight=0.04,
+            dependency_weight=0.04 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_000.0,
+            annual_value_per_ha=1_000.0 * _WEIGHT_RENORM,
             description="Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
             # v0.3: Tertiary consumer — apex marine predator
             trophic_level=3,
@@ -369,9 +379,9 @@ def build_posidonia_ecosystem(
         # ── Seabirds ────────────────────────────────────────────────────────
         Agent(
             name="Seabirds",
-            dependency_weight=0.05,
+            dependency_weight=0.05 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=720.0,
+            annual_value_per_ha=720.0 * _WEIGHT_RENORM,
             description="Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
             # v0.3: Secondary consumer (fish-dependent)
             trophic_level=2,
@@ -379,45 +389,35 @@ def build_posidonia_ecosystem(
         # ── Physical ecosystem services ─────────────────────────────────────
         Agent(
             name="Coastal Protection",
-            dependency_weight=0.13,
+            dependency_weight=0.13 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_384.6,
+            annual_value_per_ha=1_384.6 * _WEIGHT_RENORM,
             description="Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
             # v0.3: Abiotic service
             trophic_level=-1,
         ),
         Agent(
             name="Water Quality",
-            dependency_weight=0.11,
+            dependency_weight=0.11 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_181.8,
+            annual_value_per_ha=1_181.8 * _WEIGHT_RENORM,
             description="Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
-            # v0.3: Abiotic service
-            trophic_level=-1,
-        ),
-        # ── Carbon ──────────────────────────────────────────────────────────
-        Agent(
-            name="Blue Carbon",
-            dependency_weight=0.09,
-            damage_function=exponential_damage(threshold=t, base=2.0),
-            annual_value_per_ha=1_111.2,
-            description="Blue carbon — 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
             # v0.3: Abiotic service
             trophic_level=-1,
         ),
         # ── Human systems ───────────────────────────────────────────────────
         Agent(
             name="Human Communities",
-            dependency_weight=0.08,
+            dependency_weight=0.08 / _WEIGHT_RENORM,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            annual_value_per_ha=1_750.0,
+            annual_value_per_ha=1_750.0 * _WEIGHT_RENORM,
             description="Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
             # v0.3: External beneficiary
             trophic_level=-1,
         ),
     ]
 
-    # v0.3: Full marine trophic web with 16 interaction edges
+    # v0.3: Full marine trophic web with 15 interaction edges
     interactions = [
         # Posidonia keystone cascade — foundation collapse cascades everywhere
         InteractionEdge("Posidonia Meadow", "Coralligenous & Red Coral", 0.30, "keystone",
@@ -446,10 +446,6 @@ def build_posidonia_ecosystem(
             "Fish decline starves apex marine predators"),
         InteractionEdge("Fish Populations", "Seabirds", 0.30, "trophic",
             "Fish decline causes breeding failure in seabird colonies"),
-
-        # Physical services linked to living biomass
-        InteractionEdge("Posidonia Meadow", "Blue Carbon", 0.35, "dependency",
-            "Meadow loss releases millennia of stored matte carbon"),
 
         # Invertebrate filtration supports water quality
         InteractionEdge("Marine Invertebrates", "Water Quality", 0.15, "dependency",
@@ -668,6 +664,7 @@ def main(argv: list = None) -> None:
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
         )
+        apply_carbon_price_view(ecosystem, args.carbon_price)
         if args.mode == "restore":
             cost = RestorationCost(
                 planting_cost_per_unit=args.planting_cost,

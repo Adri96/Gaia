@@ -275,6 +275,7 @@ _NON_MONETARY_KEYS = {
     "total_units", "safe_threshold_ratio", "safe_threshold_units",
     "area_ha", "units_per_ha", "discount_rate", "discount_horizon_years",
     "carbon_stored_per_unit", "carbon_absorption_per_unit_yr",
+    "carbon_price_growth", "carbon_released_tco2", "carbon_absorption_lost_tco2_yr",
     "dependency_weight", "trophic_level", "keystone_threshold", "strength",
     # extraction summary and steps
     "total_units_extracted", "final_ecosystem_health", "num_steps", "step",

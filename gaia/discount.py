@@ -18,6 +18,7 @@ Scientific foundations:
 
 from typing import Optional
 
+from gaia.carbon import compute_carbon_release, pv_absorption, pv_carbon_release
 from gaia.models import (
     CarbonBreakeven,
     CarbonProfile,
@@ -33,12 +34,15 @@ from gaia.succession import succession_service
 # ── Preconfigured discount profiles ──────────────────────────────────────────
 
 
+# Every profile prices carbon at the social cost of carbon (DiscountConfig's
+# default: gaia.carbon.SOCIAL_COST_OF_CARBON_EUR growing at SCC_GROWTH_RATE,
+# 1.3%/yr — below each profile's discount rate). The EU ETS price is only
+# available as the market/ETS view, gaia.carbon.with_carbon_price_view.
+
 DISCOUNT_MARKET = DiscountConfig(
     delta=0.015, eta=2.0, g=0.013,
     rate_schedule=0.041,
     scarcity_rate=0.0,
-    carbon_price_current=80.0,
-    carbon_price_growth=0.02,
 )
 """Conservative / market-aligned (Nordhaus-adjacent). 4.1%, no scarcity."""
 
@@ -46,8 +50,6 @@ DISCOUNT_CENTRAL = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=0.023,
     scarcity_rate=0.02,
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
 )
 """Central / consensus (Drupp et al. 2018). 2.3%, 2% scarcity uplift."""
 
@@ -55,8 +57,6 @@ DISCOUNT_ENVIRONMENTAL = DiscountConfig(
     delta=0.001, eta=1.0, g=0.013,
     rate_schedule=0.014,
     scarcity_rate=0.03,
-    carbon_price_current=80.0,
-    carbon_price_growth=0.04,
 )
 """Environmental / Stern-adjacent. 1.4%, 3% scarcity uplift."""
 
@@ -64,8 +64,6 @@ DISCOUNT_GREEN_BOOK = DiscountConfig(
     delta=0.005, eta=1.35, g=0.013,
     rate_schedule=[(0, 0.035), (31, 0.030), (76, 0.025)],
     scarcity_rate=0.02,
-    carbon_price_current=80.0,
-    carbon_price_growth=0.03,
     horizon_years=125,
 )
 """UK Green Book declining schedule. 3.5% -> 3.0% -> 2.5%."""
@@ -91,7 +89,6 @@ def compute_extraction_npv(
     carbon_profile: Optional[CarbonProfile],
     units_extracted: int,
     substrate_ceiling: float = 1.0,
-    remaining_productive_years: int = 80,
 ) -> ExtractionNPV:
     """Discount extraction externality stream to present value.
 
@@ -101,10 +98,15 @@ def compute_extraction_npv(
     Components:
         direct: Annual ecosystem service loss projected over horizon,
             discounted with scarcity uplift.
-        carbon_release: One-time carbon release at year 0.
-        carbon_foregone: Future absorption capacity lost, valued at rising
-            carbon prices, discounted.
+        carbon_release: One-time carbon release at year 0, valued at the
+            year-0 carbon price (gaia.carbon).
+        carbon_foregone: The extracted units' absorption, lost every year
+            of the horizon (like the direct loss), valued at the growing
+            carbon price and discounted (gaia.carbon).
         substrate_damage: Permanent capacity loss as perpetual annuity.
+
+    Carbon is valued by gaia.carbon alone, at the DiscountConfig's carbon
+    price (the social cost of carbon unless the market/ETS view is chosen).
 
     Args:
         annual_externality: Ecosystem service value lost per year at the
@@ -113,7 +115,6 @@ def compute_extraction_npv(
         carbon_profile: Optional carbon accounting parameters.
         units_extracted: Number of units that were extracted.
         substrate_ceiling: Max recoverable fraction (1.0 = no permanent loss).
-        remaining_productive_years: Productive lifespan of destroyed units.
 
     Returns:
         ExtractionNPV with all NPV components.
@@ -127,26 +128,16 @@ def compute_extraction_npv(
         sf: float = discount.scarcity_factor(year)
         npv_direct += annual_externality * df * sf
 
-    # Carbon release: one-time at year 0
-    npv_carbon_release: float = 0.0
+    # Carbon (gaia.carbon): release (stock) and foregone absorption (flow → PV)
+    release_t: float = 0.0
+    absorption_lost_t_yr: float = 0.0
     if carbon_profile is not None and units_extracted > 0:
-        total_release: float = units_extracted * (
-            carbon_profile.stored_carbon_tonnes
-            + carbon_profile.soil_carbon_tonnes * carbon_profile.soil_release_fraction
-        )
-        npv_carbon_release = total_release * discount.carbon_price_at_year(0)
-
-    # Foregone absorption: annual stream over remaining productive years
-    npv_carbon_foregone: float = 0.0
-    if carbon_profile is not None and units_extracted > 0:
-        annual_absorption: float = (
+        release_t = compute_carbon_release(carbon_profile, units_extracted)
+        absorption_lost_t_yr = (
             units_extracted * carbon_profile.annual_absorption_tonnes
         )
-        years_to_project: int = min(remaining_productive_years, horizon)
-        for year in range(1, years_to_project + 1):
-            cp: float = discount.carbon_price_at_year(year)
-            df = discount.discount_factor(year)
-            npv_carbon_foregone += annual_absorption * cp * df
+    npv_carbon_release: float = pv_carbon_release(release_t, discount)
+    npv_carbon_foregone: float = pv_absorption(absorption_lost_t_yr, discount)
 
     # Substrate damage: permanent capacity loss as annuity
     npv_substrate: float = 0.0
@@ -168,6 +159,9 @@ def compute_extraction_npv(
         substrate_damage=npv_substrate,
         total=total,
         horizon=horizon,
+        carbon_released_t=release_t,
+        carbon_absorption_lost_t_yr=absorption_lost_t_yr,
+        carbon_price=discount.carbon_price_at_year(0),
     )
 
 
@@ -234,22 +228,14 @@ def compute_restoration_npv(
         sf: float = discount.scarcity_factor(year)
         npv_services += annual_services * df * sf
 
-    # Carbon absorption benefits
+    # Carbon absorption benefits (gaia.carbon): the restored units' absorption
+    # ramps up along the succession curve, capped by the substrate ceiling
     npv_carbon: float = 0.0
     if carbon_profile is not None and units_restored > 0:
-        annual_absorption_full: float = (
-            units_restored * carbon_profile.annual_absorption_tonnes
+        npv_carbon = pv_absorption(
+            units_restored * carbon_profile.annual_absorption_tonnes,
+            discount, succession_curve, substrate_ceiling,
         )
-        for year in range(horizon):
-            if succession_curve is not None:
-                sfrac: float = succession_service(succession_curve, float(year))
-            else:
-                sfrac = 1.0
-            effective_sfrac: float = min(sfrac, substrate_ceiling)
-            absorption: float = annual_absorption_full * effective_sfrac
-            cp: float = discount.carbon_price_at_year(year)
-            df = discount.discount_factor(year)
-            npv_carbon += absorption * cp * df
 
     # Carbon payback period (undiscounted)
     carbon_payback_years: Optional[int] = None
@@ -260,7 +246,7 @@ def compute_restoration_npv(
         )
         for year in range(horizon):
             if succession_curve is not None:
-                sfrac = succession_service(succession_curve, float(year))
+                sfrac: float = succession_service(succession_curve, float(year))
             else:
                 sfrac = 1.0
             cumulative += annual_abs_full * min(sfrac, substrate_ceiling)
@@ -310,8 +296,6 @@ def compute_carbon_breakeven(
     Returns:
         CarbonBreakeven analysis.
     """
-    horizon: int = discount.horizon_years
-
     # NPV of restoration costs (independent of carbon price)
     planting_cost: float = restoration_cost_total - (
         maintenance_cost_per_year * maintenance_years
@@ -327,18 +311,10 @@ def compute_carbon_breakeven(
     # NPV of absorption stream per euro/tonne carbon price
     npv_absorption_per_euro: float = 0.0
     if carbon_profile is not None and units_restored > 0:
-        annual_abs_full: float = (
-            units_restored * carbon_profile.annual_absorption_tonnes
+        npv_absorption_per_euro = pv_absorption(
+            units_restored * carbon_profile.annual_absorption_tonnes,
+            discount, succession_curve, substrate_ceiling, priced=False,
         )
-        for year in range(horizon):
-            if succession_curve is not None:
-                sfrac: float = succession_service(succession_curve, float(year))
-            else:
-                sfrac = 1.0
-            effective_sfrac: float = min(sfrac, substrate_ceiling)
-            absorption: float = annual_abs_full * effective_sfrac
-            df = discount.discount_factor(year)
-            npv_absorption_per_euro += absorption * df
 
     # Breakeven calculation
     if npv_absorption_per_euro > 0.0:
@@ -455,27 +431,17 @@ def compute_prevention_advantage_v06(
         sf: float = discount.scarcity_factor(year)
         npv_maturation_gap += annual_gap * df * sf
 
-    # Carbon externality NPV
+    # Carbon externality NPV (gaia.carbon): the release, plus the absorption
+    # not delivered while the replanted units mature (and never, above the
+    # substrate ceiling)
     npv_carbon: float = 0.0
     if carbon_profile is not None and units > 0:
-        # Release cost
-        total_release: float = units * (
-            carbon_profile.stored_carbon_tonnes
-            + carbon_profile.soil_carbon_tonnes * carbon_profile.soil_release_fraction
+        npv_carbon = pv_carbon_release(
+            compute_carbon_release(carbon_profile, units), discount
+        ) + pv_absorption(
+            units * carbon_profile.annual_absorption_tonnes,
+            discount, succession_curve, substrate_ceiling, shortfall=True,
         )
-        npv_carbon += total_release * discount.carbon_price_at_year(0)
-
-        # Foregone absorption during recovery
-        annual_abs: float = units * carbon_profile.annual_absorption_tonnes
-        for year in range(1, min(horizon, 80) + 1):
-            if succession_curve is not None:
-                sfrac = succession_service(succession_curve, float(year))
-            else:
-                sfrac = 1.0
-            foregone_frac: float = 1.0 - min(sfrac, substrate_ceiling)
-            cp: float = discount.carbon_price_at_year(year)
-            df = discount.discount_factor(year)
-            npv_carbon += annual_abs * foregone_frac * cp * df
 
     # Substrate permanent loss NPV
     npv_substrate: float = 0.0

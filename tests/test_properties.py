@@ -37,6 +37,7 @@ from gaia.discount import (
     DISCOUNT_MARKET,
     compute_extraction_npv,
 )
+from gaia.carbon import SOCIAL_COST_OF_CARBON_EUR
 from gaia.models import RestorationCost
 from gaia.recovery import logistic_recovery
 from gaia.report import format_report
@@ -217,9 +218,6 @@ def test_cost_monotonic_in_depletion_with_pricing(case):
 _CARBON_WORDS = re.compile(r"carbon|co2|co₂", re.IGNORECASE)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "C5: carbon is also valued inside agent rates / pricing anchors "
-    "(General Biosphere, Carbon & Climate, Blue Carbon, Amazon canopy anchor)"))
 @pytest.mark.parametrize("case", list(CASES))
 def test_no_hidden_carbon(case):
     """Removing the carbon profile removes exactly the carbon line items.
@@ -247,6 +245,73 @@ def test_no_hidden_carbon(case):
     assert annual_externality(a) == annual_externality(b)
 
 
+# ── 6b. Carbon value is bounded by the carbon at stake (C5, D3) ─────────────
+
+
+def _carbon_at_stake(eco, units):
+    """Release + PV of the foregone absorption of ``units``, at the SCC.
+
+    Computed independently of gaia.carbon: tonnes from the carbon profile,
+    priced at SOCIAL_COST_OF_CARBON_EUR growing at the DiscountConfig's rate,
+    over the years t = 0..H−1 of the service streams.
+    """
+    cp = eco.resource.carbon_profile
+    discount = eco.resource.discount
+    assert discount.carbon_price_current == SOCIAL_COST_OF_CARBON_EUR
+    release = units * (cp.stored_carbon_tonnes
+                       + cp.soil_carbon_tonnes * cp.soil_release_fraction)
+    absorption = units * cp.annual_absorption_tonnes
+    foregone = sum(
+        absorption * SOCIAL_COST_OF_CARBON_EUR
+        * (1 + discount.carbon_price_growth) ** t * discount.discount_factor(t)
+        for t in range(discount.horizon_years)
+    )
+    return release * SOCIAL_COST_OF_CARBON_EUR, foregone
+
+
+@pytest.mark.parametrize("succession", [True, False], ids=["succession", "instant"])
+@pytest.mark.parametrize("case", list(CASES))
+def test_capitalised_carbon_never_exceeds_carbon_at_stake(case, succession):
+    """No NPV capitalises more carbon than (release + PV of foregone absorption).
+
+    Extraction carries exactly the carbon at stake; a restoration of k ≤ lost
+    units recovers at most the foregone absorption of the units lost (and
+    nothing is counted through agents or anchors, see test 6).
+    """
+    eco, _ = build(case, 1000)
+    lost = 500
+    cut = run_extraction(eco, lost)
+    release_eur, foregone_eur = _carbon_at_stake(eco, lost)
+    npv = cut.extraction_npv
+    assert npv.carbon_release == pytest.approx(release_eur, rel=1e-12)
+    assert npv.carbon_foregone == pytest.approx(foregone_eur, rel=1e-9)
+    assert npv.carbon_release + npv.carbon_foregone <= (
+        release_eur + foregone_eur) * (1 + 1e-12)
+
+    cost = RestorationCost(planting_cost_per_unit=50.0,
+                           annual_maintenance_per_unit=10.0, maintenance_years=10)
+    curve = _FOREST_SUCCESSION if succession else None
+    for k in (100, lost):
+        recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+        restored = run_restoration(eco, k, cost, recovery, succession_curve=curve,
+                                   time_horizon_years=60 if succession else 0,
+                                   starting_state=cut)
+        assert restored.restoration_npv.carbon_benefits <= foregone_eur * (1 + 1e-12)
+
+
+def test_amazon_carbon_release_at_most_stock_times_scc():
+    """Amazon: the capitalised release never exceeds the stock × SCC (C5)."""
+    eco, area = build("amazon_forest", 4000)
+    cp = eco.resource.carbon_profile
+    stock_t = 4000 * (cp.stored_carbon_tonnes + cp.soil_carbon_tonnes)
+    for units in (800, 4000):
+        npv = run_extraction(eco, units).extraction_npv
+        assert npv.carbon_release <= stock_t * SOCIAL_COST_OF_CARBON_EUR
+    # Biomass alone is ~635 t CO₂/ha (173 Mg C/ha × 3.67): ~€106k/ha at the SCC
+    biomass_per_ha = cp.stored_carbon_tonnes * AMAZON_TREES_PER_HA
+    assert biomass_per_ha * SOCIAL_COST_OF_CARBON_EUR == pytest.approx(105_600, rel=0.01)
+
+
 # ── 7. Text report and JSON agree (E3) ───────────────────────────────────────
 
 _EURO = re.compile(r"€\s*(-?[\d,]+(?:\.\d+)?)|(-?[\d,]+(?:\.\d+)?)€")
@@ -268,7 +333,7 @@ def _json_numbers(obj, out):
 
 @pytest.mark.xfail(strict=True, reason=(
     "E3: report.py computes figures absent from the result/JSON "
-    "(carbon externality, confidence band, direct/cascade split)"))
+    "(confidence band, direct/cascade split; carbon fixed in Step 3.4)"))
 @pytest.mark.parametrize("case", list(CASES))
 def test_text_report_figures_exist_in_json(case):
     """Every € figure printed in the text report is a value of the JSON output."""

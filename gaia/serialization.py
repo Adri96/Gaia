@@ -77,10 +77,15 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         d["discount_rate"] = resource.discount.rate_at_year(0)
         d["discount_horizon_years"] = resource.discount.horizon_years
     if resource.carbon_profile is not None:
+        from gaia.carbon import carbon_price_label
+        from gaia.discount import DEFAULT_DISCOUNT
         cp = resource.carbon_profile
+        discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
         d["carbon_stored_per_unit"] = cp.stored_carbon_tonnes
         d["carbon_absorption_per_unit_yr"] = cp.annual_absorption_tonnes
-        d["carbon_price_eur_per_t"] = cp.carbon_price_per_tonne
+        d["carbon_price_eur_per_t"] = round(discount.carbon_price_current, 2)
+        d["carbon_price_growth"] = discount.carbon_price_growth
+        d["carbon_price_basis"] = carbon_price_label(discount)
     return d
 
 
@@ -203,6 +208,9 @@ def _extraction_npv_to_dict(npv: ExtractionNPV) -> Dict[str, Any]:
         "services_eur_pv": round(npv.direct, 2),
         "carbon_release_eur_pv": round(npv.carbon_release, 2),
         "carbon_foregone_eur_pv": round(npv.carbon_foregone, 2),
+        "carbon_released_tco2": round(npv.carbon_released_t, 4),
+        "carbon_absorption_lost_tco2_yr": round(npv.carbon_absorption_lost_t_yr, 4),
+        "carbon_price_eur_per_t": round(npv.carbon_price, 2),
         "substrate_damage_eur_pv": round(npv.substrate_damage, 2),
         "total_eur_pv": round(npv.total, 2),
         "horizon_years": npv.horizon,

@@ -165,7 +165,7 @@ def test_forest_report_contains_all_agents():
     assert "Human Communities" in report
     assert "Animal Populations" in report
     assert "Vegetation & Flora" in report
-    assert "General Biosphere" in report
+    assert "Watershed & Local Climate" in report
 
 
 def test_forest_report_contains_revenue():
@@ -222,26 +222,30 @@ def test_forest_agent_weights_sum_to_one():
     assert abs(total_weight - 1.0) < 1e-9
 
 
-def test_forest_biosphere_largest_share_of_value():
-    """General Biosphere carries the largest share of the forest's annual value.
+def test_forest_watershed_largest_share_of_value():
+    """Watershed & Local Climate carries the largest share of the annual value.
 
     Every agent uses the same €/ha/yr biome value, so the split is decided
-    by the dependency weights (Biosphere: 0.35).
+    by the dependency weights (Watershed & Local Climate: 0.35).
     """
     eco = build_forest_ecosystem()
     area = eco.resource.area_ha
     share = {a.name: a.dependency_weight * a.annual_value(area) for a in eco.agents}
-    assert max(share, key=share.get) == "General Biosphere"
+    assert max(share, key=share.get) == "Watershed & Local Climate"
 
 
 def test_forest_value_is_per_hectare():
-    """Full-damage value = €3,000/ha/yr × area; the default area follows the trees."""
+    """Full-damage value = €2,848/ha/yr × area; the default area follows the trees.
+
+    €3,000/ha/yr (de Groot 2012, temperate forest) minus its €152 climate
+    regulation component, valued by gaia.carbon instead (decision D3).
+    """
     from gaia.cases.forest import FOREST_AREA_HA, FOREST_TOTAL_TREES
 
     eco = build_forest_ecosystem()
     assert eco.resource.area_ha == FOREST_AREA_HA
     total = sum(a.dependency_weight * a.annual_value(FOREST_AREA_HA) for a in eco.agents)
-    assert total == pytest.approx(3_000.0 * FOREST_AREA_HA, rel=1e-12)
+    assert total == pytest.approx(2_848.0 * FOREST_AREA_HA, rel=1e-12)
     assert build_forest_ecosystem(total_trees=2 * FOREST_TOTAL_TREES).resource.area_ha == (
         2 * FOREST_AREA_HA)
     assert build_forest_ecosystem(total_trees=500, area_ha=40.0).resource.area_ha == 40.0

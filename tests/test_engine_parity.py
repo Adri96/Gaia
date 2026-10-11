@@ -151,7 +151,6 @@ def _synthetic(
                 annual_absorption_tonnes=0.02,
                 soil_carbon_tonnes=1.0,
                 soil_release_fraction=0.3,
-                carbon_price_per_tonne=80.0,
             )
             if discount else None
         ),

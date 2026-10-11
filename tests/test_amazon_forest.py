@@ -340,14 +340,24 @@ def test_amazon_mycorrhizal_keystone_edge_is_strongest():
 
 def test_amazon_max_externality_matches_per_hectare_calibration():
     """
-    sum(weight × rate) equals the spec §8 service value (~€840/ha/yr) times
-    the reference area, so the agent rates scale with the stated hectares.
+    sum(weight × rate) equals the spec §8 non-carbon anchors (€580/ha/yr:
+    water cycling + fisheries + biodiversity) times the reference area, so
+    the agent rates scale with the stated hectares.
     """
     eco = build_amazon_ecosystem()
     assert eco.resource.area_ha == AMAZON_AREA_HA
     amazon_max = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
-    assert amazon_max == pytest.approx(840.0 * AMAZON_AREA_HA, rel=1e-9)
+    assert amazon_max == pytest.approx(580.0 * AMAZON_AREA_HA, rel=1e-9)
+
+
+def test_amazon_agent_value_equals_pricing_anchors():
+    """The agent value and the (carbon-free) pricing anchors agree."""
+    eco = build_amazon_ecosystem(with_pricing=True)
+    anchors = sum(p.anchor_value for p in eco.pricing.anchors)
+    agents = sum(
+        a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
+    assert anchors == pytest.approx(agents, rel=1e-12)
 
 
 def test_amazon_carbon_density_matches_literature():

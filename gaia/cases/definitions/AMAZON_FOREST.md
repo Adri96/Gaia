@@ -262,17 +262,20 @@ For the 1,000 ha reference area:
 
 | Anchor | Annual Value | Calculation | Confidence |
 |---|---|---|---|
-| **Carbon sequestration** | €88,000/yr | 11 Mg C/ha × 1,000 ha × 3.67 → 40,370 t CO₂ × €80/t (EU ETS) × 0.027 (net uptake fraction) | HIGH |
-| **Carbon stock protection** | €508,000/yr | 635,000 t CO₂ stock × €80/t ÷ 100 yr amortized | HIGH |
+| ~~Carbon sequestration~~ | ~~€88,000/yr~~ | Removed (Step 3.4): carbon is valued by `gaia/carbon.py` only | – |
+| ~~Carbon stock protection~~ | ~~€508,000/yr~~ | Removed (Step 3.4): the NPV capitalised this amortised stock a second time (audit C5) | – |
 | **Water cycling / rainfall** | €150,000/yr | Rainfall recycling service: $15-20/ha/yr × 1,000 ha + downwind agricultural value | MEDIUM |
+| **Fisheries** | €20,000/yr | River fish catch value for the 1,000 ha watershed | MEDIUM |
 | **Biodiversity / habitat** | €410,000/yr | $410/ha/yr meta-analysis mean × 1,000 ha (conservative, only local values) | MEDIUM |
-| **REDD+ avoided deforestation** | €5,400/yr | 54 t CO₂/ha × 1,000 ha × $10/t CO₂ × 1% annual deforestation risk | MEDIUM |
+| ~~REDD+ avoided deforestation~~ | ~~€5,400/yr~~ | Removed (Step 3.4): carbon (54 t CO₂/ha × $10/t × 1% risk) | – |
 
-**Total annual ecosystem service value: ~€840/ha/yr** (€840,000/yr for 1,000 ha), the figure the agent rates are calibrated to.
+**Total annual ecosystem service value: €580/ha/yr** (€580,000/yr for 1,000 ha) = water cycling + fisheries + biodiversity/habitat, the figure the agent rates (`annual_value_per_ha`, scaled by `area_ha`) use.
 
-> **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula. Summed as written above, the anchors give ~€1,160/ha/yr, not €840/ha/yr; the €840/ha/yr figure is kept unchanged (it is now the per-hectare agent value, `annual_value_per_ha`, scaled by `area_ha`) and is to be reconciled when carbon leaves the anchors and agent values entirely (Step 3.4).
+> **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula.
+>
+> **Carbon removed, value reconciled (Step 3.4, decision D3).** The anchors, carbon included, summed to ~€1,160/ha/yr while the agent value was €840/ha/yr, a figure with no derivation of its own. Carbon now leaves the anchors and the agent values entirely: `gaia/carbon.py` values the release of the stock (one-off, at the social cost of carbon) and the foregone absorption (PV of the annual flow). The agent value was brought to the sum of the remaining, documented anchors (€580/ha/yr) rather than the anchors to the undocumented €840.
 
-**Note on carbon anchor:** The Amazon is unusual because **stock protection** dominates over **annual sequestration**. Each hectare stores ~635 t CO₂. At EU ETS prices (€80/t), that's €50,800/ha in stored carbon value. The annual sequestration flow is much smaller because old-growth forests are near carbon equilibrium (net uptake only ~0.62 t C/ha/yr historically). The value comes from NOT releasing the stock.
+**Note on carbon:** The Amazon is unusual because **stock release** dominates over **annual sequestration**. Each hectare stores ~635 t CO₂ (~€106,000/ha at the social cost of carbon, €166/t). The annual sequestration flow is much smaller because old-growth forests are near carbon equilibrium (net uptake only ~0.62 t C/ha/yr historically). In Gaia this value enters once, as `gaia/carbon.py`'s carbon release, never through an agent or an anchor.
 
 This creates an interesting pricing dynamic for v0.7: the "price of destruction" is front-loaded (releasing stock), while the "price of prevention" accumulates (protecting ongoing services).
 
@@ -289,7 +292,7 @@ AmazonRainforest = EcosystemConfig(
     initial_population=400_000,  # 400 trees/ha × 1,000 ha (terra firme: ~400-600 stems/ha)
     carrying_capacity=None,  # DERIVED from substrate in v0.5+
     threshold=0.20,  # Amazon tipping point (Lovejoy & Nobre)
-    annual_value_per_ha=840.0,  # €/ha/yr baseline (from meta-analysis), × area_ha
+    annual_value_per_ha=580.0,  # €/ha/yr: non-carbon §8 anchors, × area_ha
     # v0.5 substrate
     substrate_type="terrestrial_soil",  # Oxisol/Ferralsol, modelled as terrestrial soil
     substrate_capacity_function="threshold",
@@ -298,8 +301,6 @@ AmazonRainforest = EcosystemConfig(
     # v0.7 pricing
     pricing_config=PricingConfig(
         anchors=[
-            AnchorPoint("canopy_trees", 508_000, "carbon_stock_protection", "HIGH"),
-            AnchorPoint("canopy_trees", 88_000, "carbon_sequestration", "HIGH"),
             AnchorPoint("canopy_trees", 150_000, "water_cycling", "MEDIUM"),
             AnchorPoint("aquatic_system", 20_000, "fisheries", "MEDIUM"),
             AnchorPoint("pollinators", 410_000, "biodiversity_habitat", "MEDIUM"),
@@ -338,7 +339,7 @@ AmazonRainforest = EcosystemConfig(
 ### Expected Model Behaviors
 
 1. **Mycorrhizal fungi emerge as most expensive agent** — highest network centrality (all producers depend on them), highest scarcity alpha, non-substitutable
-2. **Canopy trees are second most expensive** — largest carbon anchor, most demanded by consumers
+2. **Canopy trees are second most expensive** — water-cycling anchor, most demanded by consumers
 3. **Apex predators are cheapest** — few dependents, low network centrality
 4. **Degradation spiral is faster than Mediterranean cases** — due to dual feedback (substrate + atmospheric moisture)
 5. **Prevention advantage ratio should exceed Mediterranean cases** — stock protection value + moisture recycling feedback
@@ -372,7 +373,7 @@ AmazonRainforest = EcosystemConfig(
 | Tipping point (%) | 30% | 25% | 20% | **20%** |
 | Key interaction | Mycorrhizal | Mycorrhizal | Posidonia meadow | **Mycorrhizal + Water** |
 | Agents | 4-6 | 6-8 | 5-7 | **11** |
-| Annual service value (€/ha) | ~€100 | ~€60 | ~€2,500 | **~€840** |
+| Annual service value (€/ha) | ~€100 | ~€60 | ~€2,500 | **~€580** (non-carbon) |
 | Unique dynamics | Basic | Succession | Marine substrate | **Moisture feedback, tipping point** |
 
 ---

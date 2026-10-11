@@ -17,7 +17,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
     Adds: --version, --mode, --format, --output, --with-pricing, --summary-only,
-    --area-ha.
+    --area-ha, --carbon-price.
     """
     parser.add_argument(
         "--version",
@@ -60,6 +60,16 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "divided by the case's reference density). Agent values are "
             "€/ha/yr, so holding the area fixed while changing the number of "
             "units changes per-unit figures but not the per-ha externality"
+        ),
+    )
+    parser.add_argument(
+        "--carbon-price",
+        choices=["scc", "ets"],
+        default="scc",
+        help=(
+            "Carbon price: 'scc' (default), the social cost of carbon "
+            "(US EPA 2023, ~€166/t CO₂); 'ets', the market/ETS view "
+            "(EU ETS, €80/t), a private price that understates the damage"
         ),
     )
     parser.add_argument(
@@ -129,6 +139,28 @@ def add_restoration_arguments(
         default=0,
         metavar="YEARS",
         help="[restore mode] Years of maturation to simulate (default: 0=skip)",
+    )
+
+
+def apply_carbon_price_view(ecosystem, view: str) -> None:
+    """Set the carbon price of ``ecosystem`` to the named view, in place.
+
+    ``"scc"`` leaves the ecosystem unchanged (every shipped DiscountConfig
+    already uses the social cost of carbon). ``"ets"`` replaces the
+    resource's DiscountConfig (or DEFAULT_DISCOUNT) by a copy priced at the
+    market/ETS view (gaia.carbon.with_carbon_price_view).
+    """
+    if view == "scc":
+        return
+    import dataclasses
+
+    from gaia.carbon import with_carbon_price_view
+    from gaia.discount import DEFAULT_DISCOUNT
+
+    resource = ecosystem.resource
+    discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
+    ecosystem.resource = dataclasses.replace(
+        resource, discount=with_carbon_price_view(discount, view)
     )
 
 
