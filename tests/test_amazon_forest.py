@@ -11,14 +11,19 @@ ecological plausibility. They verify:
     - Report generation and content
 
 Numerical validation targets from AMAZON_FOREST.md §10:
-    - Total externality at 50% extraction: €50M – €200M range (much higher
-      than Mediterranean cases due to carbon stock)
+    - Total externality at 50% extraction: €5M – €20M range for the 1,000 ha
+      reference area (driven by the carbon stock)
     - Mycorrhizal price / Apex predator price > 20:1 (under v0.7 pricing)
     - Prevention advantage at 30% extraction: > 100× (extreme asymmetry)
 """
 
 import pytest
-from gaia.cases.amazon_forest import build_amazon_ecosystem, run_amazon
+from gaia.cases.amazon_forest import (
+    AMAZON_AREA_HA,
+    AMAZON_TOTAL_TREES,
+    build_amazon_ecosystem,
+    run_amazon,
+)
 from gaia.damage import logistic_damage
 from gaia.report import format_report
 from gaia.simulation import run_extraction
@@ -88,8 +93,7 @@ def test_amazon_apex_predators_lowest_weight():
 def test_amazon_at_threshold():
     """
     Cutting exactly 80,000 trees (20%): externality is substantial and exceeds
-    revenue. The Amazon's extreme ecosystem service value (14× ratio) means
-    that even at the safe threshold the social cost dominates.
+    revenue. Even at the safe threshold the social cost dominates.
     """
     eco = build_amazon_ecosystem(
         total_trees=TOTAL_TREES,
@@ -112,7 +116,7 @@ def test_amazon_at_threshold():
     assert result_threshold.total_externality_cost > result_threshold.total_private_revenue, (
         f"Amazon externality ({result_threshold.total_externality_cost:.2f}) "
         f"should exceed revenue ({result_threshold.total_private_revenue:.2f}) "
-        f"at all levels — 14× externality/revenue ratio"
+        f"at all levels"
     )
 
 
@@ -207,9 +211,8 @@ def test_amazon_externality_exceeds_revenue_at_all_levels():
     """
     Amazon externality exceeds revenue at ALL extraction levels.
 
-    With a 14× externality/revenue ratio, the economic case for extraction
-    is always negative from a social perspective. This is stronger than
-    Costa Brava (5.8×) and reflects the Amazon's extreme service value.
+    The economic case for extraction is always negative from a social
+    perspective.
     """
     eco = build_amazon_ecosystem(
         total_trees=TOTAL_TREES,
@@ -358,17 +361,27 @@ def test_amazon_mycorrhizal_keystone_edge_is_strongest():
     assert max_edge.strength == 0.40
 
 
-def test_amazon_higher_externality_than_costa_brava_rate():
+def test_amazon_max_externality_matches_per_hectare_calibration():
     """
-    The Amazon total effective max externality (~€8.4M) should be higher
-    than Costa Brava (~€3.5M), reflecting the higher service value per hectare
-    and much larger area.
+    sum(weight × rate) equals the spec §8 service value (~€840/ha/yr) times
+    the reference area, so the agent rates scale with the stated hectares.
     """
     eco = build_amazon_ecosystem()
-    # sum(weight × rate) gives the max effective externality
     amazon_max = sum(a.dependency_weight * a.monetary_rate for a in eco.agents)
-    # Costa Brava max is ~€3.5M (from costa_brava.py docstring)
-    assert amazon_max > 3_500_000.0, (
-        f"Amazon max externality ({amazon_max:.2f}) should exceed "
-        f"Costa Brava's €3.5M reflecting higher service value"
-    )
+    assert amazon_max == pytest.approx(840.0 * AMAZON_AREA_HA, rel=1e-9)
+
+
+def test_amazon_carbon_density_matches_literature():
+    """
+    Per-tree stored carbon × tree density reproduces the 173 Mg C/ha total
+    biomass (× 3.67 t CO₂ / t C) from spec §2, within ±10%.
+
+    Tree density comes from the case's own unit count and area, so a
+    mismatch between the two (C6: 400,000 trees on 10,000 ha = 40 trees/ha
+    while the per-tree carbon assumed 400 trees/ha) fails here.
+    """
+    eco = build_amazon_ecosystem()
+    assert eco.resource.total_units == AMAZON_TOTAL_TREES
+    trees_per_ha = eco.resource.total_units / AMAZON_AREA_HA
+    stored_per_ha = eco.resource.carbon_profile.stored_carbon_tonnes * trees_per_ha
+    assert stored_per_ha == pytest.approx(173.0 * 3.67, rel=0.10)
