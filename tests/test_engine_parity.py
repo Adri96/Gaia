@@ -125,7 +125,7 @@ def _synthetic(
             name=name,
             dependency_weight=weight,
             damage_function=_DAMAGE[kind](threshold),
-            monetary_rate=rate,
+            annual_value=rate,
             description=name,
             trophic_level=level if trophic else -1,
             is_keystone=keystone and name == "Producers",

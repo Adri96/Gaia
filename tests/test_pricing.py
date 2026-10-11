@@ -257,9 +257,9 @@ class TestSolver:
         healths = {"A": 1.0}
         interactions = []
         pricing = _simple_pricing_config(agent_names=agents, anchor_value=100.0)
-        monetary_rates = {"A": 50.0}
+        static_prices = {"A": 50.0}
 
-        result = solve_prices(agents, healths, interactions, pricing, monetary_rates)
+        result = solve_prices(agents, healths, interactions, pricing, static_prices)
 
         assert result.converged is True
         # At health=1.0, scarcity=1.0, no interactions: V = (I - 0)^-1 * 1 * 100 = 100
@@ -281,9 +281,9 @@ class TestSolver:
             scarcity_functions={},
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
         )
-        monetary_rates = {"A": 50.0, "B": 100.0}
+        static_prices = {"A": 50.0, "B": 100.0}
 
-        result = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result = solve_prices(agents, healths, edges, pricing, static_prices)
 
         assert result.converged is True
         # A depends on B, so A's price should be > its anchor (100) because
@@ -308,9 +308,9 @@ class TestSolver:
             scarcity_functions={},
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
         )
-        monetary_rates = {"A": 50.0, "B": 50.0, "C": 50.0}
+        static_prices = {"A": 50.0, "B": 50.0, "C": 50.0}
 
-        result = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result = solve_prices(agents, healths, edges, pricing, static_prices)
 
         for name in agents:
             assert result.prices[name] >= 0.0, (
@@ -323,9 +323,9 @@ class TestSolver:
         healths = {"A": 0.7}  # Some degradation -> scarcity > 1
         interactions = []
         pricing = _simple_pricing_config(agent_names=agents, anchor_value=100.0)
-        monetary_rates = {"A": 50.0}
+        static_prices = {"A": 50.0}
 
-        result = solve_prices(agents, healths, interactions, pricing, monetary_rates)
+        result = solve_prices(agents, healths, interactions, pricing, static_prices)
 
         # scarcity(0.7) = 1/0.7 ~ 1.43, so price = 1.43 * 100 ~ 143
         assert result.prices["A"] >= 100.0
@@ -342,16 +342,16 @@ class TestSolver:
             anchor_agent="A",
             anchor_value=100.0,
         )
-        monetary_rates = {"A": 50.0, "B": 50.0}
+        static_prices = {"A": 50.0, "B": 50.0}
 
-        result = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result = solve_prices(agents, healths, edges, pricing, static_prices)
 
         # spectral radius should be < 1.0 for this small system
         assert result.spectral_radius < 1.0
         assert result.spectral_radius >= 0.0
 
     def test_fallback_on_divergence(self):
-        """When convergence fails and fallback_to_static=True, return monetary_rates."""
+        """When convergence fails and fallback_to_static=True, return static_prices."""
         agents = ["A", "B"]
         healths = {"A": 0.01, "B": 0.01}  # Very degraded -> high scarcity
         # Strong bidirectional dependency to force spectral radius > 1
@@ -365,12 +365,12 @@ class TestSolver:
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
             fallback_to_static=True,
         )
-        monetary_rates = {"A": 50.0, "B": 75.0}
+        static_prices = {"A": 50.0, "B": 75.0}
 
-        result = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result = solve_prices(agents, healths, edges, pricing, static_prices)
 
         # If spectral radius >= 1 and fallback_to_static is True,
-        # prices should match monetary_rates and converged=False
+        # prices should match static_prices and converged=False
         if not result.converged:
             assert result.prices["A"] == pytest.approx(50.0)
             assert result.prices["B"] == pytest.approx(75.0)
@@ -391,10 +391,10 @@ class TestSolver:
             anchor_agent="A",
             anchor_value=100.0,
         )
-        monetary_rates = {"A": 50.0, "B": 50.0}
+        static_prices = {"A": 50.0, "B": 50.0}
 
-        result1 = solve_prices(agents, healths, edges, pricing, monetary_rates)
-        result2 = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result1 = solve_prices(agents, healths, edges, pricing, static_prices)
+        result2 = solve_prices(agents, healths, edges, pricing, static_prices)
 
         assert result1.prices["A"] == pytest.approx(result2.prices["A"])
         assert result1.prices["B"] == pytest.approx(result2.prices["B"])
@@ -423,16 +423,16 @@ class TestPriceDynamics:
             scarcity_functions={},
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
         )
-        monetary_rates = {"A": 50.0, "B": 100.0}
+        static_prices = {"A": 50.0, "B": 100.0}
 
         # Pristine
         healths_pristine = {"A": 1.0, "B": 1.0}
-        result_pristine = solve_prices(agents, healths_pristine, edges, pricing, monetary_rates)
+        result_pristine = solve_prices(agents, healths_pristine, edges, pricing, static_prices)
         total_pristine = sum(result_pristine.prices.values())
 
         # Degraded
         healths_degraded = {"A": 0.5, "B": 0.5}
-        result_degraded = solve_prices(agents, healths_degraded, edges, pricing, monetary_rates)
+        result_degraded = solve_prices(agents, healths_degraded, edges, pricing, static_prices)
         total_degraded = sum(result_degraded.prices.values())
 
         assert total_degraded > total_pristine
@@ -455,10 +455,10 @@ class TestPriceDynamics:
             scarcity_functions={},
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
         )
-        monetary_rates = {"A": 50.0, "B": 50.0, "C": 50.0}
+        static_prices = {"A": 50.0, "B": 50.0, "C": 50.0}
 
         healths = {"A": 0.5, "B": 0.5, "C": 0.5}
-        result = solve_prices(agents, healths, edges, pricing, monetary_rates)
+        result = solve_prices(agents, healths, edges, pricing, static_prices)
 
         # B and C depend on A, so B and C get value from A.
         # B and C should have higher prices than A (since they pick up A's
@@ -482,16 +482,16 @@ class TestPriceDynamics:
             scarcity_functions={},
             default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
         )
-        monetary_rates = {"A": 50.0, "B": 50.0}
+        static_prices = {"A": 50.0, "B": 50.0}
 
         # Baseline: A is healthy
         result_healthy = solve_prices(
-            agents, {"A": 1.0, "B": 1.0}, edges, pricing, monetary_rates
+            agents, {"A": 1.0, "B": 1.0}, edges, pricing, static_prices
         )
 
         # Degraded: A is damaged -> scarcity(A) rises -> B picks up more value
         result_degraded = solve_prices(
-            agents, {"A": 0.3, "B": 1.0}, edges, pricing, monetary_rates
+            agents, {"A": 0.3, "B": 1.0}, edges, pricing, static_prices
         )
 
         # B's price should increase when A is degraded, because B depends on A
@@ -542,7 +542,7 @@ class TestSimulationIntegration:
         # The total externality should generally differ from the static case.
         # At moderate degradation, scarcity > 1 increases costs.
         # We verify that the pricing result is present and total externality differs.
-        assert result_yes.total_externality_cost != result_no.total_externality_cost
+        assert result_yes.annual_externality != result_no.annual_externality
 
     def test_price_vector_in_steps(self):
         """When pricing is active, each step should have price_result set."""

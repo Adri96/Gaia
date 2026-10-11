@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from gaia.cases.forest import build_forest_ecosystem
+from gaia.cases.forest import _FOREST_SUCCESSION, build_forest_ecosystem
 from gaia.models import RestorationCost
 from gaia.recovery import logistic_recovery
 from gaia.serialization import (
@@ -61,9 +61,11 @@ class TestExtractionSerialization:
         d = simulation_result_to_dict(result)
         s = d["summary"]
         assert s["total_units_extracted"] == 50
-        assert "total_private_revenue" in s
-        assert "total_externality_cost" in s
-        assert "net_social_cost" in s
+        assert s["revenue_eur"] == round(result.revenue, 2)
+        assert s["annual_externality_eur_yr"] == round(result.annual_externality, 2)
+        assert s["pv_externality_eur_pv"] == round(result.pv_externality, 2)
+        assert s["net_social_cost_eur_pv"] == round(result.net_social_cost, 2)
+        assert s["discount_is_default"] is False
         assert "final_ecosystem_health" in s
         assert s["num_steps"] == 50
 
@@ -95,7 +97,7 @@ class TestExtractionSerialization:
         agent = d["ecosystem"]["agents"][0]
         assert "name" in agent
         assert "dependency_weight" in agent
-        assert "monetary_rate" in agent
+        assert "annual_value_eur_yr" in agent
         assert "damage_function" not in agent
 
     def test_step_agent_damages_as_dict(self):
@@ -110,16 +112,16 @@ class TestExtractionSerialization:
         d = simulation_result_to_dict(result)
         assert "npv_analysis" in d
         npv = d["npv_analysis"]
-        assert "direct" in npv
-        assert "carbon_release" in npv
-        assert "total" in npv
-        assert "horizon" in npv
+        assert "services_eur_pv" in npv
+        assert "carbon_release_eur_pv" in npv
+        assert npv["total_eur_pv"] == d["summary"]["pv_externality_eur_pv"]
+        assert "horizon_years" in npv
 
     def test_pricing_present_when_enabled(self):
         result, _ = _run_extraction(with_pricing=True)
         d = simulation_result_to_dict(result)
         assert "pricing" in d
-        assert "prices" in d["pricing"]
+        assert "prices_eur_yr" in d["pricing"]
         assert "converged" in d["pricing"]
 
     def test_pricing_absent_when_disabled(self):
@@ -170,9 +172,9 @@ class TestRestorationSerialization:
         d = restoration_result_to_dict(result)
         s = d["summary"]
         assert s["total_units_restored"] == 50
-        assert "total_restoration_cost" in s
-        assert "total_recovered_value" in s
-        assert "net_restoration_value" in s
+        assert "total_restoration_cost_eur" in s
+        assert "annual_recovered_value_eur_yr" in s
+        assert s["net_restoration_value_eur_pv"] == round(result.net_restoration_pv, 2)
         assert "prevention_advantage" in s
         assert "final_ecosystem_health" in s
 
@@ -180,10 +182,10 @@ class TestRestorationSerialization:
         result, _ = _run_restoration()
         d = restoration_result_to_dict(result)
         rc = d["restoration_cost"]
-        assert rc["planting_cost_per_unit"] == 50.0
-        assert rc["annual_maintenance_per_unit"] == 10.0
+        assert rc["planting_cost_per_unit_eur"] == 50.0
+        assert rc["annual_maintenance_per_unit_eur_yr"] == 10.0
         assert rc["maintenance_years"] == 10
-        assert "total_cost_per_unit" in rc
+        assert "total_cost_per_unit_eur" in rc
 
     def test_steps_included_by_default(self):
         result, _ = _run_restoration()
@@ -201,7 +203,7 @@ class TestRestorationSerialization:
         d = restoration_result_to_dict(result)
         step = d["steps"][0]
         assert isinstance(step["agent_recoveries"], dict)
-        assert isinstance(step["agent_service_values"], dict)
+        assert isinstance(step["agent_service_value_eur_yr"], dict)
 
     def test_notes_included_when_provided(self):
         result, _ = _run_restoration()
@@ -262,3 +264,83 @@ class TestToJson:
         lines = json_str.split("\n")
         indented = [l for l in lines if l.startswith("    ")]
         assert len(indented) > 0
+
+
+# ── Every monetary key carries its unit ──────────────────────────────────────
+
+# Numeric JSON keys that are not money (counts, ratios, physical quantities,
+# years). Every other numeric key must end in a unit suffix.
+_NON_MONETARY_KEYS = {
+    # resource / agents / interactions
+    "total_units", "safe_threshold_ratio", "safe_threshold_units",
+    "area_ha", "units_per_ha", "discount_rate", "discount_horizon_years",
+    "carbon_stored_per_unit", "carbon_absorption_per_unit_yr",
+    "dependency_weight", "trophic_level", "keystone_threshold", "strength",
+    # extraction summary and steps
+    "total_units_extracted", "final_ecosystem_health", "num_steps", "step",
+    "units_extracted", "depletion_ratio", "ecosystem_health", "agent_damages",
+    "agent_direct_damages", "agent_cascade_damages", "model_confidence",
+    "substrate_erosion", "effective_k", "k_fraction", "discount_factor",
+    # restoration
+    "total_units_restored", "units_restored", "recovery_ratio",
+    "agent_recoveries", "maintenance_years", "year", "service_fraction",
+    "annual_carbon_absorbed", "cumulative_carbon_absorbed",
+    "years_to_pioneer", "years_to_50pct", "years_to_90pct",
+    "substrate_ceiling", "substrate_recovery_years", "carbon_payback_years",
+    "projected_breakeven_year", "horizon_years",
+    # ratios
+    "prevention_advantage", "prevention_advantage_with_substrate", "roi",
+    "pa_simple", "pa_with_carbon", "pa_with_substrate", "pa_full",
+    # pricing decomposition
+    "scarcity_multipliers", "demand_multipliers", "spectral_radius", "iterations",
+}
+_UNIT_SUFFIXES = ("_eur_yr", "_eur_pv", "_eur", "_eur_per_t")
+
+
+def _numeric_keys(obj, key, agent_names, out):
+    if isinstance(obj, bool) or obj is None:
+        return out
+    if isinstance(obj, (int, float)):
+        out.add(key)
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            # Per-agent maps are keyed by agent name: keep the parent key
+            _numeric_keys(v, key if k in agent_names else k, agent_names, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _numeric_keys(v, key, agent_names, out)
+    return out
+
+
+@pytest.mark.parametrize("make", [
+    lambda: _run_extraction()[0],
+    lambda: _run_extraction(with_pricing=True)[0],
+    lambda: _run_restoration()[0],
+])
+def test_every_monetary_key_has_unit_suffix(make):
+    result = make()
+    d = json.loads(to_json(result, include_steps=True))
+    names = {a.name for a in result.ecosystem.agents}
+    keys = _numeric_keys(d, None, names, set())
+    unlabelled = sorted(
+        k for k in keys
+        if k not in _NON_MONETARY_KEYS and not k.endswith(_UNIT_SUFFIXES)
+    )
+    assert not unlabelled, f"numeric keys without a unit or allow-list entry: {unlabelled}"
+
+
+def test_restoration_with_maturation_keys_have_units():
+    eco = build_forest_ecosystem(total_trees=100, safe_threshold_ratio=0.3)
+    cost = RestorationCost(50.0, 10.0, 10)
+    fns = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    result = run_restoration(eco, 50, cost, fns,
+                             succession_curve=_FOREST_SUCCESSION, time_horizon_years=30)
+    d = json.loads(to_json(result, include_steps=True))
+    assert "maturation_gap_eur_pv" in d["maturation"]
+    names = {a.name for a in eco.agents}
+    keys = _numeric_keys(d, None, names, set())
+    unlabelled = sorted(
+        k for k in keys
+        if k not in _NON_MONETARY_KEYS and not k.endswith(_UNIT_SUFFIXES)
+    )
+    assert not unlabelled, unlabelled

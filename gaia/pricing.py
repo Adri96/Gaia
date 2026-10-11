@@ -3,7 +3,7 @@ Gaia v0.7 -- Endogenous pricing engine.
 
 Implements a Leontief-Hannon input-output pricing model for ecosystem services.
 Prices emerge endogenously from network structure, scarcity, and anchor values
-rather than being fixed exogenously as static monetary rates.
+rather than being fixed exogenously as static agent annual values.
 
 The theoretical foundation draws on three pillars:
 
@@ -487,7 +487,7 @@ def solve_prices(
     agent_healths: Dict[str, float],
     interactions: List[InteractionEdge],
     pricing: PricingConfig,
-    monetary_rates: Dict[str, float],
+    static_prices: Dict[str, float],
 ) -> PriceResult:
     """Solve the Leontief-Hannon price system for the current ecosystem state.
 
@@ -500,7 +500,7 @@ def solve_prices(
     4. Compute SW = S @ W (the technical coefficients matrix).
     5. Compute spectral_radius(SW) to check convergence.
     6. If spectral_radius >= 1.0:
-       a. If fallback_to_static: return static monetary_rates.
+       a. If fallback_to_static: return static_prices.
        b. Else: scale down scarcity multipliers until spectral_radius < 0.95.
     7. Solve V = (I - SW)^(-1) * S * A via Gaussian elimination.
     8. Decompose prices into scarcity, demand, and anchor contributions.
@@ -515,7 +515,8 @@ def solve_prices(
         agent_healths: Health fraction per agent (0.0 to 1.0).
         interactions: List of InteractionEdge defining the value network.
         pricing: PricingConfig with anchors, scarcity functions, solver params.
-        monetary_rates: Fallback static prices per agent (from Agent.monetary_rate).
+        static_prices: Fallback prices per agent: each agent's static annual
+            value (€/yr at full damage, Agent.annual_value).
 
     Returns:
         PriceResult with computed prices and full decomposition.
@@ -556,7 +557,7 @@ def solve_prices(
             for i in range(n):
                 scarcity_mults[agent_names[i]] = s_matrix[i][i]
             return PriceResult(
-                prices=dict(monetary_rates),
+                prices=dict(static_prices),
                 scarcity_multipliers=scarcity_mults,
                 demand_multipliers={name: 1.0 for name in agent_names},
                 anchor_contributions={name: 0.0 for name in agent_names},
@@ -613,7 +614,7 @@ def solve_prices(
         converged: bool = True
     except ValueError:
         # Singular matrix — fall back to static prices
-        v_vector = [monetary_rates.get(agent_names[i], 0.0) for i in range(n)]
+        v_vector = [static_prices.get(agent_names[i], 0.0) for i in range(n)]
         converged = False
 
     # Step 6: Ensure non-negative prices (clamp to zero)

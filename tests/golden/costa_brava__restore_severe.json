@@ -14,110 +14,110 @@
   ],
   "cli_summary_json": {
     "carbon_breakeven": {
-      "breakeven_price": 376.37,
-      "current_price": 80.0,
-      "gap_to_current": 296.37,
+      "breakeven_price_eur_per_t": 376.37,
+      "current_price_eur_per_t": 80.0,
+      "gap_to_current_eur_per_t": 296.37,
       "profitable_at_current": false,
       "projected_breakeven_year": 53
     },
     "ecosystem": {
       "agents": [
         {
+          "annual_value_eur_yr": 3077000.0,
           "dependency_weight": 0.13,
           "description": "Keystone underground network \u2014 nutrient/water transport, cascades to all tree regeneration",
           "is_keystone": true,
           "keystone_threshold": 0.3,
-          "monetary_rate": 3077000.0,
           "name": "Mycorrhizal Fungi",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 3500000.0,
           "dependency_weight": 0.1,
           "description": "Soil microbiome and biocrusts \u2014 nitrogen fixation, carbon storage, erosion prevention",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 3500000.0,
           "name": "Soil Microbiome",
           "trophic_level": -1
         },
         {
+          "annual_value_eur_yr": 2500000.0,
           "dependency_weight": 0.12,
           "description": "Remaining canopy trees \u2014 self-reinforcing decline from microclimate loss and network fragmentation",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 2500000.0,
           "name": "Canopy Trees",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 1875000.0,
           "dependency_weight": 0.08,
           "description": "Understory shrubs and aromatic plants \u2014 microclimate collapse and biodiversity loss",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 1875000.0,
           "name": "Understory & Matorral",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 3500000.0,
           "dependency_weight": 0.1,
           "description": "Keystone pollination services \u2014 base of animal food web, agricultural crop dependency",
           "is_keystone": true,
           "keystone_threshold": 0.4,
-          "monetary_rate": 3500000.0,
           "name": "Pollinators & Insects",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 2500000.0,
           "dependency_weight": 0.08,
           "description": "Nesting and migratory stopover habitat \u2014 seed dispersal, insect control, ecotourism",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 2500000.0,
           "name": "Forest Birds",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 2571000.0,
           "dependency_weight": 0.07,
           "description": "Habitat displacement \u2014 predator-prey disruption, human-wildlife conflict, crop damage",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 2571000.0,
           "name": "Forest Mammals",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 3000000.0,
           "dependency_weight": 0.04,
           "description": "Apex trophic control \u2014 carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 3000000.0,
           "name": "Raptors & Apex Predators",
           "trophic_level": 3
         },
         {
+          "annual_value_eur_yr": 4167000.0,
           "dependency_weight": 0.12,
           "description": "Aquifer recharge, flood control, drought buffering \u2014 Costa Brava water and tourism supply",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 4167000.0,
           "name": "Watershed & Water Cycle",
           "trophic_level": -1
         },
         {
+          "annual_value_eur_yr": 4500000.0,
           "dependency_weight": 0.1,
           "description": "CO\u2082 release, lost sequestration, fire risk amplification \u2014 exponential accumulation, no plateau",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 4500000.0,
           "name": "Carbon & Climate",
           "trophic_level": -1
         },
         {
+          "annual_value_eur_yr": 8333000.0,
           "dependency_weight": 0.06,
           "description": "Water, fire protection, tourism economy, traditional livelihoods \u2014 Costa Brava coastal dependency",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 8333000.0,
           "name": "Human Communities",
           "trophic_level": -1
         }
@@ -246,7 +246,7 @@
       "name": "Costa Brava Holm Oak Forest",
       "resource": {
         "carbon_absorption_per_unit_yr": 0.018,
-        "carbon_price_per_tonne": 80.0,
+        "carbon_price_eur_per_t": 80.0,
         "carbon_stored_per_unit": 0.5,
         "discount_horizon_years": 100,
         "discount_rate": 0.023,
@@ -258,34 +258,34 @@
         "safe_threshold_units": 250,
         "substrate_type": "terrestrial_soil",
         "total_units": 1000,
-        "unit_value": 60.0
+        "unit_value_eur": 60.0
       }
     },
     "gaia_version": "<gaia_version>",
     "mode": "restoration",
     "npv_analysis": {
-      "carbon_benefits": 183919.11,
+      "carbon_benefits_eur_pv": 183919.11,
       "carbon_payback_years": 33,
-      "cost": 241634.38,
-      "horizon": 100,
-      "net_present_value": 383461223.24,
+      "cost_eur_pv": 241634.38,
+      "horizon_years": 100,
+      "net_present_value_eur_pv": 383461223.24,
       "roi": 1587.9481,
-      "service_benefits": 383518938.51,
-      "total_benefits": 383702857.62
+      "service_benefits_eur_pv": 383518938.51,
+      "total_benefits_eur_pv": 383702857.62
     },
     "prevention_advantage_v06": {
-      "npv_prevention_cost": 54000.0,
-      "npv_restoration_total": 5528285.69,
       "pa_full": 103.3757,
       "pa_simple": 6.0833,
       "pa_with_carbon": 54.8256,
-      "pa_with_substrate": 102.5749
+      "pa_with_substrate": 102.5749,
+      "prevention_cost_eur": 54000.0,
+      "restoration_total_eur_pv": 5528285.69
     },
     "restoration_cost": {
-      "annual_maintenance_per_unit": 15.0,
+      "annual_maintenance_per_unit_eur_yr": 15.0,
       "maintenance_years": 15,
-      "planting_cost_per_unit": 80.0,
-      "total_cost_per_unit": 305.0
+      "planting_cost_per_unit_eur": 80.0,
+      "total_cost_per_unit_eur": 305.0
     },
     "substrate": {
       "prevention_advantage_with_substrate": 28.0864,
@@ -293,12 +293,12 @@
       "substrate_recovery_years": 51.1
     },
     "summary": {
+      "annual_recovered_value_eur_yr": 3500000.0,
       "final_ecosystem_health": 1.0,
-      "net_restoration_value": 3225500.0,
+      "net_restoration_value_eur_pv": 383461223.24,
       "num_steps": 900,
       "prevention_advantage": 6.0833,
-      "total_recovered_value": 3500000.0,
-      "total_restoration_cost": 274500.0,
+      "total_restoration_cost_eur": 274500.0,
       "total_units_restored": 900
     }
   },
@@ -316,6 +316,7 @@
     "Watershed & Water Cycle": 500040.0
   },
   "result": {
+    "annual_recovered_value": 3500000.0,
     "carbon_breakeven": {
       "breakeven_price": 376.3710399283337,
       "current_price": 80.0,
@@ -327,7 +328,8 @@
     },
     "extraction_npv": null,
     "final_ecosystem_health": 1.0,
-    "net_restoration_value": 3225500.0,
+    "maturation_gap_pv": 0.0,
+    "net_restoration_pv": 383461223.2378072,
     "prevention_advantage": 6.083333333333333,
     "prevention_advantage_v06": {
       "npv_prevention_cost": 54000.0,
@@ -356,8 +358,6 @@
     "substrate_ceiling": 0.9932104895104896,
     "substrate_recovery_cost": 0.0,
     "substrate_recovery_years": 51.09999999999966,
-    "total_maturation_gap": 0.0,
-    "total_recovered_value": 3500000.0,
     "total_restoration_cost": 274500.0,
     "total_units_restored": 900,
     "years_to_50pct": 0.0,

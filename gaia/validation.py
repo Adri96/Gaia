@@ -12,6 +12,8 @@ v0.6: Added validation for DiscountConfig.
 v0.7: Added validation for ScarcityFunction, AnchorPoint, PricingConfig.
 """
 
+import math
+
 from gaia.models import (
     AnchorPoint,
     CarbonProfile,
@@ -97,10 +99,10 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
                 f"Agent '{agent.name}' dependency_weight must be in (0.0, 1.0], "
                 f"got {agent.dependency_weight}"
             )
-        if agent.monetary_rate < 0.0:
+        if not (math.isfinite(agent.annual_value) and agent.annual_value >= 0.0):
             raise ValueError(
-                f"Agent '{agent.name}' monetary_rate must be >= 0.0, "
-                f"got {agent.monetary_rate}"
+                f"Agent '{agent.name}' annual_value must be finite and >= 0.0 "
+                f"(€/yr at full damage), got {agent.annual_value}"
             )
         weight_sum += agent.dependency_weight
 

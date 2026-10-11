@@ -46,7 +46,7 @@ def extraction_loop_cy(
     # Per-agent flat arrays (length n_agents):
     list damage_params,       # list of (kind, param1, param2, param3) tuples
     list dep_weights,         # dependency_weight per agent
-    list monetary_rates,      # monetary_rate per agent
+    list annual_values,       # €/yr lost at full damage per agent (Agent.annual_value)
     list trophic_levels,      # trophic_level per agent (int)
     list is_keystone,         # bool per agent
     list keystone_thresholds, # float per agent
@@ -91,8 +91,8 @@ def extraction_loop_cy(
     Returns:
         List of tuples, one per step:
         (step, units_extracted, depletion_ratio,
-         effective_damages, agent_costs, marginal_cost, cumulative_cost,
-         private_revenue, ecosystem_health,
+         effective_damages, agent_annual_costs, marginal_annual_externality,
+         annual_externality, revenue, ecosystem_health,
          direct_damages, cascade_damages, keystone_triggered,
          zone, confidence, irreversibility_warning,
          substrate_erosion, effective_k, k_fraction)
@@ -159,7 +159,7 @@ def extraction_loop_cy(
 
     # Pre-extract per-agent arrays to C-level
     cdef list c_dep_weights = [<double>dep_weights[i] for i in range(n_agents)]
-    cdef list c_mon_rates = [<double>monetary_rates[i] for i in range(n_agents)]
+    cdef list c_annual_values = [<double>annual_values[i] for i in range(n_agents)]
     cdef list c_trophic = [<int>trophic_levels[i] for i in range(n_agents)]
     cdef list c_is_keystone = [<bint>is_keystone[i] for i in range(n_agents)]
     cdef list c_ks_thresholds = [<double>keystone_thresholds[i] for i in range(n_agents)]
@@ -276,13 +276,13 @@ def extraction_loop_cy(
             cascade_damages = [0.0] * n_agents
             keystone_triggered = []
 
-        # ── Phase 3: Cost computation ──────────────────────────────────
+        # ── Phase 3: Annual cost computation (€/yr) ────────────────────
         agent_costs = [0.0] * n_agents
         step_total_cost = 0.0
         health_sum = 0.0
 
         for i in range(n_agents):
-            rate = c_mon_rates[i]
+            rate = c_annual_values[i]
             weight = c_dep_weights[i]
             cost = effective_damages[i] * weight * rate
             agent_costs[i] = cost

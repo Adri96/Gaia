@@ -87,7 +87,7 @@ def test_posidonia_coastal_protection_highest_physical_cost():
     # Map agent names to their final costs
     final_step = result.steps[-1]
     agent_costs = {
-        eco.agents[i].name: final_step.agent_costs[i]
+        eco.agents[i].name: final_step.agent_annual_costs[i]
         for i in range(len(eco.agents))
     }
 
@@ -106,11 +106,11 @@ def test_posidonia_coastal_protection_highest_physical_cost():
 
 def test_posidonia_at_threshold():
     """
-    Destroying exactly 1,000 ha (20%): externality < one-time revenue.
+    Destroying exactly 1,000 ha (20%): one-off revenue is weighed against the
+    present value of the recurring annual loss.
 
-    At the safe threshold, the single-year externality is still below the
-    one-time private gain. The annual note flags that this changes within ~2
-    years as recurring losses accumulate.
+    Replaces a test asserting that the single-year externality is below the
+    one-off revenue, which compared a yearly flow with a one-off amount.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -120,28 +120,20 @@ def test_posidonia_at_threshold():
     result = run_extraction(eco, THRESHOLD_UNITS)
 
     # Revenue = 1000 ha * 2500 = 2,500,000
-    assert result.total_private_revenue == 2_500_000.0
-    assert result.net_social_cost > 0, (
-        f"At safe threshold (20%), single-year net_social_cost should be positive, "
-        f"got {result.net_social_cost:.2f}. Note: annual recurring losses change "
-        f"this picture within ~2 years."
-    )
+    assert result.revenue == 2_500_000.0
+    assert result.net_social_cost == pytest.approx(
+        result.pv_externality - result.revenue, rel=1e-12)
+    # The annual loss recurs every year of the 200-year horizon
+    assert result.extraction_npv.horizon == 200
+    assert result.extraction_npv.direct > 10 * result.annual_externality
 
 
 def test_posidonia_past_threshold():
     """
     Destroying 2,500 ha (50%): externality is much larger than at threshold.
 
-    The Posidonia case uses an inverted economic model: one-time private revenue
-    vs annual recurring externality costs. The single-year externality snapshot does
-    NOT cross the one-time revenue figure (revenue per ha is high relative to
-    annual service loss per ha at any single moment). The real crossover requires
-    multi-year NPV — a v0.6 feature.
-
-    The correct invariant here: externality at 50% must be substantially larger
-    than at 20% (the safe threshold), confirming the S-curve acceleration. The
-    externality at 50% should also be at least 50% of one-time revenue, confirming
-    that within 2 years of annual losses the private gain is fully offset.
+    The invariant: externality at 50% must be substantially larger than at 20%
+    (the safe threshold), confirming the S-curve acceleration.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -152,20 +144,12 @@ def test_posidonia_past_threshold():
     result_threshold = run_extraction(eco, THRESHOLD_UNITS)  # 20%
 
     # Revenue = 2500 * 2500 = 6,250,000
-    assert result_past.total_private_revenue == 6_250_000.0
+    assert result_past.revenue == 6_250_000.0
 
     # Externality at 50% must be substantially larger than at threshold (S-curve accel)
-    assert result_past.total_externality_cost > 3 * result_threshold.total_externality_cost, (
-        f"Externality at 50% ({result_past.total_externality_cost:.2f}) should be "
-        f">>3× the threshold externality ({result_threshold.total_externality_cost:.2f})"
-    )
-
-    # Annual externality at 50% should be >= 50% of the one-time revenue,
-    # meaning within ~2 years of annual losses the private gain is fully offset
-    assert result_past.total_externality_cost >= 0.5 * result_past.total_private_revenue, (
-        f"Annual externality at 50% ({result_past.total_externality_cost:.2f}) should be "
-        f">= 50% of one-time revenue ({result_past.total_private_revenue:.2f}), "
-        f"meaning payback < 2 years"
+    assert result_past.annual_externality > 3 * result_threshold.annual_externality, (
+        f"Externality at 50% ({result_past.annual_externality:.2f}) should be "
+        f">>3× the threshold externality ({result_threshold.annual_externality:.2f})"
     )
 
 
@@ -173,8 +157,8 @@ def test_posidonia_heavy_extraction():
     """
     Destroying 4,000 ha (80%): substantial externality, critically low health.
 
-    At 80% destruction the ecosystem is near collapse. Externality should be
-    at least 50% of revenue and ecosystem health critically low.
+    At 80% destruction the ecosystem is near collapse: ecosystem health is
+    critically low.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -183,10 +167,6 @@ def test_posidonia_heavy_extraction():
     )
     result = run_extraction(eco, 4_000)
 
-    assert result.total_externality_cost >= 0.5 * result.total_private_revenue, (
-        f"At 80% destruction, externality ({result.total_externality_cost:.2f}) "
-        f"should be >= 50% of revenue ({result.total_private_revenue:.2f})"
-    )
     assert result.final_ecosystem_health < 0.10, (
         f"At 80% destruction, ecosystem health should be < 10%, "
         f"got {result.final_ecosystem_health:.1%}"
@@ -210,7 +190,7 @@ def test_posidonia_marginal_cost_curve_shape():
     cost_at = {}
     for step in result.steps:
         if step.units_extracted in (500, 1_000, 2_000):
-            cost_at[step.units_extracted] = step.cumulative_cost
+            cost_at[step.units_extracted] = step.annual_externality
 
     inc_pre_threshold = cost_at[1_000] - cost_at[500]     # 10% → 20%
     inc_post_threshold = cost_at[2_000] - cost_at[1_000]  # 20% → 40%
@@ -263,7 +243,7 @@ def test_posidonia_report_generates():
     assert isinstance(report, str)
     assert len(report) > 100
     assert "Costa Brava Posidonia Meadow" in report
-    assert "TOTAL EXTERNALITY" in report
+    assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 
 

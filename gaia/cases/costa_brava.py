@@ -39,17 +39,17 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
     | Carbon & Climate weight       | 0.10          | ratio   | User spec      | Medium     |
     | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
-    | Canopy Trees monetary_rate    | 2,500,000 €   | €       | Calibrated     | Low        |
-    | Understory monetary_rate      | 1,875,000 €   | €       | Calibrated     | Low        |
-    | Mycorrhizal monetary_rate     | 3,077,000 €   | €       | Calibrated     | Low        |
-    | Soil Microbiome monetary_rate | 3,500,000 €   | €       | Calibrated     | Low        |
-    | Pollinators monetary_rate     | 3,500,000 €   | €       | Calibrated     | Low        |
-    | Forest Birds monetary_rate    | 2,500,000 €   | €       | Calibrated     | Low        |
-    | Forest Mammals monetary_rate  | 2,571,000 €   | €       | Calibrated     | Low        |
-    | Raptors monetary_rate         | 3,000,000 €   | €       | Calibrated     | Low        |
-    | Watershed monetary_rate       | 4,167,000 €   | €       | Calibrated     | Low        |
-    | Carbon & Climate monetary_rate| 4,500,000 €   | €       | Calibrated     | Low        |
-    | Human Communities monetary_rate| 8,333,000 €  | €       | Calibrated     | Low        |
+    | Canopy Trees annual_value     | 2,500,000 €   | €/yr    | Calibrated     | Low        |
+    | Understory annual_value       | 1,875,000 €   | €/yr    | Calibrated     | Low        |
+    | Mycorrhizal annual_value      | 3,077,000 €   | €/yr    | Calibrated     | Low        |
+    | Soil Microbiome annual_value  | 3,500,000 €   | €/yr    | Calibrated     | Low        |
+    | Pollinators annual_value      | 3,500,000 €   | €/yr    | Calibrated     | Low        |
+    | Forest Birds annual_value     | 2,500,000 €   | €/yr    | Calibrated     | Low        |
+    | Forest Mammals annual_value   | 2,571,000 €   | €/yr    | Calibrated     | Low        |
+    | Raptors annual_value          | 3,000,000 €   | €/yr    | Calibrated     | Low        |
+    | Watershed annual_value        | 4,167,000 €   | €/yr    | Calibrated     | Low        |
+    | Carbon & Climate annual_value | 4,500,000 €   | €/yr    | Calibrated     | Low        |
+    | Human Communities annual_value | 8,333,000 €  | €/yr    | Calibrated     | Low        |
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | exponential base (carbon)     | 2.0           | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
@@ -248,7 +248,7 @@ def build_costa_brava_ecosystem(
             name="Mycorrhizal Fungi",
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_077_000.0,
+            annual_value=3_077_000.0,
             description="Keystone underground network — nutrient/water transport, cascades to all tree regeneration",
             # v0.3: Producer-level, KEYSTONE agent
             trophic_level=0,
@@ -259,7 +259,7 @@ def build_costa_brava_ecosystem(
             name="Soil Microbiome",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_500_000.0,
+            annual_value=3_500_000.0,
             description="Soil microbiome and biocrusts — nitrogen fixation, carbon storage, erosion prevention",
             # v0.3: Abiotic process agent
             trophic_level=-1,
@@ -269,7 +269,7 @@ def build_costa_brava_ecosystem(
             name="Canopy Trees",
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=2_500_000.0,
+            annual_value=2_500_000.0,
             description="Remaining canopy trees — self-reinforcing decline from microclimate loss and network fragmentation",
             # v0.3: Producer — the resource itself
             trophic_level=0,
@@ -278,7 +278,7 @@ def build_costa_brava_ecosystem(
             name="Understory & Matorral",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=1_875_000.0,
+            annual_value=1_875_000.0,
             description="Understory shrubs and aromatic plants — microclimate collapse and biodiversity loss",
             # v0.3: Secondary producer
             trophic_level=0,
@@ -288,7 +288,7 @@ def build_costa_brava_ecosystem(
             name="Pollinators & Insects",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_500_000.0,
+            annual_value=3_500_000.0,
             description="Keystone pollination services — base of animal food web, agricultural crop dependency",
             # v0.3: Primary consumer, KEYSTONE functional group
             trophic_level=1,
@@ -300,7 +300,7 @@ def build_costa_brava_ecosystem(
             name="Forest Birds",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=2_500_000.0,
+            annual_value=2_500_000.0,
             description="Nesting and migratory stopover habitat — seed dispersal, insect control, ecotourism",
             # v0.3: Primary consumer (insects + seeds)
             trophic_level=1,
@@ -309,7 +309,7 @@ def build_costa_brava_ecosystem(
             name="Forest Mammals",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=2_571_000.0,
+            annual_value=2_571_000.0,
             description="Habitat displacement — predator-prey disruption, human-wildlife conflict, crop damage",
             # v0.3: Primary consumer — herbivores and omnivores
             trophic_level=1,
@@ -318,7 +318,7 @@ def build_costa_brava_ecosystem(
             name="Raptors & Apex Predators",
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_000_000.0,
+            annual_value=3_000_000.0,
             description="Apex trophic control — carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
             # v0.3: Tertiary consumer — apex predator
             trophic_level=3,
@@ -328,7 +328,7 @@ def build_costa_brava_ecosystem(
             name="Watershed & Water Cycle",
             dependency_weight=0.12,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=4_167_000.0,
+            annual_value=4_167_000.0,
             description="Aquifer recharge, flood control, drought buffering — Costa Brava water and tourism supply",
             # v0.3: Abiotic process
             trophic_level=-1,
@@ -337,7 +337,7 @@ def build_costa_brava_ecosystem(
             name="Carbon & Climate",
             dependency_weight=0.10,
             damage_function=exponential_damage(threshold=t, base=2.0),
-            monetary_rate=4_500_000.0,
+            annual_value=4_500_000.0,
             description="CO₂ release, lost sequestration, fire risk amplification — exponential accumulation, no plateau",
             # v0.3: Abiotic process
             trophic_level=-1,
@@ -347,7 +347,7 @@ def build_costa_brava_ecosystem(
             name="Human Communities",
             dependency_weight=0.06,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=8_333_000.0,
+            annual_value=8_333_000.0,
             description="Water, fire protection, tourism economy, traditional livelihoods — Costa Brava coastal dependency",
             # v0.3: External beneficiary
             trophic_level=-1,

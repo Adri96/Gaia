@@ -34,7 +34,7 @@ def _agent(weight: float = 1.0) -> Agent:
         name="Agent",
         dependency_weight=weight,
         damage_function=logistic_damage(threshold=0.3),
-        monetary_rate=100_000.0,
+        annual_value=100_000.0,
         description="Test agent",
     )
 
@@ -103,6 +103,15 @@ def test_zero_unit_value_is_valid():
 def test_valid_ecosystem_passes():
     """Valid ecosystem should not raise."""
     validate_ecosystem(_ecosystem([0.5, 0.5]))
+
+
+@pytest.mark.parametrize("value", [-1.0, float("inf"), float("nan")])
+def test_reject_invalid_agent_annual_value(value):
+    """Agent annual values must be finite and >= 0 (€/yr at full damage)."""
+    eco = _ecosystem([1.0])
+    eco.agents[0].annual_value = value
+    with pytest.raises(ValueError, match="annual_value"):
+        validate_ecosystem(eco)
 
 
 def test_reject_weights_not_summing_to_one():
@@ -213,7 +222,7 @@ def test_reject_invalid_trophic_level():
         name="A",
         dependency_weight=1.0,
         damage_function=logistic_damage(threshold=0.3),
-        monetary_rate=1.0,
+        annual_value=1.0,
         description="",
         trophic_level=5,
     )
@@ -228,7 +237,7 @@ def test_reject_invalid_keystone_threshold():
         name="A",
         dependency_weight=1.0,
         damage_function=logistic_damage(threshold=0.3),
-        monetary_rate=1.0,
+        annual_value=1.0,
         description="",
         is_keystone=True,
         keystone_threshold=0.0,
@@ -272,12 +281,12 @@ def test_reject_edge_bad_strength():
     agents[0] = Agent(
         name="A", dependency_weight=0.5,
         damage_function=logistic_damage(0.3),
-        monetary_rate=1.0, description="",
+        annual_value=1.0, description="",
     )
     agents[1] = Agent(
         name="B", dependency_weight=0.5,
         damage_function=logistic_damage(0.3),
-        monetary_rate=1.0, description="",
+        annual_value=1.0, description="",
     )
     edge = InteractionEdge("A", "B", 0.0, "dependency", "bad")
     eco = Ecosystem(
@@ -295,10 +304,10 @@ def test_reject_edge_bad_interaction_type():
     agents = [
         Agent(name="A", dependency_weight=0.5,
               damage_function=logistic_damage(0.3),
-              monetary_rate=1.0, description=""),
+              annual_value=1.0, description=""),
         Agent(name="B", dependency_weight=0.5,
               damage_function=logistic_damage(0.3),
-              monetary_rate=1.0, description=""),
+              annual_value=1.0, description=""),
     ]
     edge = InteractionEdge("A", "B", 0.3, "invalid_type", "bad")
     eco = Ecosystem(

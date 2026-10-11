@@ -67,11 +67,6 @@ def test_costa_brava_at_threshold():
     Cutting exactly 2,500 trees (25%): externality is already substantial and
     growing — and accelerates further past the threshold.
 
-    The Costa Brava case is calibrated so that externality consistently exceeds
-    revenue at all extraction levels. This is the scientific story for a high-value
-    Mediterranean ecosystem in a tourism-dependent coastal region (5.8× ratio at
-    full depletion). Even at the safe threshold, the social cost is ~4.5× revenue.
-
     The threshold marks where the damage curve ACCELERATES, not a crossover point.
     The key invariant: externality at 25% < externality at 50% — the S-curve is
     still climbing steeply through this region.
@@ -85,20 +80,13 @@ def test_costa_brava_at_threshold():
     result_past = run_extraction(eco, THRESHOLD_UNITS * 2)        # 50%
 
     # Revenue = 2500 * 60 = 150,000
-    assert result_threshold.total_private_revenue == 150_000.0
+    assert result_threshold.revenue == 150_000.0
 
     # Externality at threshold should be less than externality past threshold
     # (the curve is still accelerating — this is the core non-linearity invariant)
-    assert result_threshold.total_externality_cost < result_past.total_externality_cost, (
-        f"Externality at 25% ({result_threshold.total_externality_cost:.2f}) "
-        f"should be less than at 50% ({result_past.total_externality_cost:.2f})"
-    )
-
-    # Externality at threshold is substantial — ecosystem has very high social value
-    # (calibrated at ~4.5× revenue, reflecting tourism and biodiversity value)
-    assert result_threshold.total_externality_cost > result_threshold.total_private_revenue, (
-        f"Costa Brava externality ({result_threshold.total_externality_cost:.2f}) "
-        f"should exceed revenue ({result_threshold.total_private_revenue:.2f}) at all levels"
+    assert result_threshold.annual_externality < result_past.annual_externality, (
+        f"Externality at 25% ({result_threshold.annual_externality:.2f}) "
+        f"should be less than at 50% ({result_past.annual_externality:.2f})"
     )
 
 
@@ -109,8 +97,6 @@ def test_costa_brava_past_threshold():
     The externality acceleration past the threshold is the key invariant. At 50%,
     the externality should be much larger than at 25% — reflecting the logistic
     curve's steeper slope through and past the inflection point.
-    Externality also exceeds revenue (externality > revenue at all extraction levels
-    for the Costa Brava, a high-value ecosystem with a 5.8× externality/revenue ratio).
     """
     eco = build_costa_brava_ecosystem(
         total_trees=TOTAL_TREES,
@@ -120,19 +106,13 @@ def test_costa_brava_past_threshold():
     result = run_extraction(eco, 5_000)
 
     # Revenue = 5000 * 60 = 300,000
-    assert result.total_private_revenue == 300_000.0
-
-    # Externality should far exceed revenue (high-value Mediterranean ecosystem)
-    assert result.total_externality_cost > result.total_private_revenue, (
-        f"At 50% extraction, externality ({result.total_externality_cost:.2f}) "
-        f"should exceed revenue ({result.total_private_revenue:.2f})"
-    )
+    assert result.revenue == 300_000.0
 
     # Externality at 50% should be substantially more than at 25%
     result_threshold = run_extraction(eco, THRESHOLD_UNITS)
-    assert result.total_externality_cost > 2 * result_threshold.total_externality_cost, (
-        f"Externality at 50% ({result.total_externality_cost:.2f}) should be "
-        f"much larger than at 25% ({result_threshold.total_externality_cost:.2f})"
+    assert result.annual_externality > 2 * result_threshold.annual_externality, (
+        f"Externality at 50% ({result.annual_externality:.2f}) should be "
+        f"much larger than at 25% ({result_threshold.annual_externality:.2f})"
     )
 
 
@@ -141,8 +121,7 @@ def test_costa_brava_heavy_extraction():
     Cutting 8,000 trees (80%): substantial externality, critically low health.
 
     At 80% depletion the logistic damage function is in its high-damage saturation
-    region. Externality should be at least 50% of revenue and ecosystem health
-    critically low.
+    region. Ecosystem health should be critically low.
     """
     eco = build_costa_brava_ecosystem(
         total_trees=TOTAL_TREES,
@@ -152,12 +131,8 @@ def test_costa_brava_heavy_extraction():
     result = run_extraction(eco, 8_000)
 
     # Revenue = 8000 * 60 = 480,000
-    assert result.total_private_revenue == 480_000.0
+    assert result.revenue == 480_000.0
 
-    assert result.total_externality_cost >= 0.5 * result.total_private_revenue, (
-        f"At 80% extraction, externality ({result.total_externality_cost:.2f}) "
-        f"should be >= 50% of revenue ({result.total_private_revenue:.2f})"
-    )
     assert result.final_ecosystem_health < 0.10, (
         f"At 80% extraction, ecosystem health should be < 10%, "
         f"got {result.final_ecosystem_health:.1%}"
@@ -181,7 +156,7 @@ def test_costa_brava_marginal_cost_curve_shape():
     cost_at = {}
     for step in result.steps:
         if step.units_extracted in (1_000, 2_500, 4_000):
-            cost_at[step.units_extracted] = step.cumulative_cost
+            cost_at[step.units_extracted] = step.annual_externality
 
     inc_pre_threshold = cost_at[2_500] - cost_at[1_000]      # 10% → 25%
     inc_post_threshold = cost_at[4_000] - cost_at[2_500]     # 25% → 40%
@@ -247,7 +222,7 @@ def test_costa_brava_report_generates():
     assert isinstance(report, str)
     assert len(report) > 100
     assert "Costa Brava Holm Oak Forest" in report
-    assert "TOTAL EXTERNALITY" in report
+    assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 
 

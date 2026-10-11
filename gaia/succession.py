@@ -18,7 +18,7 @@ No third-party dependencies.
 Scientific foundations used: F8 (Ecological Succession & Climax State).
 """
 
-from gaia.models import CarbonProfile, MaturationStep, SuccessionCurve
+from gaia.models import CarbonProfile, DiscountConfig, MaturationStep, SuccessionCurve
 
 
 def get_succession_phase(curve: SuccessionCurve, years: float) -> str:
@@ -136,7 +136,7 @@ def compute_maturation_timeline(
 
     Args:
         succession_curve: The SuccessionCurve to evaluate.
-        max_recovered_value: € — maximum annual service value at full climax.
+        max_recovered_value: €/yr — annual service value at full climax.
         time_horizon_years: Number of years to simulate.
         units_restored: Number of resource units restored.
         carbon_profile: Optional CarbonProfile for carbon absorption tracking.
@@ -180,22 +180,34 @@ def compute_maturation_timeline(
 def compute_maturation_gap(
     timeline: list,
     max_recovered_value: float,
+    discount: DiscountConfig,
 ) -> float:
-    """Compute the total maturation gap — the accumulated cost of waiting.
+    """Present value of the maturation gap — the discounted cost of waiting.
 
-    The maturation gap is the sum over all years of the difference between
-    the maximum possible service value and the actual service value delivered.
+    Each year the restored units deliver less than their mature service
+    flow. That shortfall is a yearly flow; it is discounted (and given the
+    scarcity uplift, like every service stream in gaia.discount) to year 0
+    and summed:
 
-    maturation_gap = Σ (max_service_value - actual_service_value) for each year
+        maturation_gap = Σ_y (max_service_value - actual_service_value_y)
+                             × discount_factor(y) × scarcity_factor(y)
+
+    over the timeline's years (1..time_horizon_years).
 
     Args:
         timeline: List of MaturationStep from compute_maturation_timeline.
-        max_recovered_value: € — maximum annual service value at full climax.
+        max_recovered_value: €/yr — annual service value at full climax.
+        discount: DiscountConfig used to bring each year's gap to year 0.
 
     Returns:
-        Total maturation gap in €.
+        Maturation gap in € (present value at year 0).
     """
     gap: float = 0.0
     for step in timeline:
-        gap += max_recovered_value - step.annual_service_value
+        annual_gap: float = max_recovered_value - step.annual_service_value
+        gap += (
+            annual_gap
+            * discount.discount_factor(step.year)
+            * discount.scarcity_factor(step.year)
+        )
     return gap

@@ -15,10 +15,10 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | total_units             | configurable  | trees      | Placeholder  | Low        |
     | safe_threshold_ratio    | configurable  | ratio      | Placeholder  | Low        |
     | unit_value              | 100.0 €/tree  | €/tree     | Placeholder  | Low        |
-    | Human monetary_rate     | 750,000 €     | €          | Placeholder  | Low        |
-    | Animal monetary_rate    | 1,167,000 €   | €          | Placeholder  | Low        |
-    | Vegetation monetary_rate| 1,000,000 €   | €          | Placeholder  | Low        |
-    | Biosphere monetary_rate | 1,571,000 €   | €          | Placeholder  | Low        |
+    | Human annual_value      | 750,000 €     | €/yr       | Placeholder  | Low        |
+    | Animal annual_value     | 1,167,000 €   | €/yr       | Placeholder  | Low        |
+    | Vegetation annual_value | 1,000,000 €   | €/yr       | Placeholder  | Low        |
+    | Biosphere annual_value  | 1,571,000 €   | €/yr       | Placeholder  | Low        |
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
 
@@ -189,7 +189,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            monetary_rate=750_000.0,
+            annual_value=750_000.0,
             # Effective max contribution (weight × rate): 0.20 × €750k = €150k
             # [PLACEHOLDER — health costs, water treatment, lost recreation]
             # Calibration: sum(weight × rate) ≈ €1.2M, ensuring:
@@ -205,7 +205,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            monetary_rate=1_167_000.0,
+            annual_value=1_167_000.0,
             # Effective max: 0.30 × €1,167k = €350k
             # [PLACEHOLDER — habitat, biodiversity, species loss valuation]
             description="Habitat loss, population decline, species loss",
@@ -218,7 +218,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            monetary_rate=1_000_000.0,
+            annual_value=1_000_000.0,
             # Effective max: 0.15 × €1,000k = €150k
             # [PLACEHOLDER — soil erosion, pollination network disruption]
             description="Soil erosion, pollination network disruption",
@@ -231,7 +231,7 @@ def build_forest_ecosystem(
             damage_function=logistic_damage(
                 threshold=safe_threshold_ratio, steepness=steepness
             ),
-            monetary_rate=1_571_000.0,
+            annual_value=1_571_000.0,
             # Effective max: 0.35 × €1,571k = €550k
             # [PLACEHOLDER — carbon release, watershed, climate impact]
             description="Carbon release, watershed degradation, climate impact",

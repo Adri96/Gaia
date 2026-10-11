@@ -212,7 +212,7 @@ class TestComputeExtractionNPV:
         carbon = _carbon_profile()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=carbon,
             units_extracted=10,
@@ -230,7 +230,7 @@ class TestComputeExtractionNPV:
         config = _default_discount()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -247,7 +247,7 @@ class TestComputeExtractionNPV:
         carbon = _carbon_profile()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=carbon,
             units_extracted=10,
@@ -261,7 +261,7 @@ class TestComputeExtractionNPV:
         config = _default_discount()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -275,7 +275,7 @@ class TestComputeExtractionNPV:
         config = _default_discount()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -290,7 +290,7 @@ class TestComputeExtractionNPV:
         carbon = _carbon_profile()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=carbon,
             units_extracted=10,
@@ -310,7 +310,7 @@ class TestComputeExtractionNPV:
         config = _default_discount(horizon_years=50)
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -791,7 +791,7 @@ class TestEdgeCases:
         config = _default_discount(horizon_years=0)
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -829,7 +829,7 @@ class TestEdgeCases:
         )
 
         result = compute_extraction_npv(
-            total_externality=100.0,
+            annual_externality=100.0,
             discount=config,
             carbon_profile=None,
             units_extracted=1,
@@ -849,7 +849,7 @@ class TestEdgeCases:
         )
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -866,7 +866,7 @@ class TestEdgeCases:
         config = _default_discount()
 
         result = compute_extraction_npv(
-            total_externality=0.0,
+            annual_externality=0.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,
@@ -881,7 +881,7 @@ class TestEdgeCases:
         carbon = _carbon_profile()
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=carbon,
             units_extracted=0,
@@ -895,7 +895,7 @@ class TestEdgeCases:
         config = _default_discount(horizon_years=1)
 
         result = compute_extraction_npv(
-            total_externality=1000.0,
+            annual_externality=1000.0,
             discount=config,
             carbon_profile=None,
             units_extracted=10,

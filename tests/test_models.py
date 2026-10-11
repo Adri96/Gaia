@@ -54,14 +54,26 @@ def test_agent_creation():
         name="Test Agent",
         dependency_weight=0.5,
         damage_function=fn,
-        monetary_rate=100_000.0,
+        annual_value=100_000.0,
         description="A test agent",
     )
     assert agent.name == "Test Agent"
     assert agent.dependency_weight == 0.5
-    assert agent.monetary_rate == 100_000.0
+    assert agent.annual_value == 100_000.0
     assert agent.description == "A test agent"
     assert callable(agent.damage_function)
+
+
+def test_agent_monetary_rate_removed():
+    """The old field name is gone and is never silently reinterpreted."""
+    fn = logistic_damage(threshold=0.3)
+    with pytest.raises(TypeError, match="monetary_rate"):
+        Agent(name="A", dependency_weight=1.0, damage_function=fn,
+              monetary_rate=1.0, description="")
+    agent = Agent(name="A", dependency_weight=1.0, damage_function=fn,
+                  annual_value=1.0, description="")
+    with pytest.raises(AttributeError, match="annual_value"):
+        agent.monetary_rate
 
 
 def test_agent_damage_function_is_callable():
@@ -71,7 +83,7 @@ def test_agent_damage_function_is_callable():
         name="A",
         dependency_weight=1.0,
         damage_function=fn,
-        monetary_rate=1.0,
+        annual_value=1.0,
         description="",
     )
     result = agent.damage_function(0.5)
@@ -96,7 +108,7 @@ def _make_ecosystem(n_agents: int = 2, weights: list = None) -> Ecosystem:
             name=f"Agent {i}",
             dependency_weight=weights[i],
             damage_function=logistic_damage(threshold=0.3),
-            monetary_rate=10_000.0,
+            annual_value=10_000.0,
             description=f"Test agent {i}",
         )
         for i in range(n_agents)
@@ -134,23 +146,23 @@ def test_simulation_step_fields():
         units_extracted=1,
         depletion_ratio=0.001,
         agent_damages=[0.01, 0.02],
-        agent_costs=[100.0, 200.0],
-        marginal_cost=300.0,
-        cumulative_cost=300.0,
-        private_revenue=100.0,
+        agent_annual_costs=[100.0, 200.0],
+        marginal_annual_externality=300.0,
+        annual_externality=300.0,
+        revenue=100.0,
         ecosystem_health=0.98,
     )
     assert step.step == 1
     assert step.units_extracted == 1
     assert isinstance(step.depletion_ratio, float)
     assert isinstance(step.agent_damages, list)
-    assert isinstance(step.agent_costs, list)
-    assert isinstance(step.marginal_cost, float)
-    assert isinstance(step.cumulative_cost, float)
-    assert isinstance(step.private_revenue, float)
+    assert isinstance(step.agent_annual_costs, list)
+    assert isinstance(step.marginal_annual_externality, float)
+    assert isinstance(step.annual_externality, float)
+    assert isinstance(step.revenue, float)
     assert isinstance(step.ecosystem_health, float)
     assert len(step.agent_damages) == 2
-    assert len(step.agent_costs) == 2
+    assert len(step.agent_annual_costs) == 2
 
 
 # ── v0.3: InteractionEdge ─────────────────────────────────────────────────────
@@ -179,7 +191,7 @@ def test_agent_trophic_defaults():
         name="A",
         dependency_weight=1.0,
         damage_function=fn,
-        monetary_rate=1.0,
+        annual_value=1.0,
         description="",
     )
     assert agent.trophic_level == -1
@@ -194,7 +206,7 @@ def test_agent_trophic_custom_values():
         name="K",
         dependency_weight=1.0,
         damage_function=fn,
-        monetary_rate=1.0,
+        annual_value=1.0,
         description="",
         trophic_level=2,
         is_keystone=True,
@@ -235,10 +247,10 @@ def test_simulation_step_cascade_defaults():
         units_extracted=1,
         depletion_ratio=0.001,
         agent_damages=[0.01],
-        agent_costs=[100.0],
-        marginal_cost=100.0,
-        cumulative_cost=100.0,
-        private_revenue=100.0,
+        agent_annual_costs=[100.0],
+        marginal_annual_externality=100.0,
+        annual_externality=100.0,
+        revenue=100.0,
         ecosystem_health=0.99,
     )
     assert step.agent_direct_damages == []

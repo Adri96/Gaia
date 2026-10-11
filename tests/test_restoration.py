@@ -127,7 +127,7 @@ def test_recovered_value_positive():
     """Total recovered service value is always positive."""
     eco = _make_ecosystem()
     result = run_restoration(eco, 5_000, RESTORATION_COST, _make_recovery_fns(eco))
-    assert result.total_recovered_value > 0
+    assert result.annual_recovered_value > 0
 
 
 def test_full_restoration_recovers_near_max():
@@ -194,11 +194,11 @@ def test_net_restoration_value_positive():
     """
     eco = _make_ecosystem()
     result = run_restoration(eco, 5_000, RESTORATION_COST, _make_recovery_fns(eco))
-    assert result.net_restoration_value > 0, (
+    assert result.net_restoration_pv > 0, (
         f"Net restoration value should be positive (restoration is a social good). "
-        f"Got recovered={result.total_recovered_value:.2f}, "
+        f"Got recovered={result.annual_recovered_value:.2f}, "
         f"cost={result.total_restoration_cost:.2f}, "
-        f"net={result.net_restoration_value:.2f}"
+        f"net={result.net_restoration_pv:.2f}"
     )
 
 
@@ -295,11 +295,11 @@ def test_restoration_with_linear_recovery():
     eco = _make_ecosystem()
     fns = [linear_recovery(slope=0.8) for _ in eco.agents]
     result = run_restoration(eco, 3_000, RESTORATION_COST, fns)
-    assert result.total_recovered_value > 0
+    assert result.annual_recovered_value > 0
     assert result.total_restoration_cost > 0
-    assert result.net_restoration_value == (
-        result.total_recovered_value - result.total_restoration_cost
-    )
+    # Net restoration value is a PV (benefits − costs), never the annual
+    # recovered flow minus the one-off cost
+    assert result.net_restoration_pv == result.restoration_npv.net_present_value
 
 
 def test_logistic_recovery_slower_than_linear():

@@ -70,12 +70,23 @@ DISCOUNT_GREEN_BOOK = DiscountConfig(
 )
 """UK Green Book declining schedule. 3.5% -> 3.0% -> 2.5%."""
 
+DEFAULT_DISCOUNT = DISCOUNT_CENTRAL
+"""Profile used when a Resource has no DiscountConfig.
+
+Present values are always reported (one-off revenue is only ever compared
+with the PV of the yearly externality flow, decision D1), so a resource
+without its own configuration falls back to the central Drupp et al. (2018)
+consensus profile: 2.3% discount rate, 2% scarcity uplift, 100-year horizon.
+Its scarcity growth is below the discount rate, so the PV converges as the
+horizon grows.
+"""
+
 
 # ── NPV computation functions ────────────────────────────────────────────────
 
 
 def compute_extraction_npv(
-    total_externality: float,
+    annual_externality: float,
     discount: DiscountConfig,
     carbon_profile: Optional[CarbonProfile],
     units_extracted: int,
@@ -96,7 +107,8 @@ def compute_extraction_npv(
         substrate_damage: Permanent capacity loss as perpetual annuity.
 
     Args:
-        total_externality: Total undiscounted externality cost from extraction.
+        annual_externality: Ecosystem service value lost per year at the
+            end state of the extraction (€/yr, a flow).
         discount: DiscountConfig with rate schedule and scarcity parameters.
         carbon_profile: Optional carbon accounting parameters.
         units_extracted: Number of units that were extracted.
@@ -108,13 +120,12 @@ def compute_extraction_npv(
     """
     horizon: int = discount.horizon_years
 
-    # Direct ecosystem service loss: annual recurring cost
-    # We treat total_externality as the annual service value lost
+    # Direct ecosystem service loss: the annual flow, every year of the horizon
     npv_direct: float = 0.0
     for year in range(horizon):
         df: float = discount.discount_factor(year)
         sf: float = discount.scarcity_factor(year)
-        npv_direct += total_externality * df * sf
+        npv_direct += annual_externality * df * sf
 
     # Carbon release: one-time at year 0
     npv_carbon_release: float = 0.0
@@ -141,7 +152,7 @@ def compute_extraction_npv(
     npv_substrate: float = 0.0
     if substrate_ceiling < 1.0:
         permanent_gap: float = 1.0 - substrate_ceiling
-        annual_loss: float = total_externality * permanent_gap
+        annual_loss: float = annual_externality * permanent_gap
         # Net effective rate for substrate annuity
         for year in range(horizon):
             df = discount.discount_factor(year)

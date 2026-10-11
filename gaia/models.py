@@ -328,7 +328,8 @@ class AnchorPoint:
 
     Attributes:
         agent_name: Name of the agent this anchors.
-        anchor_value: Euro-value at pristine health (annual flow value).
+        anchor_value: €/yr value of the agent's service at pristine health
+            for the whole resource (an annual flow, like Agent.annual_value).
         source: Data source description.
         confidence: "high", "medium", or "low".
         description: Calculation explanation.
@@ -351,7 +352,8 @@ class PricingConfig:
         default_scarcity: Fallback for agents without explicit scarcity function.
         convergence_tolerance: For iterative solver (default 1e-6).
         max_iterations: Cap on iterative solve (default 100).
-        fallback_to_static: If True, use monetary_rate when solve fails.
+        fallback_to_static: If True, use each agent's static annual value
+            (€/yr at full damage) when the solve fails.
     """
 
     anchors: list              # List[AnchorPoint]
@@ -468,8 +470,9 @@ class MaturationStep:
         year: Year since restoration began.
         succession_phase: "delay", "pioneer", "intermediate", or "climax".
         service_fraction: 0.0 to 1.0 — fraction of max recovered services delivered.
-        annual_service_value: € — actual service value delivered this year.
-        cumulative_service_value: € — total services from year 0 to this year.
+        annual_service_value: €/yr — service value delivered this year (a flow).
+        cumulative_service_value: € — undiscounted sum of annual_service_value
+            from year 1 to this year.
         annual_carbon_absorbed: Tonnes CO₂ absorbed this year.
         cumulative_carbon_absorbed: Tonnes CO₂ total absorbed so far.
     """
@@ -549,22 +552,24 @@ class Agent:
     """
     An entity that depends on the resource and suffers when it is depleted.
 
-    Monetary cost at depletion level d:
-        cost = damage_function(d) * dependency_weight * monetary_rate
+    Annual service value lost at depletion level d (a yearly FLOW, €/yr):
+        annual_cost = damage_function(d) * dependency_weight * annual_value
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
         dependency_weight: This agent's share of total ecosystem damage. Must be in (0, 1].
                            All agents in an ecosystem must sum to 1.0.
         damage_function: Callable (depletion_ratio: float) -> damage_ratio: float
-        monetary_rate: Total monetary cost (€) at maximum damage (damage_ratio = 1.0).
+        annual_value: € per year of service lost at full damage (damage_ratio = 1.0).
+            A yearly flow, never a one-off total: compare it with one-off
+            amounts (revenue, restoration cost) only through its present value.
         description: Short description of what damage means for this agent.
     """
 
     name: str
     dependency_weight: float
     damage_function: DamageFunc
-    monetary_rate: float
+    annual_value: float
     description: str
 
     # v0.3: Trophic cascade fields (defaults preserve v0.1/v0.2 behavior)
@@ -574,6 +579,15 @@ class Agent:
 
     # v0.4: Agent-specific succession curve (None → use ecosystem default)
     succession_curve: Optional[SuccessionCurve] = None
+
+    @property
+    def monetary_rate(self) -> float:
+        """Removed: the field was a one-off total in some places and a yearly
+        flow in others. Raises instead of guessing which one was meant."""
+        raise AttributeError(
+            "Agent.monetary_rate was removed: use Agent.annual_value "
+            "(€ per year of service lost at full damage)."
+        )
 
 
 @dataclass
@@ -618,7 +632,7 @@ class Ecosystem:
     # v0.3: Agent interaction edges (empty list preserves v0.1/v0.2 behavior)
     interactions: list = field(default_factory=list)  # List[InteractionEdge]
 
-    # v0.7: Endogenous pricing (None → use static monetary_rate, backward compatible)
+    # v0.7: Endogenous pricing (None → use static Agent annual values)
     pricing: Optional[PricingConfig] = None
 
 
@@ -627,15 +641,19 @@ class SimulationStep:
     """
     The state of the simulation at one point in time (after extracting N units total).
 
+    Monetary units: externality fields are yearly flows (€/yr) of service
+    lost at this depletion level; revenue is a one-off amount (€).
+
     Attributes:
         step: Which extraction step this is (1-indexed).
         units_extracted: Cumulative units extracted so far (equals step).
         depletion_ratio: units_extracted / total_units.
         agent_damages: Damage ratio per agent at this depletion level (0.0 to 1.0).
-        agent_costs: Total € cost per agent at this depletion level.
-        marginal_cost: Externality cost of THIS unit only (total cost minus previous total).
-        cumulative_cost: Total externality cost at this depletion level.
-        private_revenue: Cumulative revenue from extraction so far.
+        agent_annual_costs: €/yr of service lost per agent at this depletion level.
+        marginal_annual_externality: €/yr added by THIS unit only
+            (annual_externality minus the previous step's).
+        annual_externality: €/yr of service lost at this depletion level.
+        revenue: Cumulative one-off private revenue so far (€).
         ecosystem_health: Weighted average health index (0.0 = collapsed, 1.0 = pristine).
     """
 
@@ -643,10 +661,10 @@ class SimulationStep:
     units_extracted: int
     depletion_ratio: float
     agent_damages: list   # List[float] — effective (post-propagation) damage ratios
-    agent_costs: list     # List[float]
-    marginal_cost: float
-    cumulative_cost: float
-    private_revenue: float
+    agent_annual_costs: list     # List[float] — €/yr
+    marginal_annual_externality: float
+    annual_externality: float
+    revenue: float
     ecosystem_health: float
 
     # v0.3: Cascade breakdown fields (empty lists preserve v0.1/v0.2 behavior)
@@ -679,27 +697,39 @@ class SimulationResult:
     """
     The complete output of a simulation run.
 
+    Flows and stocks are kept apart (decision D1): the annual externality is
+    a yearly flow, revenue is one-off, and the two are only ever compared
+    through the present value of the flow.
+
     Attributes:
         ecosystem: The ecosystem that was simulated.
         steps: All SimulationStep records produced during the run.
         total_units_extracted: How many units were extracted.
-        total_private_revenue: Sum of all unit revenues.
-        total_externality_cost: Total externality cost at the final depletion level.
-        net_social_cost: total_private_revenue - total_externality_cost.
-                         Positive = society gained; negative = society lost.
+        revenue: One-off private revenue from all extracted units (€).
+        annual_externality: Ecosystem service value lost per year at the
+            final depletion level (€/yr, a flow). Excludes carbon, which is
+            valued separately in extraction_npv.
+        pv_externality: Present value of every externality stream at year 0
+            (€ PV, a stock) = extraction_npv.total: the annual service loss,
+            carbon released, absorption foregone and permanent substrate loss.
+        net_social_cost: pv_externality - revenue (€ PV). Positive = society
+            loses more than the extractor gains.
         final_ecosystem_health: Ecosystem health at the end of the simulation.
+        extraction_npv: Breakdown of pv_externality. Uses the resource's
+            DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT if it has none.
+        discount_is_default: True when DEFAULT_DISCOUNT was used.
     """
 
     ecosystem: Ecosystem
     steps: list               # List[SimulationStep]
     total_units_extracted: int
-    total_private_revenue: float
-    total_externality_cost: float
+    revenue: float
+    annual_externality: float
+    pv_externality: float
     net_social_cost: float
     final_ecosystem_health: float
-
-    # v0.6: NPV of extraction externalities (None → no NPV, backward compatible)
     extraction_npv: Optional[ExtractionNPV] = None
+    discount_is_default: bool = False
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────
@@ -758,10 +788,10 @@ class RestorationStep:
         recovery_ratio: units_restored / total_units_destroyed.
             Represents the fraction of the damage that has been addressed.
         agent_recoveries: Recovered service ratio per agent (0.0 to 1.0).
-        agent_service_values: Recovered € service value per agent.
-        marginal_service_value: Value recovered by THIS unit only.
-        cumulative_service_value: Total recovered service value at this point.
-        restoration_cost_so_far: Total restoration cost incurred so far (€).
+        agent_service_values: Recovered service per agent (€/yr, a flow).
+        marginal_service_value: €/yr recovered by THIS unit only.
+        cumulative_service_value: Total recovered service at this point (€/yr).
+        restoration_cost_so_far: Total restoration cost incurred so far (€, one-off).
         ecosystem_health: Weighted health recovery index (0.0 to 1.0).
     """
 
@@ -786,22 +816,23 @@ class RestorationResult:
         restoration_cost: The RestorationCost parameters used.
         steps: All RestorationStep records.
         total_units_restored: How many units were replanted.
-        total_restoration_cost: Total direct cost of restoration (€).
-        total_recovered_value: Total ecosystem service value recovered (€).
-        net_restoration_value: total_recovered_value - total_restoration_cost.
-            Positive = restoration generates net social value.
-        prevention_advantage: How many times cheaper prevention is vs.
-            destruction + restoration. Computed as:
-            (foregone_revenue + total_restoration_cost) / foregone_revenue
-            A ratio > 1.0 means restoration costs more than prevention.
-            [NOTE: this is a simplified ratio without time-discounting.
-             Full NPV analysis is a v0.6 feature.]
+        total_restoration_cost: Total direct cost of restoration (€, one-off,
+            undiscounted planting + maintenance).
+        annual_recovered_value: Ecosystem service value recovered per year
+            at full maturity (€/yr, a flow).
+        net_restoration_pv: restoration_npv.net_present_value (€ PV):
+            PV of recovered services and carbon minus PV of restoration costs.
+        prevention_advantage: (foregone_revenue + total_restoration_cost)
+            / foregone_revenue — a ratio of two one-off amounts.
         final_ecosystem_health: Ecosystem health after all restoration.
         maturation_timeline: Year-by-year service recovery (v0.4, empty if no succession).
         years_to_pioneer: Years until services first become non-zero (v0.4).
         years_to_50pct: Years until 50% of recoverable services are delivered (v0.4).
         years_to_90pct: Years until 90% of recoverable services are delivered (v0.4).
-        total_maturation_gap: € accumulated externality during maturation (v0.4).
+        maturation_gap_pv: Present value (€ PV) of the services not yet
+            delivered while the restored units mature, discounted year by year.
+        restoration_npv / carbon_breakeven / prevention_advantage_v06: use the
+            resource's DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT.
     """
 
     ecosystem: Ecosystem
@@ -809,8 +840,8 @@ class RestorationResult:
     steps: list                  # List[RestorationStep]
     total_units_restored: int
     total_restoration_cost: float
-    total_recovered_value: float
-    net_restoration_value: float
+    annual_recovered_value: float
+    net_restoration_pv: float
     prevention_advantage: float
     final_ecosystem_health: float
 
@@ -819,7 +850,7 @@ class RestorationResult:
     years_to_pioneer: float = 0.0
     years_to_50pct: float = 0.0
     years_to_90pct: float = 0.0
-    total_maturation_gap: float = 0.0
+    maturation_gap_pv: float = 0.0
 
     # v0.5: Substrate-constrained restoration fields (defaults preserve v0.4 behavior)
     substrate_ceiling: float = 1.0              # Max recoverable fraction (K_current/K_pristine)

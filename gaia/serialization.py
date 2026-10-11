@@ -7,6 +7,13 @@ config objects) and includes only output data.
 
 Produces a stable, documented JSON schema with version field.
 Pure stdlib — no numpy or third-party dependencies.
+
+Every monetary key carries its unit as a suffix (decision D1):
+    *_eur_yr   — a yearly flow (€ per year)
+    *_eur_pv   — a present value at year 0 (€, discounted stock)
+    *_eur      — an undiscounted one-off amount (€) or an undiscounted sum
+    *_eur_per_t — a price per tonne of CO₂
+Ratios carry no currency suffix (e.g. ``prevention_advantage``, ``roi``).
 """
 
 import json
@@ -38,7 +45,7 @@ def _agent_metadata(agents: list) -> List[Dict[str, Any]]:
         {
             "name": a.name,
             "dependency_weight": a.dependency_weight,
-            "monetary_rate": a.monetary_rate,
+            "annual_value_eur_yr": a.annual_value,
             "description": a.description,
             "trophic_level": a.trophic_level,
             "is_keystone": a.is_keystone,
@@ -55,7 +62,7 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         "total_units": resource.total_units,
         "safe_threshold_ratio": resource.safe_threshold_ratio,
         "safe_threshold_units": resource.safe_threshold_units,
-        "unit_value": resource.unit_value,
+        "unit_value_eur": resource.unit_value,
         "has_carbon_profile": resource.carbon_profile is not None,
         "has_substrate": resource.substrate is not None,
         "has_discount": resource.discount is not None,
@@ -69,7 +76,7 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         cp = resource.carbon_profile
         d["carbon_stored_per_unit"] = cp.stored_carbon_tonnes
         d["carbon_absorption_per_unit_yr"] = cp.annual_absorption_tonnes
-        d["carbon_price_per_tonne"] = cp.carbon_price_per_tonne
+        d["carbon_price_eur_per_t"] = cp.carbon_price_per_tonne
     return d
 
 
@@ -94,9 +101,9 @@ def _simulation_step_to_dict(step: SimulationStep, agents: list) -> Dict[str, An
         "step": step.step,
         "units_extracted": step.units_extracted,
         "depletion_ratio": round(step.depletion_ratio, 6),
-        "marginal_cost": round(step.marginal_cost, 2),
-        "cumulative_cost": round(step.cumulative_cost, 2),
-        "private_revenue": round(step.private_revenue, 2),
+        "marginal_externality_eur_yr": round(step.marginal_annual_externality, 2),
+        "externality_eur_yr": round(step.annual_externality, 2),
+        "revenue_eur": round(step.revenue, 2),
         "ecosystem_health": round(step.ecosystem_health, 6),
     }
     # Per-agent breakdown
@@ -105,10 +112,10 @@ def _simulation_step_to_dict(step: SimulationStep, agents: list) -> Dict[str, An
             agents[i].name: round(step.agent_damages[i], 6)
             for i in range(min(n, len(step.agent_damages)))
         }
-    if step.agent_costs:
-        d["agent_costs"] = {
-            agents[i].name: round(step.agent_costs[i], 2)
-            for i in range(min(n, len(step.agent_costs)))
+    if step.agent_annual_costs:
+        d["agent_externality_eur_yr"] = {
+            agents[i].name: round(step.agent_annual_costs[i], 2)
+            for i in range(min(n, len(step.agent_annual_costs)))
         }
     # Cascade data (v0.3)
     if step.agent_direct_damages:
@@ -136,12 +143,12 @@ def _simulation_step_to_dict(step: SimulationStep, agents: list) -> Dict[str, An
     # Discount (v0.6)
     if step.discount_factor_at_step != 1.0:
         d["discount_factor"] = round(step.discount_factor_at_step, 6)
-        d["npv_externality"] = round(step.npv_externality, 2)
+        d["npv_externality_eur_pv"] = round(step.npv_externality, 2)
     if step.carbon_price_used > 0:
-        d["carbon_price_used"] = round(step.carbon_price_used, 2)
-    # Pricing (v0.7)
+        d["carbon_price_used_eur_per_t"] = round(step.carbon_price_used, 2)
+    # Pricing (v0.7): agent prices are €/yr at full damage
     if step.agent_prices:
-        d["agent_prices"] = {
+        d["agent_prices_eur_yr"] = {
             agents[i].name: round(step.agent_prices[i], 2)
             for i in range(min(n, len(step.agent_prices)))
         }
@@ -157,15 +164,15 @@ def _restoration_step_to_dict(
         "step": step.step,
         "units_restored": step.units_restored,
         "recovery_ratio": round(step.recovery_ratio, 6),
-        "marginal_service_value": round(step.marginal_service_value, 2),
-        "cumulative_service_value": round(step.cumulative_service_value, 2),
-        "restoration_cost_so_far": round(step.restoration_cost_so_far, 2),
+        "marginal_service_value_eur_yr": round(step.marginal_service_value, 2),
+        "service_value_eur_yr": round(step.cumulative_service_value, 2),
+        "restoration_cost_so_far_eur": round(step.restoration_cost_so_far, 2),
         "ecosystem_health": round(step.ecosystem_health, 6),
         "agent_recoveries": {
             agents[i].name: round(step.agent_recoveries[i], 6)
             for i in range(min(n, len(step.agent_recoveries)))
         },
-        "agent_service_values": {
+        "agent_service_value_eur_yr": {
             agents[i].name: round(step.agent_service_values[i], 2)
             for i in range(min(n, len(step.agent_service_values)))
         },
@@ -178,8 +185,8 @@ def _maturation_step_to_dict(step: MaturationStep) -> Dict[str, Any]:
         "year": step.year,
         "succession_phase": step.succession_phase,
         "service_fraction": round(step.service_fraction, 6),
-        "annual_service_value": round(step.annual_service_value, 2),
-        "cumulative_service_value": round(step.cumulative_service_value, 2),
+        "annual_service_value_eur_yr": round(step.annual_service_value, 2),
+        "cumulative_service_value_eur": round(step.cumulative_service_value, 2),
         "annual_carbon_absorbed": round(step.annual_carbon_absorbed, 4),
         "cumulative_carbon_absorbed": round(step.cumulative_carbon_absorbed, 4),
     }
@@ -188,35 +195,35 @@ def _maturation_step_to_dict(step: MaturationStep) -> Dict[str, Any]:
 def _extraction_npv_to_dict(npv: ExtractionNPV) -> Dict[str, Any]:
     """Convert ExtractionNPV to dict."""
     return {
-        "direct": round(npv.direct, 2),
-        "carbon_release": round(npv.carbon_release, 2),
-        "carbon_foregone": round(npv.carbon_foregone, 2),
-        "substrate_damage": round(npv.substrate_damage, 2),
-        "total": round(npv.total, 2),
-        "horizon": npv.horizon,
+        "services_eur_pv": round(npv.direct, 2),
+        "carbon_release_eur_pv": round(npv.carbon_release, 2),
+        "carbon_foregone_eur_pv": round(npv.carbon_foregone, 2),
+        "substrate_damage_eur_pv": round(npv.substrate_damage, 2),
+        "total_eur_pv": round(npv.total, 2),
+        "horizon_years": npv.horizon,
     }
 
 
 def _restoration_npv_to_dict(npv: RestorationNPV) -> Dict[str, Any]:
     """Convert RestorationNPV to dict."""
     return {
-        "cost": round(npv.cost, 2),
-        "service_benefits": round(npv.service_benefits, 2),
-        "carbon_benefits": round(npv.carbon_benefits, 2),
-        "total_benefits": round(npv.total_benefits, 2),
-        "net_present_value": round(npv.net_present_value, 2),
+        "cost_eur_pv": round(npv.cost, 2),
+        "service_benefits_eur_pv": round(npv.service_benefits, 2),
+        "carbon_benefits_eur_pv": round(npv.carbon_benefits, 2),
+        "total_benefits_eur_pv": round(npv.total_benefits, 2),
+        "net_present_value_eur_pv": round(npv.net_present_value, 2),
         "roi": round(npv.roi, 4),
         "carbon_payback_years": npv.carbon_payback_years,
-        "horizon": npv.horizon,
+        "horizon_years": npv.horizon,
     }
 
 
 def _carbon_breakeven_to_dict(cb: CarbonBreakeven) -> Dict[str, Any]:
     """Convert CarbonBreakeven to dict."""
     return {
-        "breakeven_price": round(cb.breakeven_price, 2),
-        "current_price": round(cb.current_price, 2),
-        "gap_to_current": round(cb.gap_to_current, 2),
+        "breakeven_price_eur_per_t": round(cb.breakeven_price, 2),
+        "current_price_eur_per_t": round(cb.current_price, 2),
+        "gap_to_current_eur_per_t": round(cb.gap_to_current, 2),
         "profitable_at_current": cb.profitable_at_current,
         "projected_breakeven_year": cb.projected_breakeven_year,
     }
@@ -229,15 +236,15 @@ def _prevention_advantage_v06_to_dict(pa: PreventionAdvantageV06) -> Dict[str, A
         "pa_with_carbon": round(pa.pa_with_carbon, 4),
         "pa_with_substrate": round(pa.pa_with_substrate, 4),
         "pa_full": round(pa.pa_full, 4),
-        "npv_prevention_cost": round(pa.npv_prevention_cost, 2),
-        "npv_restoration_total": round(pa.npv_restoration_total, 2),
+        "prevention_cost_eur": round(pa.npv_prevention_cost, 2),
+        "restoration_total_eur_pv": round(pa.npv_restoration_total, 2),
     }
 
 
 def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
     """Convert PriceResult to dict."""
     return {
-        "prices": {k: round(v, 2) for k, v in pr.prices.items()},
+        "prices_eur_yr": {k: round(v, 2) for k, v in pr.prices.items()},
         "scarcity_multipliers": {
             k: round(v, 4) for k, v in pr.scarcity_multipliers.items()
         },
@@ -281,9 +288,11 @@ def simulation_result_to_dict(
         },
         "summary": {
             "total_units_extracted": result.total_units_extracted,
-            "total_private_revenue": round(result.total_private_revenue, 2),
-            "total_externality_cost": round(result.total_externality_cost, 2),
-            "net_social_cost": round(result.net_social_cost, 2),
+            "revenue_eur": round(result.revenue, 2),
+            "annual_externality_eur_yr": round(result.annual_externality, 2),
+            "pv_externality_eur_pv": round(result.pv_externality, 2),
+            "net_social_cost_eur_pv": round(result.net_social_cost, 2),
+            "discount_is_default": result.discount_is_default,
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
         },
@@ -333,18 +342,20 @@ def restoration_result_to_dict(
             "interactions": _interaction_metadata(eco.interactions),
         },
         "restoration_cost": {
-            "planting_cost_per_unit": result.restoration_cost.planting_cost_per_unit,
-            "annual_maintenance_per_unit": (
+            "planting_cost_per_unit_eur": (
+                result.restoration_cost.planting_cost_per_unit
+            ),
+            "annual_maintenance_per_unit_eur_yr": (
                 result.restoration_cost.annual_maintenance_per_unit
             ),
             "maintenance_years": result.restoration_cost.maintenance_years,
-            "total_cost_per_unit": result.restoration_cost.total_cost_per_unit,
+            "total_cost_per_unit_eur": result.restoration_cost.total_cost_per_unit,
         },
         "summary": {
             "total_units_restored": result.total_units_restored,
-            "total_restoration_cost": round(result.total_restoration_cost, 2),
-            "total_recovered_value": round(result.total_recovered_value, 2),
-            "net_restoration_value": round(result.net_restoration_value, 2),
+            "total_restoration_cost_eur": round(result.total_restoration_cost, 2),
+            "annual_recovered_value_eur_yr": round(result.annual_recovered_value, 2),
+            "net_restoration_value_eur_pv": round(result.net_restoration_pv, 2),
             "prevention_advantage": round(result.prevention_advantage, 4),
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
@@ -362,7 +373,7 @@ def restoration_result_to_dict(
             "years_to_pioneer": result.years_to_pioneer,
             "years_to_50pct": result.years_to_50pct,
             "years_to_90pct": result.years_to_90pct,
-            "total_maturation_gap": round(result.total_maturation_gap, 2),
+            "maturation_gap_eur_pv": round(result.maturation_gap_pv, 2),
             "timeline": [
                 _maturation_step_to_dict(ms)
                 for ms in result.maturation_timeline

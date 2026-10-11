@@ -50,14 +50,14 @@ def _make_ecosystem_without_substrate(
             name="Agent A",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            monetary_rate=100_000.0,
+            annual_value=100_000.0,
             description="Test agent A",
         ),
         Agent(
             name="Agent B",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            monetary_rate=100_000.0,
+            annual_value=100_000.0,
             description="Test agent B",
         ),
     ]
@@ -92,14 +92,14 @@ def _make_ecosystem_with_substrate(
             name="Agent A",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            monetary_rate=100_000.0,
+            annual_value=100_000.0,
             description="Test agent A",
         ),
         Agent(
             name="Agent B",
             dependency_weight=0.5,
             damage_function=logistic_damage(threshold=threshold),
-            monetary_rate=100_000.0,
+            annual_value=100_000.0,
             description="Test agent B",
         ),
     ]

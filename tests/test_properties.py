@@ -80,7 +80,7 @@ def per_ha(value, area_ha):
 
 def annual_externality(result):
     """Yearly service flow lost at the end state (€/yr, decision D1)."""
-    return result.total_externality_cost
+    return result.annual_externality
 
 
 def recovered_after_cut(total_units, units_cut, units_restored):
@@ -145,14 +145,14 @@ def test_restoring_k_recovers_at_most_cost_of_cutting_k(k):
     eco, _ = build("forest", 1000)
     cut = annual_externality(run_extraction(eco, k))
     recovered = recovered_after_cut(1000, units_cut=k, units_restored=k)
-    assert recovered.total_recovered_value <= cut
+    assert recovered.annual_recovered_value <= cut
 
 
 @pytest.mark.xfail(strict=True, reason=(
     "C1: recovered value is identical for 1, 250, 500 and 1000 units restored"))
 def test_recovered_value_strictly_increasing_in_units_restored():
     values = [
-        recovered_after_cut(1000, units_cut=1000, units_restored=k).total_recovered_value
+        recovered_after_cut(1000, units_cut=1000, units_restored=k).annual_recovered_value
         for k in (1, 250, 500, 1000)
     ]
     assert all(a < b for a, b in zip(values, values[1:])), values
@@ -214,7 +214,7 @@ def test_npv_bounded_as_horizon_grows(name):
 ])
 def test_cost_monotonic_in_depletion_with_pricing(case):
     eco, _ = build(case, 200, with_pricing=True)
-    costs = [s.cumulative_cost for s in run_extraction(eco, 200).steps]
+    costs = [s.annual_externality for s in run_extraction(eco, 200).steps]
     drops = [
         (i + 1, costs[i - 1], costs[i])
         for i in range(1, len(costs))

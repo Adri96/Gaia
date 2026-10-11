@@ -59,7 +59,7 @@ class TestRestorationWithMaturation:
         assert len(result.maturation_timeline) == 60
         assert result.years_to_50pct > 0
         assert result.years_to_90pct > result.years_to_50pct
-        assert result.total_maturation_gap > 0
+        assert result.maturation_gap_pv > 0
 
     def test_no_maturation_without_succession(self):
         """Without succession_curve, maturation fields should be empty/zero."""
@@ -69,7 +69,7 @@ class TestRestorationWithMaturation:
         assert result.maturation_timeline == []
         assert result.years_to_pioneer == 0.0
         assert result.years_to_50pct == 0.0
-        assert result.total_maturation_gap == 0.0
+        assert result.maturation_gap_pv == 0.0
 
     def test_no_maturation_with_zero_horizon(self):
         """With time_horizon_years=0, maturation pass should be skipped."""
@@ -91,7 +91,7 @@ class TestRestorationWithMaturation:
             succession_curve=_FOREST_SUCCESSION,
             time_horizon_years=60,
         )
-        assert result.total_maturation_gap > 0
+        assert result.maturation_gap_pv > 0
 
     def test_cumulative_service_monotonic(self):
         """Cumulative service in the timeline must be monotonically non-decreasing."""
@@ -161,7 +161,7 @@ class TestExtractionWithResilience:
         agents = [Agent(
             name="A", dependency_weight=1.0,
             damage_function=logistic_damage(0.3, 12.0),
-            monetary_rate=1000.0, description="Test",
+            annual_value=1000.0, description="Test",
         )]
         eco = Ecosystem(name="Test", resource=resource, agents=agents)
         result = run_extraction(eco, 50)

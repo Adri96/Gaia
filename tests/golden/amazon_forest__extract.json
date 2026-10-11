@@ -16,101 +16,101 @@
     "ecosystem": {
       "agents": [
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.15,
           "description": "Emergent + canopy layer (400+ species/ha) \u2014 primary biomass, carbon stock, rainfall recycling",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Canopy Trees",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.08,
           "description": "Sub-canopy trees, palms, ferns, epiphytes \u2014 shade-tolerant reproduction, microclimate regulation",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Understory",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.15,
           "description": "Arbuscular + ectomycorrhizae \u2014 KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
           "is_keystone": true,
           "keystone_threshold": 0.25,
-          "monetary_rate": 840000.0,
           "name": "Mycorrhizal Fungi",
           "trophic_level": 0
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.1,
           "description": "Termites, fungi, bacteria, dung beetles \u2014 organic matter breakdown, nutrient return",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Soil Decomposers",
           "trophic_level": -1
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.09,
           "description": "Bees, butterflies, hummingbirds, bats \u2014 reproduction for 90%+ of canopy species",
           "is_keystone": true,
           "keystone_threshold": 0.35,
-          "monetary_rate": 840000.0,
           "name": "Pollinators",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.08,
           "description": "Monkeys, toucans, agoutis, tapirs \u2014 forest regeneration, genetic connectivity",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Seed Dispersers",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.07,
           "description": "Capybaras, sloths, leafcutter ants, insects \u2014 energy transfer, population dynamics",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Herbivores",
           "trophic_level": 1
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.05,
           "description": "Snakes (boa, anaconda), caimans, ocelots, anteaters \u2014 mid-trophic regulation",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Mesopredators",
           "trophic_level": 2
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.03,
           "description": "Jaguars, harpy eagles \u2014 top-down population control, KEYSTONE trophic role",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Apex Predators",
           "trophic_level": 3
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.1,
           "description": "River fish (3,000+ species), river dolphins, aquatic plants \u2014 nutrient transport, fisheries",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Aquatic System",
           "trophic_level": -1
         },
         {
+          "annual_value_eur_yr": 840000.0,
           "dependency_weight": 0.1,
           "description": "Orchids, bromeliads, lichens (~25,000 species) \u2014 water retention, microhabitat creation",
           "is_keystone": false,
           "keystone_threshold": null,
-          "monetary_rate": 840000.0,
           "name": "Epiphytes & Bromeliads",
           "trophic_level": 0
         }
@@ -359,7 +359,7 @@
       "name": "Central Amazon Old-Growth Lowland Forest",
       "resource": {
         "carbon_absorption_per_unit_yr": 0.006,
-        "carbon_price_per_tonne": 80.0,
+        "carbon_price_eur_per_t": 80.0,
         "carbon_stored_per_unit": 1.587,
         "discount_horizon_years": 100,
         "discount_rate": 0.023,
@@ -371,25 +371,27 @@
         "safe_threshold_units": 800,
         "substrate_type": "terrestrial_soil",
         "total_units": 4000,
-        "unit_value": 1.5
+        "unit_value_eur": 1.5
       }
     },
     "gaia_version": "<gaia_version>",
     "mode": "extraction",
     "npv_analysis": {
-      "carbon_foregone": 40995.59,
-      "carbon_release": 108614.4,
-      "direct": 43243565.61,
-      "horizon": 100,
-      "substrate_damage": 10343.03,
-      "total": 43403518.63
+      "carbon_foregone_eur_pv": 40995.59,
+      "carbon_release_eur_pv": 108614.4,
+      "horizon_years": 100,
+      "services_eur_pv": 43243565.61,
+      "substrate_damage_eur_pv": 10343.03,
+      "total_eur_pv": 43403518.63
     },
     "summary": {
+      "annual_externality_eur_yr": 302650.19,
+      "discount_is_default": false,
       "final_ecosystem_health": 0.639702,
-      "net_social_cost": -301450.19,
+      "net_social_cost_eur_pv": 43402318.63,
       "num_steps": 800,
-      "total_externality_cost": 302650.19,
-      "total_private_revenue": 1200.0,
+      "pv_externality_eur_pv": 43403518.63,
+      "revenue_eur": 1200.0,
       "total_units_extracted": 800
     }
   },
@@ -407,6 +409,8 @@
     "Understory": 25776.695655711166
   },
   "result": {
+    "annual_externality": 302650.1864096086,
+    "discount_is_default": false,
     "extraction_npv": {
       "carbon_foregone": 40995.58769916489,
       "carbon_release": 108614.40000000001,
@@ -416,9 +420,9 @@
       "total": 43403518.63441935
     },
     "final_ecosystem_health": 0.6397021590361802,
-    "net_social_cost": -301450.1864096086,
-    "total_externality_cost": 302650.1864096086,
-    "total_private_revenue": 1200.0,
+    "net_social_cost": 43402318.63441935,
+    "pv_externality": 43403518.63441935,
+    "revenue": 1200.0,
     "total_units_extracted": 800
   },
   "scenario": {
@@ -432,6 +436,19 @@
     "name": "amazon_forest__extract"
   },
   "step_sums": {
+    "agent_annual_costs": [
+      16372674.436214207,
+      7111552.565508514,
+      8781581.848495265,
+      5450637.009410858,
+      7474120.002439482,
+      5836160.44521867,
+      5671891.634986723,
+      6913692.216332816,
+      6644790.518430075,
+      6334385.422229322,
+      6906908.6663179705
+    ],
     "agent_cascade_damages": [
       81.87627851130458,
       57.76109298840183,
@@ -444,19 +461,6 @@
       64.26351803379653,
       27.34376817106464,
       34.15952107688183
-    ],
-    "agent_costs": [
-      16372674.436214207,
-      7111552.565508514,
-      8781581.848495265,
-      5450637.009410858,
-      7474120.002439482,
-      5836160.44521867,
-      5671891.634986723,
-      6913692.216332816,
-      6644790.518430075,
-      6334385.422229322,
-      6906908.6663179705
     ],
     "agent_damages": [
       129.94186060487473,
@@ -484,23 +488,36 @@
       48.06558209357014,
       48.06558209357014
     ],
+    "annual_externality": 83498394.76558381,
     "carbon_price_used": 0.0,
-    "cumulative_cost": 83498394.76558381,
     "depletion_ratio": 80.09999999999998,
     "discount_factor_at_step": 800.0,
     "ecosystem_health": 700.5971490885885,
     "effective_k": 3199200.0,
     "k_fraction": 799.9556583549552,
-    "marginal_cost": 302650.1864096086,
+    "marginal_annual_externality": 302650.1864096086,
     "model_confidence": 659.8499999999985,
     "npv_externality": 0.0,
-    "private_revenue": 480600.0,
+    "revenue": 480600.0,
     "step": 320400.0,
     "substrate_erosion": 0.003660931142222736,
     "units_extracted": 320400.0
   },
   "steps": [
     {
+      "agent_annual_costs": [
+        21.539279044048005,
+        9.355692971338534,
+        11.552721128108042,
+        7.170654493308441,
+        9.832673151135419,
+        7.677834727926528,
+        7.461728815871402,
+        9.09539528513879,
+        8.741638253622039,
+        8.333280901265832,
+        9.086471100073716
+      ],
       "agent_cascade_damages": [
         0.00010771337430630304,
         7.598833682385658e-05,
@@ -513,19 +530,6 @@
         8.454268437785013e-05,
         3.597244024162637e-05,
         4.4938990227434523e-05
-      ],
-      "agent_costs": [
-        21.539279044048005,
-        9.355692971338534,
-        11.552721128108042,
-        7.170654493308441,
-        9.832673151135419,
-        7.677834727926528,
-        7.461728815871402,
-        9.09539528513879,
-        8.741638253622039,
-        8.333280901265832,
-        9.086471100073716
       ],
       "agent_damages": [
         0.00017094665907974607,
@@ -554,8 +558,8 @@
         6.323328477344304e-05
       ],
       "agent_prices": [],
+      "annual_externality": 109.84736987183675,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 109.84736987183675,
       "depletion_ratio": 0.00025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9998692293215812,
@@ -563,17 +567,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999999905768673,
       "keystone_triggered": [],
-      "marginal_cost": 109.84736987183675,
+      "marginal_annual_externality": 109.84736987183675,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 1.5,
       "resilience_zone": "green",
+      "revenue": 1.5,
       "step": 1,
       "substrate_erosion": 1.4423162427150014e-07,
       "units_extracted": 1
     },
     {
+      "agent_annual_costs": [
+        1960.7419631494317,
+        851.6580228025193,
+        1051.6556778953072,
+        652.7518000729493,
+        895.078002283065,
+        698.9209205371022,
+        679.2485847367889,
+        827.9628659126896,
+        795.7600119993531,
+        758.5868366536038,
+        827.1504884831469
+      ],
       "agent_cascade_damages": [
         0.009805255438814279,
         0.00691729376901501,
@@ -586,19 +603,6 @@
         0.007696004522619124,
         0.0032746069612823265,
         0.00409084091163403
-      ],
-      "agent_costs": [
-        1960.7419631494317,
-        851.6580228025193,
-        1051.6556778953072,
-        652.7518000729493,
-        895.078002283065,
-        698.9209205371022,
-        679.2485847367889,
-        827.9628659126896,
-        795.7600119993531,
-        758.5868366536038,
-        827.1504884831469
       ],
       "agent_damages": [
         0.015561444151979617,
@@ -627,8 +631,8 @@
         0.005756188713165337
       ],
       "agent_prices": [],
+      "annual_externality": 9999.515174525957,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 9999.515174525957,
       "depletion_ratio": 0.02025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9880958152684215,
@@ -636,17 +640,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999991587331452,
       "keystone_triggered": [],
-      "marginal_cost": 138.0606003040375,
+      "marginal_annual_externality": 138.0606003040375,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 121.5,
       "resilience_zone": "green",
+      "revenue": 121.5,
       "step": 81,
       "substrate_erosion": 1.9472006935087768e-07,
       "units_extracted": 81
     },
     {
+      "agent_annual_costs": [
+        4394.312485774063,
+        1908.6914818712135,
+        2356.915781354314,
+        1462.9132435992294,
+        2006.0020722239299,
+        1566.3850651473115,
+        1522.296453562336,
+        1855.5871337569386,
+        1783.415779397983,
+        1700.1052002255385,
+        1853.7664758892072
+      ],
       "agent_cascade_damages": [
         0.021975026398566383,
         0.015502677531379572,
@@ -659,19 +676,6 @@
         0.01724788340327956,
         0.007338878101457211,
         0.009168179002215171
-      ],
-      "agent_costs": [
-        4394.312485774063,
-        1908.6914818712135,
-        2356.915781354314,
-        1462.9132435992294,
-        2006.0020722239299,
-        1566.3850651473115,
-        1522.296453562336,
-        1855.5871337569386,
-        1783.415779397983,
-        1700.1052002255385,
-        1853.7664758892072
       ],
       "agent_damages": [
         0.03487549591884177,
@@ -700,8 +704,8 @@
         0.01290046952027539
       ],
       "agent_prices": [],
+      "annual_externality": 22410.39117280206,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 22410.39117280206,
       "depletion_ratio": 0.04025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9733209628895213,
@@ -709,17 +713,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999976285040746,
       "keystone_triggered": [],
-      "marginal_cost": 173.00054592723973,
+      "marginal_annual_externality": 173.00054592723973,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 241.5,
       "resilience_zone": "green",
+      "revenue": 241.5,
       "step": 161,
       "substrate_erosion": 4.254541944098443e-07,
       "units_extracted": 161
     },
     {
+      "agent_annual_costs": [
+        7437.968582084335,
+        3230.718643931237,
+        3989.3989307963598,
+        2476.178646701189,
+        3395.4299875352153,
+        2651.318707927422,
+        2576.6927661314335,
+        3140.832347923668,
+        3018.67256343264,
+        2877.658133428867,
+        3137.7506380856084
+      ],
       "agent_cascade_damages": [
         0.03719570614792516,
         0.02624037976131193,
@@ -732,19 +749,6 @@
         0.029194376885204362,
         0.012422044386488376,
         0.015518383727640056
-      ],
-      "agent_costs": [
-        7437.968582084335,
-        3230.718643931237,
-        3989.3989307963598,
-        2476.178646701189,
-        3395.4299875352153,
-        2651.318707927422,
-        2576.6927661314335,
-        3140.832347923668,
-        3018.67256343264,
-        2877.658133428867,
-        3137.7506380856084
       ],
       "agent_damages": [
         0.05903149668320901,
@@ -773,8 +777,8 @@
         0.021835790535283853
       ],
       "agent_prices": [],
+      "annual_externality": 37932.61994797797,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 37932.61994797797,
       "depletion_ratio": 0.06025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9548421191095501,
@@ -782,17 +786,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999942355377696,
       "keystone_triggered": [],
-      "marginal_cost": 215.97004512508283,
+      "marginal_annual_externality": 215.97004512508283,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 361.5,
       "resilience_zone": "green",
+      "revenue": 361.5,
       "step": 241,
       "substrate_erosion": 9.151864445617482e-07,
       "units_extracted": 241
     },
     {
+      "agent_annual_costs": [
+        11228.591795570212,
+        4877.194688133019,
+        6022.5223606744,
+        3738.1173273151453,
+        5125.848123680427,
+        4002.514283669249,
+        3889.8566099321633,
+        4741.499502714266,
+        4557.083241910407,
+        4344.203413994589,
+        4736.84725641582
+      ],
       "agent_cascade_damages": [
         0.05615181030597924,
         0.039613304311369696,
@@ -805,19 +822,6 @@
         0.04407275147136047,
         0.01875270971408774,
         0.02342704117148335
-      ],
-      "agent_costs": [
-        11228.591795570212,
-        4877.194688133019,
-        6022.5223606744,
-        3738.1173273151453,
-        5125.848123680427,
-        4002.514283669249,
-        3889.8566099321633,
-        4741.499502714266,
-        4557.083241910407,
-        4344.203413994589,
-        4736.84725641582
       ],
       "agent_damages": [
         0.08911580790135089,
@@ -846,8 +850,8 @@
         0.03296399759537165
       ],
       "agent_prices": [],
+      "annual_externality": 57264.27860400969,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 57264.27860400969,
       "depletion_ratio": 0.08025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9318282397571314,
@@ -855,17 +859,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999874650839742,
       "keystone_triggered": [],
-      "marginal_cost": 268.3509256452744,
+      "marginal_annual_externality": 268.3509256452744,
       "model_confidence": 0.9,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 481.5,
       "resilience_zone": "green",
+      "revenue": 481.5,
       "step": 321,
       "substrate_erosion": 1.7227482088602844e-06,
       "units_extracted": 321
     },
     {
+      "agent_annual_costs": [
+        15924.715185079456,
+        6916.979236999379,
+        8541.316225187597,
+        5301.506622530233,
+        7269.626765111157,
+        5676.482069353587,
+        5516.707682650487,
+        6724.532381763919,
+        6462.987881592725,
+        6161.075523397859,
+        6717.934430870129
+      ],
       "agent_cascade_damages": [
         0.07963612913616647,
         0.056180739328979,
@@ -878,19 +895,6 @@
         0.06250525688190856,
         0.026595637866462747,
         0.033224910574465964
-      ],
-      "agent_costs": [
-        15924.715185079456,
-        6916.979236999379,
-        8541.316225187597,
-        5301.506622530233,
-        7269.626765111157,
-        5676.482069353587,
-        5516.707682650487,
-        6724.532381763919,
-        6462.987881592725,
-        6161.075523397859,
-        6717.934430870129
       ],
       "agent_damages": [
         0.12638662845301155,
@@ -919,8 +923,8 @@
         0.046750499316845086
       ],
       "agent_prices": [],
+      "annual_externality": 81213.86400453652,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 81213.86400453652,
       "depletion_ratio": 0.10025,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.9033168285660279,
@@ -928,17 +932,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.99997552221973,
       "keystone_triggered": [],
-      "marginal_cost": 331.4995996816433,
+      "marginal_annual_externality": 331.4995996816433,
       "model_confidence": 0.8992500000000001,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 601.5,
       "resilience_zone": "yellow",
+      "revenue": 601.5,
       "step": 401,
       "substrate_erosion": 2.8974940001771464e-06,
       "units_extracted": 401
     },
     {
+      "agent_annual_costs": [
+        21625.126474423127,
+        9392.981229656074,
+        11598.765910789038,
+        7199.234013593196,
+        9871.862472282946,
+        7708.435677052516,
+        7491.468448460247,
+        9131.646095199723,
+        8776.479121777735,
+        8366.494211261248,
+        9122.686341703853
+      ],
       "agent_cascade_damages": [
         0.10814267913040228,
         0.07629119763184682,
@@ -951,19 +968,6 @@
         0.08487963958401151,
         0.03611581280078914,
         0.045118100067963005
-      ],
-      "agent_costs": [
-        21625.126474423127,
-        9392.981229656074,
-        11598.765910789038,
-        7199.234013593196,
-        9871.862472282946,
-        7708.435677052516,
-        7491.468448460247,
-        9131.646095199723,
-        8776.479121777735,
-        8366.494211261248,
-        9122.686341703853
       ],
       "agent_damages": [
         0.17162798789224704,
@@ -992,8 +996,8 @@
         0.06348530876184476
       ],
       "agent_prices": [],
+      "annual_externality": 110285.17999619972,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 110285.17999619972,
       "depletion_ratio": 0.12,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.8687081190521433,
@@ -1001,17 +1005,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999566636952159,
       "keystone_triggered": [],
-      "marginal_cost": 405.55791455548024,
+      "marginal_annual_externality": 405.55791455548024,
       "model_confidence": 0.84,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 720.0,
       "resilience_zone": "yellow",
+      "revenue": 720.0,
       "step": 480,
       "substrate_erosion": 4.460314853143904e-06,
       "units_extracted": 480
     },
     {
+      "agent_annual_costs": [
+        28665.497609193168,
+        12451.001445025544,
+        15374.911072938998,
+        9543.048252169034,
+        13085.789367854295,
+        10218.027845178776,
+        9930.423812904515,
+        12104.584896626766,
+        11633.788203736489,
+        11090.326805435967,
+        12092.708166438919
+      ],
       "agent_cascade_damages": [
         0.1433500846217356,
         0.10112889494101913,
@@ -1024,19 +1041,6 @@
         0.11251342776849893,
         0.047873835407138646,
         0.059806946847649964
-      ],
-      "agent_costs": [
-        28665.497609193168,
-        12451.001445025544,
-        15374.911072938998,
-        9543.048252169034,
-        13085.789367854295,
-        10218.027845178776,
-        9930.423812904515,
-        12104.584896626766,
-        11633.788203736489,
-        11090.326805435967,
-        12092.708166438919
       ],
       "agent_damages": [
         0.22750394927931086,
@@ -1065,8 +1069,8 @@
         0.08415386465757525
       ],
       "agent_prices": [],
+      "annual_externality": 146190.10747750246,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 146190.10747750246,
       "depletion_ratio": 0.14,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.825964157764878,
@@ -1074,17 +1078,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999281853851464,
       "keystone_triggered": [],
-      "marginal_cost": 493.0964027076552,
+      "marginal_annual_externality": 493.0964027076552,
       "model_confidence": 0.7799999999999999,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 840.0,
       "resilience_zone": "yellow",
+      "revenue": 840.0,
       "step": 560,
       "substrate_erosion": 6.489599599036079e-06,
       "units_extracted": 560
     },
     {
+      "agent_annual_costs": [
+        37179.31079776531,
+        16149.01854414587,
+        19941.345692372637,
+        12377.386981472671,
+        16972.342032029403,
+        13252.839290474632,
+        12879.815251318025,
+        15699.714342488585,
+        15089.088397453044,
+        14384.215922902906,
+        15684.31015697836
+      ],
       "agent_cascade_damages": [
         0.18592586187403976,
         0.1311647426082318,
@@ -1097,19 +1114,6 @@
         0.14593054538796402,
         0.06209263240252427,
         0.07756994471294631
-      ],
-      "agent_costs": [
-        37179.31079776531,
-        16149.01854414587,
-        19941.345692372637,
-        12377.386981472671,
-        16972.342032029403,
-        13252.839290474632,
-        12879.815251318025,
-        15699.714342488585,
-        15089.088397453044,
-        14384.215922902906,
-        15684.31015697836
       ],
       "agent_damages": [
         0.2950738952203596,
@@ -1138,8 +1142,8 @@
         0.10914803334631984
       ],
       "agent_prices": [],
+      "annual_externality": 189609.38740940145,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 189609.38740940145,
       "depletion_ratio": 0.16,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.7742745387983316,
@@ -1147,17 +1151,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998878314118157,
       "keystone_triggered": [],
-      "marginal_cost": 593.1549547617615,
+      "marginal_annual_externality": 593.1549547617615,
       "model_confidence": 0.7199999999999999,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 960.0,
       "resilience_zone": "yellow",
+      "revenue": 960.0,
       "step": 640,
       "substrate_erosion": 9.004292307692312e-06,
       "units_extracted": 640
     },
     {
+      "agent_annual_costs": [
+        47354.31658303075,
+        20568.582909037734,
+        25398.77089558714,
+        15764.754348985121,
+        21617.228520236786,
+        16879.795077397866,
+        16404.684106691962,
+        19996.315888729132,
+        19218.577579584267,
+        18320.79992867316,
+        19976.695980191205
+      ],
       "agent_cascade_damages": [
         0.236808911602668,
         0.16706110502659663,
@@ -1170,19 +1187,6 @@
         0.18586792216307957,
         0.07908576326916794,
         0.09879881150152561
-      ],
-      "agent_costs": [
-        47354.31658303075,
-        20568.582909037734,
-        25398.77089558714,
-        15764.754348985121,
-        21617.228520236786,
-        16879.795077397866,
-        16404.684106691962,
-        19996.315888729132,
-        19218.577579584267,
-        18320.79992867316,
-        19976.695980191205
       ],
       "agent_damages": [
         0.3758279093891329,
@@ -1211,8 +1215,8 @@
         0.1390189977864649
       ],
       "agent_prices": [],
+      "annual_externality": 241500.52181814512,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 241500.52181814512,
       "depletion_ratio": 0.18,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.7124993787879224,
@@ -1220,17 +1224,30 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9998329749114548,
       "keystone_triggered": [],
-      "marginal_cost": 704.405618738645,
+      "marginal_annual_externality": 704.405618738645,
       "model_confidence": 0.6600000000000001,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 1080.0,
       "resilience_zone": "yellow",
+      "revenue": 1080.0,
       "step": 720,
       "substrate_erosion": 1.2037959923332601e-05,
       "units_extracted": 720
     },
     {
+      "agent_annual_costs": [
+        59344.769250420126,
+        25776.695655711166,
+        31829.921891070757,
+        19756.503242733575,
+        27090.865858399167,
+        21153.880282616512,
+        20558.46780579515,
+        25059.526520553387,
+        24084.859292224017,
+        22959.757899659613,
+        25034.93871042511
+      ],
       "agent_cascade_damages": [
         0.29677062683108063,
         0.20936217527582907,
@@ -1243,19 +1260,6 @@
         0.23293101342688727,
         0.09911084587131308,
         0.12381537933280712
-      ],
-      "agent_costs": [
-        59344.769250420126,
-        25776.695655711166,
-        31829.921891070757,
-        19756.503242733575,
-        27090.865858399167,
-        21153.880282616512,
-        20558.46780579515,
-        25059.526520553387,
-        24084.859292224017,
-        22959.757899659613,
-        25034.93871042511
       ],
       "agent_damages": [
         0.4709902321461915,
@@ -1284,8 +1288,8 @@
         0.17421960531511088
       ],
       "agent_prices": [],
+      "annual_externality": 302650.1864096086,
       "carbon_price_used": 0.0,
-      "cumulative_cost": 302650.1864096086,
       "depletion_ratio": 0.2,
       "discount_factor_at_step": 1.0,
       "ecosystem_health": 0.6397021590361802,
@@ -1293,12 +1297,12 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9997608191653746,
       "keystone_triggered": [],
-      "marginal_cost": 823.8589780072216,
+      "marginal_annual_externality": 823.8589780072216,
       "model_confidence": 0.6,
       "npv_externality": 0.0,
       "price_result": null,
-      "private_revenue": 1200.0,
       "resilience_zone": "red",
+      "revenue": 1200.0,
       "step": 800,
       "substrate_erosion": 1.562212130425527e-05,
       "units_extracted": 800

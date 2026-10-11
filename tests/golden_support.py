@@ -210,7 +210,7 @@ def build_snapshot(name: str) -> Dict[str, Any]:
     per_agent: Dict[str, Any] = {}
     if steps:
         last = steps[-1]
-        values = last.get("agent_costs", last.get("agent_service_values", []))
+        values = last.get("agent_annual_costs", last.get("agent_service_values", []))
         per_agent = dict(zip(agents, values))
 
     snapshot: Dict[str, Any] = {

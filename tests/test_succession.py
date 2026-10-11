@@ -7,7 +7,8 @@ maturation timeline, maturation gap, and years_to_threshold.
 
 import pytest
 
-from gaia.models import CarbonProfile, SuccessionCurve
+from gaia.discount import DISCOUNT_CENTRAL
+from gaia.models import CarbonProfile, DiscountConfig, SuccessionCurve
 from gaia.succession import (
     compute_maturation_gap,
     compute_maturation_timeline,
@@ -221,15 +222,28 @@ class TestMaturationGap:
     def test_gap_positive(self):
         """Maturation gap must be > 0 for any non-zero succession curve."""
         tl = compute_maturation_timeline(_FOREST, 100_000.0, 60, 100)
-        gap = compute_maturation_gap(tl, 100_000.0)
+        gap = compute_maturation_gap(tl, 100_000.0, DISCOUNT_CENTRAL)
         assert gap > 0
 
     def test_posidonia_gap_larger_than_forest(self):
         """Posidonia maturation gap should be much larger than forest."""
         tl_f = compute_maturation_timeline(_FOREST, 100_000.0, 60, 100)
-        gap_f = compute_maturation_gap(tl_f, 100_000.0)
+        gap_f = compute_maturation_gap(tl_f, 100_000.0, DISCOUNT_CENTRAL)
 
         tl_p = compute_maturation_timeline(_POSIDONIA, 100_000.0, 120, 100)
-        gap_p = compute_maturation_gap(tl_p, 100_000.0)
+        gap_p = compute_maturation_gap(tl_p, 100_000.0, DISCOUNT_CENTRAL)
 
         assert gap_p > gap_f
+
+    def test_gap_is_discounted_year_by_year(self):
+        """Each year's shortfall (a flow) is discounted to year 0 and summed."""
+        tl = compute_maturation_timeline(_FOREST, 100_000.0, 60, 100)
+        discount = DiscountConfig(rate_schedule=0.05, scarcity_rate=0.01)
+        expected = sum(
+            (100_000.0 - s.annual_service_value) * 1.01 ** s.year / 1.05 ** s.year
+            for s in tl
+        )
+        gap = compute_maturation_gap(tl, 100_000.0, discount)
+        assert gap == pytest.approx(expected, rel=1e-12)
+        undiscounted = sum(100_000.0 - s.annual_service_value for s in tl)
+        assert gap < undiscounted

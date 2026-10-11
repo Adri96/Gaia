@@ -7,32 +7,21 @@ through coralligenous reefs, fish nurseries, and apex megafauna, to the
 coastal protection and tourism economy of the Costa Brava.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CRITICAL: MARINE EXTERNALITY ECONOMICS — TIME-FLOW ASYMMETRY
+MONETARY SEMANTICS — ONE-OFF REVENUE vs YEARLY LOSSES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-In the forest case, private revenue is ongoing (per-tree timber income) and
-externalities are one-time costs. Here the economics are INVERTED:
+As in every Gaia case, agent values are YEARLY FLOWS and revenue is ONE-OFF:
 
     Private revenue:    ONE-TIME gain from coastal development, marina
                         construction, or trawling permits that destroy
                         Posidonia (modeled as €2,500/ha destroyed).
 
     Externality costs:  ANNUAL RECURRING losses — every year the meadow
-                        is gone, the ecosystem services are absent. The
-                        report shows the annual cost rate; the true social
-                        cost compounds every year the damage persists.
+                        is gone, the ecosystem services are absent.
 
-Payback arithmetic (at default parameters, full destruction):
-    One-time revenue:   5,000 ha × €2,500 = €12,500,000
-    Annual externality: ~€5,830,000/yr at full damage
-    Payback period:     ~2.1 years — after that, society loses €5.8M/yr
-                        every year, forever (Posidonia growth: 1-6 cm/year).
-
-Over 10 years: €58.3M lost vs €12.5M gained (ratio: 4.7× against destruction).
-Over 30 years: €174.9M lost vs €12.5M gained (ratio: 14× against destruction).
-
-The simulation reports ANNUAL externality costs. A note in the output flags
-this explicitly. NPV analysis over time horizons is a v0.5 feature.
+The report shows the annual loss (€/yr) and its present value over the
+200-year horizon (€ PV); the net social cost compares the one-off revenue
+with that present value, never with the annual figure.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Scientific context:
@@ -236,10 +225,10 @@ _STEEPNESS: float = 12.0
 
 # Annual externality note appended to the report to flag the time-flow asymmetry.
 _ANNUAL_NOTE: str = (
-    "\n  ⚠  MARINE EXTERNALITY NOTE: these costs are ANNUAL — they recur every year\n"
-    "     the damage persists. Posidonia recovers at 1-6 cm/year; damage is\n"
-    "     effectively permanent on human timescales. The one-time private revenue\n"
-    "     is offset within ~2 years of annual ecosystem service losses."
+    "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n"
+    "     recur every year the damage persists. Posidonia recovers at 1-6 cm/year;\n"
+    "     damage is effectively permanent on human timescales. The net social\n"
+    "     cost compares the one-off revenue with the PV of these annual losses."
 )
 
 
@@ -291,7 +280,7 @@ def build_posidonia_ecosystem(
             name="Posidonia Meadow",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=8_000_000.0,
+            annual_value=8_000_000.0,
             description="Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
             # v0.3: Producer, KEYSTONE foundation species
             trophic_level=0,
@@ -303,7 +292,7 @@ def build_posidonia_ecosystem(
             name="Coralligenous & Red Coral",
             dependency_weight=0.10,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=6_000_000.0,
+            annual_value=6_000_000.0,
             description="Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
             # v0.3: Producer (biogenic)
             trophic_level=0,
@@ -313,7 +302,7 @@ def build_posidonia_ecosystem(
             name="Epiphytes & Algae",
             dependency_weight=0.07,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_571_000.0,
+            annual_value=3_571_000.0,
             description="Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
             # v0.3: Producer
             trophic_level=0,
@@ -323,7 +312,7 @@ def build_posidonia_ecosystem(
             name="Marine Invertebrates",
             dependency_weight=0.09,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_889_000.0,
+            annual_value=3_889_000.0,
             description="Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
             # v0.3: Primary consumer
             trophic_level=1,
@@ -333,7 +322,7 @@ def build_posidonia_ecosystem(
             name="Fish Populations",
             dependency_weight=0.14,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=5_000_000.0,
+            annual_value=5_000_000.0,
             description="Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
             # v0.3: Secondary consumer
             trophic_level=2,
@@ -343,7 +332,7 @@ def build_posidonia_ecosystem(
             name="Marine Megafauna",
             dependency_weight=0.04,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=5_000_000.0,
+            annual_value=5_000_000.0,
             description="Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
             # v0.3: Tertiary consumer — apex marine predator
             trophic_level=3,
@@ -353,7 +342,7 @@ def build_posidonia_ecosystem(
             name="Seabirds",
             dependency_weight=0.05,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=3_600_000.0,
+            annual_value=3_600_000.0,
             description="Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
             # v0.3: Secondary consumer (fish-dependent)
             trophic_level=2,
@@ -363,7 +352,7 @@ def build_posidonia_ecosystem(
             name="Coastal Protection",
             dependency_weight=0.13,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=6_923_000.0,
+            annual_value=6_923_000.0,
             description="Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -372,7 +361,7 @@ def build_posidonia_ecosystem(
             name="Water Quality",
             dependency_weight=0.11,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=5_909_000.0,
+            annual_value=5_909_000.0,
             description="Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -382,7 +371,7 @@ def build_posidonia_ecosystem(
             name="Blue Carbon",
             dependency_weight=0.09,
             damage_function=exponential_damage(threshold=t, base=2.0),
-            monetary_rate=5_556_000.0,
+            annual_value=5_556_000.0,
             description="Blue carbon — 15\u00d7 Amazon CO\u2082 rate, millennia of stored matte carbon, exponential release",
             # v0.3: Abiotic service
             trophic_level=-1,
@@ -392,7 +381,7 @@ def build_posidonia_ecosystem(
             name="Human Communities",
             dependency_weight=0.08,
             damage_function=logistic_damage(threshold=t, steepness=_STEEPNESS),
-            monetary_rate=8_750_000.0,
+            annual_value=8_750_000.0,
             description="Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
             # v0.3: External beneficiary
             trophic_level=-1,
@@ -471,9 +460,8 @@ def run_posidonia(
     Default hectares_destroyed=2,000 — 40% of the meadow, well past the 20%
     safe threshold, representative of a major coastal development project.
 
-    NOTE: externality costs in the report are ANNUAL rates. The one-time
-    private revenue must be compared against recurring annual losses to
-    understand the true social cost over time.
+    NOTE: per-agent externality costs in the report are ANNUAL (€/yr); the
+    net social cost compares the one-off revenue with their present value.
 
     Args:
         total_hectares: Total hectares of Posidonia meadow.
@@ -626,10 +614,10 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
 
 # Posidonia marine annual note for JSON output
 _POSIDONIA_NOTES = [
-    "Marine externality costs are ANNUAL — they recur every year the damage "
-    "persists. Posidonia recovers at 1-6 cm/year; damage is effectively "
-    "permanent on human timescales. The one-time private revenue is offset "
-    "within ~2 years of annual ecosystem service losses."
+    "Marine externality costs are ANNUAL (€/yr) — they recur every year the "
+    "damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively "
+    "permanent on human timescales. The net social cost compares the one-off "
+    "revenue with the present value of these annual losses."
 ]
 
 

@@ -92,8 +92,7 @@ def test_amazon_apex_predators_lowest_weight():
 
 def test_amazon_at_threshold():
     """
-    Cutting exactly 80,000 trees (20%): externality is substantial and exceeds
-    revenue. Even at the safe threshold the social cost dominates.
+    Cutting exactly 80,000 trees (20%) costs less per year than cutting 40%.
     """
     eco = build_amazon_ecosystem(
         total_trees=TOTAL_TREES,
@@ -104,19 +103,12 @@ def test_amazon_at_threshold():
     result_past = run_extraction(eco, THRESHOLD_UNITS * 2)        # 40%
 
     # Revenue = 80,000 * 1.50 = 120,000
-    assert result_threshold.total_private_revenue == 120_000.0
+    assert result_threshold.revenue == 120_000.0
 
     # Externality at threshold < externality past threshold (S-curve accelerating)
-    assert result_threshold.total_externality_cost < result_past.total_externality_cost, (
-        f"Externality at 20% ({result_threshold.total_externality_cost:.2f}) "
-        f"should be less than at 40% ({result_past.total_externality_cost:.2f})"
-    )
-
-    # Externality should already exceed revenue at threshold (very high service value)
-    assert result_threshold.total_externality_cost > result_threshold.total_private_revenue, (
-        f"Amazon externality ({result_threshold.total_externality_cost:.2f}) "
-        f"should exceed revenue ({result_threshold.total_private_revenue:.2f}) "
-        f"at all levels"
+    assert result_threshold.annual_externality < result_past.annual_externality, (
+        f"Externality at 20% ({result_threshold.annual_externality:.2f}) "
+        f"should be less than at 40% ({result_past.annual_externality:.2f})"
     )
 
 
@@ -136,19 +128,13 @@ def test_amazon_past_threshold():
     result = run_extraction(eco, 200_000)
 
     # Revenue = 200,000 * 1.50 = 300,000
-    assert result.total_private_revenue == 300_000.0
-
-    # Externality should far exceed revenue
-    assert result.total_externality_cost > result.total_private_revenue, (
-        f"At 50% extraction, externality ({result.total_externality_cost:.2f}) "
-        f"should exceed revenue ({result.total_private_revenue:.2f})"
-    )
+    assert result.revenue == 300_000.0
 
     # Externality at 50% should be substantially more than at 20%
     result_threshold = run_extraction(eco, THRESHOLD_UNITS)
-    assert result.total_externality_cost > 2 * result_threshold.total_externality_cost, (
-        f"Externality at 50% ({result.total_externality_cost:.2f}) should be "
-        f"much larger than at 20% ({result_threshold.total_externality_cost:.2f})"
+    assert result.annual_externality > 2 * result_threshold.annual_externality, (
+        f"Externality at 50% ({result.annual_externality:.2f}) should be "
+        f"much larger than at 20% ({result_threshold.annual_externality:.2f})"
     )
 
 
@@ -167,12 +153,8 @@ def test_amazon_heavy_extraction():
     result = run_extraction(eco, 320_000)
 
     # Revenue = 320,000 * 1.50 = 480,000
-    assert result.total_private_revenue == 480_000.0
+    assert result.revenue == 480_000.0
 
-    assert result.total_externality_cost >= 0.5 * result.total_private_revenue, (
-        f"At 80% extraction, externality ({result.total_externality_cost:.2f}) "
-        f"should be >= 50% of revenue ({result.total_private_revenue:.2f})"
-    )
     assert result.final_ecosystem_health < 0.10, (
         f"At 80% extraction, ecosystem health should be < 10%, "
         f"got {result.final_ecosystem_health:.1%}"
@@ -196,7 +178,7 @@ def test_amazon_marginal_cost_curve_shape():
     cost_at = {}
     for step in result.steps:
         if step.units_extracted in (40_000, 80_000, 160_000):
-            cost_at[step.units_extracted] = step.cumulative_cost
+            cost_at[step.units_extracted] = step.annual_externality
 
     inc_pre_threshold = cost_at[80_000] - cost_at[40_000]       # 10% → 20%
     inc_post_threshold = cost_at[160_000] - cost_at[80_000]     # 20% → 40%
@@ -207,26 +189,21 @@ def test_amazon_marginal_cost_curve_shape():
     )
 
 
-def test_amazon_externality_exceeds_revenue_at_all_levels():
+def test_amazon_net_social_cost_compares_revenue_with_pv():
     """
-    Amazon externality exceeds revenue at ALL extraction levels.
+    Revenue (one-off) is compared with the present value of the externality,
+    never with the annual flow: net_social_cost = pv_externality - revenue.
 
-    The economic case for extraction is always negative from a social
-    perspective.
+    Replaces a test asserting annual externality > revenue at every level,
+    which compared a yearly flow with a one-off amount.
     """
-    eco = build_amazon_ecosystem(
-        total_trees=TOTAL_TREES,
-        safe_threshold_ratio=THRESHOLD,
-        tree_value=TREE_VALUE,
-    )
+    eco = build_amazon_ecosystem(total_trees=4_000, safe_threshold_ratio=THRESHOLD)
     for fraction in [0.10, 0.20, 0.30, 0.50]:
-        units = int(TOTAL_TREES * fraction)
-        result = run_extraction(eco, units)
-        assert result.total_externality_cost > result.total_private_revenue, (
-            f"At {fraction:.0%} extraction, externality "
-            f"({result.total_externality_cost:.2f}) should exceed revenue "
-            f"({result.total_private_revenue:.2f})"
-        )
+        result = run_extraction(eco, int(4_000 * fraction))
+        assert result.pv_externality == result.extraction_npv.total
+        assert result.net_social_cost == pytest.approx(
+            result.pv_externality - result.revenue, rel=1e-12)
+        assert result.extraction_npv.direct > result.annual_externality
 
 
 # ── Report tests ───────────────────────────────────────────────────────────────
@@ -242,7 +219,7 @@ def test_amazon_report_generates():
     assert isinstance(report, str)
     assert len(report) > 100
     assert "Central Amazon" in report
-    assert "TOTAL EXTERNALITY" in report
+    assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 
 
@@ -367,7 +344,7 @@ def test_amazon_max_externality_matches_per_hectare_calibration():
     the reference area, so the agent rates scale with the stated hectares.
     """
     eco = build_amazon_ecosystem()
-    amazon_max = sum(a.dependency_weight * a.monetary_rate for a in eco.agents)
+    amazon_max = sum(a.dependency_weight * a.annual_value for a in eco.agents)
     assert amazon_max == pytest.approx(840.0 * AMAZON_AREA_HA, rel=1e-9)
 
 
