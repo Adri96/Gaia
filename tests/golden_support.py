@@ -49,6 +49,13 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
         ["--mode", "restore", "--trees", "10000", "--units", "5000",
          "--time-horizon", "100"],
     ),
+    # Partial restoration of a clear-cut: 500 of 1,000 lost trees replanted,
+    # so depletion goes 100% → 50% and final health stays well below 1.
+    "forest__restore_partial": (
+        "forest",
+        ["--mode", "restore", "--trees", "1000", "--units", "500",
+         "--units-lost", "1000", "--time-horizon", "60"],
+    ),
     "costa_brava__extract": (
         "costa_brava", ["--trees", "10000", "--units", "4000"],
     ),
@@ -60,8 +67,10 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
         ["--mode", "restore", "--trees", "10000", "--units", "4000",
          "--time-horizon", "100"],
     ),
-    # 90% destroyed: substrate recovery (~51 yr) exceeds the 50-year cap on
-    # the permanent-loss term, which no default-sized scenario reaches.
+    # 90% destroyed: the largest substrate loss of the scenarios (~19 yr to
+    # recover). Since Step 3.3 the substrate state is the extraction's (one
+    # year of progressive clearing, not a year of bare ground), so no
+    # scenario reaches the 50-year cap on the permanent-loss term any more.
     "costa_brava__restore_severe": (
         "costa_brava",
         ["--mode", "restore", "--trees", "1000", "--units", "900"],

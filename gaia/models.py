@@ -798,24 +798,31 @@ class RestorationStep:
     The state of the restoration simulation at one point in time
     (after replanting N units total).
 
-    Mirrors SimulationStep but for the restoration direction.
+    Mirrors SimulationStep but for the restoration direction. Service
+    values are at maturity; gaia.succession spreads them over time.
 
     Attributes:
         step: Which restoration step this is (1-indexed).
         units_restored: Cumulative units replanted so far (equals step).
-        recovery_ratio: units_restored / total_units_destroyed.
-            Represents the fraction of the damage that has been addressed.
-        agent_recoveries: Recovered service ratio per agent (0.0 to 1.0).
+        recovery_ratio: units_restored / units missing at the start: the
+            fraction of the lost units replanted, which the recovery
+            functions map to a recovery efficiency.
+        depletion_ratio: Depletion once these units have matured,
+            (units missing − units_restored) / total_units.
+        agent_recoveries: Fraction of each agent's full service value
+            recovered (0.0 to 1.0): efficiency × damage reversal.
         agent_service_values: Recovered service per agent (€/yr, a flow).
         marginal_service_value: €/yr recovered by THIS unit only.
         cumulative_service_value: Total recovered service at this point (€/yr).
         restoration_cost_so_far: Total restoration cost incurred so far (€, one-off).
-        ecosystem_health: Weighted health recovery index (0.0 to 1.0).
+        ecosystem_health: Ecosystem health at maturity (0.0 to 1.0), on the
+            same scale as the extraction's health.
     """
 
     step: int
     units_restored: int
     recovery_ratio: float
+    depletion_ratio: float
     agent_recoveries: list    # List[float]
     agent_service_values: list  # List[float]
     marginal_service_value: float
@@ -837,7 +844,8 @@ class RestorationResult:
         total_restoration_cost: Total direct cost of restoration (€, one-off,
             undiscounted planting + maintenance).
         annual_recovered_value: Ecosystem service value recovered per year
-            at full maturity (€/yr, a flow).
+            at full maturity (€/yr, a flow): the recovery efficiency times
+            annual_damage_reversal, so never more than it.
         net_restoration_pv: restoration_npv.net_present_value (€ PV):
             PV of recovered services and carbon minus PV of restoration costs.
         prevention_advantage: (foregone_revenue + total_restoration_cost)
@@ -851,6 +859,15 @@ class RestorationResult:
             delivered while the restored units mature, discounted year by year.
         restoration_npv / carbon_breakeven / prevention_advantage_v06: use the
             resource's DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT.
+        units_lost: Units missing at the start (extracted from the pristine
+            resource by the starting state).
+        depletion_before: units_lost / total_units.
+        depletion_after: (units_lost − total_units_restored) / total_units.
+        initial_ecosystem_health: Ecosystem health of the starting state.
+        annual_damage_reversal: Annual externality at depletion_before minus
+            annual externality at depletion_after, with the extraction's
+            damage and propagation model at static agent values (€/yr, a
+            flow): the most restoration could recover (Foundation #2).
     """
 
     ecosystem: Ecosystem
@@ -881,3 +898,10 @@ class RestorationResult:
     restoration_npv: Optional[RestorationNPV] = None
     carbon_breakeven: Optional[CarbonBreakeven] = None
     prevention_advantage_v06: Optional[PreventionAdvantageV06] = None
+
+    # Step 3.3: the starting state the restoration begins from
+    units_lost: int = 0
+    depletion_before: float = 0.0
+    depletion_after: float = 0.0
+    initial_ecosystem_health: float = 1.0
+    annual_damage_reversal: float = 0.0

@@ -549,6 +549,7 @@ def run_amazon_restoration(
     annual_maintenance_per_tree: float = 1.0,
     maintenance_years: int = 20,
     time_horizon_years: int = 0,
+    units_lost: Optional[int] = None,
 ) -> str:
     """
     Run the Amazon Forest restoration simulation and return the report.
@@ -566,6 +567,8 @@ def run_amazon_restoration(
         annual_maintenance_per_tree: Annual maintenance cost per tree.
         maintenance_years: Number of years of maintenance required.
         time_horizon_years: Years to simulate maturation (0 = skip, v0.4).
+        units_lost: Units missing before restoring (default: the units
+            restored, i.e. restore what was cut).
 
     Returns:
         Formatted text restoration report string.
@@ -588,6 +591,7 @@ def run_amazon_restoration(
         ecosystem, trees_to_restore, cost, recovery_fns,
         succession_curve=_AMAZON_SUCCESSION if time_horizon_years > 0 else None,
         time_horizon_years=time_horizon_years,
+        units_lost=units_lost,
     )
     return format_restoration_report(result)
 
@@ -695,6 +699,7 @@ def main(argv: list = None) -> None:
             ]
             result = run_restoration(
                 ecosystem, args.units, cost, recovery_fns,
+                units_lost=args.units_lost,
                 succession_curve=(
                     _AMAZON_SUCCESSION if args.time_horizon > 0 else None
                 ),

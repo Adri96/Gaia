@@ -512,13 +512,21 @@ def format_restoration_report(result: RestorationResult) -> str:
         f"  {'Area:':<28} {resource.area_ha:>10,.1f} ha"
     )
     lines.append(
+        f"  {'Units Lost (start):':<28} {result.units_lost:>10,}"
+    )
+    lines.append(
         f"  {'Units Restored:':<28} {result.total_units_restored:>10,}"
     )
     lines.append(
         f"  {'Restoration Coverage:':<28} {restoration_ratio:>10.1%}  of total capacity"
     )
     lines.append(
-        f"  {'Final Ecosystem Health:':<28} {result.final_ecosystem_health:>10.1%}"
+        f"  {'Depletion:':<28} {result.depletion_before:>10.1%}  \u2192 "
+        f"{result.depletion_after:.1%}"
+    )
+    lines.append(
+        f"  {'Ecosystem Health:':<28} {result.initial_ecosystem_health:>10.1%}  \u2192 "
+        f"{result.final_ecosystem_health:.1%}  (at maturity)"
     )
     lines.append("")
 
@@ -555,6 +563,13 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.append("")
 
     # Totals
+    lines.append(
+        f"  {'Damage reversal (upper bound):':<40} "
+        f"{result.annual_damage_reversal:>14,.2f}\u20ac/yr"
+    )
+    lines.append(
+        "    (annual externality before \u2212 after restoring, same damage model)"
+    )
     lines.append(
         f"  {'ANNUAL RECOVERED VALUE:':<40} {result.annual_recovered_value:>14,.2f}\u20ac/yr"
     )

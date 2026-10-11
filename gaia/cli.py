@@ -78,8 +78,21 @@ def add_restoration_arguments(
 ) -> None:
     """Add restoration-specific arguments with case-specific defaults.
 
-    Adds: --planting-cost, --maintenance-cost, --maintenance-years, --time-horizon.
+    Adds: --units-lost, --planting-cost, --maintenance-cost,
+    --maintenance-years, --time-horizon.
     """
+    parser.add_argument(
+        "--units-lost",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "[restore mode] Units missing before restoring: the starting "
+            "state is the pristine resource with N units extracted. "
+            "--units (the units restored) may not exceed it "
+            "(default: same as --units, i.e. restore what was cut)"
+        ),
+    )
     parser.add_argument(
         "--planting-cost",
         type=float,
@@ -145,6 +158,7 @@ def warn_unused_restoration_args(args: argparse.Namespace) -> None:
     if args.mode != "extract":
         return
     restoration_flags = [
+        "--units-lost",
         "--planting-cost",
         "--maintenance-cost",
         "--maintenance-years",

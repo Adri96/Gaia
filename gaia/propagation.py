@@ -108,6 +108,8 @@ def propagate_interactions(
         agent_is_keystone: Boolean per agent — is this a keystone species?
         agent_keystone_thresholds: Keystone threshold per agent.
         recovery_mode: If True, multiply edge strengths by recovery_cascade_factor.
+            Not used by run_restoration since Step 3.3, which reverses the
+            extraction's effective damage instead of propagating recoveries.
         recovery_cascade_factor: Strength multiplier for recovery cascades.
             Default 0.5 — recovery cascades are weaker than damage cascades
             (entropy asymmetry). [PLACEHOLDER]

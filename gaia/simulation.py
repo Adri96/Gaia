@@ -19,6 +19,9 @@ v0.5: Phase 3.5 substrate degradation in extraction, substrate ceiling in restor
 v0.6: NPV computation on SimulationResult and RestorationResult when DiscountConfig present.
 v0.7: Per-step price solver when PricingConfig present; dynamic prices replace
       the static agent annual values.
+Step 3.3: run_restoration starts from a real state (an extraction result) and
+      retraces its damage path in reverse; recovery functions are efficiencies
+      bounded by the damage reversal.
 
 Monetary semantics (decision D1): agent values and externalities are yearly
 flows (€/yr); revenue and restoration costs are one-off amounts (€). The two
@@ -47,10 +50,10 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.propagation import compute_trophic_amplification, propagate_interactions
-from gaia.recovery import RecoveryFunc
 from gaia.resilience import compute_resilience_zone
 from gaia.substrate import (
     _T_HA_TO_MM_FACTOR,
+    apply_erosion,
     compute_capacity_fraction,
     compute_substrate_recovery_years,
     create_substrate_state,
@@ -586,6 +589,71 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     return _extraction_result(ecosystem, steps, units_to_extract)
 
 
+_RECOVERY_TOLERANCE: float = 1e-9
+
+
+def _resolve_starting_state(
+    ecosystem: Ecosystem,
+    units_to_restore: int,
+    starting_state: Optional[SimulationResult],
+    units_lost: Optional[int],
+) -> SimulationResult:
+    """Return the extraction result a restoration starts from.
+
+    Either the given ``starting_state`` (which must come from run_extraction
+    on this same ecosystem), or an extraction of ``units_lost`` units from
+    the pristine resource — ``units_to_restore`` units when neither is
+    given ("restore what was cut").
+    """
+    total_units: int = ecosystem.resource.total_units
+    if starting_state is not None:
+        if units_lost is not None:
+            raise ValueError(
+                "Pass either starting_state or units_lost, not both."
+            )
+        if not isinstance(starting_state, SimulationResult):
+            raise ValueError(
+                f"starting_state must be a SimulationResult from run_extraction, "
+                f"got {type(starting_state).__name__}."
+            )
+        if starting_state.ecosystem is not ecosystem:
+            raise ValueError(
+                "starting_state must be the result of run_extraction on the "
+                "ecosystem being restored."
+            )
+        if len(starting_state.steps) != starting_state.total_units_extracted:
+            raise ValueError(
+                f"starting_state has {len(starting_state.steps)} steps for "
+                f"{starting_state.total_units_extracted} units extracted; the "
+                f"restoration retraces every step."
+            )
+        return starting_state
+
+    lost: int = units_to_restore if units_lost is None else units_lost
+    if isinstance(lost, bool) or not isinstance(lost, int):
+        raise ValueError(f"units_lost must be an integer, got {lost!r}.")
+    if lost < 0 or lost > total_units:
+        raise ValueError(
+            f"units_lost must be in [0, total_units={total_units}], got {lost}."
+        )
+    return run_extraction(ecosystem, lost)
+
+
+def _substrate_after(extraction: SimulationResult) -> Optional[SubstrateState]:
+    """Substrate state at the end of an extraction (None without a substrate).
+
+    Replays the extraction's per-step erosion on a pristine substrate, so the
+    state is exactly the one the extraction ended in, whichever engine ran it.
+    """
+    profile = extraction.ecosystem.resource.substrate
+    if profile is None:
+        return None
+    state: SubstrateState = create_substrate_state(profile)
+    for step in extraction.steps:
+        apply_erosion(state, step.substrate_erosion)
+    return state
+
+
 def run_restoration(
     ecosystem: Ecosystem,
     units_to_restore: int,
@@ -593,37 +661,86 @@ def run_restoration(
     recovery_functions: list,
     succession_curve: Optional[SuccessionCurve] = None,
     time_horizon_years: int = 0,
+    starting_state: Optional[SimulationResult] = None,
+    units_lost: Optional[int] = None,
 ) -> RestorationResult:
     """
-    Simulate restoring `units_to_restore` units to the ecosystem.
+    Simulate restoring `units_to_restore` units to a degraded ecosystem.
 
-    The inverse of run_extraction. At each step, the current recovery ratio is
-    computed and each agent's recovery function is evaluated to get the TOTAL
-    recovered ecosystem service flow (€/yr) at that ratio. Marginal value per
-    step is the difference from the previous step's total.
+    Starting state:
+        The restoration starts from the end state of an extraction from the
+        pristine resource: ``starting_state`` (the SimulationResult of
+        run_extraction on this ecosystem — extraction → restoration
+        chaining), or else an extraction of ``units_lost`` units, run here.
+        With neither, units_lost = units_to_restore ("restore what was
+        cut"). The substrate state also comes from the starting state.
 
-    Present values (net restoration value, maturation gap, investment NPV)
-    use the resource's DiscountConfig, or DEFAULT_DISCOUNT when it has none.
+        m = units missing, N = total_units, k = units_to_restore (1 <= k <= m):
+            depletion_before = m / N
+            depletion_after  = (m − k) / N
 
-    v0.3: Recovery cascades propagate at reduced strength (0.5×) reflecting
-    entropy asymmetry — recovery cascades are weaker than damage cascades.
+    Recovered value at maturity (per restoration step j = 1..k):
+        The extraction already computed every agent's effective damage
+        (damage function, trophic amplification, interaction propagation)
+        at depletions 1/N .. m/N, so restoring j units retraces that path:
+            reversal[i]  = damage_i(m/N) − damage_i((m − j)/N)
+            efficiency_i = recovery_functions[i](j / m)       in [0, 1]
+            recovered[i] = efficiency_i × reversal[i]
+            service[i]   = recovered[i] × weight[i] × annual_value[i]   (€/yr)
+            health       = 1 − Σ weight[i] × (damage_i(m/N) − recovered[i])
+        At step k, Σ service is annual_recovered_value and Σ of
+        reversal × weight × value is annual_damage_reversal, i.e.
+        annual_externality(depletion_before) − annual_externality(depletion_after)
+        at static agent values (endogenous prices are not applied).
 
-    v0.4: Optional succession_curve + time_horizon_years for maturation pass.
+        The recovery functions (gaia.recovery) map the fraction of the lost
+        units replanted to the fraction of the damage reversal recovered at
+        maturity: a recovery efficiency, which must lie in [0, 1], so
+        recovery never exceeds the reversal of the damage (Foundation #2).
+        logistic_recovery reaches 1 only when every lost unit is replanted
+        (partial restoration lags the reversal); linear_recovery(slope)
+        caps efficiency at its slope. With efficiency 1, health is the
+        extraction's health at depletion_after.
+
+        Trophic amplification is not applied to recovery (S2): the reversal
+        is of the extraction's amplified damage, so consumers regain what
+        they lost; amplifying recovery as well made them recover 1.6–4.2×
+        faster than producers. Interaction cascades are reversed as part of
+        the effective damage (the former 0.5× recovery cascade is gone).
+
+    Time and money:
+        The succession curve spreads annual_recovered_value over time
+        (maturation timeline and gap); the substrate ceiling of the starting
+        state caps the service fraction in the present values as before.
+        Present values (net restoration value, maturation gap, investment
+        NPV) use the resource's DiscountConfig, or DEFAULT_DISCOUNT when it
+        has none. Foregone revenue and carbon released refer to the k units
+        restored (cut, then replanted).
+
+    Restoration has no Cython loop: it reads the damages from the starting
+    state, which either engine may have produced.
 
     Args:
         ecosystem: The Ecosystem to restore.
-        units_to_restore: Number of units to replant (>= 1, <= total_units).
+        units_to_restore: Number of units to replant (1 <= k <= units missing).
         restoration_cost: RestorationCost parameters (planting + maintenance).
         recovery_functions: List of RecoveryFunc, one per agent, in the same
-            order as ecosystem.agents. Each maps recovery_ratio → recovered_ratio.
+            order as ecosystem.agents. Each maps the fraction of lost units
+            replanted to a recovery efficiency in [0, 1].
         succession_curve: Optional SuccessionCurve for maturation pass (v0.4).
         time_horizon_years: Years to simulate post-restoration (v0.4, 0 = skip).
+        starting_state: Optional SimulationResult of run_extraction on this
+            ecosystem to restore from.
+        units_lost: Optional number of units missing at the start, cut from
+            the pristine resource (default: units_to_restore). Not allowed
+            together with starting_state.
 
     Returns:
         RestorationResult with all steps recorded.
 
     Raises:
-        ValueError: If inputs are invalid.
+        ValueError: If inputs are invalid, including k > units missing or a
+            recovery efficiency outside [0, 1].
     """
     validate_ecosystem(ecosystem)
 
@@ -637,107 +754,100 @@ def run_restoration(
         raise ValueError(
             f"units_to_restore must be >= 1, got {units_to_restore}."
         )
-    if units_to_restore > ecosystem.resource.total_units:
+
+    start: SimulationResult = _resolve_starting_state(
+        ecosystem, units_to_restore, starting_state, units_lost
+    )
+    resource = ecosystem.resource
+    total_units: int = resource.total_units
+    missing: int = start.total_units_extracted
+    if units_to_restore > missing:
         raise ValueError(
-            f"units_to_restore ({units_to_restore}) cannot exceed "
-            f"total_units ({ecosystem.resource.total_units})."
+            f"units_to_restore ({units_to_restore}) cannot exceed the units "
+            f"missing in the starting state ({missing} of {total_units})."
         )
 
     agents: list = ecosystem.agents
     cost_per_unit: float = restoration_cost.total_cost_per_unit
-    annual_values: list = [a.annual_value(ecosystem.resource.area_ha) for a in agents]
+    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
+    weights: list = [a.dependency_weight for a in agents]
 
-    # v0.3: Pre-extract interaction metadata
-    agent_names: list = [a.name for a in agents]
-    agent_trophic_levels: list = [a.trophic_level for a in agents]
-    agent_is_keystone: list = [a.is_keystone for a in agents]
-    agent_keystone_thresholds: list = [a.keystone_threshold for a in agents]
-
-    interactions: list = ecosystem.interactions
-    edge_sources: list = [e.source for e in interactions]
-    edge_targets: list = [e.target for e in interactions]
-    edge_strengths: list = [e.strength for e in interactions]
-
-    has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
-    has_interactions: bool = len(interactions) > 0
+    start_step: SimulationStep = start.steps[missing - 1]
+    damages_before: list = start_step.agent_damages
+    no_damage: list = [0.0] * n_agents
 
     steps: list = []
     previous_total_service: float = 0.0
+    reversals: list = []
 
     for step in range(1, units_to_restore + 1):
         units_restored: int = step
-        # Recovery ratio: fraction of the destroyed resource that has been replanted
-        recovery_ratio: float = units_restored / units_to_restore
+        still_missing: int = missing - units_restored
+        recovery_ratio: float = units_restored / missing
+        damages_now: list = (
+            start.steps[still_missing - 1].agent_damages
+            if still_missing > 0 else no_damage
+        )
 
-        # Phase 1: Direct recovery with trophic amplification
-        direct_recoveries: list = []
-        for i in range(n_agents):
-            recovery_fn: RecoveryFunc = recovery_functions[i]
-            raw_recovery: float = recovery_fn(recovery_ratio)
-            if has_trophic:
-                amplified: float = compute_trophic_amplification(
-                    raw_recovery, agent_trophic_levels[i]
-                )
-                direct_recoveries.append(amplified)
-            else:
-                direct_recoveries.append(raw_recovery)
-
-        # Phase 2: Interaction propagation (recovery mode — 0.5× cascade strength)
-        if has_interactions:
-            effective_recoveries, _cascade, _keystone = propagate_interactions(
-                agent_names=agent_names,
-                direct_damages=direct_recoveries,
-                edge_sources=edge_sources,
-                edge_targets=edge_targets,
-                edge_strengths=edge_strengths,
-                agent_is_keystone=agent_is_keystone,
-                agent_keystone_thresholds=agent_keystone_thresholds,
-                recovery_mode=True,
-            )
-        else:
-            effective_recoveries = direct_recoveries
-
-        # Phase 3: Compute service values from effective recoveries
+        recoveries: list = []
+        reversals = []
         agent_service_values: list = []
         step_total_service: float = 0.0
         health_sum: float = 0.0
 
         for i in range(n_agents):
-            service_value: float = (
-                effective_recoveries[i] * agents[i].dependency_weight
-                * annual_values[i]
-            )
+            efficiency: float = recovery_functions[i](recovery_ratio)
+            if not (-_RECOVERY_TOLERANCE <= efficiency <= 1.0 + _RECOVERY_TOLERANCE):
+                raise ValueError(
+                    f"Recovery function for agent '{agents[i].name}' returned "
+                    f"{efficiency} at recovery ratio {recovery_ratio}; recovery "
+                    f"efficiency must be in [0, 1] (recovery cannot exceed the "
+                    f"reversal of the damage)."
+                )
+            if efficiency < 0.0:
+                efficiency = 0.0
+            elif efficiency > 1.0:
+                efficiency = 1.0
+
+            reversal: float = damages_before[i] - damages_now[i]
+            if reversal < 0.0:
+                reversal = 0.0
+            recovered: float = efficiency * reversal
+            service_value: float = recovered * weights[i] * annual_values[i]
+
+            reversals.append(reversal)
+            recoveries.append(recovered)
             agent_service_values.append(service_value)
             step_total_service += service_value
-            health_sum += agents[i].dependency_weight * effective_recoveries[i]
+            health_sum += weights[i] * (damages_before[i] - recovered)
 
         marginal_value: float = step_total_service - previous_total_service
-        ecosystem_health: float = health_sum
+        ecosystem_health: float = 1.0 - health_sum
         if ecosystem_health < 0.0:
             ecosystem_health = 0.0
         elif ecosystem_health > 1.0:
             ecosystem_health = 1.0
 
-        restoration_cost_so_far: float = step * cost_per_unit
-
         steps.append(RestorationStep(
             step=step,
             units_restored=units_restored,
             recovery_ratio=recovery_ratio,
-            agent_recoveries=effective_recoveries,
+            depletion_ratio=still_missing / total_units,
+            agent_recoveries=recoveries,
             agent_service_values=agent_service_values,
             marginal_service_value=marginal_value,
             cumulative_service_value=step_total_service,
-            restoration_cost_so_far=restoration_cost_so_far,
+            restoration_cost_so_far=step * cost_per_unit,
             ecosystem_health=ecosystem_health,
         ))
 
         previous_total_service = step_total_service
 
     final_step: RestorationStep = steps[-1]
-    # TODO(3.3): recovered value ignores the starting state (C1): the final
-    # step always recovers every agent's full annual value.
     annual_recovered: float = final_step.cumulative_service_value  # €/yr
+    annual_damage_reversal: float = 0.0
+    for i in range(n_agents):
+        annual_damage_reversal += reversals[i] * weights[i] * annual_values[i]
     total_cost: float = final_step.restoration_cost_so_far  # €, one-off
 
     from gaia.discount import (
@@ -747,52 +857,42 @@ def run_restoration(
         compute_restoration_npv,
     )
     discount = (
-        ecosystem.resource.discount
-        if ecosystem.resource.discount is not None else DEFAULT_DISCOUNT
+        resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
     )
 
     # Prevention advantage: how many times cheaper it would have been to not
     # destroy the units vs. destroying them and then restoring them.
-    # foregone_revenue = the private revenue that was earned by destroying the units
-    foregone_revenue: float = units_to_restore * ecosystem.resource.unit_value
+    # foregone_revenue = the private revenue earned by cutting the restored units
+    foregone_revenue: float = units_to_restore * resource.unit_value
     if foregone_revenue > 0.0:
         prevention_advantage: float = (foregone_revenue + total_cost) / foregone_revenue
     else:
         prevention_advantage = 1.0
 
-    # v0.5: Substrate ceiling and enhanced prevention advantage
+    # v0.5: Substrate ceiling (from the starting state) and enhanced PA
     substrate_ceiling: float = 1.0
     substrate_recovery_yrs: float = 0.0
     prevention_advantage_with_substrate: float = prevention_advantage
-    if ecosystem.resource.substrate is not None:
-        sub_state: SubstrateState = create_substrate_state(ecosystem.resource.substrate)
-        # Simulate substrate degradation from the extraction that preceded this restoration
-        # Approximate: units_to_restore were extracted, so degrade substrate accordingly
-        if ecosystem.resource.total_units > 0:
-            cover_after_extraction: float = (
-                (ecosystem.resource.total_units - units_to_restore)
-                / ecosystem.resource.total_units
-            )
-            # Apply degradation over an estimated extraction period (~1 year)
-            degrade_substrate(sub_state, cover_after_extraction, years=1.0)
-            substrate_ceiling = compute_capacity_fraction(sub_state)
-            substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
+    sub_state: Optional[SubstrateState] = _substrate_after(start)
+    if sub_state is not None:
+        substrate_ceiling = start_step.k_fraction
+        substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
 
-            # Enhanced prevention advantage including permanent capacity loss:
-            # the annual flow lost (€/yr) summed, undiscounted, over the
-            # substrate recovery time (capped at 50 years) — a one-off €.
-            # TODO(3.7): undiscounted; replaced by destroy_then_restore_penalty.
-            if substrate_ceiling < 1.0 and foregone_revenue > 0.0:
-                permanent_loss_fraction: float = 1.0 - substrate_ceiling
-                # Annual service value at full capacity (€/yr)
-                annual_lost_value: float = annual_recovered * permanent_loss_fraction
-                # Cap at 50 years for NPV calculation (avoid infinite values)
-                npv_years: float = min(substrate_recovery_yrs, 50.0)
-                permanent_loss_npv: float = annual_lost_value * npv_years
-                prevention_advantage_with_substrate = (
-                    (foregone_revenue + total_cost + permanent_loss_npv)
-                    / foregone_revenue
-                )
+        # Enhanced prevention advantage including permanent capacity loss:
+        # the annual flow lost (€/yr) summed, undiscounted, over the
+        # substrate recovery time (capped at 50 years) — a one-off €.
+        # TODO(3.7): undiscounted; replaced by destroy_then_restore_penalty.
+        if substrate_ceiling < 1.0 and foregone_revenue > 0.0:
+            permanent_loss_fraction: float = 1.0 - substrate_ceiling
+            # Annual recovered service value at maturity (€/yr)
+            annual_lost_value: float = annual_recovered * permanent_loss_fraction
+            # Cap at 50 years for NPV calculation (avoid infinite values)
+            npv_years: float = min(substrate_recovery_yrs, 50.0)
+            permanent_loss_npv: float = annual_lost_value * npv_years
+            prevention_advantage_with_substrate = (
+                (foregone_revenue + total_cost + permanent_loss_npv)
+                / foregone_revenue
+            )
 
     # v0.4: Maturation pass — produce year-by-year timeline if succession curve provided
     maturation_timeline: list = []
@@ -892,4 +992,9 @@ def run_restoration(
         restoration_npv=restoration_npv_result,
         carbon_breakeven=carbon_breakeven_result,
         prevention_advantage_v06=pa_v06_result,
+        units_lost=missing,
+        depletion_before=missing / total_units,
+        depletion_after=(missing - units_to_restore) / total_units,
+        initial_ecosystem_health=start_step.ecosystem_health,
+        annual_damage_reversal=annual_damage_reversal,
     )

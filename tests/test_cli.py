@@ -267,3 +267,48 @@ class TestAreaHa:
         with pytest.raises(SystemExit):
             posidonia_main(["--hectares", "1000", "--units", "100", "--area-ha", "500"])
         assert "area_ha" in capsys.readouterr().err
+
+
+class TestUnitsLost:
+    """--units-lost sets the degraded starting state of a restoration (Step 3.3)."""
+
+    def test_default_is_none(self):
+        assert forest_parse([]).units_lost is None
+
+    def test_default_restores_what_was_cut(self, capsys):
+        d = _json_run(forest_main, ["--trees", "100", "--units", "40",
+                                    "--mode", "restore"], capsys)
+        assert d["summary"]["units_lost"] == 40
+        assert d["summary"]["depletion_before"] == 0.4
+        assert d["summary"]["depletion_after"] == 0.0
+
+    def test_partial_restoration_of_a_larger_loss(self, capsys):
+        d = _json_run(forest_main, ["--trees", "100", "--units", "40",
+                                    "--units-lost", "80", "--mode", "restore"], capsys)
+        s = d["summary"]
+        assert s["units_lost"] == 80
+        assert s["depletion_before"] == 0.8
+        assert s["depletion_after"] == 0.4
+        assert s["initial_ecosystem_health"] < s["final_ecosystem_health"] < 1.0
+        assert s["annual_recovered_value_eur_yr"] <= s["annual_damage_reversal_eur_yr"]
+
+    def test_more_restored_than_lost_is_an_error(self, capsys):
+        with pytest.raises(SystemExit):
+            forest_main(["--trees", "100", "--units", "50", "--units-lost", "20",
+                         "--mode", "restore"])
+        assert "cannot exceed the units missing" in capsys.readouterr().err
+
+    def test_deprecated_cut_alias_sets_units_restored(self, capsys):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            d = _json_run(forest_main, ["--trees", "100", "--cut", "30",
+                                        "--units-lost", "60", "--mode", "restore"], capsys)
+        assert d["summary"]["total_units_restored"] == 30
+        assert d["summary"]["units_lost"] == 60
+
+    def test_warned_in_extraction_mode(self, capsys, monkeypatch):
+        argv = ["--trees", "100", "--units", "50", "--units-lost", "60"]
+        monkeypatch.setattr("sys.argv", ["forest"] + argv)
+        with pytest.warns(UserWarning, match="--units-lost is only used in restore mode"):
+            forest_main(argv)
+        capsys.readouterr()

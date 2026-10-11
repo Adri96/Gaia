@@ -249,28 +249,47 @@ def degrade_substrate(
         # Convert t/ha/yr to mm/yr, then to cm
         erosion_mm: float = erosion_amount * _T_HA_TO_MM_FACTOR
         erosion_cm: float = erosion_mm / 10.0
-        state.current_soil_depth_cm -= erosion_cm
-        if state.current_soil_depth_cm < 0.0:
-            state.current_soil_depth_cm = 0.0
-        # Recompute capacity
-        compute_capacity_fraction(state)
+        apply_erosion(state, erosion_cm)
         return erosion_cm
 
     if is_marine(profile) and state.current_sediment_stability is not None:
-        # Marine: erosion_rate is in mm/yr, applied as fraction of stability
-        # 5 mm/yr matte erosion on 0.85 stability -> gradual reduction
-        # Normalize: treat erosion_rate as direct stability reduction per year
-        # (scaled so that at full erosion rate, stability drops meaningfully)
+        apply_erosion(state, erosion_amount)
+        return erosion_amount
+
+    return 0.0
+
+
+def apply_erosion(state: SubstrateState, erosion: float) -> None:
+    """Remove an amount of substrate, in the units degrade_substrate returns.
+
+    Terrestrial: ``erosion`` is cm of soil. Marine: mm of matte, applied as
+    a loss of sediment stability (erosion / 100 per mm, so ~5 mm/yr of matte
+    erosion removes 0.05 stability per year). Values are floored at 0 and the
+    capacity fraction is recomputed.
+
+    Replaying the per-step ``substrate_erosion`` of an extraction through
+    this function reproduces the substrate state the extraction ended in,
+    which is how a restoration inherits it (gaia.simulation).
+
+    Args:
+        state: Current substrate state (modified in place).
+        erosion: Erosion amount (cm of soil, or mm of matte).
+    """
+    profile = state.profile
+    if is_terrestrial(profile) and state.current_soil_depth_cm is not None:
+        state.current_soil_depth_cm -= erosion
+        if state.current_soil_depth_cm < 0.0:
+            state.current_soil_depth_cm = 0.0
+        compute_capacity_fraction(state)
+        return
+
+    if is_marine(profile) and state.current_sediment_stability is not None:
         if state.pristine_sediment_stability is not None and state.pristine_sediment_stability > 0:
-            # Erosion rate in mm/yr -> fraction of pristine stability lost per year
-            stability_loss: float = (erosion_amount / 100.0)  # ~5mm/yr -> 0.05/yr
+            stability_loss: float = (erosion / 100.0)
             state.current_sediment_stability -= stability_loss
             if state.current_sediment_stability < 0.0:
                 state.current_sediment_stability = 0.0
         compute_capacity_fraction(state)
-        return erosion_amount
-
-    return 0.0
 
 
 def recover_substrate(state: SubstrateState, years: float = 1.0) -> None:

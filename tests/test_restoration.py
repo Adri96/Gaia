@@ -8,13 +8,15 @@ These tests verify the run_restoration() engine and the core economic claim of v
     - Net restoration value is positive (restoration generates net social value)
     - Partial restoration recovers partial services (not all-or-nothing)
     - Full restoration approaches maximum service recovery
+    - Step 3.3: restoration starts from a real state (an extraction result)
+      and recovers at most the reversal of the damage
 """
 
 import pytest
 from gaia.cases.forest import build_forest_ecosystem
 from gaia.models import RestorationCost
 from gaia.recovery import logistic_recovery, linear_recovery
-from gaia.simulation import run_restoration
+from gaia.simulation import run_extraction, run_restoration
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────────
@@ -158,11 +160,13 @@ def test_partial_restoration_partial_recovery():
     produces partial recovery. We compare ecosystem health at the halfway step
     of two runs with different totals:
 
-    - half-run (5,000 trees): at step 2,500, recovery_ratio=0.5 → health > 0
-    - full-run (10,000 trees): at step 2,500, recovery_ratio=0.25 → less health
+    - half-run (5,000 trees lost and restored): at step 2,500,
+      recovery_ratio=0.5 and depletion 0.5 → 0.25
+    - full-run (10,000 trees lost and restored): at step 2,500,
+      recovery_ratio=0.25 and depletion 1.0 → 0.75 → less health
 
-    Since recovery is monotone and logistic, health at ratio=0.5 > health at
-    ratio=0.25, confirming partial restoration is partial (not all-or-nothing).
+    Each run starts from the state its own extraction left (units lost =
+    units restored), so the half-run starts healthier and recovers faster.
     """
     eco = _make_ecosystem()
     fns = _make_recovery_fns(eco)
@@ -329,3 +333,155 @@ def test_logistic_recovery_slower_than_linear():
         f"Logistic recovery at 30% progress ({logistic_at_30:.2f}) should recover "
         f"less than linear at 30% ({linear_at_30:.2f}) — entropy asymmetry"
     )
+
+
+# ── Step 3.3: restoration from a real starting state (C1) ────────────────────
+
+SMALL_TREES = 1_000
+
+
+def _small():
+    eco = build_forest_ecosystem(
+        total_trees=SMALL_TREES, safe_threshold_ratio=THRESHOLD, tree_value=TREE_VALUE,
+    )
+    return eco, _make_recovery_fns(eco)
+
+
+def test_chaining_from_extraction_result():
+    """A restoration chained from an extraction starts from its end state."""
+    eco, fns = _small()
+    cut = run_extraction(eco, 800)
+    result = run_restoration(eco, 300, RESTORATION_COST, fns, starting_state=cut)
+
+    assert result.units_lost == 800
+    assert result.depletion_before == pytest.approx(0.8)
+    assert result.depletion_after == pytest.approx(0.5)
+    assert result.initial_ecosystem_health == cut.final_ecosystem_health
+    assert result.steps[-1].depletion_ratio == pytest.approx(0.5)
+    # Upper bound = externality before − after, same damage model
+    after = run_extraction(eco, 500)
+    assert result.annual_damage_reversal == pytest.approx(
+        cut.annual_externality - after.annual_externality, rel=1e-12)
+    assert result.substrate_ceiling == cut.steps[-1].k_fraction
+
+    # units_lost derives the same state as chaining
+    same = run_restoration(eco, 300, RESTORATION_COST, fns, units_lost=800)
+    assert same.annual_recovered_value == result.annual_recovered_value
+    assert same.final_ecosystem_health == result.final_ecosystem_health
+    assert same.substrate_recovery_years == result.substrate_recovery_years
+
+
+def test_default_starting_state_restores_what_was_cut():
+    eco, fns = _small()
+    default = run_restoration(eco, 400, RESTORATION_COST, fns)
+    chained = run_restoration(eco, 400, RESTORATION_COST, fns,
+                              starting_state=run_extraction(eco, 400))
+    assert default.units_lost == 400
+    assert default.annual_recovered_value == chained.annual_recovered_value
+
+
+@pytest.mark.parametrize("kwargs", [
+    {"units_lost": 299},
+    {"units_lost": 0},
+])
+def test_restoring_more_than_missing_rejected(kwargs):
+    eco, fns = _small()
+    with pytest.raises(ValueError, match="cannot exceed the units missing"):
+        run_restoration(eco, 300, RESTORATION_COST, fns, **kwargs)
+
+
+def test_restoring_more_than_missing_rejected_when_chained():
+    eco, fns = _small()
+    cut = run_extraction(eco, 100)
+    with pytest.raises(ValueError, match="cannot exceed the units missing"):
+        run_restoration(eco, 101, RESTORATION_COST, fns, starting_state=cut)
+
+
+def test_starting_state_arguments_validated():
+    eco, fns = _small()
+    cut = run_extraction(eco, 100)
+    with pytest.raises(ValueError, match="not both"):
+        run_restoration(eco, 50, RESTORATION_COST, fns,
+                        starting_state=cut, units_lost=100)
+    other, _ = _small()
+    with pytest.raises(ValueError, match="ecosystem being restored"):
+        run_restoration(other, 50, RESTORATION_COST, fns, starting_state=cut)
+    with pytest.raises(ValueError, match="units_lost"):
+        run_restoration(eco, 50, RESTORATION_COST, fns, units_lost=SMALL_TREES + 1)
+
+
+def test_final_health_below_one_when_degraded_and_efficiency_below_one():
+    """Replanting every lost unit at 80% efficiency leaves 20% of the damage."""
+    eco, _ = _small()
+    fns = [linear_recovery(slope=0.8) for _ in eco.agents]
+    cut = run_extraction(eco, 600)
+    result = run_restoration(eco, 600, RESTORATION_COST, fns, starting_state=cut)
+
+    assert result.depletion_after == 0.0
+    assert cut.final_ecosystem_health < result.final_ecosystem_health < 1.0
+    assert result.annual_recovered_value == pytest.approx(
+        0.8 * result.annual_damage_reversal, rel=1e-12)
+    expected_health = 1.0 - 0.2 * (1.0 - cut.final_ecosystem_health)
+    assert result.final_ecosystem_health == pytest.approx(expected_health, rel=1e-9)
+
+
+def test_full_efficiency_health_is_damage_model_health_at_depletion_after():
+    """With efficiency 1, health after restoring is the extraction's health there."""
+    eco, _ = _small()
+    fns = [lambda r: 1.0 for _ in eco.agents]
+    result = run_restoration(eco, 300, RESTORATION_COST, fns, units_lost=700)
+    reference = run_extraction(eco, 400)
+    assert result.final_ecosystem_health == pytest.approx(
+        reference.final_ecosystem_health, rel=1e-12)
+    assert result.annual_recovered_value == pytest.approx(
+        result.annual_damage_reversal, rel=1e-12)
+
+
+def test_recovered_value_strictly_monotonic_in_units_restored():
+    eco, fns = _small()
+    cut = run_extraction(eco, 1_000)
+    values = [
+        run_restoration(eco, k, RESTORATION_COST, fns,
+                        starting_state=cut).annual_recovered_value
+        for k in (1, 10, 100, 400, 700, 1_000)
+    ]
+    assert all(a < b for a, b in zip(values, values[1:])), values
+    # And every cost-of-cutting bound holds along the way
+    for k, v in zip((1, 10, 100, 400, 700, 1_000), values):
+        reversal = cut.annual_externality - (
+            run_extraction(eco, 1_000 - k).annual_externality)
+        assert v <= reversal * (1 + 1e-12)
+
+
+def test_downstream_values_scale_with_recovered_value():
+    """Maturation gap and service PV follow the recovered value (C1 / C2)."""
+    from gaia.cases.forest import _FOREST_SUCCESSION
+    eco, fns = _small()
+    cut = run_extraction(eco, 1_000)
+    small = run_restoration(eco, 500, RESTORATION_COST, fns, starting_state=cut,
+                            succession_curve=_FOREST_SUCCESSION, time_horizon_years=60)
+    full = run_restoration(eco, 1_000, RESTORATION_COST, fns, starting_state=cut,
+                           succession_curve=_FOREST_SUCCESSION, time_horizon_years=60)
+    ratio = small.annual_recovered_value / full.annual_recovered_value
+    assert ratio < 0.5
+    assert small.maturation_gap_pv == pytest.approx(ratio * full.maturation_gap_pv, rel=1e-9)
+    assert small.restoration_npv.service_benefits == pytest.approx(
+        ratio * full.restoration_npv.service_benefits, rel=1e-9)
+
+
+def test_recovery_not_trophically_amplified():
+    """Each agent regains at most what it lost — consumers do not recover faster."""
+    eco, fns = _small()
+    cut = run_extraction(eco, 500)
+    result = run_restoration(eco, 500, RESTORATION_COST, fns, starting_state=cut)
+    for recovered, lost in zip(result.steps[-1].agent_service_values,
+                               cut.steps[-1].agent_annual_costs):
+        assert recovered == pytest.approx(lost, rel=1e-12)
+    assert result.annual_recovered_value <= cut.annual_externality
+
+
+def test_recovery_efficiency_outside_unit_interval_rejected():
+    eco, _ = _small()
+    fns = [lambda r: 1.5 * r for _ in eco.agents]
+    with pytest.raises(ValueError, match=r"efficiency must be in \[0, 1\]"):
+        run_restoration(eco, 100, RESTORATION_COST, fns)

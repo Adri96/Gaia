@@ -4,6 +4,13 @@ Gaia v0.2 — Recovery function library.
 Recovery functions map a restoration ratio (fraction of destroyed units replanted
 and recovering) to a recovered ecosystem service ratio (0.0 to 1.0).
 
+How the engine uses them (Step 3.3): run_restoration evaluates f at
+units_restored / units_lost and uses f as a recovery EFFICIENCY — the fraction
+of the damage reversal (the extraction's damage at the starting depletion minus
+its damage at the depletion after restoring) that is recovered at maturity.
+The efficiency must lie in [0, 1], so recovery never exceeds the reversal of
+the damage (Foundation #2); the engine rejects values outside that range.
+
 They share the same interface as damage functions (float → float) but model the
 INVERSE process: restoration. The key scientific constraint is entropy asymmetry
 (Scientific Foundation #2): recovery is always SLOWER than equivalent damage.
@@ -18,14 +25,15 @@ This asymmetry is encoded in two ways:
 
 Scientific invariants all recovery functions must satisfy:
     1. f(0.0) = 0.0  — zero restoration → zero recovered services
-    2. f(1.0) = 1.0  — full restoration → full services (at maturity)
+    2. f(1.0) <= 1.0 — replanting every lost unit reverses at most the full
+       damage (1.0 for logistic_recovery, the slope for linear_recovery)
     3. Monotonicity: f(a) <= f(b) for all a < b (more planting = more recovery)
     4. Slower than damage: the recovery curve at any point x should be below
        the equivalent damage curve at x (entropy asymmetry)
 
-Note on "full recovery": f(1.0) = 1.0 means that IF all units are replanted AND
-fully matured, full ecosystem services return. Maturation delay is handled
-separately by the RestorationCost.maintenance_years parameter — the recovery
+Note on "full recovery": f(1.0) = 1.0 means that IF all lost units are replanted
+AND fully matured, the services lost to the damage return. Maturation delay is
+handled separately by the succession curve (gaia.succession) — the recovery
 function models the shape of the return curve, not the time dimension.
 
 All functions are float → float in the hot path — Cython-compatible.

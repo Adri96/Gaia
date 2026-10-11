@@ -283,6 +283,8 @@ _NON_MONETARY_KEYS = {
     "substrate_erosion", "effective_k", "k_fraction", "discount_factor",
     # restoration
     "total_units_restored", "units_restored", "recovery_ratio",
+    "units_lost", "depletion_before", "depletion_after",
+    "initial_ecosystem_health",
     "agent_recoveries", "maintenance_years", "year", "service_fraction",
     "annual_carbon_absorbed", "cumulative_carbon_absorbed",
     "years_to_pioneer", "years_to_50pct", "years_to_90pct",

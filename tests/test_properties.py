@@ -86,11 +86,11 @@ def annual_externality(result):
 def recovered_after_cut(total_units, units_cut, units_restored):
     """Forest: cut ``units_cut`` from pristine, then restore ``units_restored``.
 
-    The restoration engine has no starting state yet (C1): it assumes the
-    restored units are exactly the ones destroyed, so ``units_cut`` is not
-    passed. Step 3.3 should chain the extraction result in here.
+    The extraction result is chained into the restoration as its starting
+    state (Step 3.3).
     """
     eco, _ = build("forest", total_units)
+    cut = run_extraction(eco, units_cut)
     cost = RestorationCost(
         planting_cost_per_unit=50.0,
         annual_maintenance_per_unit=10.0,
@@ -100,6 +100,7 @@ def recovered_after_cut(total_units, units_cut, units_restored):
     return run_restoration(
         eco, units_restored, cost, recovery,
         succession_curve=_FOREST_SUCCESSION, time_horizon_years=60,
+        starting_state=cut,
     )
 
 
@@ -130,9 +131,6 @@ def test_scale_invariance_per_ha_externality_independent_of_extent(case):
 # ── 2–3. Restoration is bounded and monotonic in k (C1) ──────────────────────
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "C1: recovery ratio is units_restored / units_to_restore, so any k "
-    "recovers every agent's full value, more than cutting k cost"))
 @pytest.mark.parametrize("k", [100, 500])
 def test_restoring_k_recovers_at_most_cost_of_cutting_k(k):
     eco, _ = build("forest", 1000)
@@ -141,8 +139,6 @@ def test_restoring_k_recovers_at_most_cost_of_cutting_k(k):
     assert recovered.annual_recovered_value <= cut
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "C1: recovered value is identical for 1, 250, 500 and 1000 units restored"))
 def test_recovered_value_strictly_increasing_in_units_restored():
     values = [
         recovered_after_cut(1000, units_cut=1000, units_restored=k).annual_recovered_value

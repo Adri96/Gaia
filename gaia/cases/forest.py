@@ -43,6 +43,7 @@ CLI usage:
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000 --mode restore
     python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000 --mode restore --time-horizon 60
+    python -m gaia.cases.forest --trees 10000 --units 5000 --units-lost 8000 --mode restore
     python -m gaia.cases.forest --trees 10000 --units 5000 --format json
 """
 
@@ -326,6 +327,7 @@ def run_forest_restoration(
     annual_maintenance_per_tree: float = 10.0,
     maintenance_years: int = 10,
     time_horizon_years: int = 0,
+    units_lost: Optional[int] = None,
 ) -> str:
     """
     Run the Oak Valley Forest restoration simulation and return the report.
@@ -346,6 +348,8 @@ def run_forest_restoration(
         annual_maintenance_per_tree: Annual maintenance cost per tree.
         maintenance_years: Number of years of maintenance required.
         time_horizon_years: Years to simulate maturation (0 = skip, v0.4).
+        units_lost: Units missing before restoring (default: the units
+            restored, i.e. restore what was cut).
 
     Returns:
         Formatted text restoration report string.
@@ -368,6 +372,7 @@ def run_forest_restoration(
         ecosystem, trees_to_restore, cost, recovery_fns,
         succession_curve=_FOREST_SUCCESSION if time_horizon_years > 0 else None,
         time_horizon_years=time_horizon_years,
+        units_lost=units_lost,
     )
     return format_restoration_report(result)
 
@@ -380,8 +385,10 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
             "Examples:\n"
             "  # Extraction mode (default):\n"
             "  python -m gaia.cases.forest --trees 10000 --threshold 0.3 --units 5000\n\n"
-            "  # Restoration mode:\n"
+            "  # Restoration mode (replant the 5000 trees that were cut):\n"
             "  python -m gaia.cases.forest --trees 10000 --units 5000 --mode restore\n\n"
+            "  # Replant 5000 of 8000 trees lost:\n"
+            "  python -m gaia.cases.forest --trees 10000 --units 5000 --units-lost 8000 --mode restore\n\n"
             "  # JSON output:\n"
             "  python -m gaia.cases.forest --units 5000 --format json\n"
         ),
@@ -473,6 +480,7 @@ def main(argv: list = None) -> None:
             ]
             result = run_restoration(
                 ecosystem, args.units, cost, recovery_fns,
+                units_lost=args.units_lost,
                 succession_curve=(
                     _FOREST_SUCCESSION if args.time_horizon > 0 else None
                 ),
