@@ -175,148 +175,328 @@ def _can_use_cython(ecosystem: Ecosystem) -> bool:
     return True
 
 
-def _run_extraction_cython(
-    ecosystem: Ecosystem, units_to_extract: int
-) -> SimulationResult:
-    """Run extraction using the Cython-optimized inner loop.
+# ── Extraction ────────────────────────────────────────────────────────────────
+#
+# run_extraction validates, then runs the steps with one of two engines —
+# _cython_steps (the compiled loop) or _python_steps (the phases below) —
+# and both hand their SimulationSteps (built by _make_step) to
+# _extraction_result, which computes everything that is not per-step.
 
-    Extracts all parameters from Python objects into flat lists/primitives,
-    calls the C-typed loop, then wraps results back into SimulationStep
-    dataclasses.
+
+def _make_step(
+    step: int,
+    depletion_ratio: float,
+    effective_damages: list,
+    agent_costs: list,
+    marginal_cost: float,
+    total_cost: float,
+    revenue: float,
+    health: float,
+    direct_damages: list,
+    cascade_damages: list,
+    keystone_triggered: list,
+    zone: str,
+    confidence: float,
+    irreversibility: bool,
+    substrate_erosion: float,
+    effective_k: int,
+    k_fraction: float,
+    agent_prices: list,
+    price_result,
+) -> SimulationStep:
+    """One SimulationStep, from either engine's per-step values."""
+    return SimulationStep(
+        step=step,
+        units_extracted=step,
+        depletion_ratio=depletion_ratio,
+        agent_damages=effective_damages,
+        agent_annual_costs=agent_costs,
+        marginal_annual_externality=marginal_cost,
+        annual_externality=total_cost,
+        revenue=revenue,
+        ecosystem_health=health,
+        agent_direct_damages=direct_damages,
+        agent_cascade_damages=cascade_damages,
+        keystone_triggered=keystone_triggered,
+        resilience_zone=zone,
+        model_confidence=confidence,
+        irreversibility_warning=irreversibility,
+        substrate_erosion=substrate_erosion,
+        effective_k=effective_k,
+        k_fraction=k_fraction,
+        agent_prices=agent_prices,
+        price_result=price_result,
+    )
+
+
+# ── Extraction engine 1: the compiled loop ───────────────────────────────────
+
+
+def _cython_arguments(ecosystem: Ecosystem, units_to_extract: int) -> dict:
+    """Flatten the ecosystem into the primitives and lists extraction_loop_cy takes."""
+    resource = ecosystem.resource
+    agents = ecosystem.agents
+    trophic_levels = [a.trophic_level for a in agents]
+
+    # Edges as agent indices
+    interactions = ecosystem.interactions
+    name_to_idx = {a.name: i for i, a in enumerate(agents)}
+
+    r = resource.resilience
+    sub = resource.substrate
+    return dict(
+        n_agents=len(agents),
+        n_edges=len(interactions),
+        total_units=resource.total_units,
+        units_to_extract=units_to_extract,
+        unit_value=resource.unit_value,
+        safe_threshold_ratio=resource.safe_threshold_ratio,
+        damage_params=[_extract_damage_params(a.damage_function) for a in agents],
+        dep_weights=[a.dependency_weight for a in agents],
+        annual_values=[a.annual_value(resource.area_ha) for a in agents],
+        trophic_levels=trophic_levels,
+        trophic_amp_factors=[trophic_amplification_factor(lvl) for lvl in trophic_levels],
+        is_keystone=[a.is_keystone for a in agents],
+        keystone_thresholds=[a.keystone_threshold for a in agents],
+        edge_src_idx=[name_to_idx[e.source] for e in interactions],
+        edge_tgt_idx=[name_to_idx[e.target] for e in interactions],
+        edge_strengths=[e.strength for e in interactions],
+        keystone_edge_multiplier=KEYSTONE_EDGE_MULTIPLIER,
+        max_edge_strength=MAX_EDGE_STRENGTH,
+        has_trophic=any(lvl >= 1 for lvl in trophic_levels),
+        has_interactions=len(interactions) > 0,
+        has_resilience=r is not None,
+        has_substrate=sub is not None,
+        substrate_is_marine=bool(sub is not None and is_marine(sub)),
+        resilience_warning_width=r.warning_zone_width if r else 0.0,
+        resilience_conf_green=r.confidence_green if r else 0.9,
+        resilience_conf_yellow=r.confidence_yellow if r else 0.6,
+        resilience_conf_red=r.confidence_red if r else 0.3,
+        resilience_irreversibility_ratio=r.irreversibility_flag_ratio if r else 0.5,
+        substrate_soil_depth_cm=sub.soil_depth_cm if sub and sub.soil_depth_cm else 0.0,
+        substrate_sediment_stability=(
+            sub.sediment_stability if sub and sub.sediment_stability else 0.0
+        ),
+        substrate_erosion_unprotected=sub.erosion_rate_unprotected if sub else 0.0,
+        substrate_erosion_protected=sub.erosion_rate_protected if sub else 0.0,
+        substrate_formation_rate=sub.formation_rate if sub else 0.0,
+        substrate_erosion_alpha=sub.erosion_alpha if sub else 2.0,
+        substrate_critical_minimum=sub.critical_minimum if sub else 0.0,
+        substrate_residual_fraction=sub.residual_fraction if sub else 0.05,
+        substrate_capacity_function=sub.capacity_function if sub else "linear",
+        substrate_t_ha_to_mm_factor=_T_HA_TO_MM_FACTOR,
+    )
+
+
+def _cython_steps(ecosystem: Ecosystem, units_to_extract: int) -> list:
+    """The extraction steps computed by the compiled loop.
+
+    The loop returns one raw tuple per step; keystone crossings come back
+    as agent indices and are mapped to names.
     """
     loop = extraction_loop_cy
     if loop is None:
         raise RuntimeError("the Cython extension is not available")
-    resource = ecosystem.resource
-    agents = ecosystem.agents
-    n_agents = len(agents)
-    total_units = resource.total_units
-    unit_value = resource.unit_value
+    agent_names = [a.name for a in ecosystem.agents]
+    raw_steps = loop(**_cython_arguments(ecosystem, units_to_extract))
 
-    # Build name-to-index lookup for converting keystone indices back to names
-    agent_names = [a.name for a in agents]
-
-    # Pre-extract all per-agent arrays
-    damage_params = [_extract_damage_params(a.damage_function) for a in agents]
-    dep_weights = [a.dependency_weight for a in agents]
-    annual_values = [a.annual_value(resource.area_ha) for a in agents]
-    trophic_levels = [a.trophic_level for a in agents]
-    is_keystone = [a.is_keystone for a in agents]
-    keystone_thresholds = [a.keystone_threshold for a in agents]
-
-    # Pre-extract per-edge arrays (convert names to indices)
-    interactions = ecosystem.interactions
-    name_to_idx = {name: i for i, name in enumerate(agent_names)}
-    edge_src_idx = [name_to_idx[e.source] for e in interactions]
-    edge_tgt_idx = [name_to_idx[e.target] for e in interactions]
-    edge_strengths = [e.strength for e in interactions]
-    n_edges = len(interactions)
-
-    has_trophic = any(lvl >= 1 for lvl in trophic_levels)
-    has_interactions = n_edges > 0
-    has_resilience = resource.resilience is not None
-    has_substrate = resource.substrate is not None
-
-    # Resilience config
-    r = resource.resilience
-    res_warning = r.warning_zone_width if r else 0.0
-    res_conf_green = r.confidence_green if r else 0.9
-    res_conf_yellow = r.confidence_yellow if r else 0.6
-    res_conf_red = r.confidence_red if r else 0.3
-    res_irrev = r.irreversibility_flag_ratio if r else 0.5
-
-    # Substrate config
-    sub = resource.substrate
-    sub_is_marine = bool(sub is not None and is_marine(sub))
-    sub_depth = sub.soil_depth_cm if sub and sub.soil_depth_cm else 0.0
-    sub_stability = sub.sediment_stability if sub and sub.sediment_stability else 0.0
-    sub_erosion_unp = sub.erosion_rate_unprotected if sub else 0.0
-    sub_erosion_pro = sub.erosion_rate_protected if sub else 0.0
-    sub_formation = sub.formation_rate if sub else 0.0
-    sub_alpha = sub.erosion_alpha if sub else 2.0
-    sub_critical = sub.critical_minimum if sub else 0.0
-    sub_residual = sub.residual_fraction if sub else 0.05
-    sub_cap_fn = sub.capacity_function if sub else "linear"
-
-    # Call the Cython loop
-    raw_steps = loop(
-        n_agents=n_agents,
-        n_edges=n_edges,
-        total_units=total_units,
-        units_to_extract=units_to_extract,
-        unit_value=unit_value,
-        safe_threshold_ratio=resource.safe_threshold_ratio,
-        damage_params=damage_params,
-        dep_weights=dep_weights,
-        annual_values=annual_values,
-        trophic_levels=trophic_levels,
-        trophic_amp_factors=[trophic_amplification_factor(lvl) for lvl in trophic_levels],
-        is_keystone=is_keystone,
-        keystone_thresholds=keystone_thresholds,
-        edge_src_idx=edge_src_idx,
-        edge_tgt_idx=edge_tgt_idx,
-        edge_strengths=edge_strengths,
-        keystone_edge_multiplier=KEYSTONE_EDGE_MULTIPLIER,
-        max_edge_strength=MAX_EDGE_STRENGTH,
-        has_trophic=has_trophic,
-        has_interactions=has_interactions,
-        has_resilience=has_resilience,
-        has_substrate=has_substrate,
-        substrate_is_marine=sub_is_marine,
-        resilience_warning_width=res_warning,
-        resilience_conf_green=res_conf_green,
-        resilience_conf_yellow=res_conf_yellow,
-        resilience_conf_red=res_conf_red,
-        resilience_irreversibility_ratio=res_irrev,
-        substrate_soil_depth_cm=sub_depth,
-        substrate_sediment_stability=sub_stability,
-        substrate_erosion_unprotected=sub_erosion_unp,
-        substrate_erosion_protected=sub_erosion_pro,
-        substrate_formation_rate=sub_formation,
-        substrate_erosion_alpha=sub_alpha,
-        substrate_critical_minimum=sub_critical,
-        substrate_residual_fraction=sub_residual,
-        substrate_capacity_function=sub_cap_fn,
-        substrate_t_ha_to_mm_factor=_T_HA_TO_MM_FACTOR,
-    )
-
-    # Convert raw tuples into SimulationStep dataclasses
-    steps = []
+    steps: list = []
     for raw in raw_steps:
-        (step, units_extracted, depletion_ratio,
+        (step, _units_extracted, depletion_ratio,
          effective_damages, agent_annual_costs, marginal_annual_externality,
          annual_externality, revenue, ecosystem_health,
          direct_damages, cascade_damages, keystone_triggered_indices,
          zone, confidence, irreversibility,
          substrate_erosion, effective_k, k_fraction) = raw
-
-        # Convert keystone indices back to agent names
-        keystone_names = [agent_names[idx] for idx in keystone_triggered_indices]
-
-        steps.append(SimulationStep(
-            step=step,
-            units_extracted=units_extracted,
-            depletion_ratio=depletion_ratio,
-            agent_damages=effective_damages,
-            agent_annual_costs=agent_annual_costs,
-            marginal_annual_externality=marginal_annual_externality,
-            annual_externality=annual_externality,
-            revenue=revenue,
-            ecosystem_health=ecosystem_health,
-            agent_direct_damages=direct_damages,
-            agent_cascade_damages=cascade_damages,
-            keystone_triggered=keystone_names,
-            resilience_zone=zone,
-            model_confidence=confidence,
-            irreversibility_warning=irreversibility,
-            substrate_erosion=substrate_erosion,
-            effective_k=effective_k,
-            k_fraction=k_fraction,
-            agent_prices=[],
-            price_result=None,
+        steps.append(_make_step(
+            step, depletion_ratio, effective_damages, agent_annual_costs,
+            marginal_annual_externality, annual_externality, revenue,
+            ecosystem_health, direct_damages, cascade_damages,
+            [agent_names[idx] for idx in keystone_triggered_indices],
+            zone, confidence, irreversibility,
+            substrate_erosion, effective_k, k_fraction,
+            [], None,
         ))
+    return steps
 
-    return _extraction_result(ecosystem, steps, units_to_extract)
+
+# ── Extraction engine 2: the Python loop, phase by phase ─────────────────────
+
+
+def _compute_damage(
+    damage_functions: list,
+    trophic_levels: list,
+    has_trophic: bool,
+    depletion_ratio: float,
+) -> list:
+    """Phase 1: each agent's direct damage, trophically amplified."""
+    direct_damages: list = []
+    for i in range(len(damage_functions)):
+        raw_damage: float = damage_functions[i](depletion_ratio)
+        if has_trophic:
+            direct_damages.append(
+                compute_trophic_amplification(raw_damage, trophic_levels[i])
+            )
+        else:
+            direct_damages.append(raw_damage)
+    return direct_damages
+
+
+def _interaction_arrays(ecosystem: Ecosystem) -> dict:
+    """The propagate_interactions arguments that do not change between steps."""
+    agents: list = ecosystem.agents
+    interactions: list = ecosystem.interactions
+    return dict(
+        agent_names=[a.name for a in agents],
+        edge_sources=[e.source for e in interactions],
+        edge_targets=[e.target for e in interactions],
+        edge_strengths=[e.strength for e in interactions],
+        agent_is_keystone=[a.is_keystone for a in agents],
+        agent_keystone_thresholds=[a.keystone_threshold for a in agents],
+    )
+
+
+def _propagate(network: dict, direct_damages: list) -> tuple:
+    """Phase 2: interaction propagation → (effective, cascade, keystone names).
+
+    ``network`` comes from _interaction_arrays.
+    """
+    if not network["edge_sources"]:
+        return direct_damages, [0.0] * len(direct_damages), []
+    return propagate_interactions(direct_damages=direct_damages, **network)
+
+
+def _price(
+    ecosystem: Ecosystem,
+    pricing: PricingConfig,
+    agent_names: list,
+    effective_damages: list,
+    step: int,
+) -> tuple:
+    """Phase 3a (v0.7, EXPERIMENTAL): endogenous prices → (PriceResult, prices).
+
+    Raises:
+        PricingConvergenceError: located at ``step`` (see _pricing_failure).
+    """
+    from gaia.pricing import PricingConvergenceError, solve_prices
+
+    healths: dict = {}
+    for i, name in enumerate(agent_names):
+        h: float = 1.0 - effective_damages[i]
+        if h < 0.0:
+            h = 0.0
+        elif h > 1.0:
+            h = 1.0
+        healths[name] = h
+    try:
+        price_result = solve_prices(
+            agent_names=agent_names,
+            agent_healths=healths,
+            interactions=ecosystem.interactions,
+            pricing=pricing,
+        )
+    except PricingConvergenceError as exc:
+        raise _pricing_failure(exc, step, ecosystem.resource.total_units) from exc
+    return price_result, [price_result.prices[name] for name in agent_names]
+
+
+def _annual_costs(effective_damages: list, weights: list, rates: list) -> tuple:
+    """Phase 3b: per-agent €/yr costs, their total, and ecosystem health."""
+    costs: list = []
+    total: float = 0.0
+    health_sum: float = 0.0
+    for i in range(len(effective_damages)):
+        cost: float = effective_damages[i] * weights[i] * rates[i]
+        costs.append(cost)
+        total += cost
+        health_sum += weights[i] * effective_damages[i]
+    health: float = 1.0 - health_sum
+    # Clamp health to [0, 1] to guard against floating-point overshoot
+    if health < 0.0:
+        health = 0.0
+    elif health > 1.0:
+        health = 1.0
+    return costs, total, health
+
+
+def _substrate(
+    state: Optional[SubstrateState],
+    total_units: int,
+    units_extracted: int,
+    years: float,
+) -> tuple:
+    """Phase 3.5 (v0.5): erode the substrate → (erosion, effective K, K fraction)."""
+    if state is None:
+        return 0.0, total_units, 1.0
+    vegetation_cover: float = (total_units - units_extracted) / total_units
+    erosion: float = degrade_substrate(state, vegetation_cover, years=years)
+    k_fraction: float = compute_capacity_fraction(state)
+    return erosion, int(total_units * k_fraction), k_fraction
+
+
+def _resilience(resource, depletion_ratio: float) -> tuple:
+    """Phase 4 (v0.4): resilience zone → (zone, confidence, irreversibility)."""
+    if resource.resilience is None:
+        return "green", 1.0, False
+    return compute_resilience_zone(
+        1.0 - depletion_ratio, resource.safe_threshold_ratio, resource.resilience,
+    )
+
+
+def _python_steps(ecosystem: Ecosystem, units_to_extract: int) -> list:
+    """The extraction steps computed by the Python phases (any ecosystem)."""
+    resource = ecosystem.resource
+    agents: list = ecosystem.agents
+    total_units: int = resource.total_units
+
+    damage_functions: list = [a.damage_function for a in agents]
+    trophic_levels: list = [a.trophic_level for a in agents]
+    has_trophic: bool = any(lvl >= 1 for lvl in trophic_levels)
+    weights: list = [a.dependency_weight for a in agents]
+    # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
+    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
+    pricing: Optional[PricingConfig] = ecosystem.pricing
+    network: dict = _interaction_arrays(ecosystem)
+
+    # v0.5: the whole extraction takes one year, spread evenly over the steps
+    substrate_state: Optional[SubstrateState] = None
+    years_per_step: float = 0.0
+    if resource.substrate is not None:
+        substrate_state = create_substrate_state(resource.substrate)
+        years_per_step = 1.0 / units_to_extract
+
+    steps: list = []
+    previous_total: float = 0.0
+    for step in range(1, units_to_extract + 1):
+        depletion_ratio: float = step / total_units
+        direct = _compute_damage(damage_functions, trophic_levels, has_trophic, depletion_ratio)
+        effective, cascade, keystone = _propagate(network, direct)
+
+        price_result = None
+        prices: list = []
+        if pricing is not None:
+            price_result, prices = _price(
+                ecosystem, pricing, network["agent_names"], effective, step,
+            )
+        costs, total, health = _annual_costs(
+            effective, weights, prices if pricing is not None else annual_values,
+        )
+        erosion, effective_k, k_fraction = _substrate(
+            substrate_state, total_units, step, years_per_step,
+        )
+        zone, confidence, irreversible = _resilience(resource, depletion_ratio)
+
+        steps.append(_make_step(
+            step, depletion_ratio, effective, costs, total - previous_total,
+            total, step * resource.unit_value, health, direct, cascade, keystone,
+            zone, confidence, irreversible, erosion, effective_k, k_fraction,
+            prices, price_result,
+        ))
+        previous_total = total
+    return steps
+
+
+# ── Extraction: everything that is not per-step ──────────────────────────────
 
 
 def _resolve_discount(resource):
@@ -333,6 +513,48 @@ def _resolve_discount(resource):
     return discount
 
 
+def _npv(
+    resource, discount, annual_externality: float, units: int, substrate_ceiling: float,
+) -> tuple:
+    """Present value of the externality streams → (ExtractionNPV, PV by horizon).
+
+    compute_extraction_npv with the run's DiscountConfig, then its total at
+    each of SENSITIVITY_HORIZONS (None where that horizon fails validation).
+    """
+    from gaia.discount import compute_extraction_npv, horizon_variants
+
+    def pv_externality(config) -> ExtractionNPV:
+        return compute_extraction_npv(
+            annual_externality=annual_externality,
+            discount=config,
+            carbon_profile=resource.carbon_profile,
+            units_extracted=units,
+            substrate_ceiling=substrate_ceiling,
+        )
+
+    by_horizon: dict = {
+        horizon: (pv_externality(config).total if config is not None else None)
+        for horizon, config in horizon_variants(discount).items()
+    }
+    return pv_externality(discount), by_horizon
+
+
+def _cost_split(ecosystem: Ecosystem, final_step: SimulationStep) -> tuple:
+    """The final step's per-agent cost → (direct part, cascade part), €/yr,
+    at the rate each cost used (endogenous price or static value)."""
+    agents: list = ecosystem.agents
+    area_ha: float = ecosystem.resource.area_ha
+    rates: list = final_step.agent_prices or [a.annual_value(area_ha) for a in agents]
+    weights: list = [a.dependency_weight for a in agents]
+    direct: list = [
+        d * w * r for d, w, r in zip(final_step.agent_direct_damages, weights, rates)
+    ]
+    cascade: list = [
+        c * w * r for c, w, r in zip(final_step.agent_cascade_damages, weights, rates)
+    ]
+    return direct, cascade
+
+
 def _extraction_result(
     ecosystem: Ecosystem, steps: list, units_to_extract: int
 ) -> SimulationResult:
@@ -344,61 +566,32 @@ def _extraction_result(
     so revenue (one-off) is only ever compared with a present value. The
     PV is also recomputed at each of SENSITIVITY_HORIZONS.
     """
-    from gaia.discount import compute_extraction_npv, horizon_variants
-
     resource = ecosystem.resource
     discount = _resolve_discount(resource)
 
-    if steps:
-        final_step: SimulationStep = steps[-1]
-        annual_externality: float = final_step.annual_externality
-        revenue: float = final_step.revenue
-        health: float = final_step.ecosystem_health
-        substrate_ceiling: float = (
-            final_step.k_fraction if resource.substrate is not None else 1.0
-        )
-    else:
-        annual_externality = 0.0
-        revenue = 0.0
-        health = 1.0
-        substrate_ceiling = 1.0
-
-    def pv_externality(config) -> ExtractionNPV:
-        return compute_extraction_npv(
-            annual_externality=annual_externality,
-            discount=config,
-            carbon_profile=resource.carbon_profile,
-            units_extracted=units_to_extract,
-            substrate_ceiling=substrate_ceiling,
-        )
-
-    extraction_npv = pv_externality(discount)
-    by_horizon: dict = {
-        horizon: (pv_externality(config).total if config is not None else None)
-        for horizon, config in horizon_variants(discount).items()
-    }
-
-    # Per-agent direct / cascade split of the final annual cost, at the rate
-    # each agent's cost was computed with (endogenous price or static value)
-    agents: list = ecosystem.agents
-    direct_costs: list = []
-    cascade_costs: list = []
+    annual_externality: float = 0.0
+    revenue: float = 0.0
+    health: float = 1.0
+    substrate_ceiling: float = 1.0
     confidence: float = 1.0
     band = None
+    direct_costs: list = []
+    cascade_costs: list = []
     if steps:
-        rates: list = final_step.agent_prices or [
-            a.annual_value(resource.area_ha) for a in agents
-        ]
-        weights: list = [a.dependency_weight for a in agents]
-        direct_costs = [
-            d * w * r for d, w, r in zip(final_step.agent_direct_damages, weights, rates)
-        ]
-        cascade_costs = [
-            c * w * r for c, w, r in zip(final_step.agent_cascade_damages, weights, rates)
-        ]
+        final_step: SimulationStep = steps[-1]
+        annual_externality = final_step.annual_externality
+        revenue = final_step.revenue
+        health = final_step.ecosystem_health
+        if resource.substrate is not None:
+            substrate_ceiling = final_step.k_fraction
+        direct_costs, cascade_costs = _cost_split(ecosystem, final_step)
         confidence = final_step.model_confidence
         if resource.resilience is not None and confidence < 1.0:
             band = compute_confidence_band(annual_externality, confidence)
+
+    extraction_npv, by_horizon = _npv(
+        resource, discount, annual_externality, units_to_extract, substrate_ceiling,
+    )
 
     substrate_years: Optional[float] = None
     end_state: Optional[SubstrateState] = _replay_substrate(resource.substrate, steps)
@@ -421,7 +614,7 @@ def _extraction_result(
         agent_direct_annual_costs=direct_costs,
         agent_cascade_annual_costs=cascade_costs,
         agent_trophic_amplification=[
-            trophic_amplification_factor(a.trophic_level) for a in agents
+            trophic_amplification_factor(a.trophic_level) for a in ecosystem.agents
         ],
         annual_externality_band=band,
         final_model_confidence=confidence,
@@ -507,194 +700,17 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     validate_ecosystem(ecosystem)
     validate_extraction(ecosystem, units_to_extract)
 
-    # v0.8: Dispatch to Cython fast path when available and compatible
-    if _can_use_cython(ecosystem) and units_to_extract > 0:
-        return _run_extraction_cython(ecosystem, units_to_extract)
-
-    resource = ecosystem.resource
-    agents: list = ecosystem.agents
-    n_agents: int = len(agents)
-    total_units: int = resource.total_units
-    unit_value: float = resource.unit_value
-
-    steps: list = []
-
-    # Handle zero-extraction case: return empty result immediately
     if units_to_extract == 0:
-        return _extraction_result(ecosystem, steps, 0)
-
-    # v0.3: Pre-extract interaction metadata for the loop
-    agent_names: list = [a.name for a in agents]
-    agent_trophic_levels: list = [a.trophic_level for a in agents]
-    agent_is_keystone: list = [a.is_keystone for a in agents]
-    agent_keystone_thresholds: list = [a.keystone_threshold for a in agents]
-
-    interactions: list = ecosystem.interactions
-    edge_sources: list = [e.source for e in interactions]
-    edge_targets: list = [e.target for e in interactions]
-    edge_strengths: list = [e.strength for e in interactions]
-
-    # Short-circuit flags: skip phases when not needed
-    has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
-    has_interactions: bool = len(interactions) > 0
-
-    # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
-    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
-
-    # v0.7: Endogenous pricing (experimental, D4)
-    pricing: Optional[PricingConfig] = ecosystem.pricing
-    has_pricing: bool = pricing is not None
-
-    # v0.5: Initialize substrate state if profile is configured
-    has_substrate: bool = resource.substrate is not None
-    substrate_state: Optional[SubstrateState] = None
-    time_per_step: float = 0.0
-    if resource.substrate is not None:
-        substrate_state = create_substrate_state(resource.substrate)
-        # Default: total extraction takes ~1 year
-        time_per_step = 1.0 / units_to_extract if units_to_extract > 0 else 0.0
-
-    previous_total_cost: float = 0.0
-
-    for step in range(1, units_to_extract + 1):
-        units_extracted: int = step
-        depletion_ratio: float = units_extracted / total_units
-
-        # Phase 1: Direct damage with trophic amplification
-        direct_damages: list = []
-        for i in range(n_agents):
-            raw_damage: float = agents[i].damage_function(depletion_ratio)
-            if has_trophic:
-                amplified: float = compute_trophic_amplification(
-                    raw_damage, agent_trophic_levels[i]
-                )
-                direct_damages.append(amplified)
-            else:
-                direct_damages.append(raw_damage)
-
-        # Phase 2: Interaction propagation
-        if has_interactions:
-            effective_damages, cascade_damages, keystone_triggered = (
-                propagate_interactions(
-                    agent_names=agent_names,
-                    direct_damages=direct_damages,
-                    edge_sources=edge_sources,
-                    edge_targets=edge_targets,
-                    edge_strengths=edge_strengths,
-                    agent_is_keystone=agent_is_keystone,
-                    agent_keystone_thresholds=agent_keystone_thresholds,
-                )
-            )
-        else:
-            effective_damages = direct_damages
-            cascade_damages = [0.0] * n_agents
-            keystone_triggered = []
-
-        # Phase 3: Compute costs from effective damages
-        # v0.7: Solve endogenous prices when PricingConfig is present
-        step_price_result = None
-        step_agent_prices: list = []
-
-        if pricing is not None:
-            from gaia.pricing import PricingConvergenceError, solve_prices
-            # Agent health = 1.0 - effective_damage
-            agent_healths_dict: dict = {}
-            for i in range(n_agents):
-                h: float = 1.0 - effective_damages[i]
-                if h < 0.0:
-                    h = 0.0
-                elif h > 1.0:
-                    h = 1.0
-                agent_healths_dict[agent_names[i]] = h
-
-            try:
-                step_price_result = solve_prices(
-                    agent_names=agent_names,
-                    agent_healths=agent_healths_dict,
-                    interactions=interactions,
-                    pricing=pricing,
-                )
-            except PricingConvergenceError as exc:
-                raise _pricing_failure(exc, step, total_units) from exc
-            step_agent_prices = [
-                step_price_result.prices[agent_names[i]]
-                for i in range(n_agents)
-            ]
-
-        agent_costs: list = []
-        step_total_cost: float = 0.0
-        health_sum: float = 0.0
-
-        for i in range(n_agents):
-            # v0.7: the endogenous price (€/yr) when pricing is on, else the static annual value
-            rate: float = step_agent_prices[i] if has_pricing else annual_values[i]
-            cost: float = effective_damages[i] * agents[i].dependency_weight * rate
-            agent_costs.append(cost)
-            step_total_cost += cost
-            health_sum += agents[i].dependency_weight * effective_damages[i]
-
-        marginal_cost: float = step_total_cost - previous_total_cost
-        ecosystem_health: float = 1.0 - health_sum
-        # Clamp health to [0, 1] to guard against floating-point overshoot
-        if ecosystem_health < 0.0:
-            ecosystem_health = 0.0
-        elif ecosystem_health > 1.0:
-            ecosystem_health = 1.0
-
-        private_revenue: float = units_extracted * unit_value
-
-        # Phase 3.5: Substrate degradation (v0.5)
-        step_substrate_erosion: float = 0.0
-        step_effective_k: int = total_units
-        step_k_fraction: float = 1.0
-        if has_substrate and substrate_state is not None:
-            vegetation_cover: float = (total_units - units_extracted) / total_units
-            step_substrate_erosion = degrade_substrate(
-                substrate_state, vegetation_cover, years=time_per_step
-            )
-            step_k_fraction = compute_capacity_fraction(substrate_state)
-            step_effective_k = int(total_units * step_k_fraction)
-
-        # Phase 4: Resilience zone tagging (v0.4)
-        step_zone: str = "green"
-        step_confidence: float = 1.0
-        step_irreversibility: bool = False
-        if resource.resilience is not None:
-            remaining_frac: float = 1.0 - depletion_ratio
-            step_zone, step_confidence, step_irreversibility = (
-                compute_resilience_zone(
-                    remaining_frac,
-                    resource.safe_threshold_ratio,
-                    resource.resilience,
-                )
-            )
-
-        steps.append(SimulationStep(
-            step=step,
-            units_extracted=units_extracted,
-            depletion_ratio=depletion_ratio,
-            agent_damages=effective_damages,
-            agent_annual_costs=agent_costs,
-            marginal_annual_externality=marginal_cost,
-            annual_externality=step_total_cost,
-            revenue=private_revenue,
-            ecosystem_health=ecosystem_health,
-            agent_direct_damages=direct_damages,
-            agent_cascade_damages=cascade_damages,
-            keystone_triggered=keystone_triggered,
-            resilience_zone=step_zone,
-            model_confidence=step_confidence,
-            irreversibility_warning=step_irreversibility,
-            substrate_erosion=step_substrate_erosion,
-            effective_k=step_effective_k,
-            k_fraction=step_k_fraction,
-            agent_prices=step_agent_prices,
-            price_result=step_price_result,
-        ))
-
-        previous_total_cost = step_total_cost
-
+        steps: list = []
+    elif _can_use_cython(ecosystem):
+        # v0.8: the compiled loop, when built and compatible
+        steps = _cython_steps(ecosystem, units_to_extract)
+    else:
+        steps = _python_steps(ecosystem, units_to_extract)
     return _extraction_result(ecosystem, steps, units_to_extract)
+
+
+# ── Restoration ───────────────────────────────────────────────────────────────
 
 
 _RECOVERY_TOLERANCE: float = 1e-9
@@ -764,6 +780,210 @@ def substrate_after_extraction(extraction: SimulationResult) -> Optional[Substra
     state is exactly the one the extraction ended in, whichever engine ran it.
     """
     return _replay_substrate(extraction.ecosystem.resource.substrate, extraction.steps)
+
+
+def _recovery_efficiency(recovery_fn, agent_name: str, recovery_ratio: float) -> float:
+    """A recovery function's efficiency at ``recovery_ratio``, checked to lie
+    in [0, 1] (within _RECOVERY_TOLERANCE) and clamped there."""
+    efficiency: float = recovery_fn(recovery_ratio)
+    if not (-_RECOVERY_TOLERANCE <= efficiency <= 1.0 + _RECOVERY_TOLERANCE):
+        raise ValueError(
+            f"Recovery function for agent '{agent_name}' returned "
+            f"{efficiency} at recovery ratio {recovery_ratio}; recovery "
+            f"efficiency must be in [0, 1] (recovery cannot exceed the "
+            f"reversal of the damage)."
+        )
+    if efficiency < 0.0:
+        return 0.0
+    if efficiency > 1.0:
+        return 1.0
+    return efficiency
+
+
+def _restoration_steps(
+    ecosystem: Ecosystem,
+    start: SimulationResult,
+    units_to_restore: int,
+    recovery_functions: list,
+    substrate_ceiling: float,
+    cost_per_unit: float,
+) -> tuple:
+    """Retrace the starting state's damage path → (steps, reversals, potential).
+
+    ``reversals`` are the final step's per-agent damage reversals and
+    ``potential`` its biological recovery before the substrate cap (€/yr).
+    See run_restoration for the formulas.
+    """
+    agents: list = ecosystem.agents
+    n_agents: int = len(agents)
+    resource = ecosystem.resource
+    total_units: int = resource.total_units
+    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
+    weights: list = [a.dependency_weight for a in agents]
+    missing: int = start.total_units_extracted
+    damages_before: list = start.steps[missing - 1].agent_damages
+    no_damage: list = [0.0] * n_agents
+
+    steps: list = []
+    previous_total_service: float = 0.0
+    reversals: list = []
+    potential: float = 0.0
+    for step in range(1, units_to_restore + 1):
+        still_missing: int = missing - step
+        recovery_ratio: float = step / missing
+        damages_now: list = (
+            start.steps[still_missing - 1].agent_damages
+            if still_missing > 0 else no_damage
+        )
+
+        recoveries: list = []
+        reversals = []
+        service_values: list = []
+        total_service: float = 0.0
+        potential = 0.0
+        health_sum: float = 0.0
+        for i in range(n_agents):
+            efficiency: float = _recovery_efficiency(
+                recovery_functions[i], agents[i].name, recovery_ratio,
+            )
+            reversal: float = damages_before[i] - damages_now[i]
+            if reversal < 0.0:
+                reversal = 0.0
+            biological: float = efficiency * reversal
+            recovered: float = biological * substrate_ceiling
+            service_value: float = recovered * weights[i] * annual_values[i]
+            potential += biological * weights[i] * annual_values[i]
+
+            reversals.append(reversal)
+            recoveries.append(recovered)
+            service_values.append(service_value)
+            total_service += service_value
+            health_sum += weights[i] * (damages_before[i] - recovered)
+
+        health: float = 1.0 - health_sum
+        if health < 0.0:
+            health = 0.0
+        elif health > 1.0:
+            health = 1.0
+
+        steps.append(RestorationStep(
+            step=step,
+            units_restored=step,
+            recovery_ratio=recovery_ratio,
+            depletion_ratio=still_missing / total_units,
+            agent_recoveries=recoveries,
+            agent_service_values=service_values,
+            marginal_service_value=total_service - previous_total_service,
+            cumulative_service_value=total_service,
+            restoration_cost_so_far=step * cost_per_unit,
+            ecosystem_health=health,
+        ))
+        previous_total_service = total_service
+    return steps, reversals, potential
+
+
+def _maturation(
+    succession_curve: Optional[SuccessionCurve],
+    time_horizon_years: int,
+    annual_recovered_potential: float,
+    units: int,
+    carbon_profile,
+    substrate_ceiling: float,
+) -> tuple:
+    """v0.4 maturation pass → (timeline, years to pioneer / 50% / 90%).
+
+    Empty timeline and zero milestones without a succession curve or horizon.
+    """
+    if succession_curve is None or time_horizon_years <= 0:
+        return [], 0.0, 0.0, 0.0
+    timeline: list = compute_maturation_timeline(
+        succession_curve=succession_curve,
+        max_recovered_value=annual_recovered_potential,
+        time_horizon_years=time_horizon_years,
+        units_restored=units,
+        carbon_profile=carbon_profile,
+        substrate_ceiling=substrate_ceiling,
+    )
+    return (
+        timeline,
+        find_years_to_threshold(succession_curve, 0.001),
+        find_years_to_threshold(succession_curve, 0.50),
+        find_years_to_threshold(succession_curve, 0.90),
+    )
+
+
+def _restoration_money(
+    ecosystem: Ecosystem,
+    restoration_cost: RestorationCost,
+    units: int,
+    total_cost: float,
+    annual_recovered_potential: float,
+    annual_damage_reversal: float,
+    succession_curve: Optional[SuccessionCurve],
+    substrate_ceiling: float,
+    discount,
+) -> tuple:
+    """v0.6 present values → (RestorationNPV, net PV by horizon,
+    CarbonBreakeven, DestroyThenRestorePenalty)."""
+    from gaia.discount import (
+        compute_carbon_breakeven,
+        compute_destroy_then_restore_penalty,
+        compute_restoration_npv,
+        horizon_variants,
+    )
+
+    carbon_profile = ecosystem.resource.carbon_profile
+    maintenance_per_year: float = restoration_cost.annual_maintenance_per_unit * units
+    # Carbon released when the restored units were cut
+    carbon_released: float = (
+        compute_carbon_release(carbon_profile, units) if carbon_profile is not None else 0.0
+    )
+
+    def restoration_npv(config):
+        return compute_restoration_npv(
+            restoration_cost_total=total_cost,
+            maintenance_cost_per_year=maintenance_per_year,
+            maintenance_years=restoration_cost.maintenance_years,
+            max_recovered_value=annual_recovered_potential,
+            discount=config,
+            succession_curve=succession_curve,
+            carbon_profile=carbon_profile,
+            units_restored=units,
+            substrate_ceiling=substrate_ceiling,
+            carbon_released=carbon_released,
+        )
+
+    npv_result = restoration_npv(discount)
+    net_pv_by_horizon: dict = {
+        horizon: (
+            restoration_npv(config).net_present_value if config is not None else None
+        )
+        for horizon, config in horizon_variants(discount).items()
+    }
+    breakeven = compute_carbon_breakeven(
+        restoration_cost_total=total_cost,
+        maintenance_cost_per_year=maintenance_per_year,
+        maintenance_years=restoration_cost.maintenance_years,
+        discount=discount,
+        succession_curve=succession_curve,
+        carbon_profile=carbon_profile,
+        units_restored=units,
+        substrate_ceiling=substrate_ceiling,
+    )
+    penalty = compute_destroy_then_restore_penalty(
+        # the private revenue earned by cutting the restored units: the
+        # present value of not cutting them (one-off, year 0)
+        foregone_revenue=units * ecosystem.resource.unit_value,
+        restoration_cost_pv=npv_result.cost,
+        annual_damage_reversal=annual_damage_reversal,
+        annual_recovered_potential=annual_recovered_potential,
+        discount=discount,
+        succession_curve=succession_curve,
+        carbon_profile=carbon_profile,
+        units=units,
+        substrate_ceiling=substrate_ceiling,
+    )
+    return npv_result, net_pv_by_horizon, breakeven, penalty
 
 
 def run_restoration(
@@ -904,18 +1124,10 @@ def run_restoration(
             f"units_to_restore ({units_to_restore}) cannot exceed the units "
             f"missing in the starting state ({missing} of {total_units})."
         )
-
-    agents: list = ecosystem.agents
-    cost_per_unit: float = restoration_cost.total_cost_per_unit
-    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
-    weights: list = [a.dependency_weight for a in agents]
-
     start_step: SimulationStep = start.steps[missing - 1]
-    damages_before: list = start_step.agent_damages
-    no_damage: list = [0.0] * n_agents
 
     # v0.5: Substrate ceiling of the starting state (substrate model: the
-    # ceiling caps what restoration can ever recover; see run_restoration)
+    # ceiling caps what restoration can ever recover; see above)
     substrate_ceiling: float = 1.0
     substrate_recovery_yrs: float = 0.0
     sub_state: Optional[SubstrateState] = substrate_after_extraction(start)
@@ -923,177 +1135,30 @@ def run_restoration(
         substrate_ceiling = start_step.k_fraction
         substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
 
-    steps: list = []
-    previous_total_service: float = 0.0
-    reversals: list = []
-    step_potential: float = 0.0
-
-    for step in range(1, units_to_restore + 1):
-        units_restored: int = step
-        still_missing: int = missing - units_restored
-        recovery_ratio: float = units_restored / missing
-        damages_now: list = (
-            start.steps[still_missing - 1].agent_damages
-            if still_missing > 0 else no_damage
-        )
-
-        recoveries: list = []
-        reversals = []
-        agent_service_values: list = []
-        step_total_service: float = 0.0
-        step_potential = 0.0
-        health_sum: float = 0.0
-
-        for i in range(n_agents):
-            efficiency: float = recovery_functions[i](recovery_ratio)
-            if not (-_RECOVERY_TOLERANCE <= efficiency <= 1.0 + _RECOVERY_TOLERANCE):
-                raise ValueError(
-                    f"Recovery function for agent '{agents[i].name}' returned "
-                    f"{efficiency} at recovery ratio {recovery_ratio}; recovery "
-                    f"efficiency must be in [0, 1] (recovery cannot exceed the "
-                    f"reversal of the damage)."
-                )
-            if efficiency < 0.0:
-                efficiency = 0.0
-            elif efficiency > 1.0:
-                efficiency = 1.0
-
-            reversal: float = damages_before[i] - damages_now[i]
-            if reversal < 0.0:
-                reversal = 0.0
-            biological: float = efficiency * reversal
-            recovered: float = biological * substrate_ceiling
-            service_value: float = recovered * weights[i] * annual_values[i]
-            step_potential += biological * weights[i] * annual_values[i]
-
-            reversals.append(reversal)
-            recoveries.append(recovered)
-            agent_service_values.append(service_value)
-            step_total_service += service_value
-            health_sum += weights[i] * (damages_before[i] - recovered)
-
-        marginal_value: float = step_total_service - previous_total_service
-        ecosystem_health: float = 1.0 - health_sum
-        if ecosystem_health < 0.0:
-            ecosystem_health = 0.0
-        elif ecosystem_health > 1.0:
-            ecosystem_health = 1.0
-
-        steps.append(RestorationStep(
-            step=step,
-            units_restored=units_restored,
-            recovery_ratio=recovery_ratio,
-            depletion_ratio=still_missing / total_units,
-            agent_recoveries=recoveries,
-            agent_service_values=agent_service_values,
-            marginal_service_value=marginal_value,
-            cumulative_service_value=step_total_service,
-            restoration_cost_so_far=step * cost_per_unit,
-            ecosystem_health=ecosystem_health,
-        ))
-
-        previous_total_service = step_total_service
-
+    steps, reversals, annual_recovered_potential = _restoration_steps(
+        ecosystem, start, units_to_restore, recovery_functions,
+        substrate_ceiling, restoration_cost.total_cost_per_unit,
+    )
     final_step: RestorationStep = steps[-1]
-    annual_recovered: float = final_step.cumulative_service_value  # €/yr
-    # Biological recovery before the substrate cap: the stream the succession
-    # curve ramps up, capped year by year at the substrate ceiling
-    annual_recovered_potential: float = step_potential
+    annual_values: list = [a.annual_value(resource.area_ha) for a in ecosystem.agents]
     annual_damage_reversal: float = 0.0
     for i in range(n_agents):
-        annual_damage_reversal += reversals[i] * weights[i] * annual_values[i]
+        annual_damage_reversal += (
+            reversals[i] * ecosystem.agents[i].dependency_weight * annual_values[i]
+        )
     total_cost: float = final_step.restoration_cost_so_far  # €, one-off
 
-    from gaia.discount import (
-        compute_carbon_breakeven,
-        compute_destroy_then_restore_penalty,
-        compute_restoration_npv,
-        horizon_variants,
-        restoration_cost_ratio,
-    )
-    discount = _resolve_discount(resource)
-
-    # foregone_revenue = the private revenue earned by cutting the restored
-    # units: the present value of not cutting them (one-off, year 0)
-    foregone_revenue: float = units_to_restore * resource.unit_value
-
-    # v0.4: Maturation pass — produce year-by-year timeline if succession curve provided
-    maturation_timeline: list = []
-    years_to_pioneer: float = 0.0
-    years_to_50pct: float = 0.0
-    years_to_90pct: float = 0.0
-
-    if succession_curve is not None and time_horizon_years > 0:
-        maturation_timeline = compute_maturation_timeline(
-            succession_curve=succession_curve,
-            max_recovered_value=annual_recovered_potential,
-            time_horizon_years=time_horizon_years,
-            units_restored=units_to_restore,
-            carbon_profile=ecosystem.resource.carbon_profile,
-            substrate_ceiling=substrate_ceiling,
-        )
-        # Compute milestone years
-        years_to_pioneer = find_years_to_threshold(succession_curve, 0.001)
-        years_to_50pct = find_years_to_threshold(succession_curve, 0.50)
-        years_to_90pct = find_years_to_threshold(succession_curve, 0.90)
-
-    # v0.6: NPV computations (DEFAULT_DISCOUNT when no DiscountConfig)
-    # Total maintenance cost (total across all units)
-    maintenance_total_per_year: float = (
-        restoration_cost.annual_maintenance_per_unit * units_to_restore
+    timeline, years_to_pioneer, years_to_50pct, years_to_90pct = _maturation(
+        succession_curve, time_horizon_years, annual_recovered_potential,
+        units_to_restore, resource.carbon_profile, substrate_ceiling,
     )
 
-    # Carbon released during prior extraction
-    carbon_released: float = 0.0
-    if ecosystem.resource.carbon_profile is not None:
-        carbon_released = compute_carbon_release(
-            ecosystem.resource.carbon_profile, units_to_restore
-        )
+    from gaia.discount import restoration_cost_ratio
 
-    def restoration_npv(config):
-        return compute_restoration_npv(
-            restoration_cost_total=total_cost,
-            maintenance_cost_per_year=maintenance_total_per_year,
-            maintenance_years=restoration_cost.maintenance_years,
-            max_recovered_value=annual_recovered_potential,
-            discount=config,
-            succession_curve=succession_curve,
-            carbon_profile=ecosystem.resource.carbon_profile,
-            units_restored=units_to_restore,
-            substrate_ceiling=substrate_ceiling,
-            carbon_released=carbon_released,
-        )
-
-    restoration_npv_result = restoration_npv(discount)
-    net_pv_by_horizon: dict = {
-        horizon: (
-            restoration_npv(config).net_present_value
-            if config is not None else None
-        )
-        for horizon, config in horizon_variants(discount).items()
-    }
-
-    carbon_breakeven_result = compute_carbon_breakeven(
-        restoration_cost_total=total_cost,
-        maintenance_cost_per_year=maintenance_total_per_year,
-        maintenance_years=restoration_cost.maintenance_years,
-        discount=discount,
-        succession_curve=succession_curve,
-        carbon_profile=ecosystem.resource.carbon_profile,
-        units_restored=units_to_restore,
-        substrate_ceiling=substrate_ceiling,
-    )
-
-    penalty = compute_destroy_then_restore_penalty(
-        foregone_revenue=foregone_revenue,
-        restoration_cost_pv=restoration_npv_result.cost,
-        annual_damage_reversal=annual_damage_reversal,
-        annual_recovered_potential=annual_recovered_potential,
-        discount=discount,
-        succession_curve=succession_curve,
-        carbon_profile=ecosystem.resource.carbon_profile,
-        units=units_to_restore,
-        substrate_ceiling=substrate_ceiling,
+    npv_result, net_pv_by_horizon, breakeven, penalty = _restoration_money(
+        ecosystem, restoration_cost, units_to_restore, total_cost,
+        annual_recovered_potential, annual_damage_reversal,
+        succession_curve, substrate_ceiling, _resolve_discount(resource),
     )
 
     return RestorationResult(
@@ -1102,19 +1167,21 @@ def run_restoration(
         steps=steps,
         total_units_restored=units_to_restore,
         total_restoration_cost=total_cost,
-        annual_recovered_value=annual_recovered,
-        net_restoration_pv=restoration_npv_result.net_present_value,
-        restoration_cost_ratio=restoration_cost_ratio(foregone_revenue, total_cost),
+        annual_recovered_value=final_step.cumulative_service_value,  # €/yr
+        net_restoration_pv=npv_result.net_present_value,
+        restoration_cost_ratio=restoration_cost_ratio(
+            units_to_restore * resource.unit_value, total_cost,
+        ),
         final_ecosystem_health=final_step.ecosystem_health,
-        maturation_timeline=maturation_timeline,
+        maturation_timeline=timeline,
         years_to_pioneer=years_to_pioneer,
         years_to_50pct=years_to_50pct,
         years_to_90pct=years_to_90pct,
         maturation_gap_pv=penalty.maturation_gap,
         substrate_ceiling=substrate_ceiling,
         substrate_recovery_years=substrate_recovery_yrs,
-        restoration_npv=restoration_npv_result,
-        carbon_breakeven=carbon_breakeven_result,
+        restoration_npv=npv_result,
+        carbon_breakeven=breakeven,
         destroy_then_restore_penalty=penalty,
         units_lost=missing,
         depletion_before=missing / total_units,
