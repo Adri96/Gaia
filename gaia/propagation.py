@@ -9,8 +9,12 @@ This module implements the two cascade mechanisms introduced in v0.3:
 2. Interaction propagation — a single-pass propagation of damage through
    agent-to-agent edges, with keystone species amplification (Foundation F6).
 
-Step 3.8 (S2): validation caps each agent's incoming edge strengths,
-keystone multipliers included, at MAX_INCOMING_EDGE_STRENGTH = 1.
+Step 3.8 (S2): the cascade pressure on an agent, sum(strength × source
+damage), acts only on the service its direct damage left standing:
+effective = direct + (1 − direct) × pressure. Validation caps each agent's
+incoming edge strengths, keystone multipliers included, at
+MAX_INCOMING_EDGE_STRENGTH = 1, so effective damage stays in [0, 1] without
+clamping and keeps rising with depletion instead of saturating.
 
 The constants live in gaia.constants. All propagation functions use
 primitive types (float, int, list, dict) for Cython compatibility; the
@@ -102,8 +106,19 @@ def propagate_interactions(
     Single-pass propagation of damage through interaction edges.
 
     After direct damage (with trophic amplification) is computed for all agents,
-    this function propagates damage through agent-to-agent edges. Each edge adds
-    source_damage * strength to the target's effective damage.
+    this function propagates damage through agent-to-agent edges. The cascade
+    pressure on a target is the sum of source_damage * strength over its
+    incoming edges, and it acts only on the service the target's direct
+    damage left standing (Step 3.8, S2):
+
+        effective = direct + (1 − direct) × pressure
+
+    The same unit of service cannot be lost twice, once directly and once
+    through a cascade; the former additive rule (direct + pressure, clamped
+    at 1) counted that overlap and hit the clamp at moderate depletion, so
+    damage saturated and further loss cost nothing. Validation caps each
+    agent's incoming strengths at MAX_INCOMING_EDGE_STRENGTH = 1 (keystone
+    boosts included), so pressure <= 1 and effective damage stays in [0, 1].
 
     Source lookups read from the ORIGINAL direct_damages (frozen), not the
     mutating effective array. This ensures:
@@ -153,7 +168,7 @@ def propagate_interactions(
     Returns:
         Tuple of (effective_damages, cascade_damages, keystone_triggered):
         - effective_damages: list of float — final damage per agent after propagation
-        - cascade_damages: list of float — additional damage from interactions per agent
+        - cascade_damages: list of float — effective − direct damage per agent
         - keystone_triggered: list of str — names of agents whose keystone threshold crossed
     """
     n_agents: int = len(agent_names)
@@ -193,20 +208,21 @@ def propagate_interactions(
         for e in range(n_edges):
             effective_strengths[e] = effective_strengths[e] * recovery_cascade_factor
 
-    # Single-pass propagation: read from direct_damages (frozen), write to effective
+    # Single-pass propagation: cascade pressure from the frozen direct damages
+    pressure: list = [0.0] * n_agents
     for e in range(n_edges):
         src_idx: int = name_to_idx[edge_sources[e]]
         tgt_idx: int = name_to_idx[edge_targets[e]]
-        source_damage: float = direct_damages[src_idx]
-        additional: float = source_damage * effective_strengths[e]
-        cascade[tgt_idx] += additional
-        effective[tgt_idx] = effective[tgt_idx] + additional
-        if effective[tgt_idx] > 1.0:
-            effective[tgt_idx] = 1.0
+        pressure[tgt_idx] = pressure[tgt_idx] + direct_damages[src_idx] * effective_strengths[e]
 
-    # Recompute cascade as effective - direct (accounts for capping)
+    # The pressure acts on the service still standing; the clamp only guards
+    # rounding (validated edges keep pressure <= 1, so effective <= 1)
     for i in range(n_agents):
-        cascade[i] = effective[i] - direct_damages[i]
+        damage: float = direct_damages[i] + (1.0 - direct_damages[i]) * pressure[i]
+        if damage > 1.0:
+            damage = 1.0
+        effective[i] = damage
+        cascade[i] = damage - direct_damages[i]
         if cascade[i] < 0.0:
             cascade[i] = 0.0
 

@@ -109,7 +109,7 @@ def extraction_loop_cy(
     cdef double step_total_cost, health_sum, marginal_cost, ecosystem_health
     cdef double private_revenue, cost, rate
     cdef double previous_total_cost = 0.0
-    cdef double agent_health, doubled, additional, source_damage
+    cdef double agent_health, doubled, additional, source_damage, headroom
     cdef double bare_fraction, exposure, effective_erosion, erosion_amount
     cdef double erosion_mm, erosion_cm
     cdef double remaining_frac, threshold_lower, threshold_upper
@@ -187,6 +187,7 @@ def extraction_loop_cy(
     cdef list agent_costs
     cdef list keystone_triggered
     cdef list eff_strengths
+    cdef list pressure
 
     # Damage function variables
     cdef double inflection, raw_0, span, steepness
@@ -255,19 +256,26 @@ def extraction_loop_cy(
                                     doubled = max_edge_strength
                                 eff_strengths[e] = doubled
 
-            # Single-pass propagation
+            # Single-pass propagation: cascade pressure from frozen direct damages
+            pressure = [0.0] * n_agents
             for e in range(n_edges):
                 src_idx = c_edge_src[e]
                 tgt_idx = c_edge_tgt[e]
                 source_damage = direct_damages[src_idx]
+                # Separate statements: a fused multiply-add would round
+                # differently from the Python engine
                 additional = source_damage * <double>eff_strengths[e]
-                effective_damages[tgt_idx] = effective_damages[tgt_idx] + additional
-                if effective_damages[tgt_idx] > 1.0:
-                    effective_damages[tgt_idx] = 1.0
+                pressure[tgt_idx] = <double>pressure[tgt_idx] + additional
 
-            # Recompute cascade
+            # Pressure acts on the service still standing (see
+            # gaia.propagation.propagate_interactions); the clamp guards rounding
             for i in range(n_agents):
-                cascade_damages[i] = effective_damages[i] - direct_damages[i]
+                headroom = (1.0 - <double>direct_damages[i]) * <double>pressure[i]
+                additional = <double>direct_damages[i] + headroom
+                if additional > 1.0:
+                    additional = 1.0
+                effective_damages[i] = additional
+                cascade_damages[i] = additional - <double>direct_damages[i]
                 if cascade_damages[i] < 0.0:
                     cascade_damages[i] = 0.0
         else:

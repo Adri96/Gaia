@@ -398,7 +398,11 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
         Phase 2 — Interaction propagation (single pass):
             Apply keystone effects, then propagate damage through edges.
-            effective_damage[i] = direct_damage[i] + cascade_damage[i]
+            pressure[i]         = Σ strength[e] × direct_damage[source[e]]
+                                  over the edges into i (<= 1, validated)
+            effective_damage[i] = direct_damage[i]
+                                  + (1 − direct_damage[i]) × pressure[i]
+            cascade_damage[i]   = effective_damage[i] − direct_damage[i]
 
         Phase 3 — Annual cost computation (€/yr flows):
             cost[i]          = effective_damage[i] * weight[i]

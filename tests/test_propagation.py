@@ -5,6 +5,8 @@ Tests for trophic amplification, interaction propagation, and keystone effects.
 These verify the two new cascade mechanisms introduced in v0.3:
     - Trophic amplification: higher trophic levels amplify direct damage
     - Interaction propagation: single-pass damage through agent-to-agent edges
+      (since Step 3.8 the cascade acts on the service still standing:
+      effective = direct + (1 − direct) × Σ strength × source damage)
     - Keystone effects: threshold-triggered doubling of outgoing edge strengths
 """
 
@@ -129,32 +131,58 @@ def test_propagation_no_edges_identity():
 
 
 def test_propagation_single_edge():
-    """Single edge: A→B adds A's damage * strength to B."""
+    """Single edge: A's damage * strength acts on B's remaining service."""
     args = _make_propagation_args(
         names=["A", "B"],
         damages=[0.5, 0.2],
         edges=[("A", "B", 0.3)],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # B gets: 0.2 + 0.5 * 0.3 = 0.35
+    # B gets: 0.2 + (1 - 0.2) * (0.5 * 0.3) = 0.2 + 0.8 * 0.15 = 0.32
     assert effective[0] == pytest.approx(0.5)  # A unchanged
-    assert effective[1] == pytest.approx(0.35)
+    assert effective[1] == pytest.approx(0.32)
     assert cascade[0] == pytest.approx(0.0)
-    assert cascade[1] == pytest.approx(0.15)
+    assert cascade[1] == pytest.approx(0.12)
 
 
-def test_propagation_cap_at_one():
-    """Effective damage is capped at 1.0 even with large propagation."""
+def test_propagation_stays_below_one_without_clamping():
+    """Heavy damage plus a strong cascade stays below 1.0 (Step 3.8): the
+    cascade only acts on the service still standing, so nothing is clamped
+    (the former additive rule gave 0.8 + 0.45 = 1.25 → 1.0)."""
     args = _make_propagation_args(
         names=["A", "B"],
         damages=[0.9, 0.8],
         edges=[("A", "B", 0.5)],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # B gets: 0.8 + 0.9 * 0.5 = 1.25 → capped at 1.0
-    assert effective[1] <= 1.0
-    # Cascade is effective - direct = 1.0 - 0.8 = 0.2 (not 0.45)
-    assert cascade[1] == pytest.approx(1.0 - 0.8)
+    # B gets: 0.8 + 0.2 * (0.9 * 0.5) = 0.89
+    assert effective[1] == pytest.approx(0.89)
+    assert cascade[1] == pytest.approx(0.09)
+
+
+def test_propagation_full_pressure_reaches_exactly_one():
+    """A fully damaged source over a strength-1 edge removes all that is left."""
+    args = _make_propagation_args(
+        names=["A", "B"],
+        damages=[1.0, 0.3],
+        edges=[("A", "B", 1.0)],
+    )
+    effective, cascade, _ = propagate_interactions(**args)
+    assert effective[1] == 1.0
+    assert cascade[1] == pytest.approx(0.7)
+
+
+def test_propagation_keeps_rising_with_source_damage():
+    """No saturation: with the target at 0.9, more source damage still adds
+    damage (the additive rule was flat at 1.0 here)."""
+    previous = 0.0
+    for source in (0.5, 0.7, 0.9, 1.0):
+        args = _make_propagation_args(
+            names=["A", "B"], damages=[source, 0.9], edges=[("A", "B", 0.6)],
+        )
+        effective, _, _ = propagate_interactions(**args)
+        assert previous < effective[1] < 1.0
+        previous = effective[1]
 
 
 def test_propagation_multiple_incoming():
@@ -165,9 +193,9 @@ def test_propagation_multiple_incoming():
         edges=[("A", "C", 0.2), ("B", "C", 0.3)],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # C gets: 0.1 + 0.4*0.2 + 0.6*0.3 = 0.1 + 0.08 + 0.18 = 0.36
-    assert effective[2] == pytest.approx(0.36)
-    assert cascade[2] == pytest.approx(0.26)
+    # Pressure on C: 0.4*0.2 + 0.6*0.3 = 0.26; C = 0.1 + 0.9 * 0.26 = 0.334
+    assert effective[2] == pytest.approx(0.334)
+    assert cascade[2] == pytest.approx(0.234)
 
 
 def test_propagation_chain_single_pass():
@@ -184,9 +212,9 @@ def test_propagation_chain_single_pass():
         edges=[("A", "B", 0.4), ("B", "C", 0.5)],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # B gets: 0.1 + 0.5 * 0.4 = 0.3
-    assert effective[1] == pytest.approx(0.3)
-    # C gets: 0.0 + 0.1 * 0.5 = 0.05 (reads B's ORIGINAL 0.1, not 0.3)
+    # B gets: 0.1 + 0.9 * (0.5 * 0.4) = 0.28
+    assert effective[1] == pytest.approx(0.28)
+    # C gets: 0.0 + 1.0 * (0.1 * 0.5) = 0.05 (reads B's ORIGINAL 0.1, not 0.28)
     assert effective[2] == pytest.approx(0.05)
 
 
@@ -223,8 +251,8 @@ def test_keystone_not_triggered_above_threshold():
         thresholds=[0.3, 0.3],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # T gets: 0.2 + 0.5 * 0.3 = 0.35 (normal strength)
-    assert effective[1] == pytest.approx(0.35)
+    # T gets: 0.2 + 0.8 * (0.5 * 0.3) = 0.32 (normal strength)
+    assert effective[1] == pytest.approx(0.32)
     assert triggered == []
 
 
@@ -238,8 +266,8 @@ def test_keystone_triggered_below_threshold():
         thresholds=[0.3, 0.3],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # T gets: 0.2 + 0.8 * 0.6 = 0.2 + 0.48 = 0.68 (doubled: 0.3→0.6)
-    assert effective[1] == pytest.approx(0.68)
+    # T gets: 0.2 + 0.8 * (0.8 * 0.6) = 0.584 (doubled: 0.3→0.6)
+    assert effective[1] == pytest.approx(0.584)
     assert "K" in triggered
 
 
@@ -253,8 +281,8 @@ def test_keystone_doubled_strength_capped():
         thresholds=[0.3, 0.3],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # T gets: 0.1 + 0.8 * 1.0 = 0.9 (capped strength is 1.0)
-    assert effective[1] == pytest.approx(0.9)
+    # T gets: 0.1 + 0.9 * (0.8 * 1.0) = 0.82 (capped strength is 1.0)
+    assert effective[1] == pytest.approx(0.82)
     assert "K" in triggered
 
 
@@ -267,8 +295,8 @@ def test_non_keystone_unaffected_by_health():
         keystones=[False, False],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # B gets: 0.1 + 0.9 * 0.3 = 0.37 (normal strength, no doubling)
-    assert effective[1] == pytest.approx(0.37)
+    # B gets: 0.1 + 0.9 * (0.9 * 0.3) = 0.343 (normal strength, no doubling)
+    assert effective[1] == pytest.approx(0.343)
     assert triggered == []
 
 
@@ -285,8 +313,8 @@ def test_keystone_only_doubles_own_edges():
         thresholds=[0.3, 0.3, 0.3],
     )
     effective, cascade, triggered = propagate_interactions(**args)
-    # B gets: 0.1 + 0.8*0.4 + 0.6*0.2 = 0.1 + 0.32 + 0.12 = 0.54
-    assert effective[2] == pytest.approx(0.54)
+    # Pressure on B: 0.8*0.4 + 0.6*0.2 = 0.44; B = 0.1 + 0.9 * 0.44 = 0.496
+    assert effective[2] == pytest.approx(0.496)
 
 
 # ── Recovery mode ──────────────────────────────────────────────────────────────
@@ -301,7 +329,7 @@ def test_recovery_mode_reduces_cascade():
     eff_normal, _, _ = propagate_interactions(**base_args)
     eff_recovery, _, _ = propagate_interactions(**base_args, recovery_mode=True)
 
-    # Normal: B = 0.2 + 0.5 * 0.4 = 0.40
-    # Recovery: B = 0.2 + 0.5 * 0.4 * 0.5 = 0.2 + 0.1 = 0.30
-    assert eff_normal[1] == pytest.approx(0.40)
-    assert eff_recovery[1] == pytest.approx(0.30)
+    # Normal: B = 0.2 + 0.8 * (0.5 * 0.4) = 0.36
+    # Recovery: B = 0.2 + 0.8 * (0.5 * 0.4 * 0.5) = 0.28
+    assert eff_normal[1] == pytest.approx(0.36)
+    assert eff_recovery[1] == pytest.approx(0.28)

@@ -83,10 +83,12 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
 
     In-degree cap (Step 3.8, S2): the spec §3 strengths into Canopy Trees
     summed to 1.40 (2.10 once the Mycorrhizal and Pollinator keystone
-    boosts fire) and into Understory to 1.05 (1.45), above the cap of 1.0.
-    Every edge into those two agents is divided by the same factor (2.10,
-    1.45; rounded down to 3 decimals) [PLACEHOLDER] — a mechanical
-    rescaling that keeps their ratios, not a fit to any outcome.
+    boosts fire) and into Understory to 1.05 (1.45), above the cap of 1.0;
+    with the former additive cascade, damage saturated (health 0.003 at 40%
+    depletion, zero marginal cost from 50% to 100%). Every edge into those
+    two agents is divided by the same factor (2.10, 1.45; rounded down to 3
+    decimals) [PLACEHOLDER] — a mechanical rescaling that keeps their
+    ratios, not a fit to any outcome.
 
     Health at the safe threshold is below 0.8, so validation issues a
     CalibrationWarning. That is honest: the logistic alone puts ~17% direct

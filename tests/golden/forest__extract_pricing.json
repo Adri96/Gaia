@@ -106,7 +106,7 @@
       "converged": true,
       "demand_multipliers": {
         "Animal Populations": 11.0,
-        "Human Communities": 8.6605,
+        "Human Communities": 6.0174,
         "Vegetation & Flora": 1.0,
         "Watershed & Local Climate": 1.0
       },
@@ -119,7 +119,7 @@
       },
       "scarcity_multipliers": {
         "Animal Populations": 50.0,
-        "Human Communities": 6.964,
+        "Human Communities": 4.5613,
         "Vegetation & Flora": 4.1052,
         "Watershed & Local Climate": 4.1052
       },
@@ -128,7 +128,7 @@
     "summary": {
       "annual_externality_eur_yr": 1660.65,
       "discount_is_default": false,
-      "final_ecosystem_health": 0.150516,
+      "final_ecosystem_health": 0.165644,
       "net_social_cost_eur_pv": 421149.2,
       "num_steps": 1000,
       "pv_externality_eur_pv": 521149.2,
@@ -159,7 +159,7 @@
       "substrate_unrecoverable": 42.00532460351223,
       "total": 521149.2039785475
     },
-    "final_ecosystem_health": 0.15051625519675782,
+    "final_ecosystem_health": 0.1656443621911362,
     "net_social_cost": 421149.2039785475,
     "pv_externality": 521149.2039785475,
     "pv_externality_by_horizon": {
@@ -189,14 +189,14 @@
       273145.74104708363
     ],
     "agent_cascade_damages": [
-      35.70429818464577,
-      28.342614428806947,
+      19.114481778734262,
+      12.73920530073019,
       0.0,
       0.0
     ],
     "agent_damages": [
-      265.29848874741054,
-      385.3855962752633,
+      248.7086723414991,
+      369.78218714718645,
       229.59419056276474,
       229.59419056276474
     ],
@@ -216,7 +216,7 @@
     "carbon_price_used": 0.0,
     "depletion_ratio": 250.25,
     "discount_factor_at_step": 1000.0,
-    "ecosystem_health": 716.5275280865571,
+    "ecosystem_health": 724.5265141061616,
     "effective_k": 1999000.0,
     "k_fraction": 999.9053772345821,
     "marginal_annual_externality": 1660.6505133133955,
@@ -236,14 +236,14 @@
         0.02477244212064968
       ],
       "agent_cascade_damages": [
-        7.442768185740829e-06,
-        9.263760168600114e-06,
+        7.442423445643513e-06,
+        9.263070688405483e-06,
         0.0,
         0.0
       ],
       "agent_damages": [
-        5.376156902874139e-05,
-        8.36914420260084e-05,
+        5.3761224288644077e-05,
+        8.369075254581377e-05,
         4.631880084300056e-05,
         4.631880084300056e-05
       ],
@@ -263,7 +263,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0005,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.999940980853165,
+      "ecosystem_health": 0.999940981128957,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999145292948,
@@ -280,8 +280,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.200016739689374,
-          "Human Communities": 1.1200081257940762,
+          "Animal Populations": 1.200016739551455,
+          "Human Communities": 1.1200081257389096,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -293,8 +293,8 @@
           "Watershed & Local Climate": 1528.070778406059
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.0000836984468697,
-          "Human Communities": 1.0000537644594905,
+          "Animal Populations": 1.000083697757274,
+          "Human Communities": 1.0000537641147134,
           "Vegetation & Flora": 1.0000463209463737,
           "Watershed & Local Climate": 1.0000463209463737
         },
@@ -314,14 +314,14 @@
         3.4292980634274906
       ],
       "agent_cascade_damages": [
-        0.0010237999050229409,
-        0.0012742888860811756,
+        0.0010172768208202322,
+        0.0012612427176757583,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.007395244335428819,
-        0.011512287936310579,
+        0.00738872125122611,
+        0.011499241767905162,
         0.006371444430405878,
         0.006371444430405878
       ],
@@ -341,7 +341,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.0505,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9918815425368182,
+      "ecosystem_health": 0.9918867610041803,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999911515389103,
@@ -358,8 +358,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.2023292728469586,
-          "Human Communities": 1.1211287036441784,
+          "Animal Populations": 1.2023266025184385,
+          "Human Communities": 1.1211276386093476,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -371,8 +371,8 @@
           "Watershed & Local Climate": 1537.7979944669357
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.0116463642347926,
-          "Human Communities": 1.0074503414306912,
+          "Animal Populations": 1.011633012592192,
+          "Human Communities": 1.0074437208295073,
           "Vegetation & Flora": 1.006412300043806,
           "Watershed & Local Climate": 1.006412300043806
         },
@@ -392,14 +392,14 @@
         9.632837170421855
       ],
       "agent_cascade_damages": [
-        0.0028430669898629572,
-        0.0035386686888640093,
+        0.0027927636291761038,
+        0.0034380619674903024,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.020536410434183017,
-        0.03196933858749358,
+        0.020486107073496164,
+        0.031868731866119875,
         0.01769334344432006,
         0.01769334344432006
       ],
@@ -419,7 +419,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1005,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9774552446147553,
+      "ecosystem_health": 0.9774954873033048,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999811306425426,
@@ -436,8 +436,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.206605026031065,
-          "Human Communities": 1.1231903910349477,
+          "Animal Populations": 1.206583555952603,
+          "Human Communities": 1.1231818726274194,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -449,8 +449,8 @@
           "Watershed & Local Climate": 1555.5223919154912
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.0330251301553253,
-          "Human Communities": 1.0209669972962307,
+          "Animal Populations": 1.0329177797630154,
+          "Human Communities": 1.020914565093395,
           "Vegetation & Flora": 1.0180120365939078,
           "Watershed & Local Climate": 1.0180120365939078
         },
@@ -470,14 +470,14 @@
         20.93671779297609
       ],
       "agent_cascade_damages": [
-        0.00605364142254404,
-        0.0075347613798573895,
+        0.0058255777045535945,
+        0.007078633943876485,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.04372744832183097,
-        0.06807117560529781,
+        0.04349938460384052,
+        0.0676150481693169,
         0.03767380689928693,
         0.03767380689928693
       ],
@@ -497,7 +497,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.1505,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.951996254204401,
+      "ecosystem_health": 0.9521787051787933,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999686125239529,
@@ -514,8 +514,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.2146086640574747,
-          "Human Communities": 1.1270149040590938,
+          "Animal Populations": 1.2145036764131723,
+          "Human Communities": 1.1269736429714845,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -527,8 +527,8 @@
           "Watershed & Local Climate": 1587.8191936942173
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.0730433202873737,
-          "Human Communities": 1.0457269721326763,
+          "Animal Populations": 1.072518382065861,
+          "Human Communities": 1.0454776336822575,
           "Vegetation & Flora": 1.0391486869726554,
           "Watershed & Local Climate": 1.0391486869726554
         },
@@ -548,14 +548,14 @@
         41.53471196700379
       ],
       "agent_cascade_damages": [
-        0.011580134693980351,
-        0.014413399403012797,
+        0.010745589161555227,
+        0.01274430833816255,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.08364713170904428,
-        0.1302147463428163,
+        0.08281258617661916,
+        0.12854565527796605,
         0.07206699701506393,
         0.07206699701506393
       ],
@@ -575,7 +575,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.2005,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.9081726512478143,
+      "ecosystem_health": 0.9088402876737544,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999523578669016,
@@ -592,8 +592,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.2299418151308734,
-          "Human Communities": 1.1342214181557349,
+          "Animal Populations": 1.229501409008172,
+          "Human Communities": 1.134051273543199,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -605,8 +605,8 @@
           "Watershed & Local Climate": 1646.6706056200107
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.149709075654367,
-          "Human Communities": 1.091282664793804,
+          "Animal Populations": 1.1475070450408598,
+          "Human Communities": 1.0902897106180374,
           "Vegetation & Flora": 1.0776640089136196,
           "Watershed & Local Climate": 1.0776640089136196
         },
@@ -626,14 +626,14 @@
         79.06996102468172
       ],
       "agent_cascade_damages": [
-        0.02069723485607111,
-        0.0257611435792352,
+        0.018031312661969112,
+        0.020429299191031203,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.14950295275224712,
-        0.23273349213994626,
+        0.14683703055814512,
+        0.22740164775174226,
         0.128805717896176,
         0.128805717896176
       ],
@@ -653,7 +653,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.2505,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.8358765028594787,
+      "ecosystem_health": 0.8380092406147603,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.999931127355149,
@@ -670,8 +670,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.2606656200305295,
-          "Human Communities": 1.1482269249623032,
+          "Animal Populations": 1.2588667182864173,
+          "Human Communities": 1.14755290177561,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -683,8 +683,8 @@
           "Watershed & Local Climate": 1753.9141743562334
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.303328100152647,
-          "Human Communities": 1.1757830356213999,
+          "Animal Populations": 1.2943335914320868,
+          "Human Communities": 1.1721090059197095,
           "Vegetation & Flora": 1.1478495905472732,
           "Watershed & Local Climate": 1.1478495905472732
         },
@@ -704,14 +704,14 @@
         146.56743284868216
       ],
       "agent_cascade_damages": [
-        0.03456474001114887,
-        0.0430215551206809,
+        0.02712959567304063,
+        0.028151266444464473,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.24967251561455348,
-        0.3886689552321695,
+        0.24223737127644523,
+        0.37379866655595306,
         0.2151077756034046,
         0.2151077756034046
       ],
@@ -731,7 +731,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.3,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.7259109225057362,
+      "ecosystem_health": 0.7318590379762228,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999039909636748,
@@ -748,8 +748,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.3271549869939214,
-          "Human Communities": 1.1768767657606098,
+          "Animal Populations": 1.319386097279639,
+          "Human Communities": 1.1741160156581139,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -761,8 +761,8 @@
           "Watershed & Local Climate": 1946.7640938533775
         },
         "scarcity_multipliers": {
-          "Animal Populations": 1.6357749349696071,
-          "Human Communities": 1.3327513929721595,
+          "Animal Populations": 1.5969304863981948,
+          "Human Communities": 1.3196744760090533,
           "Vegetation & Flora": 1.2740602708464512,
           "Watershed & Local Climate": 1.2740602708464512
         },
@@ -782,14 +782,14 @@
         270.49817506482765
       ],
       "agent_cascade_damages": [
-        0.05397402548497099,
-        0.06717963195261234,
+        0.03584424964956462,
+        0.03092008028179971,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.38987218524803285,
-        0.606919886802322,
+        0.3717424094126265,
+        0.5706603351315094,
         0.33589815976306187,
         0.33589815976306187
       ],
@@ -809,7 +809,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.35,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.5720005170281659,
+      "ecosystem_health": 0.5865043376964909,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9998691714732901,
@@ -826,8 +826,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 1.508802132911316,
-          "Human Communities": 1.2472927961044824,
+          "Animal Populations": 1.465831639527788,
+          "Human Communities": 1.233316980405656,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -839,8 +839,8 @@
           "Watershed & Local Climate": 2300.8519287566505
         },
         "scarcity_multipliers": {
-          "Animal Populations": 2.5440106645565788,
-          "Human Communities": 1.63900083854811,
+          "Animal Populations": 2.3291581976389395,
+          "Human Communities": 1.5917038090460243,
           "Vegetation & Flora": 1.5057931470920487,
           "Watershed & Local Climate": 1.5057931470920487
         },
@@ -860,14 +860,14 @@
         496.432611086717
       ],
       "agent_cascade_damages": [
-        0.07735365688593943,
-        0.0962794631879561,
+        0.04011581408292142,
+        0.021803777581920203,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.5587509728257198,
-        0.8698160320473497,
+        0.5215131300227018,
+        0.7953403464413138,
         0.4813973159397804,
         0.4813973159397804
       ],
@@ -887,7 +887,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.4,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.38660633785076093,
+      "ecosystem_health": 0.41639661209317536,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9998256705726488,
@@ -904,8 +904,8 @@
         },
         "converged": true,
         "demand_multipliers": {
-          "Animal Populations": 2.5362874795208485,
-          "Human Communities": 1.5747972966111699,
+          "Animal Populations": 1.9772321829062902,
+          "Human Communities": 1.413226006180713,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -917,8 +917,8 @@
           "Watershed & Local Climate": 2946.3788888191916
         },
         "scarcity_multipliers": {
-          "Animal Populations": 7.681437397604241,
-          "Human Communities": 2.266293948349103,
+          "Animal Populations": 4.886160914531451,
+          "Human Communities": 2.0899215062002536,
           "Vegetation & Flora": 1.9282584350910938,
           "Watershed & Local Climate": 1.9282584350910938
         },
@@ -938,13 +938,13 @@
         908.503883762811
       ],
       "agent_cascade_damages": [
-        0.09999999999999998,
+        0.03705387382494485,
         0.0,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.7294612617505519,
+        0.6665151355754968,
         1.0,
         0.629461261750552,
         0.629461261750552
@@ -965,7 +965,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.45,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.2393771167746137,
+      "ecosystem_health": 0.25196634200962476,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9997722489455121,
@@ -983,7 +983,7 @@
         "converged": true,
         "demand_multipliers": {
           "Animal Populations": 11.0,
-          "Human Communities": 5.0659611526159845,
+          "Human Communities": 4.2985005238491905,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -996,7 +996,7 @@
         },
         "scarcity_multipliers": {
           "Animal Populations": 50.0,
-          "Human Communities": 3.696328320559986,
+          "Human Communities": 2.9986368398629004,
           "Vegetation & Flora": 2.69877315587661,
           "Watershed & Local Climate": 2.69877315587661
         },
@@ -1016,13 +1016,13 @@
         1660.6505133133955
       ],
       "agent_cascade_damages": [
-        0.09999999999999998,
+        0.024359465028108263,
         0.0,
         0.0,
         0.0
       ],
       "agent_damages": [
-        0.8564053497189174,
+        0.7807648147470256,
         1.0,
         0.7564053497189174,
         0.7564053497189174
@@ -1043,7 +1043,7 @@
       "carbon_price_used": 0.0,
       "depletion_ratio": 0.5,
       "discount_factor_at_step": 1.0,
-      "ecosystem_health": 0.15051625519675782,
+      "ecosystem_health": 0.1656443621911362,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9997076672756388,
@@ -1061,7 +1061,7 @@
         "converged": true,
         "demand_multipliers": {
           "Animal Populations": 11.0,
-          "Human Communities": 8.660452515792057,
+          "Human Communities": 6.017442791998537,
           "Vegetation & Flora": 1.0,
           "Watershed & Local Climate": 1.0
         },
@@ -1074,7 +1074,7 @@
         },
         "scarcity_multipliers": {
           "Animal Populations": 50.0,
-          "Human Communities": 6.964047741629142,
+          "Human Communities": 4.5613116290895785,
           "Vegetation & Flora": 4.10518046618062,
           "Watershed & Local Climate": 4.10518046618062
         },
