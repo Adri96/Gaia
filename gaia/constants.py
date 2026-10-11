@@ -13,7 +13,7 @@ rationale. Step 5 builds parameter provenance on these flags.
 
 # ── Trophic amplification (Foundation F3) ──────────────────────────────────────
 # factor(L) = (1 / TROPHIC_TRANSFER_EFFICIENCY) ** (TROPHIC_AMPLIFICATION_EXPONENT * L)
-# for trophic level L >= 1, i.e. 1.6× / 2.6× / 4.2× for L = 1 / 2 / 3.
+# for trophic level L >= 1, i.e. 1.6× / 2.6× / 4.1× for L = 1 / 2 / 3.
 
 # PLACEHOLDER. Midpoint of the 5–20% energy transfer efficiency between
 # trophic levels (the textbook range following Lindeman 1942; from memory —
@@ -21,7 +21,7 @@ rationale. Step 5 builds parameter provenance on these flags.
 TROPHIC_TRANSFER_EFFICIENCY: float = 0.15
 
 # PLACEHOLDER. No source: damps the raw pyramid ratio (1/0.15)**L = 6.7×, 44×,
-# 296× to 1.6–4.2× so a single-resource model stays in a plausible range.
+# 296× to 1.6–4.1× so a single-resource model stays in a plausible range.
 TROPHIC_AMPLIFICATION_EXPONENT: float = 0.25
 
 # ── Keystone cascades (Foundation F6) ─────────────────────────────────────────

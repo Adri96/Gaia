@@ -41,6 +41,8 @@ jobs:
         run: python -m pytest -q
       - name: Golden files
         run: python scripts/regen_golden.py --check
+      - name: README examples
+        run: python scripts/gen_readme_examples.py --check
 
   lint:
     name: ruff + mypy (target Python ${{ matrix.python-version }})

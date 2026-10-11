@@ -1038,7 +1038,7 @@ def run_restoration(
 
         Trophic amplification is not applied to recovery (S2): the reversal
         is of the extraction's amplified damage, so consumers regain what
-        they lost; amplifying recovery as well made them recover 1.6–4.2×
+        they lost; amplifying recovery as well made them recover 1.6–4.1×
         faster than producers. Interaction cascades are reversed as part of
         the effective damage (the former 0.5× recovery cascade is gone).
 

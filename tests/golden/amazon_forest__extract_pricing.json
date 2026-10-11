@@ -35,7 +35,7 @@
         {
           "confidence": "placeholder",
           "name": "model.trophic_amplification_exponent",
-          "note": "No source: damps the pyramid ratio to 1.6-4.2\u00d7 amplification for trophic levels 1-3.",
+          "note": "No source: damps the pyramid ratio to 1.6-4.1\u00d7 amplification for trophic levels 1-3.",
           "source": null,
           "unit": "exponent",
           "value": 0.25

@@ -40,7 +40,7 @@ def trophic_amplification_factor(
     Trophic amplification factor for an agent: 1.0 for producers and abiotic
     services (level <= 0), else
         (1 / transfer_efficiency) ** (TROPHIC_AMPLIFICATION_EXPONENT * level)
-    i.e. 1.6× / 2.6× / 4.2× for levels 1 / 2 / 3 at the default efficiency.
+    i.e. 1.6× / 2.6× / 4.1× for levels 1 / 2 / 3 at the default efficiency.
     Both engines and the text report use this one function.
     """
     if trophic_level <= 0:

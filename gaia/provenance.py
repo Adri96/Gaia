@@ -226,7 +226,7 @@ def model_parameters(ecosystem, discount) -> List[Param]:
         out.append(Param(
             constants.TROPHIC_AMPLIFICATION_EXPONENT, "exponent", None,
             Confidence.PLACEHOLDER,
-            "No source: damps the pyramid ratio to 1.6-4.2× amplification for "
+            "No source: damps the pyramid ratio to 1.6-4.1× amplification for "
             "trophic levels 1-3.",
             name="model.trophic_amplification_exponent",
         ))
