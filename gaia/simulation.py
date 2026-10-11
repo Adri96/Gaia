@@ -20,8 +20,14 @@ v0.6: NPV computation on SimulationResult and RestorationResult when DiscountCon
 v0.7: Per-step price solver when PricingConfig present; dynamic prices replace monetary_rate.
 """
 
-from typing import List, Optional
+import hashlib
+import math
+import os
+import warnings
+from pathlib import Path
+from typing import Callable, List, Optional
 
+from gaia.damage import evaluate_kernel
 from gaia.models import (
     Agent,
     Ecosystem,
@@ -41,6 +47,7 @@ from gaia.substrate import (
     compute_substrate_recovery_years,
     create_substrate_state,
     degrade_substrate,
+    is_marine,
 )
 from gaia.succession import (
     compute_maturation_gap,
@@ -49,79 +56,105 @@ from gaia.succession import (
 )
 from gaia.validation import validate_ecosystem, validate_extraction
 
-# v0.8: Try importing Cython-optimized simulation loop
-try:
-    from gaia.cy.simulation_cy import extraction_loop_cy
-    _HAS_CYTHON = True
-except ImportError:
-    _HAS_CYTHON = False
+_PYX_PATH: Path = Path(__file__).resolve().parent / "cy" / "simulation_cy.pyx"
+
+
+def _pyx_sha256(path: Path) -> str:
+    """SHA-256 of a source file with normalised line endings (see setup.py)."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def _load_cython_loop(module=None, pyx_path: Path = _PYX_PATH) -> Optional[Callable]:
+    """Return the compiled extraction loop, or None to use the Python loop.
+
+    None when ``GAIA_FORCE_PYTHON=1`` is set, when the extension is not built,
+    or when it is stale: the SHA-256 of the .pyx it was compiled from
+    (``PYX_SOURCE_SHA256``) differs from the current ``pyx_path``. A stale
+    build warns. If the .pyx is absent (installed package without sources)
+    the compiled module is trusted.
+
+    Args:
+        module: The compiled module (default: import gaia.cy.simulation_cy).
+        pyx_path: The .pyx source to compare against.
+    """
+    if os.environ.get("GAIA_FORCE_PYTHON") == "1":
+        return None
+    if module is None:
+        try:
+            from gaia.cy import simulation_cy as module
+        except ImportError:
+            return None
+    if pyx_path.is_file():
+        built = getattr(module, "PYX_SOURCE_SHA256", None)
+        current = _pyx_sha256(pyx_path)
+        if built != current:
+            warnings.warn(
+                f"Gaia's compiled extension is out of date with {pyx_path.name} "
+                f"(built from {str(built)[:12]}, source is {current[:12]}); "
+                f"using the pure-Python loop. Rebuild with: "
+                f"python3 setup.py build_ext --inplace",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return None
+    return module.extraction_loop_cy
+
+
+# v0.8: Cython-optimized simulation loop (None → pure Python)
+extraction_loop_cy = _load_cython_loop()
+_HAS_CYTHON = extraction_loop_cy is not None
 
 # Bulk density for soil t/ha/yr → mm/yr conversion (from substrate.py)
 _BULK_DENSITY_KG_M3: float = 1300.0
 _T_HA_TO_MM_FACTOR: float = 10.0 / _BULK_DENSITY_KG_M3
 
 
+_NO_KERNEL: tuple = (-1, 0.0, 0.0, 0.0, 0.0)
+_KERNEL_PROBES: tuple = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0)
+
+
 def _extract_damage_params(damage_fn) -> tuple:
-    """Extract damage function parameters from a closure for the Cython loop.
+    """Return the Cython kernel tag ``(kind, p1, p2, p3, p4)`` of a damage function.
 
-    Inspects the closure variables to determine function type and extract
-    the pre-computed parameters. Returns a 5-tuple:
-        (kind, p1, p2, p3, p4)
+    Reads the ``kernel`` attribute set by the factories in gaia.damage (see
+    that module for the kinds). The tag is trusted only if
+    ``evaluate_kernel`` reproduces the function at a few probe points, so a
+    wrapped or edited function whose tag no longer describes it cannot be
+    silently mis-evaluated by the Cython loop.
 
-    Kind values:
-        0 = logistic:    (inflection, raw_0, span, steepness)
-        1 = exponential: (scale, raw_1, base, 0.0)
-        2 = piecewise:   (threshold, pre_slope, post_slope, pre_slope_ratio)
-
-    Falls back to kind=-1 if the closure cannot be inspected, which signals
-    the caller to use the pure-Python path.
+    Returns kind=-1 when there is no usable tag, which signals the caller to
+    use the pure-Python path.
     """
-    closure = getattr(damage_fn, '__closure__', None)
-    if closure is None:
-        return (-1, 0.0, 0.0, 0.0, 0.0)
-
-    freevars = damage_fn.__code__.co_freevars
-    params = {name: cell.cell_contents for name, cell in zip(freevars, closure)}
-
-    fname = damage_fn.__code__.co_name
-
-    if fname == '_logistic' and 'inflection' in params:
-        return (0, params['inflection'], params['raw_0'],
-                params['span'], params['steepness'])
-    elif fname == '_exponential' and 'scale' in params:
-        return (1, params['scale'], params['raw_1'],
-                params.get('base', 2.0), 0.0)
-    elif fname == '_piecewise' and 'pre_slope' in params:
-        return (2, params['threshold'], params['pre_slope'],
-                params['post_slope'], params['pre_slope_ratio'])
-    else:
-        return (-1, 0.0, 0.0, 0.0, 0.0)
+    kernel = getattr(damage_fn, "kernel", None)
+    if not isinstance(kernel, tuple) or len(kernel) != 5:
+        return _NO_KERNEL
+    try:
+        for x in _KERNEL_PROBES:
+            if not math.isclose(damage_fn(x), evaluate_kernel(kernel, x),
+                                rel_tol=1e-12, abs_tol=1e-15):
+                return _NO_KERNEL
+    except (ValueError, TypeError, ArithmeticError):
+        return _NO_KERNEL
+    return kernel
 
 
 def _can_use_cython(ecosystem: Ecosystem) -> bool:
     """Check if the Cython fast path can be used for this ecosystem.
 
     The fast path is available when:
-    1. The Cython extension is compiled and importable
+    1. The Cython extension is compiled, importable and not stale
     2. No v0.7 pricing config (pricing requires per-step Python solver)
-    3. All damage functions have extractable parameters
-    4. Substrate is terrestrial soil (not marine sediment)
+    3. All damage functions carry a verified kernel tag
+
+    Every validated substrate profile (terrestrial or marine) is supported.
     """
     if not _HAS_CYTHON:
         return False
     if ecosystem.pricing is not None:
         return False
-    # Check all damage functions are extractable
     for agent in ecosystem.agents:
         kind = _extract_damage_params(agent.damage_function)[0]
         if kind == -1:
-            return False
-    # Check substrate compatibility (marine uses sediment_stability, not soil_depth)
-    if ecosystem.resource.substrate is not None:
-        sub = ecosystem.resource.substrate
-        # Marine substrates use sediment_stability, which the Cython loop
-        # doesn't handle (it assumes soil_depth_cm)
-        if sub.substrate_type not in ("terrestrial_soil",):
             return False
     return True
 
@@ -175,7 +208,9 @@ def _run_extraction_cython(
 
     # Substrate config
     sub = resource.substrate
+    sub_is_marine = bool(sub is not None and is_marine(sub))
     sub_depth = sub.soil_depth_cm if sub and sub.soil_depth_cm else 0.0
+    sub_stability = sub.sediment_stability if sub and sub.sediment_stability else 0.0
     sub_erosion_unp = sub.erosion_rate_unprotected if sub else 0.0
     sub_erosion_pro = sub.erosion_rate_protected if sub else 0.0
     sub_formation = sub.formation_rate if sub else 0.0
@@ -205,12 +240,14 @@ def _run_extraction_cython(
         has_interactions=has_interactions,
         has_resilience=has_resilience,
         has_substrate=has_substrate,
+        substrate_is_marine=sub_is_marine,
         resilience_warning_width=res_warning,
         resilience_conf_green=res_conf_green,
         resilience_conf_yellow=res_conf_yellow,
         resilience_conf_red=res_conf_red,
         resilience_irreversibility_ratio=res_irrev,
         substrate_soil_depth_cm=sub_depth,
+        substrate_sediment_stability=sub_stability,
         substrate_erosion_unprotected=sub_erosion_unp,
         substrate_erosion_protected=sub_erosion_pro,
         substrate_formation_rate=sub_formation,

@@ -25,7 +25,7 @@ Follows the 14 testing requirements from the v0.5 spec:
 import math
 import pytest
 
-from gaia.models import SubstrateProfile, SubstrateState
+from gaia.models import SubstrateProfile, SubstrateState, SubstrateType
 from gaia.substrate import (
     _BULK_DENSITY_KG_M3,
     _T_HA_TO_MM_FACTOR,
@@ -35,6 +35,7 @@ from gaia.substrate import (
     degrade_substrate,
     recover_substrate,
 )
+from gaia.validation import validate_substrate_profile
 
 
 # ── Test fixtures ──────────────────────────────────────────────────────────────
@@ -271,6 +272,29 @@ def test_logistic_monotonic():
             f"Monotonicity violated: ratio={ratio}, frac={frac} < prev={prev_frac}"
         )
         prev_frac = frac
+
+
+def test_logistic_applies_to_soil_depth():
+    """Terrestrial logistic uses the soil-depth ratio (same curve as marine)."""
+    soil = create_substrate_state(_terrestrial_profile(capacity_function="logistic"))
+    marine = create_substrate_state(_marine_profile(capacity_function="logistic"))
+    for ratio in (0.0, 0.2, 0.5, 0.8, 1.0):
+        soil.current_soil_depth_cm = soil.pristine_soil_depth_cm * ratio
+        marine.current_sediment_stability = marine.pristine_sediment_stability * ratio
+        assert compute_capacity_fraction(soil) == pytest.approx(
+            compute_capacity_fraction(marine), rel=1e-12, abs=1e-15
+        )
+    soil.current_soil_depth_cm = soil.pristine_soil_depth_cm * 0.2
+    assert compute_capacity_fraction(soil) < 0.1
+
+
+def test_substrate_type_selects_state_variable():
+    """Dispatch follows substrate_type, not which fields happen to be set."""
+    profile = _marine_profile(capacity_function="linear", soil_depth_cm=30.0)
+    state = create_substrate_state(profile)
+    degrade_substrate(state, vegetation_cover=0.0, years=1.0)
+    assert state.current_soil_depth_cm == 30.0
+    assert state.current_sediment_stability < 0.85
 
 
 # ── Degradation tests ────────────────────────────────────────────────────────
@@ -537,3 +561,33 @@ def test_no_substrate_properties_returns_defaults():
     state = create_substrate_state(profile)
     frac = compute_capacity_fraction(state)
     assert frac == 1.0
+
+
+# ── substrate_type validation ─────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("profile", [
+    _terrestrial_profile(),
+    _threshold_profile(),
+    _terrestrial_profile(capacity_function="logistic"),
+    _marine_profile(),
+    _marine_profile(substrate_type="marine_sediment", capacity_function="linear"),
+    _terrestrial_profile(substrate_type=SubstrateType.TERRESTRIAL_SOIL),
+])
+def test_valid_substrate_profiles_accepted(profile):
+    validate_substrate_profile(profile)
+
+
+@pytest.mark.parametrize("profile, message", [
+    (_terrestrial_profile(substrate_type="tropical_oxisol"), "substrate_type must be one of"),
+    (_terrestrial_profile(substrate_type="Terrestrial_Soil"), "substrate_type must be one of"),
+    (_marine_profile(substrate_type="terrestrial_soil"), "requires soil_depth_cm"),
+    (_terrestrial_profile(sediment_stability=0.5), "must not set marine properties"),
+    (_terrestrial_profile(water_clarity_kd=0.1), "must not set marine properties"),
+    (_terrestrial_profile(substrate_type="marine_matte"), "requires sediment_stability"),
+    (_marine_profile(soil_depth_cm=10.0), "must not set soil_depth_cm"),
+    (_marine_profile(capacity_function="threshold"), "not supported"),
+])
+def test_invalid_substrate_profiles_rejected(profile, message):
+    with pytest.raises(ValueError, match=message):
+        validate_substrate_profile(profile)

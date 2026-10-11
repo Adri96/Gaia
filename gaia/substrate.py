@@ -21,7 +21,7 @@ All code is Cython-compatible:
 import math
 from typing import Optional
 
-from gaia.models import SubstrateProfile, SubstrateState
+from gaia.models import SubstrateProfile, SubstrateState, SubstrateType
 
 # Bulk density for soil t/ha/yr → mm/yr conversion
 # 1 t/ha = 10,000 kg / (10,000 m² * depth_m * bulk_density_kg_m3)
@@ -29,6 +29,44 @@ from gaia.models import SubstrateProfile, SubstrateState
 # At 1,300 kg/m³: 1 t/ha/yr ≈ 0.077 mm/yr
 _BULK_DENSITY_KG_M3: float = 1300.0
 _T_HA_TO_MM_FACTOR: float = 10.0 / _BULK_DENSITY_KG_M3  # ≈ 0.00769 mm per t/ha
+
+
+def is_terrestrial(profile: SubstrateProfile) -> bool:
+    """True if the profile tracks soil depth (substrate_type terrestrial_soil).
+
+    This is the single dispatch rule for substrate behaviour, shared by the
+    pure-Python functions below and the Cython extraction loop.
+    """
+    return profile.substrate_type == SubstrateType.TERRESTRIAL_SOIL
+
+
+def is_marine(profile: SubstrateProfile) -> bool:
+    """True if the profile tracks sediment stability (any marine substrate_type)."""
+    return profile.substrate_type in (
+        SubstrateType.MARINE_SEDIMENT, SubstrateType.MARINE_MATTE,
+    )
+
+
+def _substrate_ratio(state: SubstrateState) -> Optional[float]:
+    """current / pristine of the state variable selected by substrate_type.
+
+    Returns None when the type is unknown or its state variable is unset
+    (only possible for profiles that bypassed validation).
+    """
+    profile = state.profile
+    if is_terrestrial(profile):
+        current = state.current_soil_depth_cm
+        pristine = state.pristine_soil_depth_cm
+    elif is_marine(profile):
+        current = state.current_sediment_stability
+        pristine = state.pristine_sediment_stability
+    else:
+        return None
+    if current is None or pristine is None:
+        return None
+    if pristine <= 0.0:
+        return 0.0
+    return current / pristine
 
 
 def create_substrate_state(profile: SubstrateProfile) -> SubstrateState:
@@ -94,18 +132,10 @@ def _capacity_linear(state: SubstrateState) -> float:
 
     Use for systems where capacity degrades proportionally to substrate.
     """
-    if state.current_soil_depth_cm is not None and state.pristine_soil_depth_cm is not None:
-        if state.pristine_soil_depth_cm <= 0.0:
-            return 0.0
-        return state.current_soil_depth_cm / state.pristine_soil_depth_cm
-
-    if (state.current_sediment_stability is not None
-            and state.pristine_sediment_stability is not None):
-        if state.pristine_sediment_stability <= 0.0:
-            return 0.0
-        return state.current_sediment_stability / state.pristine_sediment_stability
-
-    return 1.0
+    ratio = _substrate_ratio(state)
+    if ratio is None:
+        return 1.0
+    return ratio
 
 
 def _capacity_threshold(state: SubstrateState) -> float:
@@ -115,12 +145,15 @@ def _capacity_threshold(state: SubstrateState) -> float:
     Above critical_minimum, capacity scales linearly from residual up to 1.0.
 
     Use for holm oak on limestone — below ~8cm soil, trees cannot establish.
+    Terrestrial only: validation rejects threshold for marine substrates.
     """
     profile = state.profile
     critical: float = profile.critical_minimum
     residual: float = profile.residual_fraction
 
-    if state.current_soil_depth_cm is not None and state.pristine_soil_depth_cm is not None:
+    if (is_terrestrial(profile)
+            and state.current_soil_depth_cm is not None
+            and state.pristine_soil_depth_cm is not None):
         current: float = state.current_soil_depth_cm
         pristine: float = state.pristine_soil_depth_cm
 
@@ -145,33 +178,28 @@ def _capacity_threshold(state: SubstrateState) -> float:
 
 
 def _capacity_logistic(state: SubstrateState) -> float:
-    """Logistic capacity: smooth S-curve for light-limited marine systems.
+    """Logistic capacity: smooth S-curve of the substrate ratio.
 
-    For Posidonia: water clarity (Kd) determines habitable depth via
-    Beer-Lambert law. The relationship between clarity and habitable area
-    is smooth but nonlinear.
-
-    Uses sediment_stability as primary metric for marine substrates.
+    Designed for light-limited marine systems (Posidonia: water clarity
+    determines habitable depth via Beer-Lambert, a smooth but nonlinear
+    relationship), where the ratio is sediment stability. The curve depends
+    only on current/pristine, so terrestrial profiles apply it to soil depth,
+    exactly as the Cython loop does.
     """
-    if (state.current_sediment_stability is not None
-            and state.pristine_sediment_stability is not None):
-        if state.pristine_sediment_stability <= 0.0:
-            return 0.0
+    ratio = _substrate_ratio(state)
+    if ratio is None:
+        return 1.0
 
-        ratio: float = state.current_sediment_stability / state.pristine_sediment_stability
-
-        # Logistic with inflection at 0.5, steepness 10
-        steepness: float = 10.0
-        inflection: float = 0.5
-        raw: float = 1.0 / (1.0 + math.exp(-steepness * (ratio - inflection)))
-        raw_at_0: float = 1.0 / (1.0 + math.exp(-steepness * (0.0 - inflection)))
-        raw_at_1: float = 1.0 / (1.0 + math.exp(-steepness * (1.0 - inflection)))
-        span: float = raw_at_1 - raw_at_0
-        if span <= 0.0:
-            return ratio
-        return (raw - raw_at_0) / span
-
-    return 1.0
+    # Logistic with inflection at 0.5, steepness 10
+    steepness: float = 10.0
+    inflection: float = 0.5
+    raw: float = 1.0 / (1.0 + math.exp(-steepness * (ratio - inflection)))
+    raw_at_0: float = 1.0 / (1.0 + math.exp(-steepness * (0.0 - inflection)))
+    raw_at_1: float = 1.0 / (1.0 + math.exp(-steepness * (1.0 - inflection)))
+    span: float = raw_at_1 - raw_at_0
+    if span <= 0.0:
+        return ratio
+    return (raw - raw_at_0) / span
 
 
 def degrade_substrate(
@@ -217,7 +245,7 @@ def degrade_substrate(
     erosion_amount: float = effective_erosion * years
 
     # Apply to the appropriate substrate property
-    if state.current_soil_depth_cm is not None:
+    if is_terrestrial(profile) and state.current_soil_depth_cm is not None:
         # Convert t/ha/yr to mm/yr, then to cm
         erosion_mm: float = erosion_amount * _T_HA_TO_MM_FACTOR
         erosion_cm: float = erosion_mm / 10.0
@@ -228,7 +256,7 @@ def degrade_substrate(
         compute_capacity_fraction(state)
         return erosion_cm
 
-    if state.current_sediment_stability is not None:
+    if is_marine(profile) and state.current_sediment_stability is not None:
         # Marine: erosion_rate is in mm/yr, applied as fraction of stability
         # 5 mm/yr matte erosion on 0.85 stability -> gradual reduction
         # Normalize: treat erosion_rate as direct stability reduction per year
@@ -258,7 +286,9 @@ def recover_substrate(state: SubstrateState, years: float = 1.0) -> None:
     profile = state.profile
     recovery_amount: float = profile.formation_rate * years
 
-    if state.current_soil_depth_cm is not None and state.pristine_soil_depth_cm is not None:
+    if (is_terrestrial(profile)
+            and state.current_soil_depth_cm is not None
+            and state.pristine_soil_depth_cm is not None):
         # Convert t/ha/yr to cm
         recovery_mm: float = recovery_amount * _T_HA_TO_MM_FACTOR
         recovery_cm: float = recovery_mm / 10.0
@@ -268,7 +298,8 @@ def recover_substrate(state: SubstrateState, years: float = 1.0) -> None:
         compute_capacity_fraction(state)
         return
 
-    if (state.current_sediment_stability is not None
+    if (is_marine(profile)
+            and state.current_sediment_stability is not None
             and state.pristine_sediment_stability is not None):
         # Marine: formation_rate in mm/yr -> stability recovery
         stability_gain: float = (recovery_amount / 100.0)
@@ -295,16 +326,21 @@ def compute_substrate_recovery_years(state: SubstrateState) -> float:
 
     if profile.formation_rate <= 0.0:
         # No natural recovery possible
-        if state.current_soil_depth_cm is not None and state.pristine_soil_depth_cm is not None:
+        if (is_terrestrial(profile)
+                and state.current_soil_depth_cm is not None
+                and state.pristine_soil_depth_cm is not None):
             if state.current_soil_depth_cm < state.pristine_soil_depth_cm:
                 return float("inf")
-        if (state.current_sediment_stability is not None
+        if (is_marine(profile)
+                and state.current_sediment_stability is not None
                 and state.pristine_sediment_stability is not None):
             if state.current_sediment_stability < state.pristine_sediment_stability:
                 return float("inf")
         return 0.0
 
-    if state.current_soil_depth_cm is not None and state.pristine_soil_depth_cm is not None:
+    if (is_terrestrial(profile)
+            and state.current_soil_depth_cm is not None
+            and state.pristine_soil_depth_cm is not None):
         deficit_cm: float = state.pristine_soil_depth_cm - state.current_soil_depth_cm
         if deficit_cm <= 0.0:
             state.years_to_recover = 0.0
@@ -318,7 +354,8 @@ def compute_substrate_recovery_years(state: SubstrateState) -> float:
         state.years_to_recover = years
         return years
 
-    if (state.current_sediment_stability is not None
+    if (is_marine(profile)
+            and state.current_sediment_stability is not None
             and state.pristine_sediment_stability is not None):
         deficit: float = state.pristine_sediment_stability - state.current_sediment_stability
         if deficit <= 0.0:

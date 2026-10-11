@@ -12,12 +12,45 @@ Scientific invariants that every damage function must satisfy:
     5. Convexity past threshold: second finite difference is positive post-threshold
 
 All functions are float -> float in the hot path — Cython-compatible.
+
+Kernel tags:
+    Every factory attaches a ``kernel`` attribute to the function it returns:
+    a 5-tuple ``(kind, p1, p2, p3, p4)`` holding the pre-computed parameters.
+    The Cython loop evaluates the same formula from this tag, so it never has
+    to inspect closures. ``evaluate_kernel`` is the pure-Python reference for
+    each kind; the simulation checks it against the function itself before
+    trusting a tag, and falls back to the Python loop on any mismatch.
 """
 
 import math
-from typing import Callable
+from typing import Callable, Tuple
 
 DamageFunc = Callable[[float], float]
+Kernel = Tuple[int, float, float, float, float]
+
+# Kernel kinds (must match gaia/cy/simulation_cy.pyx)
+KERNEL_LOGISTIC: int = 0     # (inflection, raw_0, span, steepness)
+KERNEL_EXPONENTIAL: int = 1  # (scale, raw_1, base, 0.0)
+KERNEL_PIECEWISE: int = 2    # (threshold, pre_slope, post_slope, pre_slope_ratio)
+
+
+def evaluate_kernel(kernel: Kernel, depletion_ratio: float) -> float:
+    """Evaluate a kernel tag with the same arithmetic as the factory closures.
+
+    Raises:
+        ValueError: If the kernel kind is unknown.
+    """
+    kind, p1, p2, p3, p4 = kernel
+    if kind == KERNEL_LOGISTIC:
+        raw: float = 1.0 / (1.0 + math.exp(-p4 * (depletion_ratio - p1)))
+        return (raw - p2) / p3
+    if kind == KERNEL_EXPONENTIAL:
+        return ((p3 ** (depletion_ratio * p1)) - 1.0) / p2
+    if kind == KERNEL_PIECEWISE:
+        if depletion_ratio <= p1:
+            return p2 * depletion_ratio
+        return p4 + p3 * (depletion_ratio - p1)
+    raise ValueError(f"Unknown damage kernel kind: {kind!r}")
 
 
 def logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:
@@ -69,6 +102,7 @@ def logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:
         raw: float = 1.0 / (1.0 + math.exp(-steepness * (depletion_ratio - inflection)))
         return (raw - raw_0) / span
 
+    _logistic.kernel = (KERNEL_LOGISTIC, inflection, raw_0, span, steepness)
     return _logistic
 
 
@@ -108,6 +142,7 @@ def exponential_damage(threshold: float, base: float = 2.0) -> DamageFunc:
         raw: float = (base ** (depletion_ratio * scale)) - 1.0
         return raw / raw_1
 
+    _exponential.kernel = (KERNEL_EXPONENTIAL, scale, raw_1, base, 0.0)
     return _exponential
 
 
@@ -163,4 +198,5 @@ def piecewise_damage(threshold: float, pre_slope_ratio: float = None) -> DamageF
         else:
             return pre_slope_ratio + post_slope * (depletion_ratio - threshold)
 
+    _piecewise.kernel = (KERNEL_PIECEWISE, threshold, pre_slope, post_slope, pre_slope_ratio)
     return _piecewise

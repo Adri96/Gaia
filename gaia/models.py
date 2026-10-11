@@ -21,6 +21,7 @@ v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Callable, List, Optional, Tuple, Union
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
@@ -28,6 +29,30 @@ DamageFunc = Callable[[float], float]
 
 
 # ── v0.5: Physical Substrate models ───────────────────────────────────────────
+
+
+class SubstrateType(str, Enum):
+    """Valid values of ``SubstrateProfile.substrate_type``.
+
+    The type alone decides which state variable a profile tracks, in both
+    simulation engines:
+        TERRESTRIAL_SOIL — soil_depth_cm (erosion in t/ha/yr)
+        MARINE_SEDIMENT, MARINE_MATTE — sediment_stability (erosion in mm/yr)
+
+    A ``str`` subclass, so the plain strings used by existing profiles
+    compare equal to the members.
+    """
+
+    TERRESTRIAL_SOIL = "terrestrial_soil"
+    MARINE_SEDIMENT = "marine_sediment"
+    MARINE_MATTE = "marine_matte"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def is_terrestrial(self) -> bool:
+        return self is SubstrateType.TERRESTRIAL_SOIL
 
 
 @dataclass
@@ -40,7 +65,8 @@ class SubstrateProfile:
 
     Attributes:
         substrate_type: Type of substrate — "terrestrial_soil", "marine_sediment",
-            or "marine_matte".
+            or "marine_matte" (see SubstrateType). Terrestrial profiles must set
+            soil_depth_cm; marine profiles must set sediment_stability.
         soil_depth_cm: Terrestrial: productive soil depth in cm.
         water_availability_mm_yr: Terrestrial: effective annual precipitation in mm/yr.
         water_clarity_kd: Marine: diffuse attenuation coefficient in m^-1.

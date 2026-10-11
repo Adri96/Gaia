@@ -1,0 +1,337 @@
+"""
+Scientific and economic properties the model must satisfy.
+
+Each test encodes one property from TOP_PRIORITIES_REPORT.md §9 Step 2.
+Properties the current model violates are marked
+``xfail(strict=True, reason="C#: ...")``: they document the bug, and the
+strict marker makes the suite fail as soon as a fix makes them pass, so the
+fixing commit must remove the marker.
+
+The properties are written for the model as it should behave after the
+owner's decisions D1 (monetary rates are yearly flows) and D2 (rates are
+€/ha/yr, ``Resource.area_ha`` required). Where the API does not exist yet,
+the helpers in the first section stand in for it; the steps that add the API
+(3.2 area_ha, 3.3 restoration from a starting state) should update those
+helpers rather than the tests.
+"""
+
+import dataclasses
+import json
+import math
+import re
+
+import pytest
+
+from gaia.cases.amazon_forest import build_amazon_ecosystem
+from gaia.cases.costa_brava import build_costa_brava_ecosystem
+from gaia.cases.forest import _FOREST_SUCCESSION, build_forest_ecosystem
+from gaia.cases.posidonia import build_posidonia_ecosystem
+from gaia.discount import (
+    DISCOUNT_CENTRAL,
+    DISCOUNT_ENVIRONMENTAL,
+    DISCOUNT_GREEN_BOOK,
+    DISCOUNT_MARKET,
+    compute_extraction_npv,
+)
+from gaia.models import RestorationCost, Resource
+from gaia.recovery import logistic_recovery
+from gaia.report import format_report
+from gaia.serialization import to_json
+from gaia.simulation import run_extraction, run_restoration
+from gaia.validation import validate_discount_config
+
+
+# ── Helpers (update these as the API gains area_ha / starting states) ────────
+
+# case → (builder, keyword for the number of units, units per hectare)
+# Units per hectare is the density used to give each resource an area.
+# Posidonia's unit is the hectare itself.
+CASES = {
+    "forest": (build_forest_ecosystem, "total_trees", 100.0),
+    "costa_brava": (build_costa_brava_ecosystem, "total_trees", 100.0),
+    "posidonia": (build_posidonia_ecosystem, "total_hectares", 1.0),
+    "amazon_forest": (build_amazon_ecosystem, "total_trees", 400.0),
+}
+TREE_CASES = ["forest", "costa_brava", "amazon_forest"]
+
+_HAS_AREA = "area_ha" in {f.name for f in dataclasses.fields(Resource)}
+
+
+def build(case, total_units, area_ha=None, with_pricing=False):
+    """Build a shipped case with ``total_units`` units over ``area_ha`` hectares.
+
+    ``area_ha`` defaults to the case's reference density. It is applied
+    through ``Resource.area_ha`` once that field exists (Step 3.2); before
+    that the model has no notion of area and the argument only feeds
+    ``per_ha``.
+    """
+    builder, units_kw, density = CASES[case]
+    if area_ha is None:
+        area_ha = total_units / density
+    eco = builder(**{units_kw: total_units}, with_pricing=with_pricing)
+    if _HAS_AREA:
+        eco.resource = dataclasses.replace(eco.resource, area_ha=area_ha)
+    return eco, area_ha
+
+
+def per_ha(value, area_ha):
+    return value / area_ha
+
+
+def annual_externality(result):
+    """Yearly service flow lost at the end state (€/yr, decision D1)."""
+    return result.total_externality_cost
+
+
+def recovered_after_cut(total_units, units_cut, units_restored):
+    """Forest: cut ``units_cut`` from pristine, then restore ``units_restored``.
+
+    The restoration engine has no starting state yet (C1): it assumes the
+    restored units are exactly the ones destroyed, so ``units_cut`` is not
+    passed. Step 3.3 should chain the extraction result in here.
+    """
+    eco, _ = build("forest", total_units)
+    cost = RestorationCost(
+        planting_cost_per_unit=50.0,
+        annual_maintenance_per_unit=10.0,
+        maintenance_years=10,
+    )
+    recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    return run_restoration(
+        eco, units_restored, cost, recovery,
+        succession_curve=_FOREST_SUCCESSION, time_horizon_years=60,
+    )
+
+
+# ── 1. Scale invariance (C4, D2) ─────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("case", TREE_CASES)
+def test_scale_invariance_finer_units_same_area(case):
+    """Same area, same fraction cut, 2× as many units → same per-ha externality.
+
+    Holds today only because rates ignore resource size entirely; must keep
+    holding once rates are €/ha/yr × area_ha.
+    """
+    coarse, area = build(case, 1000)
+    fine, _ = build(case, 2000, area_ha=area)
+    a = per_ha(annual_externality(run_extraction(coarse, 500)), area)
+    b = per_ha(annual_externality(run_extraction(fine, 1000)), area)
+    assert b == pytest.approx(a, rel=1e-9)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "C4: agent rates are fixed € totals, so doubling the resource's extent "
+    "leaves the externality unchanged and halves it per hectare"))
+@pytest.mark.parametrize("case", list(CASES))
+def test_scale_invariance_per_ha_externality_independent_of_extent(case):
+    """Same density and fraction cut on a resource twice the size → same per-ha externality."""
+    small, small_area = build(case, 1000)
+    large, large_area = build(case, 2000)
+    assert large_area == pytest.approx(2 * small_area)
+    a = per_ha(annual_externality(run_extraction(small, 500)), small_area)
+    b = per_ha(annual_externality(run_extraction(large, 1000)), large_area)
+    assert b == pytest.approx(a, rel=1e-9)
+
+
+# ── 2–3. Restoration is bounded and monotonic in k (C1) ──────────────────────
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "C1: recovery ratio is units_restored / units_to_restore, so any k "
+    "recovers every agent's full value, more than cutting k cost"))
+@pytest.mark.parametrize("k", [100, 500])
+def test_restoring_k_recovers_at_most_cost_of_cutting_k(k):
+    eco, _ = build("forest", 1000)
+    cut = annual_externality(run_extraction(eco, k))
+    recovered = recovered_after_cut(1000, units_cut=k, units_restored=k)
+    assert recovered.total_recovered_value <= cut
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "C1: recovered value is identical for 1, 250, 500 and 1000 units restored"))
+def test_recovered_value_strictly_increasing_in_units_restored():
+    values = [
+        recovered_after_cut(1000, units_cut=1000, units_restored=k).total_recovered_value
+        for k in (1, 250, 500, 1000)
+    ]
+    assert all(a < b for a, b in zip(values, values[1:])), values
+
+
+# ── 4. NPV converges as the horizon grows (C3) ───────────────────────────────
+
+DISCOUNT_CONFIGS = {
+    "market": DISCOUNT_MARKET,
+    "central": DISCOUNT_CENTRAL,
+    "environmental": DISCOUNT_ENVIRONMENTAL,
+    "green_book": DISCOUNT_GREEN_BOOK,
+    **{f"case_{c}": build(c, 100)[0].resource.discount for c in CASES},
+}
+_DIVERGENT = {"environmental", "case_costa_brava", "case_posidonia", "case_amazon_forest"}
+
+
+def _npv_at(discount, horizon):
+    config = dataclasses.replace(discount, horizon_years=horizon)
+    return compute_extraction_npv(1.0, config, None, 0).total
+
+
+@pytest.mark.parametrize("name", [
+    pytest.param(n, marks=pytest.mark.xfail(strict=True, reason=(
+        "C3: scarcity growth >= discount rate, NPV grows without bound "
+        "with the horizon and validation accepts it")))
+    if n in _DIVERGENT else n
+    for n in DISCOUNT_CONFIGS
+])
+def test_npv_bounded_as_horizon_grows(name):
+    """Every config validation accepts has a finite NPV that converges in the horizon.
+
+    Doubling a 1,000-year horizon may add at most 10% (the slowest valid
+    built-in, r − s ≈ 0.3%, adds ~5%).
+    """
+    discount = DISCOUNT_CONFIGS[name]
+    try:
+        validate_discount_config(discount)
+    except ValueError:
+        return  # invalid configs are out of scope
+    npv_1000 = _npv_at(discount, 1000)
+    npv_2000 = _npv_at(discount, 2000)
+    assert math.isfinite(npv_2000)
+    assert npv_2000 <= 1.10 * npv_1000, (npv_1000, npv_2000)
+
+
+# ── 5. Cost is monotonic in depletion with endogenous pricing (C8) ──────────
+
+
+@pytest.mark.parametrize("case", [
+    "forest",
+    "costa_brava",
+    pytest.param("posidonia", marks=pytest.mark.xfail(strict=True, reason=(
+        "C8: once the spectral radius reaches 1 the solver falls back to "
+        "static rates on a different scale, so total cost drops"))),
+    pytest.param("amazon_forest", marks=pytest.mark.xfail(strict=True, reason=(
+        "C8: once the spectral radius reaches 1 the solver falls back to "
+        "static rates on a different scale, so total cost drops"))),
+])
+def test_cost_monotonic_in_depletion_with_pricing(case):
+    eco, _ = build(case, 200, with_pricing=True)
+    costs = [s.cumulative_cost for s in run_extraction(eco, 200).steps]
+    drops = [
+        (i + 1, costs[i - 1], costs[i])
+        for i in range(1, len(costs))
+        if costs[i] < costs[i - 1] - 1e-9 * abs(costs[i - 1])
+    ]
+    assert not drops, f"cost decreases at (step, before, after): {drops[:3]}"
+
+
+# ── 6. No hidden carbon (C5, D3) ─────────────────────────────────────────────
+
+_CARBON_WORDS = re.compile(r"carbon|co2|co₂", re.IGNORECASE)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "C5: carbon is also valued inside agent rates / pricing anchors "
+    "(General Biosphere, Carbon & Climate, Blue Carbon, Amazon canopy anchor)"))
+@pytest.mark.parametrize("case", list(CASES))
+def test_no_hidden_carbon(case):
+    """Removing the carbon profile removes exactly the carbon line items.
+
+    Carbon must be valued only by gaia.carbon: no agent or pricing anchor
+    may describe a carbon component, and the extraction totals without a
+    carbon profile must differ only by the carbon NPV lines.
+    """
+    eco, _ = build(case, 1000, with_pricing=True)
+    hidden = [a.name for a in eco.agents
+              if _CARBON_WORDS.search(f"{a.name} {a.description}")]
+    hidden += [f"anchor:{p.agent_name}" for p in eco.pricing.anchors
+               if _CARBON_WORDS.search(f"{p.source} {p.description}")]
+    assert not hidden, f"carbon valued outside gaia.carbon: {hidden}"
+
+    with_carbon, _ = build(case, 1000)
+    without_carbon, _ = build(case, 1000)
+    without_carbon.resource = dataclasses.replace(
+        without_carbon.resource, carbon_profile=None)
+    a = run_extraction(with_carbon, 500)
+    b = run_extraction(without_carbon, 500)
+    carbon_lines = a.extraction_npv.carbon_release + a.extraction_npv.carbon_foregone
+    assert a.extraction_npv.total - b.extraction_npv.total == pytest.approx(
+        carbon_lines, rel=1e-12)
+    assert annual_externality(a) == annual_externality(b)
+
+
+# ── 7. Text report and JSON agree (E3) ───────────────────────────────────────
+
+_EURO = re.compile(r"€\s*(-?[\d,]+(?:\.\d+)?)|(-?[\d,]+(?:\.\d+)?)€")
+
+
+def _json_numbers(obj, out):
+    if isinstance(obj, bool):
+        return out
+    if isinstance(obj, (int, float)):
+        out.append(float(obj))
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _json_numbers(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _json_numbers(v, out)
+    return out
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "E3: report.py computes figures absent from the result/JSON "
+    "(carbon externality, confidence band, direct/cascade split)"))
+@pytest.mark.parametrize("case", list(CASES))
+def test_text_report_figures_exist_in_json(case):
+    """Every € figure printed in the text report is a value of the JSON output."""
+    eco, _ = build(case, 1000)
+    result = run_extraction(eco, 500)
+    numbers = _json_numbers(json.loads(to_json(result, include_steps=True)), [])
+    missing = []
+    for match in _EURO.finditer(format_report(result)):
+        text = match.group(1) or match.group(2)
+        decimals = len(text.split(".")[1]) if "." in text else 0
+        figure = float(text.replace(",", ""))
+        tol = 0.5 * 10 ** -decimals + 1e-9 * abs(figure)
+        if not any(abs(v - figure) <= tol for v in numbers):
+            missing.append(match.group(0))
+    assert not missing, f"text-only figures: {missing}"
+
+
+# ── 8. JSON output is strict JSON (E8) ───────────────────────────────────────
+
+
+def _reject_constant(name):
+    raise ValueError(f"non-standard JSON constant {name}")
+
+
+def _strict_json_cases():
+    def extraction(case):
+        return lambda: run_extraction(build(case, 1000)[0], 500)
+
+    def restoration_no_soil_formation():
+        eco, _ = build("forest", 1000)
+        eco.resource = dataclasses.replace(
+            eco.resource,
+            substrate=dataclasses.replace(eco.resource.substrate, formation_rate=0.0),
+        )
+        cost = RestorationCost(planting_cost_per_unit=50.0,
+                               annual_maintenance_per_unit=10.0, maintenance_years=10)
+        recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+        return run_restoration(eco, 500, cost, recovery)
+
+    params = [pytest.param(extraction(c), id=f"{c}_extract") for c in CASES]
+    params.append(pytest.param(
+        lambda: recovered_after_cut(1000, 500, 500), id="forest_restore"))
+    params.append(pytest.param(
+        restoration_no_soil_formation, id="forest_restore_zero_formation",
+        marks=pytest.mark.xfail(strict=True, reason=(
+            "E8: substrate_recovery_years is inf and to_json emits Infinity "
+            "(json.dumps without allow_nan=False)")),
+    ))
+    return params
+
+
+@pytest.mark.parametrize("make_result", _strict_json_cases())
+def test_json_output_is_strict(make_result):
+    text = to_json(make_result(), include_steps=True)
+    json.loads(text, parse_constant=_reject_constant)

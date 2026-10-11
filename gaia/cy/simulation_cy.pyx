@@ -23,15 +23,17 @@ This module eliminates the function call overhead by:
     4. Using C-level math (libc.math.exp instead of Python math.exp)
     5. Using typed memoryviews / C arrays for hot-path data
 
-Usage from simulation.py:
-    try:
-        from gaia.cy.simulation_cy import extraction_loop_cy
-        _HAS_CYTHON = True
-    except ImportError:
-        _HAS_CYTHON = False
+Usage from simulation.py: see simulation._load_cython_loop(), which only
+uses this module when PYX_SOURCE_SHA256 matches the current .pyx source.
+
+Build with ``python3 setup.py build_ext --inplace``: setup.py supplies the
+GAIA_PYX_SHA256 compile-time constant (SHA-256 of this file).
 """
 
 from libc.math cimport exp, pow
+
+# SHA-256 of the .pyx source this module was compiled from (stale-build guard)
+PYX_SOURCE_SHA256 = GAIA_PYX_SHA256
 
 
 def extraction_loop_cy(
@@ -57,14 +59,18 @@ def extraction_loop_cy(
     bint has_interactions,
     bint has_resilience,
     bint has_substrate,
+    bint substrate_is_marine,
     # Resilience config (only used if has_resilience):
     double resilience_warning_width,
     double resilience_conf_green,
     double resilience_conf_yellow,
     double resilience_conf_red,
     double resilience_irreversibility_ratio,
-    # Substrate config (only used if has_substrate):
+    # Substrate config (only used if has_substrate). Terrestrial profiles
+    # track soil depth (cm, erosion in t/ha/yr); marine profiles track
+    # sediment stability (0-1, erosion in mm/yr):
     double substrate_soil_depth_cm,
+    double substrate_sediment_stability,
     double substrate_erosion_unprotected,
     double substrate_erosion_protected,
     double substrate_formation_rate,
@@ -111,16 +117,22 @@ def extraction_loop_cy(
     cdef double confidence
     cdef bint irreversibility
 
-    # Substrate state (mutable, C-level)
-    cdef double current_soil_depth = substrate_soil_depth_cm
-    cdef double pristine_soil_depth = substrate_soil_depth_cm
+    # Substrate state (mutable, C-level). One variable is tracked, chosen by
+    # substrate_is_marine — the same rule as gaia.substrate.is_terrestrial().
+    cdef double current_level
+    cdef double pristine_level
+    if substrate_is_marine:
+        current_level = substrate_sediment_stability
+    else:
+        current_level = substrate_soil_depth_cm
+    pristine_level = current_level
     cdef double time_per_step = 0.0
     cdef double step_substrate_erosion, step_k_fraction
     cdef int step_effective_k
     cdef double vegetation_cover
 
     # Capacity variables
-    cdef double current_depth, pristine_depth, critical, residual, frac
+    cdef double critical, residual, frac
 
     if has_substrate and units_to_extract > 0:
         time_per_step = 1.0 / <double>units_to_extract
@@ -307,41 +319,50 @@ def extraction_loop_cy(
                 + (substrate_erosion_unprotected - substrate_erosion_protected) * exposure
             )
             erosion_amount = effective_erosion * time_per_step
-            erosion_mm = erosion_amount * substrate_t_ha_to_mm_factor
-            erosion_cm = erosion_mm / 10.0
-            current_soil_depth = current_soil_depth - erosion_cm
-            if current_soil_depth < 0.0:
-                current_soil_depth = 0.0
-            step_substrate_erosion = erosion_cm
+            if substrate_is_marine:
+                # Marine: erosion in mm/yr, 100 mm ≡ full stability
+                if pristine_level > 0.0:
+                    current_level = current_level - erosion_amount / 100.0
+                    if current_level < 0.0:
+                        current_level = 0.0
+                step_substrate_erosion = erosion_amount
+            else:
+                erosion_mm = erosion_amount * substrate_t_ha_to_mm_factor
+                erosion_cm = erosion_mm / 10.0
+                current_level = current_level - erosion_cm
+                if current_level < 0.0:
+                    current_level = 0.0
+                step_substrate_erosion = erosion_cm
 
-            # Inline capacity fraction computation
+            # Inline capacity fraction computation (threshold is terrestrial-only,
+            # enforced by validation)
             if substrate_capacity_function == "linear":
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    step_k_fraction = current_soil_depth / pristine_soil_depth
+                    step_k_fraction = current_level / pristine_level
             elif substrate_capacity_function == "threshold":
                 critical = substrate_critical_minimum
                 residual = substrate_residual_fraction
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
-                elif current_soil_depth <= 0.0:
+                elif current_level <= 0.0:
                     step_k_fraction = 0.0
-                elif current_soil_depth < critical:
+                elif current_level < critical:
                     if critical <= 0.0:
                         step_k_fraction = 0.0
                     else:
-                        step_k_fraction = (current_soil_depth / critical) * residual
+                        step_k_fraction = (current_level / critical) * residual
                 else:
-                    if pristine_soil_depth <= critical:
+                    if pristine_level <= critical:
                         step_k_fraction = 1.0
                     else:
-                        step_k_fraction = residual + (1.0 - residual) * (current_soil_depth - critical) / (pristine_soil_depth - critical)
+                        step_k_fraction = residual + (1.0 - residual) * (current_level - critical) / (pristine_level - critical)
             elif substrate_capacity_function == "logistic":
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    frac = current_soil_depth / pristine_soil_depth
+                    frac = current_level / pristine_level
                     steepness = 10.0
                     inflection = 0.5
                     raw_damage = 1.0 / (1.0 + exp(-steepness * (frac - inflection)))
@@ -353,10 +374,10 @@ def extraction_loop_cy(
                     else:
                         step_k_fraction = (raw_damage - raw_0) / span
             else:
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    step_k_fraction = current_soil_depth / pristine_soil_depth
+                    step_k_fraction = current_level / pristine_level
 
             if step_k_fraction < 0.0:
                 step_k_fraction = 0.0

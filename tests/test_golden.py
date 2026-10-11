@@ -5,11 +5,10 @@ Any change to a case's numbers fails here. If the change is intended,
 regenerate with ``python3 scripts/regen_golden.py [case|scenario]`` and say
 in the commit message which numbers changed and why.
 
-Set ``GAIA_FORCE_PYTHON=1`` to run against the pure-Python loop; the golden
-values are engine-independent (compared at rel=1e-9).
+Set ``GAIA_FORCE_PYTHON=1`` (honoured by gaia.simulation itself) to run
+against the pure-Python loop; the golden values are engine-independent
+(compared at rel=1e-9; tests/test_engine_parity.py checks rel=1e-12).
 """
-
-import os
 
 import pytest
 
@@ -17,19 +16,9 @@ from tests.golden_support import (
     SCENARIOS,
     build_snapshot,
     compare,
-    forced_python_engine,
     golden_path,
     load_golden,
 )
-
-
-@pytest.fixture(autouse=True)
-def _engine():
-    if os.environ.get("GAIA_FORCE_PYTHON") == "1":
-        with forced_python_engine():
-            yield
-    else:
-        yield
 
 
 @pytest.mark.parametrize("name", list(SCENARIOS))

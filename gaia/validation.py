@@ -24,6 +24,7 @@ from gaia.models import (
     Resource,
     ScarcityFunction,
     SubstrateProfile,
+    SubstrateType,
     SuccessionCurve,
 )
 
@@ -403,27 +404,48 @@ def validate_substrate_profile(
     Validate a SubstrateProfile dataclass.
 
     Checks:
-        - At least one constraint property is set
+        - substrate_type is a SubstrateType value
+        - The state variable selected by substrate_type is set
+          (terrestrial: soil_depth_cm; marine: sediment_stability), and
+          the other medium's properties are not
         - Erosion rates >= 0
         - Formation rate >= 0
-        - capacity_function is valid
+        - capacity_function is valid (threshold is terrestrial-only)
         - confidence is valid
         - For threshold function: critical_minimum >= 0
 
     Raises:
         ValueError: If any constraint is violated.
     """
-    # At least one constraint property must be set
-    has_constraint: bool = (
-        profile.soil_depth_cm is not None
-        or profile.water_clarity_kd is not None
-        or profile.sediment_stability is not None
-    )
-    if not has_constraint:
+    try:
+        substrate_type = SubstrateType(profile.substrate_type)
+    except ValueError:
         raise ValueError(
-            f"{name}: at least one constraint property must be set "
-            f"(soil_depth_cm, water_clarity_kd, or sediment_stability)"
-        )
+            f"{name}: substrate_type must be one of "
+            f"{[t.value for t in SubstrateType]}, got {profile.substrate_type!r}"
+        ) from None
+
+    if substrate_type.is_terrestrial:
+        if profile.soil_depth_cm is None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' requires soil_depth_cm"
+            )
+        if profile.sediment_stability is not None or profile.water_clarity_kd is not None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' must not set "
+                f"marine properties (sediment_stability, water_clarity_kd)"
+            )
+    else:
+        if profile.sediment_stability is None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' requires "
+                f"sediment_stability"
+            )
+        if profile.soil_depth_cm is not None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' must not set "
+                f"soil_depth_cm"
+            )
 
     # Validate constraint property values when set
     if profile.soil_depth_cm is not None and profile.soil_depth_cm < 0.0:
@@ -471,6 +493,12 @@ def validate_substrate_profile(
 
     # Threshold-specific validation
     if profile.capacity_function == "threshold":
+        if not substrate_type.is_terrestrial:
+            raise ValueError(
+                f"{name}: capacity_function 'threshold' is defined on soil depth "
+                f"(critical_minimum in cm) and is not supported for "
+                f"substrate_type '{substrate_type.value}'"
+            )
         if profile.critical_minimum < 0.0:
             raise ValueError(
                 f"{name}: critical_minimum must be >= 0.0, "
