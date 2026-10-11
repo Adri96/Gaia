@@ -11,7 +11,7 @@ Follows the 14 testing requirements from the v0.5 spec:
     4. Posidonia depth limit: Kd 0.06->0.12 reduces K by ~30-50%
     5. Erosion rates physically consistent
     6. Formation rates physically consistent
-    7. Prevention advantage increases with substrate modeling
+    7. Substrate damage adds a permanent loss to the destroy-then-restore penalty
     8. Restoration ceiling is binding
     9. No substrate = v0.4 behavior
    10. Pristine substrate = effective_K equals total_units

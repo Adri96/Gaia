@@ -4,7 +4,8 @@ Gaia v0.2 — Restoration simulation tests.
 These tests verify the run_restoration() engine and the core economic claim of v0.2:
     - Recovered service value increases monotonically with units restored
     - Total restoration cost increases monotonically
-    - Prevention is cheaper than destroy + restore (prevention_advantage > 1.0)
+    - The restoration cost ratio is an input-price ratio; the destroy-then-
+      restore penalty is at least the restoration cost
     - Net restoration value is positive (restoration generates net social value)
     - Partial restoration recovers partial services (not all-or-nothing)
     - Full restoration approaches maximum service recovery
@@ -208,67 +209,67 @@ def test_net_restoration_value_positive():
     )
 
 
-# ── Prevention advantage ─────────────────────────────────────────────────────────
+# ── Restoration cost ratio and destroy-then-restore penalty ────────────────────
 
-def test_prevention_advantage_greater_than_one():
-    """
-    Prevention advantage > 1.0: it is always cheaper to not cut than to cut and restore.
-
-    prevention_advantage = (foregone_revenue + restoration_cost) / foregone_revenue
-    If restoration_cost > 0, the ratio is always > 1.0.
-    The advantage grows with the cost of restoration.
-    """
+def test_restoration_cost_ratio_equals_input_price_ratio():
+    """restoration_cost_ratio == 1 + cost_per_unit / unit_value, whatever the ecology."""
     eco = _make_ecosystem()
     result = run_restoration(eco, 5_000, RESTORATION_COST, _make_recovery_fns(eco))
-    assert result.prevention_advantage > 1.0, (
-        f"Prevention advantage should be > 1.0, got {result.prevention_advantage:.2f}"
-    )
+    assert result.restoration_cost_ratio == pytest.approx(
+        1 + RESTORATION_COST.total_cost_per_unit / TREE_VALUE, rel=1e-12)
 
 
-def test_prevention_advantage_increases_with_restoration_cost():
-    """
-    Higher restoration cost → higher prevention advantage.
-
-    If replanting costs more, it becomes relatively even cheaper to have
-    prevented the destruction in the first place.
-    """
+def test_restoration_cost_ratio_none_without_revenue():
     eco = _make_ecosystem()
-    fns = _make_recovery_fns(eco)
+    eco.resource = dataclasses.replace(eco.resource, unit_value=0.0)
+    result = run_restoration(eco, 100, RESTORATION_COST, _make_recovery_fns(eco))
+    assert result.restoration_cost_ratio is None
+    assert result.destroy_then_restore_penalty.ratio is None
 
-    cheap_cost = RestorationCost(
-        planting_cost_per_unit=20.0,
-        annual_maintenance_per_unit=5.0,
-        maintenance_years=5,
-    )
-    expensive_cost = RestorationCost(
-        planting_cost_per_unit=100.0,
-        annual_maintenance_per_unit=30.0,
-        maintenance_years=20,
-    )
 
-    result_cheap = run_restoration(eco, 3_000, cheap_cost, fns)
-    result_expensive = run_restoration(eco, 3_000, expensive_cost, fns)
-
-    assert result_expensive.prevention_advantage > result_cheap.prevention_advantage, (
-        f"Expensive restoration ({result_expensive.prevention_advantage:.2f}×) "
-        f"should have higher prevention advantage than cheap ({result_cheap.prevention_advantage:.2f}×)"
+def _penalty_result(curve=None, units=500, lost=None):
+    from gaia.cases.forest import _FOREST_SUCCESSION
+    eco = build_forest_ecosystem(total_trees=1000)
+    fns = [logistic_recovery(threshold=0.3) for _ in eco.agents]
+    return run_restoration(
+        eco, units, RESTORATION_COST, fns, units_lost=lost,
+        succession_curve=_FOREST_SUCCESSION if curve is None else curve,
     )
 
 
-def test_prevention_advantage_numeric():
-    """
-    Verify the prevention advantage formula with known values.
+def test_penalty_components_sum_and_bounds():
+    result = _penalty_result()
+    pen = result.destroy_then_restore_penalty
+    assert pen.total == pytest.approx(
+        pen.restoration_cost + pen.maturation_gap + pen.substrate_loss
+        + pen.recovery_shortfall + pen.carbon_not_recovered, rel=1e-12)
+    assert pen.restoration_cost == result.restoration_npv.cost
+    assert pen.total >= pen.restoration_cost
+    assert pen.maturation_gap == result.maturation_gap_pv > 0.0
+    assert pen.foregone_revenue == 500 * result.ecosystem.resource.unit_value
+    assert pen.ratio == pytest.approx(pen.total / pen.foregone_revenue, rel=1e-12)
 
-    With 5,000 trees at €100/tree (€500k foregone revenue) and €150/tree
-    restoration cost (€750k total): advantage = (500k + 750k) / 500k = 2.5×
-    """
-    eco = _make_ecosystem()
-    fns = _make_recovery_fns(eco)
-    result = run_restoration(eco, 5_000, RESTORATION_COST, fns)
 
-    foregone_revenue = 5_000 * TREE_VALUE  # 500,000
-    expected_advantage = (foregone_revenue + result.total_restoration_cost) / foregone_revenue
-    assert abs(result.prevention_advantage - expected_advantage) < 1e-6
+def test_penalty_monotone_in_maturation_time():
+    from gaia.cases.forest import _FOREST_SUCCESSION
+    totals = [
+        _penalty_result(dataclasses.replace(
+            _FOREST_SUCCESSION, maturation_delay=d)).destroy_then_restore_penalty.total
+        for d in (0.0, 2.0, 5.0, 10.0)
+    ]
+    assert all(a < b for a, b in zip(totals, totals[1:])), totals
+
+
+def test_penalty_recovery_shortfall_only_for_partial_replanting():
+    """Replanting every lost unit reverses the damage (efficiency 1); replanting
+    half of them does not, and the unreversed damage is in the penalty."""
+    full = _penalty_result(units=500, lost=500).destroy_then_restore_penalty
+    partial_result = _penalty_result(units=500, lost=1000)
+    partial = partial_result.destroy_then_restore_penalty
+    assert full.recovery_shortfall == pytest.approx(0.0, abs=1e-6 * full.total)
+    assert partial.recovery_shortfall > 0.0
+    assert partial_result.annual_damage_reversal > (
+        partial_result.annual_recovered_value / partial_result.substrate_ceiling)
 
 
 # ── Validation ───────────────────────────────────────────────────────────────────

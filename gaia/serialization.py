@@ -14,7 +14,7 @@ Every monetary key carries its unit as a suffix (decision D1):
     *_eur_pv   — a present value at year 0 (€, discounted stock)
     *_eur      — an undiscounted one-off amount (€) or an undiscounted sum
     *_eur_per_t — a price per tonne of CO₂
-Ratios carry no currency suffix (e.g. ``prevention_advantage``, ``roi``).
+Ratios carry no currency suffix (e.g. ``restoration_cost_ratio``, ``roi``).
 """
 
 import json
@@ -24,8 +24,8 @@ from gaia import __version__
 from gaia.models import (
     CarbonBreakeven,
     ExtractionNPV,
+    DestroyThenRestorePenalty,
     MaturationStep,
-    PreventionAdvantageV06,
     PriceResult,
     RestorationNPV,
     RestorationResult,
@@ -252,15 +252,18 @@ def _carbon_breakeven_to_dict(cb: CarbonBreakeven) -> Dict[str, Any]:
     }
 
 
-def _prevention_advantage_v06_to_dict(pa: PreventionAdvantageV06) -> Dict[str, Any]:
-    """Convert PreventionAdvantageV06 to dict."""
+def _penalty_to_dict(pen: DestroyThenRestorePenalty) -> Dict[str, Any]:
+    """Convert DestroyThenRestorePenalty to dict."""
     return {
-        "pa_simple": round(pa.pa_simple, 4),
-        "pa_with_carbon": round(pa.pa_with_carbon, 4),
-        "pa_with_substrate": round(pa.pa_with_substrate, 4),
-        "pa_full": round(pa.pa_full, 4),
-        "prevention_cost_eur": round(pa.npv_prevention_cost, 2),
-        "restoration_total_eur_pv": round(pa.npv_restoration_total, 2),
+        "restoration_cost_eur_pv": round(pen.restoration_cost, 2),
+        "maturation_gap_eur_pv": round(pen.maturation_gap, 2),
+        "substrate_loss_eur_pv": round(pen.substrate_loss, 2),
+        "recovery_shortfall_eur_pv": round(pen.recovery_shortfall, 2),
+        "carbon_not_recovered_eur_pv": round(pen.carbon_not_recovered, 2),
+        "total_eur_pv": round(pen.total, 2),
+        "foregone_revenue_eur": round(pen.foregone_revenue, 2),
+        "penalty_ratio": round(pen.ratio, 4) if pen.ratio is not None else None,
+        "horizon_years": pen.horizon,
     }
 
 
@@ -388,7 +391,10 @@ def restoration_result_to_dict(
             **_by_horizon(
                 "net_restoration_value", result.net_restoration_pv_by_horizon,
             ),
-            "prevention_advantage": round(result.prevention_advantage, 4),
+            "restoration_cost_ratio": (
+                round(result.restoration_cost_ratio, 4)
+                if result.restoration_cost_ratio is not None else None
+            ),
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
         },
@@ -419,9 +425,6 @@ def restoration_result_to_dict(
             "substrate_recovery_years": round(
                 result.substrate_recovery_years, 2,
             ),
-            "prevention_advantage_with_substrate": round(
-                result.prevention_advantage_with_substrate, 4,
-            ),
         }
 
     # NPV analysis (v0.6)
@@ -434,10 +437,10 @@ def restoration_result_to_dict(
             result.carbon_breakeven,
         )
 
-    # Prevention advantage v0.6
-    if result.prevention_advantage_v06 is not None:
-        d["prevention_advantage_v06"] = _prevention_advantage_v06_to_dict(
-            result.prevention_advantage_v06,
+    # Destroy-then-restore penalty (Step 3.7)
+    if result.destroy_then_restore_penalty is not None:
+        d["destroy_then_restore_penalty"] = _penalty_to_dict(
+            result.destroy_then_restore_penalty,
         )
 
     # Notes (e.g. Posidonia annual externality warning)

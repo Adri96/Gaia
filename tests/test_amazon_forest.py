@@ -14,7 +14,8 @@ Numerical validation targets from AMAZON_FOREST.md §10:
     - Total externality at 50% extraction: €5M – €20M range for the 1,000 ha
       reference area (driven by the carbon stock)
     - Mycorrhizal price / Apex predator price > 20:1 (under v0.7 pricing)
-    - Prevention advantage at 30% extraction: > 100× (extreme asymmetry)
+    - (The spec's "prevention advantage > 100×" target was an input-price
+      ratio, Step 3.7; not tested.)
 """
 
 import pytest

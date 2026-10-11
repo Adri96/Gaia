@@ -465,7 +465,7 @@ The goal is to make externalities impossible to ignore and restoration impossibl
 - [x] Restoration report generation (`format_restoration_report`) with cost breakdown, per-agent recovered service values, net restoration value, and prevention advantage ratio
 - [x] Add `--mode restore` CLI flag to all three cases
 - [x] Implement `run_forest_restoration()`, `run_costa_brava_restoration()`, `run_posidonia_restoration()` convenience functions with ecologically-calibrated default costs
-- [x] Prevention advantage ratios validated against ecological reality:
+- [x] Restoration cost ratios computed — (Step 3.7) these are input-price ratios, 1 + restoration cost per unit / unit value, not findings validated against ecology:
     - Oak Valley Forest: **2.50×** (temperate, faster recovery)
     - Costa Brava Holm Oak: **6.08×** (Mediterranean drought stress, mycorrhizal network delays)
     - Costa Brava Posidonia: **81.00×** (1-6 cm/year growth, specialist diving restoration at €200k/ha vs €2.5k/ha one-time revenue)

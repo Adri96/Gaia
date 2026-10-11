@@ -20,6 +20,17 @@
       "profitable_at_current": false,
       "projected_breakeven_year": 3
     },
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered_eur_pv": 244172.86,
+      "foregone_revenue_eur": 1200.0,
+      "horizon_years": 100,
+      "maturation_gap_eur_pv": 47782.4,
+      "penalty_ratio": 257.2474,
+      "recovery_shortfall_eur_pv": 0.0,
+      "restoration_cost_eur_pv": 16710.21,
+      "substrate_loss_eur_pv": 31.41,
+      "total_eur_pv": 308696.88
+    },
     "ecosystem": {
       "agents": [
         {
@@ -1315,14 +1326,6 @@
       "service_benefits_eur_pv": 83507.68,
       "total_benefits_eur_pv": 115776.79
     },
-    "prevention_advantage_v06": {
-      "pa_full": 258.2474,
-      "pa_simple": 17.6667,
-      "pa_with_carbon": 258.2212,
-      "pa_with_substrate": 54.77,
-      "prevention_cost_eur": 1200.0,
-      "restoration_total_eur_pv": 308696.88
-    },
     "restoration_cost": {
       "annual_maintenance_per_unit_eur_yr": 1.0,
       "maintenance_years": 20,
@@ -1330,7 +1333,6 @@
       "total_cost_per_unit_eur": 25.0
     },
     "substrate": {
-      "prevention_advantage_with_substrate": 17.6672,
       "substrate_ceiling": 0.999761,
       "substrate_recovery_years": 1.19
     },
@@ -1346,7 +1348,7 @@
       "net_restoration_value_h200_eur_pv": 166206.82,
       "net_restoration_value_h50_eur_pv": 31167.76,
       "num_steps": 800,
-      "prevention_advantage": 17.6667,
+      "restoration_cost_ratio": 17.6667,
       "total_restoration_cost_eur": 20000.0,
       "total_units_restored": 800,
       "units_lost": 800
@@ -1490,31 +1492,33 @@
     },
     "depletion_after": 0.0,
     "depletion_before": 0.2,
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered": 244172.8617421079,
+      "foregone_revenue": 1200.0,
+      "horizon": 100,
+      "maturation_gap": 47782.395838717006,
+      "ratio": 257.24739998742484,
+      "recovery_shortfall": 0.0,
+      "restoration_cost": 16710.21282120277,
+      "substrate_loss": 31.409582882197707,
+      "total": 308696.87998490984
+    },
     "extraction_npv": null,
     "final_ecosystem_health": 0.9999138236616846,
     "initial_ecosystem_health": 0.6397021590361802,
-    "maturation_gap_pv": 47782.39583871704,
+    "maturation_gap_pv": 47782.395838717006,
     "net_restoration_pv": 99066.5798633547,
     "net_restoration_pv_by_horizon": {
       "100": 99066.5798633547,
       "200": 166206.8212994185,
       "50": 31167.757144885207
     },
-    "prevention_advantage": 17.666666666666668,
-    "prevention_advantage_v06": {
-      "npv_prevention_cost": 1200.0,
-      "npv_restoration_total": 308696.87998490984,
-      "pa_full": 258.24739998742484,
-      "pa_simple": 17.666666666666668,
-      "pa_with_carbon": 258.22122533502306,
-      "pa_with_substrate": 54.77001520233498
-    },
-    "prevention_advantage_with_substrate": 17.667162242027207,
     "restoration_cost": {
       "annual_maintenance_per_unit": 1.0,
       "maintenance_years": 20,
       "planting_cost_per_unit": 5.0
     },
+    "restoration_cost_ratio": 17.666666666666668,
     "restoration_npv": {
       "carbon_benefits": 32269.111033857997,
       "carbon_payback_years": null,

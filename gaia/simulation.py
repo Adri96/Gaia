@@ -61,11 +61,7 @@ from gaia.substrate import (
     degrade_substrate,
     is_marine,
 )
-from gaia.succession import (
-    compute_maturation_gap,
-    compute_maturation_timeline,
-    find_years_to_threshold,
-)
+from gaia.succession import compute_maturation_timeline, find_years_to_threshold
 from gaia.validation import (
     validate_discount_config,
     validate_ecosystem,
@@ -745,16 +741,28 @@ def run_restoration(
     maturation gap (measured against the capped mature value), the
     restoration NPV (services and carbon) and the carbon breakeven. The
     permanent shortfall (1 − ceiling) × biological recovery appears once, in
-    the prevention-advantage substrate term. In the extraction NPV the direct
-    loss is already permanent, so substrate adds nothing to its total.
+    the substrate term of the destroy-then-restore penalty. In the extraction
+    NPV the direct loss is already permanent, so substrate adds nothing to
+    its total.
 
     Time and money:
         The succession curve spreads the recovery over time (maturation
         timeline and gap), capped at the substrate ceiling.
         Present values (net restoration value, maturation gap, investment
-        NPV) use the resource's DiscountConfig, or DEFAULT_DISCOUNT when it
-        has none. Foregone revenue and carbon released refer to the k units
-        restored (cut, then replanted).
+        NPV, destroy-then-restore penalty) use the resource's
+        DiscountConfig, or DEFAULT_DISCOUNT when it has none, over its
+        horizon; time_horizon_years only sets the length of the reported
+        maturation timeline. Foregone revenue and carbon released refer to
+        the k units restored (cut, then replanted).
+
+    Prevention vs destroy-then-restore:
+        restoration_cost_ratio = (foregone revenue + restoration cost) /
+        foregone revenue, an input-price ratio (1 + cost per unit /
+        unit_value). destroy_then_restore_penalty is the PV cost to society
+        of cutting and restoring over not cutting (restoration cost,
+        maturation gap, substrate loss, recovery shortfall, carbon not
+        recovered), in € and per € of foregone revenue
+        (gaia.discount.compute_destroy_then_restore_penalty).
 
     Restoration has no Cython loop: it reads the damages from the starting
     state, which either engine may have produced.
@@ -907,47 +915,22 @@ def run_restoration(
 
     from gaia.discount import (
         compute_carbon_breakeven,
-        compute_prevention_advantage_v06,
+        compute_destroy_then_restore_penalty,
         compute_restoration_npv,
         horizon_variants,
+        restoration_cost_ratio,
     )
     discount = _resolve_discount(resource)
 
-    # Prevention advantage: how many times cheaper it would have been to not
-    # destroy the units vs. destroying them and then restoring them.
-    # foregone_revenue = the private revenue earned by cutting the restored units
+    # foregone_revenue = the private revenue earned by cutting the restored
+    # units: the present value of not cutting them (one-off, year 0)
     foregone_revenue: float = units_to_restore * resource.unit_value
-    if foregone_revenue > 0.0:
-        prevention_advantage: float = (foregone_revenue + total_cost) / foregone_revenue
-    else:
-        prevention_advantage = 1.0
-
-    # v0.5: Enhanced PA including the substrate's permanent capacity loss
-    prevention_advantage_with_substrate: float = prevention_advantage
-    if sub_state is not None:
-        # The annual flow lost (€/yr) summed, undiscounted, over the
-        # substrate recovery time (capped at 50 years) — a one-off €.
-        # TODO(3.7): undiscounted; replaced by destroy_then_restore_penalty.
-        if substrate_ceiling < 1.0 and foregone_revenue > 0.0:
-            permanent_loss_fraction: float = 1.0 - substrate_ceiling
-            # Biological recovery the substrate never lets mature (€/yr)
-            annual_lost_value: float = (
-                annual_recovered_potential * permanent_loss_fraction
-            )
-            # Cap at 50 years for NPV calculation (avoid infinite values)
-            npv_years: float = min(substrate_recovery_yrs, 50.0)
-            permanent_loss_npv: float = annual_lost_value * npv_years
-            prevention_advantage_with_substrate = (
-                (foregone_revenue + total_cost + permanent_loss_npv)
-                / foregone_revenue
-            )
 
     # v0.4: Maturation pass — produce year-by-year timeline if succession curve provided
     maturation_timeline: list = []
     years_to_pioneer: float = 0.0
     years_to_50pct: float = 0.0
     years_to_90pct: float = 0.0
-    maturation_gap_pv: float = 0.0
 
     if succession_curve is not None and time_horizon_years > 0:
         maturation_timeline = compute_maturation_timeline(
@@ -957,9 +940,6 @@ def run_restoration(
             units_restored=units_to_restore,
             carbon_profile=ecosystem.resource.carbon_profile,
             substrate_ceiling=substrate_ceiling,
-        )
-        maturation_gap_pv = compute_maturation_gap(
-            maturation_timeline, annual_recovered, discount
         )
         # Compute milestone years
         years_to_pioneer = find_years_to_threshold(succession_curve, 0.001)
@@ -1013,19 +993,16 @@ def run_restoration(
         substrate_ceiling=substrate_ceiling,
     )
 
-    pa_v06_result = compute_prevention_advantage_v06(
+    penalty = compute_destroy_then_restore_penalty(
         foregone_revenue=foregone_revenue,
-        restoration_cost_total=total_cost,
-        maintenance_cost_per_year=maintenance_total_per_year,
-        maintenance_years=restoration_cost.maintenance_years,
+        restoration_cost_pv=restoration_npv_result.cost,
+        annual_damage_reversal=annual_damage_reversal,
+        annual_recovered_potential=annual_recovered_potential,
         discount=discount,
-        max_recovered_value=annual_recovered_potential,
         succession_curve=succession_curve,
         carbon_profile=ecosystem.resource.carbon_profile,
         units=units_to_restore,
         substrate_ceiling=substrate_ceiling,
-        carbon_released=carbon_released,
-        pa_simple=prevention_advantage,
     )
 
     return RestorationResult(
@@ -1036,19 +1013,18 @@ def run_restoration(
         total_restoration_cost=total_cost,
         annual_recovered_value=annual_recovered,
         net_restoration_pv=restoration_npv_result.net_present_value,
-        prevention_advantage=prevention_advantage,
+        restoration_cost_ratio=restoration_cost_ratio(foregone_revenue, total_cost),
         final_ecosystem_health=final_step.ecosystem_health,
         maturation_timeline=maturation_timeline,
         years_to_pioneer=years_to_pioneer,
         years_to_50pct=years_to_50pct,
         years_to_90pct=years_to_90pct,
-        maturation_gap_pv=maturation_gap_pv,
+        maturation_gap_pv=penalty.maturation_gap,
         substrate_ceiling=substrate_ceiling,
         substrate_recovery_years=substrate_recovery_yrs,
-        prevention_advantage_with_substrate=prevention_advantage_with_substrate,
         restoration_npv=restoration_npv_result,
         carbon_breakeven=carbon_breakeven_result,
-        prevention_advantage_v06=pa_v06_result,
+        destroy_then_restore_penalty=penalty,
         units_lost=missing,
         depletion_before=missing / total_units,
         depletion_after=(missing - units_to_restore) / total_units,

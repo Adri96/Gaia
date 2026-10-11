@@ -2,7 +2,7 @@
 Gaia v0.6 -- Discount & NPV module unit tests.
 
 Tests the discount mechanics, NPV calculations, carbon breakeven analysis,
-and enhanced prevention advantage. Covers seven categories:
+and the destroy-then-restore penalty. Covers eight categories:
 
     1. DiscountConfig mechanics (Ramsey rate, discount factor, declining schedule,
        carbon price growth, scarcity factor)
@@ -10,8 +10,9 @@ and enhanced prevention advantage. Covers seven categories:
     3. compute_extraction_npv (components, carbon, substrate, totals)
     4. compute_restoration_npv (costs, benefits, succession, carbon payback)
     5. compute_carbon_breakeven (no-carbon, positive, monotonicity)
-    6. compute_prevention_advantage_v06 (layered PAs, zero revenue)
+    6. restoration_cost_ratio and compute_destroy_then_restore_penalty
     7. Edge cases (zero horizon, zero discount rate, high discount rate)
+    8. One year convention (flows at the end of years 1..H)
 """
 
 import math
@@ -21,20 +22,21 @@ from gaia.models import (
     CarbonBreakeven,
     CarbonProfile,
     DiscountConfig,
+    DestroyThenRestorePenalty,
     ExtractionNPV,
-    PreventionAdvantageV06,
     RestorationNPV,
     SuccessionCurve,
 )
 from gaia.discount import (
     compute_carbon_breakeven,
+    compute_destroy_then_restore_penalty,
     compute_extraction_npv,
-    compute_prevention_advantage_v06,
     compute_restoration_npv,
     DISCOUNT_CENTRAL,
     DISCOUNT_ENVIRONMENTAL,
     DISCOUNT_GREEN_BOOK,
     DISCOUNT_MARKET,
+    restoration_cost_ratio,
 )
 from gaia.succession import succession_service
 
@@ -618,210 +620,96 @@ class TestComputeCarbonBreakeven:
         assert result.current_price == 120.0
 
 
-# ── 6. compute_prevention_advantage_v06 ─────────────────────────────────────
+# ── 6. restoration_cost_ratio and destroy-then-restore penalty ────────────
 
 
-class TestComputePreventionAdvantageV06:
-    """Tests for the enhanced prevention advantage with full NPV accounting."""
+class TestDestroyThenRestorePenalty:
+    """Tests for restoration_cost_ratio and compute_destroy_then_restore_penalty."""
 
-    def test_pa_full_greater_than_simple(self):
-        """pa_full >= pa_simple always (NPV adds costs, never removes them)."""
+    @staticmethod
+    def _penalty(**kwargs):
+        args = dict(
+            foregone_revenue=100000.0, restoration_cost_pv=60000.0,
+            annual_damage_reversal=6000.0, annual_recovered_potential=5000.0,
+            discount=_default_discount(), succession_curve=_succession_curve(),
+            carbon_profile=_carbon_profile(), units=100, substrate_ceiling=0.85,
+        )
+        args.update(kwargs)
+        return compute_destroy_then_restore_penalty(**args)
+
+    def test_restoration_cost_ratio_is_input_price_ratio(self):
+        """(revenue + cost) / revenue = 1 + cost per unit / unit value."""
+        k, unit_value, cost_per_unit = 400, 60.0, 305.0
+        ratio = restoration_cost_ratio(k * unit_value, k * cost_per_unit)
+        assert ratio == pytest.approx(1 + cost_per_unit / unit_value, rel=1e-12)
+
+    def test_restoration_cost_ratio_none_without_revenue(self):
+        assert restoration_cost_ratio(0.0, 5000.0) is None
+        assert restoration_cost_ratio(-1.0, 5000.0) is None
+
+    def test_components_sum_to_total(self):
+        pen = self._penalty()
+        assert isinstance(pen, DestroyThenRestorePenalty)
+        assert pen.total == pytest.approx(
+            pen.restoration_cost + pen.maturation_gap + pen.substrate_loss
+            + pen.recovery_shortfall + pen.carbon_not_recovered, rel=1e-12)
+        assert pen.ratio == pytest.approx(pen.total / 100000.0, rel=1e-12)
+        assert pen.foregone_revenue == 100000.0
+        assert pen.horizon == 100
+
+    def test_penalty_at_least_restoration_cost(self):
+        pen = self._penalty()
+        assert pen.total >= pen.restoration_cost
+        bare = self._penalty(annual_damage_reversal=0.0, annual_recovered_potential=0.0,
+                             carbon_profile=None)
+        assert bare.total == pytest.approx(bare.restoration_cost, rel=1e-12)
+
+    def test_monotone_in_maturation_time(self):
+        """Slower succession (longer delay, later climax) → larger penalty."""
+        totals = [
+            self._penalty(succession_curve=_succession_curve(
+                maturation_delay=delay, climax_approach_year=climax)).total
+            for delay, climax in ((0.0, 40.0), (2.0, 60.0), (5.0, 90.0), (10.0, 120.0))
+        ]
+        assert all(a < b for a, b in zip(totals, totals[1:])), totals
+
+    def test_instant_recovery_has_no_maturation_gap(self):
+        pen = self._penalty(succession_curve=None)
+        assert pen.maturation_gap == 0.0
+
+    def test_shortfalls_counted_once(self):
+        """gap + substrate + shortfall = Σ_t (reversal − delivered(t)): each year's
+        unrecovered service once (substrate only lowers the ceiling)."""
         config = _default_discount()
-        carbon = _carbon_profile()
-        succession = _succession_curve()
-
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=carbon,
-            units=100,
-            substrate_ceiling=0.85,
-            carbon_released=500.0,
-            pa_simple=3.5,
-        )
-
-        assert result.pa_full >= result.pa_simple
-
-    def test_pa_with_carbon_greater_than_without_carbon(self):
-        """pa_full with carbon > pa_full without carbon (carbon adds to damage cost)."""
-        config = _default_discount()
-        carbon = _carbon_profile()
-        succession = _succession_curve()
-
-        # PA with carbon
-        result_with = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=carbon,
-            units=100,
-            substrate_ceiling=1.0,
-            carbon_released=500.0,
-            pa_simple=3.5,
-        )
-
-        # PA without carbon
-        result_without = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=None,
-            units=100,
-            substrate_ceiling=1.0,
-            carbon_released=0.0,
-            pa_simple=3.5,
-        )
-
-        # Adding carbon externality increases total NPV cost
-        assert result_with.pa_with_carbon > 1.0
-        assert result_with.pa_full >= result_without.pa_full
-
-    def test_pa_with_substrate_greater_than_simple(self):
-        """pa_with_substrate >= pa_simple when substrate_ceiling < 1.0."""
-        config = _default_discount()
-        succession = _succession_curve()
-
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=None,
-            units=100,
-            substrate_ceiling=0.85,
-            pa_simple=1.5,  # (100,000 + 50,000) / 100,000
-        )
-
-        assert result.pa_with_substrate >= result.pa_simple
-
-    def test_pa_substrate_shortfall_counted_once(self):
-        """Gap + substrate = Σ (1 − min(s(t), ceiling)) × value: each year's
-        shortfall once (the maturation gap is measured against the capped
-        mature level, the substrate term is the part above it)."""
-        config = _default_discount()
-        succession = _succession_curve()
-        kwargs = dict(
-            foregone_revenue=100000.0, restoration_cost_total=0.0,
-            maintenance_cost_per_year=0.0, maintenance_years=0,
-            discount=config, max_recovered_value=5000.0,
-            succession_curve=succession, carbon_profile=None, units=100,
-        )
-        result = compute_prevention_advantage_v06(substrate_ceiling=0.85, **kwargs)
+        curve = _succession_curve()
+        pen = self._penalty(carbon_profile=None, restoration_cost_pv=0.0)
         expected = sum(
-            5000.0 * (1.0 - min(succession_service(succession, float(t)), 0.85))
+            (6000.0 - 5000.0 * min(succession_service(curve, float(t)), 0.85))
             * config.discount_factor(t) * config.scarcity_factor(t)
             for t in range(1, config.horizon_years + 1)
         )
-        assert result.npv_restoration_total == pytest.approx(expected, rel=1e-12)
+        assert pen.total == pytest.approx(expected, rel=1e-12)
 
-    def test_pa_zero_revenue(self):
-        """Returns simple PA for all variants when foregone_revenue <= 0."""
+    def test_substrate_loss_zero_at_full_ceiling(self):
+        pen = self._penalty(substrate_ceiling=1.0)
+        assert pen.substrate_loss == 0.0
+        assert self._penalty(substrate_ceiling=0.7).substrate_loss > 0.0
+
+    def test_carbon_not_recovered_is_release_plus_absorption_shortfall(self):
+        from gaia.carbon import compute_carbon_release, pv_absorption, pv_carbon_release
         config = _default_discount()
         carbon = _carbon_profile()
-        succession = _succession_curve()
+        curve = _succession_curve()
+        pen = self._penalty()
+        expected = pv_carbon_release(compute_carbon_release(carbon, 100), config) + \
+            pv_absorption(100 * carbon.annual_absorption_tonnes, config, curve, 0.85,
+                          shortfall=True)
+        assert pen.carbon_not_recovered == pytest.approx(expected, rel=1e-12)
 
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=0.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=carbon,
-            units=100,
-            substrate_ceiling=0.85,
-            carbon_released=500.0,
-            pa_simple=3.5,
-        )
-
-        assert result.pa_simple == 3.5
-        assert result.pa_with_carbon == 3.5
-        assert result.pa_with_substrate == 3.5
-        assert result.pa_full == 3.5
-        assert result.npv_prevention_cost == 0.0
-        assert result.npv_restoration_total == 0.0
-
-    def test_pa_negative_revenue(self):
-        """Negative foregone_revenue also returns simple PA for all variants."""
-        config = _default_discount()
-
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=-5000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=None,
-            carbon_profile=None,
-            units=100,
-            pa_simple=2.0,
-        )
-
-        assert result.pa_simple == 2.0
-        assert result.pa_with_carbon == 2.0
-        assert result.pa_with_substrate == 2.0
-        assert result.pa_full == 2.0
-
-    def test_pa_full_includes_all_components(self):
-        """pa_full should be >= pa_with_carbon and pa_with_substrate individually."""
-        config = _default_discount()
-        carbon = _carbon_profile()
-        succession = _succession_curve()
-
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=succession,
-            carbon_profile=carbon,
-            units=100,
-            substrate_ceiling=0.85,
-            carbon_released=500.0,
-            pa_simple=3.5,
-        )
-
-        assert result.pa_full >= result.pa_with_carbon
-        assert result.pa_full >= result.pa_with_substrate
-
-    def test_pa_npv_prevention_cost_equals_revenue(self):
-        """npv_prevention_cost should equal foregone_revenue when revenue > 0."""
-        config = _default_discount()
-
-        result = compute_prevention_advantage_v06(
-            foregone_revenue=100000.0,
-            restoration_cost_total=50000.0,
-            maintenance_cost_per_year=2000.0,
-            maintenance_years=10,
-            discount=config,
-            max_recovered_value=5000.0,
-            succession_curve=None,
-            carbon_profile=None,
-            units=100,
-            pa_simple=3.5,
-        )
-
-        assert result.npv_prevention_cost == 100000.0
+    def test_ratio_none_without_revenue(self):
+        pen = self._penalty(foregone_revenue=0.0)
+        assert pen.ratio is None
+        assert pen.total > 0.0
 
 
 # ── 7. Edge cases ────────────────────────────────────────────────────────────

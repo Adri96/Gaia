@@ -175,7 +175,12 @@ class TestRestorationSerialization:
         assert "total_restoration_cost_eur" in s
         assert "annual_recovered_value_eur_yr" in s
         assert s["net_restoration_value_eur_pv"] == round(result.net_restoration_pv, 2)
-        assert "prevention_advantage" in s
+        assert s["restoration_cost_ratio"] == round(result.restoration_cost_ratio, 4)
+        pen = d["destroy_then_restore_penalty"]
+        assert pen["total_eur_pv"] == round(
+            result.destroy_then_restore_penalty.total, 2)
+        assert pen["penalty_ratio"] == round(
+            result.destroy_then_restore_penalty.ratio, 4)
         assert "final_ecosystem_health" in s
 
     def test_restoration_cost_included(self):
@@ -292,8 +297,7 @@ _NON_MONETARY_KEYS = {
     "substrate_ceiling", "substrate_recovery_years", "carbon_payback_years",
     "projected_breakeven_year", "horizon_years",
     # ratios
-    "prevention_advantage", "prevention_advantage_with_substrate", "roi",
-    "pa_simple", "pa_with_carbon", "pa_with_substrate", "pa_full",
+    "restoration_cost_ratio", "penalty_ratio", "roi",
     # pricing decomposition
     "scarcity_multipliers", "demand_multipliers", "spectral_radius", "iterations",
 }

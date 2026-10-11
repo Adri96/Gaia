@@ -350,7 +350,7 @@ def run_forest_restoration(
         total_trees: Total carrying capacity of the forest.
         safe_threshold_ratio: Safe extraction threshold ratio.
         trees_to_restore: Number of trees to replant (restore).
-        tree_value: Revenue per tree in euros (used for prevention_advantage).
+        tree_value: Revenue per tree in euros (the foregone revenue).
         planting_cost_per_tree: Direct cost per tree planted.
         annual_maintenance_per_tree: Annual maintenance cost per tree.
         maintenance_years: Number of years of maintenance required.

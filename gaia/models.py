@@ -13,11 +13,13 @@ v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep
                 SimulationStep + resilience fields; RestorationResult + maturation
 v0.5 additions: SubstrateProfile, SubstrateState; Resource + substrate;
                 SimulationStep + substrate fields; RestorationResult + substrate ceiling
-v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven,
-                PreventionAdvantageV06; Resource + discount;
+v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven;
+                Resource + discount;
                 SimulationStep + discount fields; RestorationResult + NPV
 v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
                 Ecosystem + pricing; SimulationStep + price fields
+Step 3.7: DestroyThenRestorePenalty; RestorationResult.restoration_cost_ratio
+                (the three "prevention advantage" variants are gone)
 """
 
 from dataclasses import dataclass, field
@@ -304,24 +306,56 @@ class CarbonBreakeven:
 
 
 @dataclass(frozen=True)
-class PreventionAdvantageV06:
-    """Enhanced prevention advantage with full NPV accounting.
+class DestroyThenRestorePenalty:
+    """What destroying k units and then restoring them costs society, over
+    not destroying them (€ PV at year 0, gaia.discount's year convention).
+
+    Each component is a difference between the two worlds that the
+    restoration does not undo; each is counted once (substrate damage only
+    lowers the restoration ceiling, Step 3.4):
+
+        restoration_cost: planting (year 0) + maintenance (years 1..N),
+            discounted (= RestorationNPV.cost).
+        maturation_gap: Σ_{t=1}^{H} (capped mature flow − delivered(t)),
+            the services not yet delivered while the replanted units
+            mature; delivered(t) = biological recovery × min(s(t), ceiling)
+            (= RestorationResult.maturation_gap_pv). Temporary.
+        substrate_loss: Σ_{t=1}^{H} biological recovery × (1 − ceiling),
+            the recovery the substrate ceiling never lets mature. Permanent.
+        recovery_shortfall: Σ_{t=1}^{H} (damage reversal − biological
+            recovery), the damage the recovery functions never reverse
+            (recovery efficiency < 1, e.g. partial replanting). Permanent.
+        carbon_not_recovered: the release valued at year 0, plus the PV of
+            the absorption not delivered, 1 − min(s(t), ceiling), years
+            1..H (gaia.carbon). The released stock itself is not modelled as
+            re-absorbed by regrowth, so the release is never recovered.
+
+    Service flows are discounted with the scarcity uplift like every
+    service stream; "biological recovery" is the restored flow at maturity
+    before the substrate cap and "damage reversal" the annual externality
+    the cut caused (RestorationResult.annual_damage_reversal).
 
     Attributes:
-        pa_simple: v0.2-style undiscounted PA.
-        pa_with_carbon: Including carbon externality NPV.
-        pa_with_substrate: Including permanent substrate loss NPV.
-        pa_full: All-inclusive NPV-based PA.
-        npv_prevention_cost: Foregone extraction revenue.
-        npv_restoration_total: Full cost of restore-after-extract.
+        restoration_cost, maturation_gap, substrate_loss, recovery_shortfall,
+            carbon_not_recovered: the components above (€ PV).
+        total: their sum (€ PV).
+        foregone_revenue: The present value of not cutting: the private
+            revenue the k units would have earned, k × unit_value, a
+            one-off amount at year 0 (so its own PV).
+        ratio: total / foregone_revenue — € PV of social cost per € of
+            revenue given up by not cutting. None when the revenue is 0.
+        horizon: Analysis horizon in years.
     """
 
-    pa_simple: float
-    pa_with_carbon: float
-    pa_with_substrate: float
-    pa_full: float
-    npv_prevention_cost: float
-    npv_restoration_total: float
+    restoration_cost: float
+    maturation_gap: float
+    substrate_loss: float
+    recovery_shortfall: float
+    carbon_not_recovered: float
+    total: float
+    foregone_revenue: float
+    ratio: Optional[float]
+    horizon: int
 
 
 # ── v0.7: Endogenous Pricing models ───────────────────────────────────────────
@@ -886,17 +920,24 @@ class RestorationResult:
         net_restoration_pv_by_horizon: net_restoration_pv recomputed at each
             of gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV};
             None for a horizon at which the DiscountConfig fails validation.
-        prevention_advantage: (foregone_revenue + total_restoration_cost)
-            / foregone_revenue — a ratio of two one-off amounts.
+        restoration_cost_ratio: (foregone_revenue + total_restoration_cost)
+            / foregone_revenue = 1 + restoration cost per unit / unit_value:
+            a ratio of two input prices, with no ecology and no
+            externality in it. None when the foregone revenue is 0.
         final_ecosystem_health: Ecosystem health after all restoration.
         maturation_timeline: Year-by-year service recovery (v0.4, empty if no succession).
         years_to_pioneer: Years until services first become non-zero (v0.4).
         years_to_50pct: Years until 50% of recoverable services are delivered (v0.4).
         years_to_90pct: Years until 90% of recoverable services are delivered (v0.4).
         maturation_gap_pv: Present value (€ PV) of the services not yet
-            delivered while the restored units mature, discounted year by year.
-        restoration_npv / carbon_breakeven / prevention_advantage_v06: use the
-            resource's DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT.
+            delivered while the restored units mature, over the
+            DiscountConfig horizon (0 without a succession curve).
+        restoration_npv / carbon_breakeven / destroy_then_restore_penalty:
+            use the resource's DiscountConfig, or
+            gaia.discount.DEFAULT_DISCOUNT.
+        destroy_then_restore_penalty: PV cost of destroying the restored
+            units and restoring them, over not destroying them, in € and
+            relative to the foregone revenue (DestroyThenRestorePenalty).
         units_lost: Units missing at the start (extracted from the pristine
             resource by the starting state).
         depletion_before: units_lost / total_units.
@@ -915,7 +956,7 @@ class RestorationResult:
     total_restoration_cost: float
     annual_recovered_value: float
     net_restoration_pv: float
-    prevention_advantage: float
+    restoration_cost_ratio: Optional[float]
     final_ecosystem_health: float
 
     # v0.4: Maturation timeline fields (defaults preserve v0.3 behavior)
@@ -929,13 +970,12 @@ class RestorationResult:
     substrate_ceiling: float = 1.0              # Max recoverable fraction (K_current/K_pristine)
     substrate_recovery_years: float = 0.0       # Years for substrate to return to pristine
     substrate_recovery_cost: float = 0.0        # Cost of substrate stabilization
-    prevention_advantage_with_substrate: float = 0.0  # PA including permanent capacity loss
 
     # v0.6: NPV and carbon breakeven (defaults preserve v0.5 behavior)
     extraction_npv: Optional[ExtractionNPV] = None
     restoration_npv: Optional[RestorationNPV] = None
     carbon_breakeven: Optional[CarbonBreakeven] = None
-    prevention_advantage_v06: Optional[PreventionAdvantageV06] = None
+    destroy_then_restore_penalty: Optional[DestroyThenRestorePenalty] = None
 
     # Step 3.3: the starting state the restoration begins from
     units_lost: int = 0

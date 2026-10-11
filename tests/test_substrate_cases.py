@@ -137,7 +137,7 @@ class TestBackwardCompatibility:
 
         assert result.substrate_ceiling == 1.0
         assert result.substrate_recovery_years == 0.0
-        assert result.prevention_advantage_with_substrate == result.prevention_advantage
+        assert result.destroy_then_restore_penalty.substrate_loss == 0.0
 
 
 class TestPristineSubstrate:
@@ -217,8 +217,9 @@ class TestSubstrateRestoration:
 
         assert result.substrate_recovery_years > 0.0
 
-    def test_prevention_advantage_with_substrate_higher(self):
-        """Spec test #7: PA increases with substrate modeling."""
+    def test_penalty_includes_substrate_loss(self):
+        """Spec test #7 (Step 3.7): a ceiling below 1 adds a permanent substrate
+        loss to the destroy-then-restore penalty."""
         eco = _make_ecosystem_with_substrate()
         cost = RestorationCost(
             planting_cost_per_unit=50.0,
@@ -228,10 +229,8 @@ class TestSubstrateRestoration:
         recovery_fns = [logistic_recovery(threshold=0.3) for _ in eco.agents]
         result = run_restoration(eco, 500, cost, recovery_fns)
 
-        assert result.prevention_advantage_with_substrate >= result.prevention_advantage, (
-            f"PA with substrate ({result.prevention_advantage_with_substrate}) "
-            f"should be >= PA without ({result.prevention_advantage})"
-        )
+        assert result.substrate_ceiling < 1.0
+        assert result.destroy_then_restore_penalty.substrate_loss > 0.0
 
 
 # ── Per-case integration tests ────────────────────────────────────────────────
@@ -253,8 +252,8 @@ class TestOakValleyForestSubstrate:
         result = run_extraction(eco, 500)
         assert result.steps[-1].k_fraction < 1.0
 
-    def test_forest_pa_with_substrate_higher(self):
-        """Forest PA with substrate should be >= v0.4 PA."""
+    def test_forest_penalty_substrate_loss(self):
+        """Forest: substrate damage adds a non-negative permanent loss."""
         eco = build_forest_ecosystem(total_trees=1000)
         cost = RestorationCost(
             planting_cost_per_unit=50.0,
@@ -263,7 +262,9 @@ class TestOakValleyForestSubstrate:
         )
         recovery_fns = [logistic_recovery(threshold=0.3) for _ in eco.agents]
         result = run_restoration(eco, 500, cost, recovery_fns)
-        assert result.prevention_advantage_with_substrate >= result.prevention_advantage
+        assert result.destroy_then_restore_penalty.substrate_loss >= 0.0
+        assert (result.destroy_then_restore_penalty.substrate_loss > 0.0) == (
+            result.substrate_ceiling < 1.0)
 
 
 class TestCostaBravaSubstrate:
@@ -283,8 +284,8 @@ class TestCostaBravaSubstrate:
         result = run_extraction(eco, 400)
         assert result.steps[-1].k_fraction < 1.0
 
-    def test_costa_brava_pa_with_substrate_higher(self):
-        """Costa Brava PA with substrate should be >= v0.4 PA."""
+    def test_costa_brava_penalty_substrate_loss(self):
+        """Costa Brava: substrate damage adds a non-negative permanent loss."""
         eco = build_costa_brava_ecosystem(total_trees=1000)
         cost = RestorationCost(
             planting_cost_per_unit=80.0,
@@ -293,7 +294,9 @@ class TestCostaBravaSubstrate:
         )
         recovery_fns = [logistic_recovery(threshold=0.25) for _ in eco.agents]
         result = run_restoration(eco, 400, cost, recovery_fns)
-        assert result.prevention_advantage_with_substrate >= result.prevention_advantage
+        assert result.destroy_then_restore_penalty.substrate_loss >= 0.0
+        assert (result.destroy_then_restore_penalty.substrate_loss > 0.0) == (
+            result.substrate_ceiling < 1.0)
 
 
 class TestPosidoniaSubstrate:
@@ -312,8 +315,8 @@ class TestPosidoniaSubstrate:
         result = run_extraction(eco, 400)
         assert result.steps[-1].k_fraction < 1.0
 
-    def test_posidonia_pa_with_substrate_higher(self):
-        """Posidonia PA with substrate should be >= v0.4 PA."""
+    def test_posidonia_penalty_substrate_loss(self):
+        """Posidonia: substrate damage adds a non-negative permanent loss."""
         eco = build_posidonia_ecosystem(total_hectares=1000)
         cost = RestorationCost(
             planting_cost_per_unit=50_000.0,
@@ -322,7 +325,9 @@ class TestPosidoniaSubstrate:
         )
         recovery_fns = [logistic_recovery(threshold=0.2) for _ in eco.agents]
         result = run_restoration(eco, 400, cost, recovery_fns)
-        assert result.prevention_advantage_with_substrate >= result.prevention_advantage
+        assert result.destroy_then_restore_penalty.substrate_loss >= 0.0
+        assert (result.destroy_then_restore_penalty.substrate_loss > 0.0) == (
+            result.substrate_ceiling < 1.0)
 
     def test_posidonia_marine_erosion_alpha(self):
         """Posidonia should use marine erosion alpha (3.0)."""

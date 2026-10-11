@@ -13,8 +13,10 @@ v0.4: Resilience Assessment, Carbon Accounting sections in extraction report;
 v0.5: Substrate Impact Assessment in extraction report;
       Substrate Restoration Ceiling in restoration report.
 v0.6: NPV Analysis section in extraction report;
-      Investment Analysis (NPV), Carbon Credit Breakeven,
-      Prevention Advantage V06 sections in restoration report.
+      Investment Analysis (NPV), Carbon Credit Breakeven sections in
+      restoration report.
+Step 3.7: Restoration Cost Ratio and Destroy-then-Restore Penalty replace
+      the prevention-advantage sections.
 v0.7: Price Decomposition section in extraction report
       (endogenous pricing with scarcity and demand multipliers).
 """
@@ -485,11 +487,12 @@ def format_restoration_report(result: RestorationResult) -> str:
         - Per-agent recovered service values (€/yr)
         - Annual recovered ecosystem value (€/yr)
         - Net restoration value (€ PV: PV of benefits minus PV of costs)
-        - Prevention advantage (how much cheaper prevention is vs destroy-then-restore)
+        - Restoration cost ratio (an input-price ratio)
         - v0.4: Maturation Timeline, Carbon Recovery
         - v0.5: Substrate Restoration Ceiling
-        - v0.6: Investment Analysis (NPV), Carbon Credit Breakeven,
-                Prevention Advantage V06
+        - v0.6: Investment Analysis (NPV), Carbon Credit Breakeven
+        - Step 3.7: Destroy-then-Restore Penalty (€ PV and per € of
+                foregone revenue)
 
     Args:
         result: A completed RestorationResult from run_restoration().
@@ -601,15 +604,22 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.extend(_horizon_sensitivity_lines(result.net_restoration_pv_by_horizon))
     lines.append("")
 
-    # Prevention advantage
-    lines.append(f"  \u2500\u2500 Prevention vs Restoration \u2500" + "\u2500" * 34)
+    # Restoration cost ratio: an input-price ratio, not a finding
+    lines.append(f"  \u2500\u2500 Restoration Cost Ratio \u2500" + "\u2500" * 37)
+    if result.restoration_cost_ratio is not None:
+        lines.append(
+            f"  {'(Revenue + restoration cost) / revenue:':<40} "
+            f"{result.restoration_cost_ratio:>10.2f}"
+        )
+    else:
+        lines.append(
+            f"  {'(Revenue + restoration cost) / revenue:':<40} {'n/a':>10}"
+        )
     lines.append(
-        f"  Prevention is {result.prevention_advantage:.2f}\u00d7 cheaper than "
-        f"destroy\u2011then\u2011restore."
+        "    (= 1 + restoration cost per unit / unit value: a ratio of two"
     )
     lines.append(
-        f"  (Foregone revenue + restoration cost) / foregone revenue = "
-        f"{result.prevention_advantage:.2f}"
+        "     input prices, no ecology; see Destroy-then-Restore Penalty)"
     )
 
     # v0.4: Maturation Timeline
@@ -636,15 +646,12 @@ def format_restoration_report(result: RestorationResult) -> str:
             f"{result.maturation_gap_pv:>14,.2f}\u20ac (PV)"
         )
         lines.append(
-            f"  (discounted services not delivered while succession proceeds)"
-        )
-        lines.append("")
-        # TODO(3.7): one-off cost + PV gap; replaced by destroy_then_restore_penalty
-        lines.append(
-            f"  This cost is IN ADDITION to restoration costs."
+            f"  (discounted services not delivered while succession proceeds,"
         )
         lines.append(
-            f"  True prevention advantage: restoration_cost + maturation_gap"
+            f"   over the {result.restoration_npv.horizon}-year NPV horizon)"
+            if result.restoration_npv is not None else
+            f"   over the NPV horizon)"
         )
 
     # v0.4: Carbon Recovery
@@ -686,21 +693,6 @@ def format_restoration_report(result: RestorationResult) -> str:
                     f"  {'Substrate recovery time:':<40} {'N/A':>10}"
                 )
 
-        # Enhanced prevention advantage
-        if result.prevention_advantage_with_substrate > result.prevention_advantage:
-            lines.append("")
-            lines.append(
-                f"  \u2500\u2500 Prevention Advantage (with substrate) \u2500"
-                + "\u2500" * 21
-            )
-            lines.append(
-                f"  {'Biological only:':<40} "
-                f"{result.prevention_advantage:>10.2f}\u00d7"
-            )
-            lines.append(
-                f"  {'Including substrate loss:':<40} "
-                f"{result.prevention_advantage_with_substrate:>10.2f}\u00d7"
-            )
 
     # v0.6: Investment Analysis (NPV)
     if result.restoration_npv is not None:
@@ -781,38 +773,37 @@ def format_restoration_report(result: RestorationResult) -> str:
                 f"{'N/A':>14}"
             )
 
-    # v0.6: Prevention Advantage V06
-    if result.prevention_advantage_v06 is not None:
-        pa = result.prevention_advantage_v06
+    # Step 3.7: Destroy-then-restore penalty
+    if result.destroy_then_restore_penalty is not None:
+        pen = result.destroy_then_restore_penalty
         lines.append("")
         lines.append(
-            f"  \u2500\u2500 Prevention Advantage (NPV-based) \u2500" + "\u2500" * 26
+            f"  \u2500\u2500 Destroy-then-Restore Penalty (\u20ac PV, "
+            f"{pen.horizon}-year) \u2500" + "\u2500" * 14
         )
         lines.append(
-            f"  {'PA simple (undiscounted):':<40} "
-            f"{pa.pa_simple:>14.2f}x"
+            "  Social cost of cutting these units and restoring them, over"
+        )
+        lines.append("  not cutting them:")
+        for label, value in (
+            ("Restoration cost:", pen.restoration_cost),
+            ("Maturation gap (temporary):", pen.maturation_gap),
+            ("Substrate loss (permanent):", pen.substrate_loss),
+            ("Recovery shortfall (permanent):", pen.recovery_shortfall),
+            ("Carbon not recovered:", pen.carbon_not_recovered),
+        ):
+            lines.append(f"    {label:<38} \u20ac{value:>14,.0f}")
+        lines.append(f"    {'':=<38} {'':=>15}")
+        lines.append(
+            f"    {'Penalty:':<38} \u20ac{pen.total:>14,.0f}"
         )
         lines.append(
-            f"  {'PA with carbon:':<40} "
-            f"{pa.pa_with_carbon:>14.2f}x"
+            f"    {'Foregone revenue (PV of not cutting):':<38} "
+            f"\u20ac{pen.foregone_revenue:>14,.0f}"
         )
-        lines.append(
-            f"  {'PA with substrate:':<40} "
-            f"{pa.pa_with_substrate:>14.2f}x"
-        )
-        lines.append(
-            f"  {'PA full (all-inclusive NPV):':<40} "
-            f"{pa.pa_full:>14.2f}x"
-        )
-        lines.append("")
-        lines.append(
-            f"  {'Prevention cost (revenue, one-off):':<40} "
-            f"\u20ac{pa.npv_prevention_cost:>14,.0f}"
-        )
-        lines.append(
-            f"  {'Restoration total (PV):':<40} "
-            f"\u20ac{pa.npv_restoration_total:>14,.0f}"
-        )
+        if pen.ratio is not None:
+            ratio_label: str = "Penalty per \u20ac of foregone revenue:"
+            lines.append(f"    {ratio_label:<38} {pen.ratio:>15.2f}")
 
     lines.append(f"  {_DOUBLE_LINE}")
 

@@ -58,13 +58,17 @@ from gaia.carbon import compute_carbon_release, pv_absorption, pv_carbon_release
 from gaia.models import (
     CarbonBreakeven,
     CarbonProfile,
+    DestroyThenRestorePenalty,
     DiscountConfig,
     ExtractionNPV,
-    PreventionAdvantageV06,
     RestorationNPV,
     SuccessionCurve,
 )
-from gaia.succession import succession_service
+from gaia.succession import (
+    compute_maturation_gap,
+    compute_maturation_timeline,
+    succession_service,
+)
 from gaia.validation import validate_discount_config
 
 
@@ -428,133 +432,124 @@ def _find_breakeven_year(
     return None
 
 
-def compute_prevention_advantage_v06(
+def restoration_cost_ratio(
+    foregone_revenue: float, restoration_cost_total: float,
+) -> Optional[float]:
+    """(foregone revenue + restoration cost) / foregone revenue.
+
+    An input-price ratio: with revenue k × unit_value and cost k × cost per
+    unit it is 1 + cost_per_unit / unit_value whatever the ecosystem does.
+    It contains no ecology and no externality, and is > 1 by construction
+    whenever restoration costs anything; destroy_then_restore_penalty is
+    the figure that measures what destroy-then-restore costs society.
+    Both amounts are one-off and undiscounted. None when the revenue is 0.
+    """
+    if foregone_revenue <= 0.0:
+        return None
+    return (foregone_revenue + restoration_cost_total) / foregone_revenue
+
+
+def compute_destroy_then_restore_penalty(
     foregone_revenue: float,
-    restoration_cost_total: float,
-    maintenance_cost_per_year: float,
-    maintenance_years: int,
+    restoration_cost_pv: float,
+    annual_damage_reversal: float,
+    annual_recovered_potential: float,
     discount: DiscountConfig,
-    max_recovered_value: float,
     succession_curve: Optional[SuccessionCurve],
     carbon_profile: Optional[CarbonProfile],
     units: int,
     substrate_ceiling: float = 1.0,
-    carbon_released: float = 0.0,
-    pa_simple: float = 1.0,
-) -> PreventionAdvantageV06:
-    """Enhanced prevention advantage with full NPV accounting.
+) -> DestroyThenRestorePenalty:
+    """PV cost of destroying ``units`` and restoring them, over not destroying them.
 
-    PA = NPV(total_cost_of_restore_after_extract) / foregone_revenue
+    penalty = restoration_cost + maturation_gap + substrate_loss
+              + recovery_shortfall + carbon_not_recovered        (€ PV)
+    ratio   = penalty / foregone_revenue
 
-    Components layered incrementally (each cost counted once; with the
-    substrate model, the maturation gap is measured against the capped
-    mature level and the permanent shortfall above it is the substrate
-    term):
-        pa_simple: v0.2-style undiscounted PA (passed in).
-        pa_with_carbon: restoration cost + maturation gap + carbon NPV.
-        pa_with_substrate: restoration cost + maturation gap + permanent
-            substrate loss NPV.
-        pa_full: all of them.
+    See DestroyThenRestorePenalty for each component. Every year t = 1..H
+    of the restored flow at maturity before the substrate cap (the
+    "biological recovery", B) is split once:
+
+        damage reversal D = delivered(t) + gap(t) + substrate + shortfall
+        delivered(t)      = B × min(s(t), c)       (the restoration's benefit)
+        gap(t)            = B × (c − min(s(t), c)) (temporary)
+        substrate         = B × (1 − c)            (permanent)
+        shortfall         = D − B                  (permanent)
+
+    with s the succession service fraction (1 without a curve) and c the
+    substrate ceiling, so nothing is counted twice and substrate damage
+    only lowers the ceiling. Carbon: the release (year 0) plus the
+    absorption shortfall 1 − min(s(t), c) of the units, from gaia.carbon.
+    Uses only quantities fixed by Steps 3.1-3.6; no new constants.
 
     Args:
-        foregone_revenue: Revenue that was earned by extraction.
-        restoration_cost_total: Total restoration cost.
-        maintenance_cost_per_year: Annual maintenance cost (total).
-        maintenance_years: Number of maintenance years.
+        foregone_revenue: One-off revenue of cutting the units (€): the
+            present value of not cutting, the ratio's denominator.
+        restoration_cost_pv: PV of planting and maintenance (€ PV,
+            RestorationNPV.cost).
+        annual_damage_reversal: Annual externality the cut caused that the
+            restoration targets (€/yr).
+        annual_recovered_potential: Restored flow at maturity before the
+            substrate cap (€/yr), at most annual_damage_reversal.
         discount: DiscountConfig.
-        max_recovered_value: Biological annual service value at full
-            maturity, before the substrate cap (€/yr).
-        succession_curve: Optional succession curve.
+        succession_curve: Optional succession curve (None: instant recovery).
         carbon_profile: Optional carbon profile.
-        units: Number of units extracted/restored.
+        units: Number of units cut and restored.
         substrate_ceiling: Max recoverable fraction.
-        carbon_released: Total CO2 released.
-        pa_simple: The v0.2-style PA (undiscounted).
 
     Returns:
-        PreventionAdvantageV06.
+        DestroyThenRestorePenalty.
     """
     horizon: int = discount.horizon_years
 
-    if foregone_revenue <= 0.0:
-        return PreventionAdvantageV06(
-            pa_simple=pa_simple,
-            pa_with_carbon=pa_simple,
-            pa_with_substrate=pa_simple,
-            pa_full=pa_simple,
-            npv_prevention_cost=0.0,
-            npv_restoration_total=0.0,
+    # Maturation gap: the timeline over the full horizon (years 1..H)
+    maturation_gap: float = 0.0
+    if succession_curve is not None:
+        timeline: list = compute_maturation_timeline(
+            succession_curve, annual_recovered_potential, horizon, units,
+            None, substrate_ceiling,
+        )
+        maturation_gap = compute_maturation_gap(
+            timeline, annual_recovered_potential * substrate_ceiling, discount
         )
 
-    # NPV of restoration costs
-    planting_cost: float = restoration_cost_total - (
-        maintenance_cost_per_year * maintenance_years
-    )
-    if planting_cost < 0.0:
-        planting_cost = 0.0
-    npv_restoration_cost: float = planting_cost
-    for year in range(1, maintenance_years + 1):
-        df: float = discount.discount_factor(year)
-        npv_restoration_cost += maintenance_cost_per_year * df
-
-    # NPV of the maturation gap: services not yet delivered while the
-    # replanted units mature, against the substrate-capped mature level
-    # (temporary). The permanent shortfall above the ceiling is the
-    # substrate term below — each counted once.
-    npv_maturation_gap: float = 0.0
+    # Permanent shortfalls: constant flows over years 1..H
+    annuity: float = 0.0
     for year in range(1, horizon + 1):
-        if succession_curve is not None:
-            sfrac: float = succession_service(succession_curve, float(year))
-        else:
-            sfrac = 1.0
-        gap_fraction: float = substrate_ceiling - min(sfrac, substrate_ceiling)
-        annual_gap: float = max_recovered_value * gap_fraction
-        df = discount.discount_factor(year)
-        sf: float = discount.scarcity_factor(year)
-        npv_maturation_gap += annual_gap * df * sf
+        annuity += discount.discount_factor(year) * discount.scarcity_factor(year)
+    substrate_loss: float = (
+        annual_recovered_potential * (1.0 - substrate_ceiling) * annuity
+    )
+    shortfall_flow: float = annual_damage_reversal - annual_recovered_potential
+    if shortfall_flow < 0.0:
+        shortfall_flow = 0.0
+    recovery_shortfall: float = shortfall_flow * annuity
 
-    # Carbon externality NPV (gaia.carbon): the release, plus the absorption
-    # not delivered while the replanted units mature (and never, above the
-    # substrate ceiling)
-    npv_carbon: float = 0.0
+    carbon_not_recovered: float = 0.0
     if carbon_profile is not None and units > 0:
-        npv_carbon = pv_carbon_release(
+        carbon_not_recovered = pv_carbon_release(
             compute_carbon_release(carbon_profile, units), discount
         ) + pv_absorption(
             units * carbon_profile.annual_absorption_tonnes,
             discount, succession_curve, substrate_ceiling, shortfall=True,
         )
 
-    # Substrate permanent loss NPV: the biological recovery above the ceiling
-    npv_substrate: float = 0.0
-    if substrate_ceiling < 1.0:
-        permanent_gap: float = 1.0 - substrate_ceiling
-        annual_loss: float = max_recovered_value * permanent_gap
-        for year in range(1, horizon + 1):
-            df = discount.discount_factor(year)
-            sf = discount.scarcity_factor(year)
-            npv_substrate += annual_loss * df * sf
-
-    # Build layered PAs
-    npv_total_restore: float = (
-        npv_restoration_cost + npv_maturation_gap + npv_carbon + npv_substrate
+    total: float = (
+        restoration_cost_pv + maturation_gap + substrate_loss
+        + recovery_shortfall + carbon_not_recovered
+    )
+    ratio: Optional[float] = (
+        total / foregone_revenue if foregone_revenue > 0.0 else None
     )
 
-    pa_with_carbon: float = (
-        (foregone_revenue + npv_restoration_cost + npv_maturation_gap + npv_carbon)
-        / foregone_revenue
-    )
-    pa_with_substrate: float = (
-        (foregone_revenue + npv_restoration_cost + npv_maturation_gap + npv_substrate)
-        / foregone_revenue
-    )
-    pa_full: float = (foregone_revenue + npv_total_restore) / foregone_revenue
-
-    return PreventionAdvantageV06(
-        pa_simple=pa_simple,
-        pa_with_carbon=pa_with_carbon,
-        pa_with_substrate=pa_with_substrate,
-        pa_full=pa_full,
-        npv_prevention_cost=foregone_revenue,
-        npv_restoration_total=npv_total_restore,
+    return DestroyThenRestorePenalty(
+        restoration_cost=restoration_cost_pv,
+        maturation_gap=maturation_gap,
+        substrate_loss=substrate_loss,
+        recovery_shortfall=recovery_shortfall,
+        carbon_not_recovered=carbon_not_recovered,
+        total=total,
+        foregone_revenue=foregone_revenue,
+        ratio=ratio,
+        horizon=horizon,
     )

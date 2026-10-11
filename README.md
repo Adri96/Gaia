@@ -33,7 +33,8 @@ The same model runs in reverse: Gaia can compute the social return on a reforest
 
 **Output (Restoration mode):** A step-by-step simulation of replanting/restoration that produces:
 - Total restoration cost and recovered ecosystem service value
-- Prevention advantage ratio (how many times cheaper it is to not destroy vs. destroy-then-restore)
+- Restoration cost ratio, (foregone revenue + restoration cost) / foregone revenue — an input-price ratio, 1 + restoration cost per unit / unit value, with no ecology in it
+- Destroy-then-restore penalty: the PV cost to society of cutting and restoring over not cutting (restoration cost, maturation gap, substrate loss, recovery shortfall, carbon not recovered), in € and per € of foregone revenue
 - Maturation timeline (years to 50%, 90% service recovery through ecological succession)
 - Maturation gap (services lost during the decades the ecosystem takes to mature)
 - Substrate restoration ceiling (maximum recovery possible given permanent substrate loss)
@@ -176,7 +177,7 @@ Gaia/
 
 | Module | Responsibility |
 |---|---|
-| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState`, v0.6: `DiscountConfig`, `ExtractionNPV`, `RestorationNPV`, `CarbonBreakeven`, `PreventionAdvantageV06`, v0.7: `ScarcityFunction`, `AnchorPoint`, `PricingConfig`, `PriceResult` |
+| `gaia/models.py` | All data containers: `Resource`, `Agent`, `Ecosystem`, `SimulationStep`, `SimulationResult`, `RestorationCost`, `RestorationStep`, `RestorationResult`, v0.4: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`, v0.5: `SubstrateProfile`, `SubstrateState`, v0.6: `DiscountConfig`, `ExtractionNPV`, `RestorationNPV`, `CarbonBreakeven`, `DestroyThenRestorePenalty`, v0.7: `ScarcityFunction`, `AnchorPoint`, `PricingConfig`, `PriceResult` |
 | `gaia/damage.py` | Damage function factories — each returns a `float → float` callable |
 | `gaia/recovery.py` | Recovery function factories — `logistic_recovery`, `linear_recovery`; slower than damage, encoding entropy asymmetry |
 | `gaia/propagation.py` | Trophic cascade amplification and interaction propagation (v0.3) |
@@ -184,10 +185,10 @@ Gaia/
 | `gaia/carbon.py` | Single owner of carbon value (Step 3.4): release (stock) + PV of foregone absorption, priced at the social cost of carbon (US EPA 2023, $190 → €166/t CO₂, +1.3%/yr; optional market/ETS view at €80/t, `--carbon-price ets`), payback period |
 | `gaia/resilience.py` | Resilience zone computation (green/yellow/red), confidence interpolation, confidence bands (v0.4) |
 | `gaia/substrate.py` | Physical substrate computation: capacity functions (linear/threshold/logistic), degradation, recovery, recovery year estimation (v0.5) |
-| `gaia/discount.py` | NPV computation engine (v0.6): Ramsey-based discounting, scarcity uplift, carbon price trajectories, 4 preconfigured profiles (Market/Central/Environmental/Green Book), `compute_extraction_npv()`, `compute_restoration_npv()`, `compute_carbon_breakeven()`, `compute_prevention_advantage_v06()` |
+| `gaia/discount.py` | NPV computation engine (v0.6): Ramsey-based discounting, scarcity uplift, carbon price trajectories, 4 preconfigured profiles (Market/Central/Environmental/Green Book), `compute_extraction_npv()`, `compute_restoration_npv()`, `compute_carbon_breakeven()`, `compute_destroy_then_restore_penalty()`, `restoration_cost_ratio()` |
 | `gaia/pricing.py` | Endogenous pricing engine (v0.7): Leontief-Hannon value system V = (I-SW)⁻¹A, scarcity functions (smooth/threshold), pure Python matrix math (no numpy), Gaussian elimination with partial pivoting, spectral radius validation via power iteration, `solve_prices()` with fallback to static rates |
 | `gaia/simulation.py` | `run_extraction(ecosystem, units)` — extraction loop with resilience tagging, substrate degradation, NPV computation, and dynamic pricing; `run_restoration(ecosystem, units, cost, fns, succession_curve, time_horizon)` — restoration loop with maturation pass, substrate ceiling, restoration NPV, and carbon breakeven |
-| `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact, NPV analysis, price decomposition; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling, investment analysis, carbon breakeven, prevention advantage v0.6 |
+| `gaia/report.py` | `format_report(result)` — externality report with resilience, carbon, confidence bands, substrate impact, NPV analysis, price decomposition; `format_restoration_report(result)` — restoration report with maturation, carbon recovery, substrate ceiling, investment analysis, carbon breakeven, restoration cost ratio, destroy-then-restore penalty |
 | `gaia/cases/forest.py` | Oak Valley Forest — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%, 2% scarcity), 1 price anchor (Water supply €7.6k); carbon valued by `carbon.py` at the social cost of carbon |
 | `gaia/cases/costa_brava.py` | Costa Brava Holm Oak Forest — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical), central discount (2.3%, 2.5% scarcity), 1 price anchor (Watershed €25k); carbon valued by `carbon.py` |
 | `gaia/cases/posidonia.py` | Costa Brava Posidonia Meadow — marine seagrass, 10 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount (2.3%→1.4%, 3% scarcity, 200yr), 2 price anchors (Tourism €500k, Fishing €75k); blue carbon valued by `carbon.py` |
@@ -379,7 +380,8 @@ result = run_restoration(ecosystem, units_to_restore=5_000, restoration_cost=cos
 print(f"Restoration cost:   €{result.total_restoration_cost:,.2f}")
 print(f"Recovered value:    €{result.total_recovered_value:,.2f}")
 print(f"Net value:          €{result.net_restoration_value:,.2f}")
-print(f"Prevention advantage: {result.prevention_advantage:.2f}×")
+print(f"Restoration cost ratio: {result.restoration_cost_ratio:.2f}")
+print(f"Destroy-then-restore penalty: €{result.destroy_then_restore_penalty.total:,.0f} (PV)")
 
 print(format_restoration_report(result))
 ```
@@ -430,7 +432,7 @@ At 40% extraction: €240,000 in timber revenue vs **€1,980,000 in annual soci
 python -m gaia.cases.costa_brava --cut 4000 --mode restore
 ```
 
-Mediterranean forest restoration is harder than temperate: holm oak grows at max 0.5 m/yr, summer drought requires irrigation during establishment, and the mycorrhizal network must re-establish before full ecosystem function returns. Prevention advantage: **6.08×** — every euro saved by not cutting saves six in future restoration costs.
+Mediterranean forest restoration is harder than temperate: holm oak grows at max 0.5 m/yr, summer drought requires irrigation during establishment, and the mycorrhizal network must re-establish before full ecosystem function returns. Restoration cost ratio: **6.08** = 1 + €305 restoration cost / €60 timber value per tree — a ratio of two input prices, not an ecological finding. What destroy-then-restore costs society is the destroy-then-restore penalty in the restoration report.
 
 ### CLI — Costa Brava Posidonia Meadow
 
@@ -464,7 +466,7 @@ At 40% destruction: €5,000,000 one-time revenue vs **€3,973,869/year** in re
 python -m gaia.cases.posidonia --destroy 2000 --mode restore
 ```
 
-Posidonia restoration is among the most expensive ecological interventions known. The default cost of **€200,000/ha** reflects specialist diving teams, substrate preparation, donor material collection, and 30 years of active monitoring — because Posidonia grows at only 1–6 cm/year. Prevention advantage: **81.00×** — the cost of not destroying 2,000 ha of Posidonia (€5M foregone revenue) is 81 times cheaper than destroying it and trying to restore it (€400M in restoration costs).
+Posidonia restoration is among the most expensive ecological interventions known. The default cost of **€200,000/ha** reflects specialist diving teams, substrate preparation, donor material collection, and 30 years of active monitoring — because Posidonia grows at only 1–6 cm/year. Restoration cost ratio: **81.00** = 1 + €200,000 restoration cost / €2,500 revenue per ha — a ratio of two input prices, not an ecological finding. What destroy-then-restore costs society is the destroy-then-restore penalty in the restoration report.
 
 ---
 
@@ -657,7 +659,7 @@ All three satisfy these invariants:
 - Step-by-step restoration simulation with per-agent service value recovery
 - Ecosystem Health Index (0.0–1.0)
 - Plain-text externality report and restoration investment report
-- Prevention advantage ratio — quantifies how much cheaper preservation is vs. destroy-then-restore
+- Restoration cost ratio (an input-price ratio) and destroy-then-restore penalty (PV social cost of cutting and restoring over not cutting)
 - **v0.3: Trophic cascade amplification** — damage propagates through the interaction network; trophic levels amplify impact; keystone species collapse triggers cascading damage
 - **v0.4: Succession-based maturation curves** — ecosystem services return through pioneer → intermediate → climax phases with configurable maturation delay
 - **v0.4: Double carbon externality** — CO₂ released from extraction + future absorption capacity permanently lost; monetized at configurable carbon price
@@ -665,17 +667,17 @@ All three satisfy these invariants:
 - **v0.4: Confidence bands** — externality estimates widen as model confidence degrades, reflecting real epistemic uncertainty
 - **v0.4: Maturation timeline** — year-by-year service recovery, carbon absorption, maturation gap (lost services during succession)
 - **v0.5: Physical substrate & derived carrying capacity** — K is no longer a fixed input but an emergent property of the physical substrate (soil depth, matte integrity). Extraction degrades substrate, which reduces K, creating a degradation spiral. Restoration is capped at the substrate ceiling. Three capacity functions (linear, threshold, logistic) encode distinct ecological dynamics.
-- **v0.5: Substrate impact reports** — extraction reports show substrate degradation trajectory (pristine K → current K, capacity lost, years to recover); restoration reports show substrate ceiling and enhanced prevention advantage including permanent capacity loss
-- **v0.6: NPV & Ramsey-based discounting** — transforms externality outputs into discounted investment cases using the Ramsey formula (r = δ + η × g). Four preconfigured profiles spanning the Stern–Nordhaus spectrum: Market (4.1%), Central (2.3%), Environmental (1.4%), and UK Green Book (declining 3.5%→2.5%). Includes scarcity uplift on ecosystem service valuations, rising carbon price trajectories, and NPV-adjusted prevention advantage with full accounting (direct + carbon + substrate).
+- **v0.5: Substrate impact reports** — extraction reports show substrate degradation trajectory (pristine K → current K, capacity lost, years to recover); restoration reports show the substrate ceiling (its permanent loss is part of the destroy-then-restore penalty)
+- **v0.6: NPV & Ramsey-based discounting** — transforms externality outputs into discounted investment cases using the Ramsey formula (r = δ + η × g). Four preconfigured profiles spanning the Stern–Nordhaus spectrum: Market (4.1%), Central (2.3%), Environmental (1.4%), and UK Green Book (declining 3.5%→2.5%). Includes scarcity uplift on ecosystem service valuations, rising carbon price trajectories, and the destroy-then-restore penalty (Step 3.7).
 - **v0.6: Carbon credit breakeven** — computes the carbon price at which restoration becomes privately profitable purely from carbon credit revenue. Reports breakeven price, gap to current EU ETS, and projected breakeven year at configured carbon price growth rate.
-- **v0.6: NPV-adjusted prevention advantage** — layered PA computation: simple (v0.2), with carbon externality, with substrate loss, and full NPV-inclusive. Scarcity uplift and rising carbon prices cause PA to increase over time, making the case for prevention stronger the further into the future you look.
+- **Step 3.7: Destroy-then-restore penalty** — replaces the three "prevention advantage" variants: PV of restoration cost + maturation gap + substrate loss + recovery shortfall + carbon not recovered, in € and per € of foregone revenue. The old headline ratio survives only as the restoration cost ratio, an input-price ratio.
 - **v0.7: Endogenous pricing** — replaces the static per-agent value with prices derived from ecosystem structure using a Leontief-Hannon input-output model: V = (I − S·W)⁻¹ · A. Prices emerge from scarcity (degraded services are worth more) and demand (services that many agents depend on command higher prices). Keystone species become the most expensive agents purely from network centrality, without manual weighting.
 - **v0.7: Dynamic per-step pricing** — prices are recomputed at each simulation step as the ecosystem degrades. A pristine mycorrhizal network has a modest price; at 30% health it becomes enormously valuable because everything depends on it and it's scarce. This matches economic reality: we don't value ecosystem services until they're degraded.
 - **v0.7: Price decomposition** — reports show per-agent price breakdown: scarcity multiplier × demand multiplier × anchor contribution, so the user can see WHY each service is priced the way it is.
 - Three ready-to-run cases, both extraction and restoration modes:
-  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%), 1 price anchor; prevention advantage **2.50×**
-  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical minimum), 2 price anchors; prevention advantage **6.08×**
-  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount, 3 price anchors, inverted economics; prevention advantage **81.00×**
+  - **Oak Valley Forest** — temperate forest, 4 agents, 8/25/60yr succession, linear substrate (45cm soil), central discount (2.3%), 1 price anchor; restoration cost ratio 2.50 (input prices)
+  - **Costa Brava Holm Oak Forest** — Mediterranean forest, 11 agents, 12/35/80yr succession, threshold substrate (30cm soil, 8cm critical minimum), 2 price anchors; restoration cost ratio 6.08 (input prices)
+  - **Costa Brava Posidonia Meadow** — marine seagrass, 11 agents, 20/50/120yr succession, logistic substrate (marine matte), declining discount, 3 price anchors, inverted economics; restoration cost ratio 81.00 (input prices)
 - 510 tests, all passing
 
 **What's coming (v0.8):**
