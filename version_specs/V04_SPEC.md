@@ -1,5 +1,13 @@
 # Gaia v0.4 — Specification: Succession, Maturation Curves & Resilience Zones
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - The carbon price per tonne (€80, configurable per profile) moved to `gaia/carbon.py`: the social cost of carbon, €166.35/t growing 1.3%/yr, with an optional market/ETS view. `CarbonProfile.carbon_price_per_tonne` and the carbon agents are gone (`4a26845`).
+> - Restoration starts from a real degraded state, not from a recovery ratio of units replanted alone (`9037b8a`). The maturation gap is a discounted PV over the discount horizon, measured against the substrate-capped mature value (`6a3feea`, `c429a9c`, `f9f3c65`).
+> - `RestorationConfig` and `Agent.succession_curve` were removed (never used) (`3867e7b`). The confidence band is labelled a heuristic (`7fd0bbb`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.4 is the version where **time becomes real**. In v0.2, restoration recovery is a function of how many units you replant — plant 50% of the trees and you recover some fraction of services. But it doesn't model *when* those services actually come back. A sapling planted today doesn't filter water tomorrow. A replanted Posidonia rhizome doesn't protect the coastline next year.

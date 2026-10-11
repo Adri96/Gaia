@@ -1,5 +1,14 @@
 # Gaia v0.1 — Specification
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - `Agent.monetary_rate` (a € total at full damage) is now `annual_value_per_ha`, a yearly flow in €/ha/yr multiplied by the required `Resource.area_ha` (`6a3feea`, `c791b6c`).
+> - `net_social_cost` was revenue − externality total; it is now PV of the externality − one-off revenue, so the sign is flipped (positive = society loses), and a yearly flow is never compared with revenue (`6a3feea`). The tests here that compared the two ("externality ≫ revenue at 80%") were removed or rewritten.
+> - The example forest rates were back-solved to produce an outcome; the cases now use per-ha values with recorded provenance (`c791b6c`, `8e349ee`).
+> - The damage-function invariants are now checked on every run, by `validate_ecosystem` (`bce41d1`). They are shape properties, not ecological validation.
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.1 is the core loop: extract trees from a forest, compute non-linear externality costs per agent, produce a text report. The simplest possible thing that embodies the Gaia thesis and produces meaningful, testable output.

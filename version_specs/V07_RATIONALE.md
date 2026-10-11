@@ -1,5 +1,11 @@
 # v0.7 — Endogenous Pricing: Design Rationale
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - "No more manual monetary rate calibration" does not hold: anchors, scarcity α, maximum multipliers and edge strengths are all set by hand, and most are placeholders. Endogenous pricing is quarantined (decision D4, `aa17792`) and its outputs are labelled EXPERIMENTAL.
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## The question that started this
 
 > In the end, the price is just an equilibrium point for offer and demand. I'm not sure if we could, with the ecosystem information, "solve" a certain system of unknowns to find the right price value for each thing.

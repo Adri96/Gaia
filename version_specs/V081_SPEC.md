@@ -1,5 +1,12 @@
 # Gaia v0.8.1 — I/O Flexibility
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - JSON money keys carry unit suffixes (`_eur_yr`, `_eur_pv`, `_eur`, ...) and several keys were renamed (`6a3feea` and later). The prevention-advantage keys are gone (`f9f3c65`), and the pricing keys are now `spectral_radius_bound`, `convergence_check`, `experimental`, `status` and `note` (`aa17792`). Output is strict JSON, with `<key>_null_reason` for non-finite values (`bce41d1`). Every output starts with a `calibration` block (`8e349ee`).
+> - Deprecated flag aliases warn with `FutureWarning`. Restoration-only flags are detected from the parsed arguments. Above 10,000 steps the JSON is summary-only unless `--steps-every N` is given (`61c1dd7`). A `gaia <case>` command exists (`5974aca`). Restore mode also takes `--units-lost` (`9037b8a`), and every case takes `--area-ha` and `--carbon-price` (`c791b6c`, `4a26845`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.8.1 improves CLI ergonomics and adds structured JSON output for programmatic consumption. All changes are backward-compatible: existing CLI invocations continue to work via deprecated aliases, and the default output format remains human-readable text.

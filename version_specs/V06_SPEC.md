@@ -1,5 +1,14 @@
 # Gaia v0.6 — NPV, Discounting & Carbon Credit Breakeven
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - Configurations whose scarcity rate or carbon-price growth is not strictly below the discount rate are rejected, and the case scarcity rates were lowered: Costa Brava and Amazon to 1.28%, Posidonia to 1% (`9d3eea1`).
+> - Year convention: yearly flows are valued at the end of years 1..H, not 0..H−1 (the off-by-one). PVs are also reported at 50/100/200-year horizons (`9d3eea1`).
+> - Carbon is priced at the social cost of carbon (€166.35/t, +1.3%/yr), not €80 growing 2–4% (`4a26845`). The substrate annuity is no longer added to the extraction PV (`c429a9c`).
+> - `PreventionAdvantageV06` and every prevention-advantage ratio are gone, replaced by `restoration_cost_ratio` (an input-price ratio) and `destroy_then_restore_penalty` (`f9f3c65`). The per-step discount fields were removed (`3867e7b`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Goal
 
 Introduce proper time-value-of-money economics to Gaia. All monetary values — extraction costs, restoration investments, ecosystem service flows, carbon externalities, substrate damage — become discountable to present value. A new carbon credit breakeven analysis answers: *"At what carbon price does restoration become privately profitable?"*

@@ -1,5 +1,12 @@
 # Gaia v0.7 — Specification: Endogenous Pricing (Equilibrium-Derived Monetary Values)
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - Endogenous pricing is quarantined and labelled EXPERIMENTAL (decision D4, `aa17792`). The power-iteration spectral-radius estimate is replaced by certified convergence bounds. `fallback_to_static` and the scarcity-scaling fallback are gone: a step that cannot be certified raises `PricingConvergenceError`. Every agent must be anchored, and undocumented agents get a placeholder anchor.
+> - No anchor contains carbon any more, and the carbon anchors described here were removed (`4a26845`). `monetary_rate` is now `annual_value_per_ha` (€/ha/yr × area) (`6a3feea`, `c791b6c`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.7 is the version where prices become outputs instead of inputs. In v0.1–v0.6, every agent has a `monetary_rate` — a static number calibrated by hand from published studies, expert estimates, and regional data. These numbers are defensible, but they're judgment calls. Someone decided "mycorrhizal fungi are worth €400k max" and "watershed services are worth €500k max."
