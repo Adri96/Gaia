@@ -146,14 +146,13 @@ def horizon_variants(discount: DiscountConfig) -> dict:
     """
     variants: dict = {}
     for horizon in SENSITIVITY_HORIZONS:
-        config: Optional[DiscountConfig] = dataclasses.replace(
-            discount, horizon_years=horizon
-        )
+        config: DiscountConfig = dataclasses.replace(discount, horizon_years=horizon)
         try:
             validate_discount_config(config)
         except ValueError:
-            config = None
-        variants[horizon] = config
+            variants[horizon] = None
+        else:
+            variants[horizon] = config
     return variants
 
 

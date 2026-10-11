@@ -10,9 +10,7 @@ check for ecological plausibility. They verify:
     - Report generation and content
 """
 
-import pytest
 from gaia.cases.costa_brava import build_costa_brava_ecosystem, run_costa_brava
-from gaia.damage import logistic_damage
 from gaia.report import format_report
 from gaia.simulation import run_extraction
 
@@ -188,12 +186,7 @@ def test_costa_brava_fire_regulation_uses_exponential():
 
     # At 80% depletion, compare exponential vs logistic with same threshold
     depletion = 0.80
-    exponential_damage = carbon_agent.damage_function(depletion)
-    logistic_fn = logistic_damage(threshold=THRESHOLD, steepness=12.0)
-    logistic_damage_val = logistic_fn(depletion)
 
-    # At 80%, exponential should be lower than logistic (which is near saturation)
-    # Actually exponential grows more slowly initially but doesn't plateau.
     # The key test is that the carbon agent uses a DIFFERENT function than the others.
     # We verify this by checking the damage values differ from a logistic with same params.
     other_agent = next(a for a in eco.agents if "Carbon" not in a.name)

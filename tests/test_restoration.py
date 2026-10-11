@@ -507,7 +507,7 @@ def test_substrate_caps_recovery_once():
     assert 0.0 < c < 1.0
     assert with_soil.annual_recovered_value == pytest.approx(
         c * no_soil.annual_recovered_value, rel=1e-12)
-    for a, b in zip(with_soil.maturation_timeline, no_soil.maturation_timeline):
+    for a in with_soil.maturation_timeline:
         s = succession_service(_FOREST_SUCCESSION, float(a.year))
         assert a.annual_service_value == pytest.approx(
             no_soil.annual_recovered_value * min(s, c), rel=1e-12)

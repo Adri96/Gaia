@@ -268,7 +268,7 @@ class TestToJson:
         json_str = to_json(result, indent=4, include_steps=False)
         # 4-space indent means lines start with "    "
         lines = json_str.split("\n")
-        indented = [l for l in lines if l.startswith("    ")]
+        indented = [line for line in lines if line.startswith("    ")]
         assert len(indented) > 0
 
 

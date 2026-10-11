@@ -31,17 +31,19 @@ DiscountConfig.
 """
 
 import hashlib
+import importlib
 import math
 import os
 import warnings
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from gaia.carbon import compute_carbon_release
 from gaia.damage import evaluate_kernel
 from gaia.models import (
-    Agent,
     Ecosystem,
+    ExtractionNPV,
+    PricingConfig,
     RestorationCost,
     RestorationResult,
     RestorationStep,
@@ -100,7 +102,7 @@ def _load_cython_loop(module=None, pyx_path: Path = _PYX_PATH) -> Optional[Calla
         return None
     if module is None:
         try:
-            from gaia.cy import simulation_cy as module
+            module = importlib.import_module("gaia.cy.simulation_cy")
         except ImportError:
             return None
     if pyx_path.is_file():
@@ -182,6 +184,9 @@ def _run_extraction_cython(
     calls the C-typed loop, then wraps results back into SimulationStep
     dataclasses.
     """
+    loop = extraction_loop_cy
+    if loop is None:
+        raise RuntimeError("the Cython extension is not available")
     resource = ecosystem.resource
     agents = ecosystem.agents
     n_agents = len(agents)
@@ -234,7 +239,7 @@ def _run_extraction_cython(
     sub_cap_fn = sub.capacity_function if sub else "linear"
 
     # Call the Cython loop
-    raw_steps = extraction_loop_cy(
+    raw_steps = loop(
         n_agents=n_agents,
         n_edges=n_edges,
         total_units=total_units,
@@ -358,7 +363,7 @@ def _extraction_result(
         health = 1.0
         substrate_ceiling = 1.0
 
-    def pv_externality(config) -> float:
+    def pv_externality(config) -> ExtractionNPV:
         return compute_extraction_npv(
             annual_externality=annual_externality,
             discount=config,
@@ -532,19 +537,19 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     # Short-circuit flags: skip phases when not needed
     has_trophic: bool = any(lvl >= 1 for lvl in agent_trophic_levels)
     has_interactions: bool = len(interactions) > 0
-    has_resilience: bool = resource.resilience is not None
 
     # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
     annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
 
     # v0.7: Endogenous pricing (experimental, D4)
-    has_pricing: bool = ecosystem.pricing is not None
+    pricing: Optional[PricingConfig] = ecosystem.pricing
+    has_pricing: bool = pricing is not None
 
     # v0.5: Initialize substrate state if profile is configured
     has_substrate: bool = resource.substrate is not None
     substrate_state: Optional[SubstrateState] = None
     time_per_step: float = 0.0
-    if has_substrate:
+    if resource.substrate is not None:
         substrate_state = create_substrate_state(resource.substrate)
         # Default: total extraction takes ~1 year
         time_per_step = 1.0 / units_to_extract if units_to_extract > 0 else 0.0
@@ -590,7 +595,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         step_price_result = None
         step_agent_prices: list = []
 
-        if has_pricing:
+        if pricing is not None:
             from gaia.pricing import PricingConvergenceError, solve_prices
             # Agent health = 1.0 - effective_damage
             agent_healths_dict: dict = {}
@@ -607,7 +612,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
                     agent_names=agent_names,
                     agent_healths=agent_healths_dict,
                     interactions=interactions,
-                    pricing=ecosystem.pricing,
+                    pricing=pricing,
                 )
             except PricingConvergenceError as exc:
                 raise _pricing_failure(exc, step, total_units) from exc
@@ -654,7 +659,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         step_zone: str = "green"
         step_confidence: float = 1.0
         step_irreversibility: bool = False
-        if has_resilience:
+        if resource.resilience is not None:
             remaining_frac: float = 1.0 - depletion_ratio
             step_zone, step_confidence, step_irreversibility = (
                 compute_resilience_zone(

@@ -7,7 +7,6 @@ These tests verify that the new v0.4 features work correctly when used
 through the simulation engine, not just as standalone modules.
 """
 
-import pytest
 
 from gaia.cases.forest import build_forest_ecosystem
 from gaia.models import RestorationCost, SuccessionCurve

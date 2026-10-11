@@ -22,10 +22,9 @@ Follows the 14 testing requirements from the v0.5 spec:
    15-17. Capacity function tests (linear, threshold, logistic)
 """
 
-import math
 import pytest
 
-from gaia.models import SubstrateProfile, SubstrateState, SubstrateType
+from gaia.models import SubstrateProfile, SubstrateType
 from gaia.substrate import (
     _BULK_DENSITY_KG_M3,
     _T_HA_TO_MM_FACTOR,

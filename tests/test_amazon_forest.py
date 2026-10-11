@@ -25,7 +25,6 @@ from gaia.cases.amazon_forest import (
     build_amazon_ecosystem,
     run_amazon,
 )
-from gaia.damage import logistic_damage
 from gaia.propagation import keystone_boosted_strength
 from gaia.report import format_report
 from gaia.simulation import run_extraction

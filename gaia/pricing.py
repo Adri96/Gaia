@@ -406,11 +406,11 @@ def solve_linear_system(
         # Find pivot row (largest absolute value in column)
         max_val: float = abs(aug[col][col])
         max_row: int = col
-        for row in range(col + 1, n):
-            val: float = abs(aug[row][col])
+        for r in range(col + 1, n):
+            val: float = abs(aug[r][col])
             if val > max_val:
                 max_val = val
-                max_row = row
+                max_row = r
 
         if max_val < 1e-15:
             raise ValueError(
@@ -424,10 +424,10 @@ def solve_linear_system(
 
         # Eliminate below
         pivot: float = aug[col][col]
-        for row in range(col + 1, n):
-            factor: float = aug[row][col] / pivot
+        for r in range(col + 1, n):
+            factor: float = aug[r][col] / pivot
             for j in range(col, n + 1):
-                aug[row][j] -= factor * aug[col][j]
+                aug[r][j] -= factor * aug[col][j]
 
     # Back substitution
     x: List[float] = [0.0] * n

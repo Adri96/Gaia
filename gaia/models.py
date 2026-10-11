@@ -28,7 +28,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 

@@ -15,16 +15,12 @@ and the destroy-then-restore penalty. Covers eight categories:
     8. One year convention (flows at the end of years 1..H)
 """
 
-import math
 import pytest
 
 from gaia.models import (
-    CarbonBreakeven,
     CarbonProfile,
     DiscountConfig,
     DestroyThenRestorePenalty,
-    ExtractionNPV,
-    RestorationNPV,
     SuccessionCurve,
 )
 from gaia.discount import (

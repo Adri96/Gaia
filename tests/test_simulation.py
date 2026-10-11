@@ -8,7 +8,7 @@ and mathematical invariants defined in the spec. They use simple ecosystems
 
 import math
 import pytest
-from gaia.damage import logistic_damage, piecewise_damage
+from gaia.damage import logistic_damage
 from gaia.discount import DEFAULT_DISCOUNT, compute_extraction_npv
 from gaia.models import (
     Agent,
@@ -17,7 +17,6 @@ from gaia.models import (
     Ecosystem,
     InteractionEdge,
     Resource,
-    SimulationResult,
 )
 from gaia.simulation import run_extraction
 

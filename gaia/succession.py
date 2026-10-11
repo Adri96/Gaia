@@ -18,6 +18,8 @@ No third-party dependencies.
 Scientific foundations used: F8 (Ecological Succession & Climax State).
 """
 
+from typing import Optional
+
 from gaia.models import CarbonProfile, DiscountConfig, MaturationStep, SuccessionCurve
 
 
@@ -126,7 +128,7 @@ def compute_maturation_timeline(
     max_recovered_value: float,
     time_horizon_years: int,
     units_restored: int,
-    carbon_profile: CarbonProfile = None,
+    carbon_profile: Optional[CarbonProfile] = None,
     substrate_ceiling: float = 1.0,
 ) -> list:
     """Produce a year-by-year maturation timeline.

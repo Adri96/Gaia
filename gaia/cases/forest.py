@@ -70,7 +70,7 @@ CLI usage:
 
 import argparse
 import sys
-from typing import Optional
+from typing import List, Optional, Union
 
 from gaia.cli import (
     add_common_arguments,
@@ -92,9 +92,11 @@ from gaia.models import (
     InteractionEdge,
     PricingConfig,
     ResilienceConfig,
-    RestorationCost,
     Resource,
+    RestorationCost,
+    RestorationResult,
     ScarcityFunction,
+    SimulationResult,
     SubstrateProfile,
     SuccessionCurve,
 )
@@ -408,7 +410,7 @@ def run_forest_restoration(
     return format_restoration_report(result)
 
 
-def _parse_args(argv: list = None) -> argparse.Namespace:
+def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Gaia v0.8.1 — Oak Valley Forest externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -476,7 +478,7 @@ def _parse_args(argv: list = None) -> argparse.Namespace:
     return args
 
 
-def main(argv: list = None) -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     args = _parse_args(argv)
     warn_unused_restoration_args(args)
     drop_pricing_in_restore_mode(args)
@@ -489,6 +491,7 @@ def main(argv: list = None) -> None:
             area_ha=args.area_ha,
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
+        result: Union[SimulationResult, RestorationResult]
         if args.mode == "restore":
             cost = RestorationCost(
                 planting_cost_per_unit=args.planting_cost,
@@ -499,7 +502,7 @@ def main(argv: list = None) -> None:
                 logistic_recovery(threshold=args.threshold)
                 for _ in ecosystem.agents
             ]
-            result = run_restoration(
+            restored = run_restoration(
                 ecosystem, args.units, cost, recovery_fns,
                 units_lost=args.units_lost,
                 succession_curve=(
@@ -507,10 +510,12 @@ def main(argv: list = None) -> None:
                 ),
                 time_horizon_years=args.time_horizon,
             )
-            text_report = format_restoration_report(result)
+            text_report = format_restoration_report(restored)
+            result = restored
         else:
-            result = run_extraction(ecosystem, args.units)
-            text_report = format_report(result)
+            extracted = run_extraction(ecosystem, args.units)
+            text_report = format_report(extracted)
+            result = extracted
         output_result(text_report, result, args)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)

@@ -13,11 +13,9 @@ ecological plausibility. They verify:
 
 import pytest
 from gaia.cases.posidonia import (
-    _ANNUAL_NOTE,
     build_posidonia_ecosystem,
     run_posidonia,
 )
-from gaia.report import format_report
 from gaia.simulation import run_extraction
 
 
@@ -229,10 +227,6 @@ def test_posidonia_carbon_valued_by_carbon_profile_only():
 
 def test_posidonia_report_generates():
     """The report produces a non-empty string with key fields and the annual note."""
-    eco = build_posidonia_ecosystem(
-        total_hectares=TOTAL_HECTARES, safe_threshold_ratio=THRESHOLD
-    )
-    result = run_extraction(eco, 2_000)
     # run_posidonia appends the annual note; format_report alone does not
     report = run_posidonia(
         total_hectares=TOTAL_HECTARES,

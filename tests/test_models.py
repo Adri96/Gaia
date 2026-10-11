@@ -89,7 +89,7 @@ def test_agent_monetary_rate_removed():
     agent = Agent(name="A", dependency_weight=1.0, damage_function=fn,
                   annual_value_per_ha=1.0, description="")
     with pytest.raises(AttributeError, match="annual_value_per_ha"):
-        agent.monetary_rate
+        _ = agent.monetary_rate
 
 
 def test_agent_damage_function_is_callable():

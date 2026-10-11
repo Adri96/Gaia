@@ -27,7 +27,14 @@ v0.7: Price Decomposition section in extraction report
 """
 
 from gaia.carbon import carbon_price_label
-from gaia.models import Agent, Ecosystem, RestorationResult, Resource, SimulationResult
+from gaia.models import (
+    Agent,
+    Ecosystem,
+    RestorationCost,
+    RestorationResult,
+    Resource,
+    SimulationResult,
+)
 
 # Report width (characters)
 _WIDTH: int = 63
@@ -165,14 +172,14 @@ def format_report(result: SimulationResult) -> str:
     lines.append("")
 
     # Private gains
-    lines.append(f"  \u2500\u2500 Private Gains \u2500" + "\u2500" * 46)
+    lines.append("  \u2500\u2500 Private Gains \u2500" + "\u2500" * 46)
     lines.append(
         f"  {'Revenue:':<40} {result.revenue:>14,.2f}\u20ac (one-off)"
     )
     lines.append("")
 
     # Externalized costs (yearly flows)
-    lines.append(f"  \u2500\u2500 Annual Externalized Costs \u2500" + "\u2500" * 34)
+    lines.append("  \u2500\u2500 Annual Externalized Costs \u2500" + "\u2500" * 34)
 
     agent: Agent
     for i, agent in enumerate(agents):
@@ -216,7 +223,7 @@ def format_report(result: SimulationResult) -> str:
                     keystone_crossings[kname] = s.step
         if keystone_crossings:
             lines.append(
-                f"  \u2500\u2500 Keystone Threshold Crossings \u2500" + "\u2500" * 31
+                "  \u2500\u2500 Keystone Threshold Crossings \u2500" + "\u2500" * 31
             )
             for kname, kstep in sorted(keystone_crossings.items(), key=lambda x: x[1]):
                 depletion_at_cross: float = kstep / resource.total_units
@@ -256,7 +263,7 @@ def format_report(result: SimulationResult) -> str:
     # v0.4: Resilience Assessment
     if result.steps and result.steps[-1].resilience_zone != "green":
         lines.append("")
-        lines.append(f"  \u2500\u2500 Resilience Assessment \u2500" + "\u2500" * 38)
+        lines.append("  \u2500\u2500 Resilience Assessment \u2500" + "\u2500" * 38)
         final_step = result.steps[-1]
         zone_label = final_step.resilience_zone.upper()
         zone_symbol = {
@@ -286,7 +293,7 @@ def format_report(result: SimulationResult) -> str:
                 )
                 prev_zone = s.resilience_zone
         if transitions:
-            lines.append(f"  Zone transitions:")
+            lines.append("  Zone transitions:")
             for t in transitions:
                 lines.append(f"    {t}")
 
@@ -305,7 +312,7 @@ def format_report(result: SimulationResult) -> str:
                     f"({depl_pct:.0f}% depletion)"
                 )
                 lines.append(
-                    f"    Ecosystem damage may be partially irreversible."
+                    "    Ecosystem damage may be partially irreversible."
                 )
 
     # v0.4: Carbon Accounting — every figure comes from extraction_npv
@@ -314,7 +321,7 @@ def format_report(result: SimulationResult) -> str:
     if (resource.carbon_profile is not None and result.total_units_extracted > 0
             and npv_c is not None):
         lines.append("")
-        lines.append(f"  \u2500\u2500 Carbon Accounting \u2500" + "\u2500" * 42)
+        lines.append("  \u2500\u2500 Carbon Accounting \u2500" + "\u2500" * 42)
         lines.append(
             f"  {'Carbon released (biomass+soil):':<40} "
             f"{npv_c.carbon_released_t:>10,.0f} t CO\u2082"
@@ -342,7 +349,7 @@ def format_report(result: SimulationResult) -> str:
         lower, upper = result.annual_externality_band
         lines.append("")
         lines.append(
-            f"  \u2500\u2500 Externality Band (heuristic) \u2500" + "\u2500" * 31
+            "  \u2500\u2500 Externality Band (heuristic) \u2500" + "\u2500" * 31
         )
         lines.append(
             f"  {'Annual Externality:':<40} {result.annual_externality:>14,.2f}\u20ac/yr"
@@ -361,7 +368,7 @@ def format_report(result: SimulationResult) -> str:
         if final_step.k_fraction < 1.0:
             lines.append("")
             lines.append(
-                f"  \u2500\u2500 Substrate Impact Assessment \u2500" + "\u2500" * 31
+                "  \u2500\u2500 Substrate Impact Assessment \u2500" + "\u2500" * 31
             )
             sub = resource.substrate
             lines.append(
@@ -433,7 +440,7 @@ def format_report(result: SimulationResult) -> str:
             lines.append(f"    ({carbon_price_label(discount)})")
 
         lines.append("")
-        lines.append(f"  Externality present value (\u20ac PV at year 0):")
+        lines.append("  Externality present value (\u20ac PV at year 0):")
         lines.append(
             f"    {'Ecosystem services (annual flow):':<36} "
             f"\u20ac{npv.direct:>14,.0f}"
@@ -467,7 +474,7 @@ def format_report(result: SimulationResult) -> str:
             pr = final_step.price_result
             lines.append("")
             lines.append(
-                f"  \u2500\u2500 Price Decomposition (v0.7 endogenous, EXPERIMENTAL) \u2500"
+                "  \u2500\u2500 Price Decomposition (v0.7 endogenous, EXPERIMENTAL) \u2500"
                 + "\u2500" * 7
             )
             method: str = (
@@ -527,7 +534,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     ecosystem: Ecosystem = result.ecosystem
     resource: Resource = ecosystem.resource
     agents: list = ecosystem.agents
-    cost: object = result.restoration_cost
+    cost: RestorationCost = result.restoration_cost
 
     restoration_ratio: float = (
         result.total_units_restored / resource.total_units
@@ -576,7 +583,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.append("")
 
     # Restoration cost breakdown
-    lines.append(f"  \u2500\u2500 Restoration Costs \u2500" + "\u2500" * 42)
+    lines.append("  \u2500\u2500 Restoration Costs \u2500" + "\u2500" * 42)
     lines.append(
         f"  {'Planting cost/unit:':<40} {cost.planting_cost_per_unit:>10,.2f}\u20ac"
     )
@@ -595,7 +602,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.append("")
 
     # Recovered ecosystem services (yearly flows at full maturity)
-    lines.append(f"  \u2500\u2500 Recovered Ecosystem Services \u2500" + "\u2500" * 31)
+    lines.append("  \u2500\u2500 Recovered Ecosystem Services \u2500" + "\u2500" * 31)
 
     agent: Agent
     for i, agent in enumerate(agents):
@@ -629,7 +636,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     lines.append("")
 
     # Restoration cost ratio: an input-price ratio, not a finding
-    lines.append(f"  \u2500\u2500 Restoration Cost Ratio \u2500" + "\u2500" * 37)
+    lines.append("  \u2500\u2500 Restoration Cost Ratio \u2500" + "\u2500" * 37)
     if result.restoration_cost_ratio is not None:
         lines.append(
             f"  {'(Revenue + restoration cost) / revenue:':<40} "
@@ -649,7 +656,7 @@ def format_restoration_report(result: RestorationResult) -> str:
     # v0.4: Maturation Timeline
     if result.maturation_timeline:
         lines.append("")
-        lines.append(f"  \u2500\u2500 Maturation Timeline \u2500" + "\u2500" * 40)
+        lines.append("  \u2500\u2500 Maturation Timeline \u2500" + "\u2500" * 40)
         lines.append(
             f"  {'Years to first services:':<40} "
             f"{result.years_to_pioneer:>10.0f} years"
@@ -664,25 +671,25 @@ def format_restoration_report(result: RestorationResult) -> str:
         )
 
         lines.append("")
-        lines.append(f"  \u2500\u2500 Maturation Gap \u2500" + "\u2500" * 45)
+        lines.append("  \u2500\u2500 Maturation Gap \u2500" + "\u2500" * 45)
         lines.append(
             f"  {'Lost services during maturation:':<40} "
             f"{result.maturation_gap_pv:>14,.2f}\u20ac (PV)"
         )
         lines.append(
-            f"  (discounted services not delivered while succession proceeds,"
+            "  (discounted services not delivered while succession proceeds,"
         )
         lines.append(
             f"   over the {result.restoration_npv.horizon}-year NPV horizon)"
             if result.restoration_npv is not None else
-            f"   over the NPV horizon)"
+            "   over the NPV horizon)"
         )
 
     # v0.4: Carbon Recovery
     if (result.maturation_timeline
             and ecosystem.resource.carbon_profile is not None):
         lines.append("")
-        lines.append(f"  \u2500\u2500 Carbon Recovery \u2500" + "\u2500" * 44)
+        lines.append("  \u2500\u2500 Carbon Recovery \u2500" + "\u2500" * 44)
         final_mat = result.maturation_timeline[-1]
         co2_label = "Cumulative CO\u2082 absorbed:"
         lines.append(
@@ -697,14 +704,14 @@ def format_restoration_report(result: RestorationResult) -> str:
     if resource.substrate is not None and result.substrate_ceiling < 1.0:
         lines.append("")
         lines.append(
-            f"  \u2500\u2500 Substrate Restoration Ceiling \u2500" + "\u2500" * 29
+            "  \u2500\u2500 Substrate Restoration Ceiling \u2500" + "\u2500" * 29
         )
         ceiling_pct: float = result.substrate_ceiling * 100
         lines.append(
             f"  {'Max recoverable services:':<40} {ceiling_pct:>10.1f}% of pristine"
         )
         lines.append(
-            f"  Biological restoration capped at substrate ceiling."
+            "  Biological restoration capped at substrate ceiling."
         )
         if result.substrate_recovery_years > 0:
             lines.append(
@@ -762,7 +769,7 @@ def format_restoration_report(result: RestorationResult) -> str:
         cb = result.carbon_breakeven
         lines.append("")
         lines.append(
-            f"  \u2500\u2500 Carbon Credit Breakeven \u2500" + "\u2500" * 36
+            "  \u2500\u2500 Carbon Credit Breakeven \u2500" + "\u2500" * 36
         )
         lines.append(
             f"  {'Breakeven price:':<40} "

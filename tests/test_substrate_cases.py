@@ -12,7 +12,6 @@ Integration test requirements:
     - Backward compatibility: no substrate → identical v0.4 behavior
 """
 
-import pytest
 
 from gaia.damage import logistic_damage
 from gaia.models import (
