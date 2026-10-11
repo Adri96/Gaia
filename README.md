@@ -205,6 +205,20 @@ Python 3.9+ with no third-party dependencies required (stdlib only). For tests, 
 pip install pytest
 ```
 
+Install the package and the `gaia` command (`gaia <case> [options]`, same as
+`python -m gaia <case>` and `python -m gaia.cases.<case>`):
+
+```bash
+pip install .                                   # pure-Python engine
+pip install "Cython>=3.0" && pip install --no-build-isolation -e .   # with the compiled loop
+gaia forest --trees 10000 --units 5000
+```
+
+Cython is optional: without it (or without a C compiler) the build still
+succeeds and the pure-Python loop is used. Lint and types: `ruff check gaia
+tests scripts` and `mypy` (configured in `pyproject.toml`); CI runs both plus
+the suite on Python 3.9–3.12, with and without the extension.
+
 ### CLI — Forest Deforestation Case
 
 ```bash

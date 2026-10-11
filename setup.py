@@ -1,19 +1,21 @@
 """
-Gaia build configuration.
+Gaia build configuration (metadata lives in pyproject.toml).
 
 Builds the optional Cython extension for the simulation loop.
-If Cython is not installed, the build is skipped and Gaia falls back
-to the pure-Python simulation loop automatically.
+If Cython is not installed, or the extension fails to compile, the build
+still succeeds and Gaia falls back to the pure-Python simulation loop
+automatically. The version is read from gaia/__init__.py.
 
 Usage:
-    python setup.py build_ext --inplace
+    python3 setup.py build_ext --inplace
+    pip install --no-build-isolation -e .   # with Cython installed
 """
 
 import hashlib
 import re
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def _read_version() -> str:
@@ -57,16 +59,18 @@ try:
             "language_level": "3",
         },
     )
+    # A compiler failure must not fail the install: the Python loop is a
+    # complete fallback (gaia.simulation._load_cython_loop).
+    for _ext in ext_modules:
+        _ext.optional = True
 except ImportError:
     ext_modules = []
     print("Cython not found — building without C extensions.")
     print("The pure-Python simulation loop will be used instead.")
 
+# Name, packages and the rest of the metadata: pyproject.toml. The version
+# is "dynamic" there and supplied here.
 setup(
-    name="gaia",
     version=_read_version(),
-    description="Gaia — Externality Computation Framework",
-    packages=find_packages(),
     ext_modules=ext_modules,
-    python_requires=">=3.9",
 )

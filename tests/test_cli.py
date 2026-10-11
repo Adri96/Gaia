@@ -362,3 +362,53 @@ class TestUnitsLost:
         with pytest.warns(UserWarning, match="--units-lost is only used in restore mode"):
             forest_main(argv)
         capsys.readouterr()
+
+
+# ── The gaia command (console script / python -m gaia) ───────────────────────
+
+
+class TestGaiaCommand:
+    def test_no_arguments_prints_usage(self, capsys):
+        from gaia.cli import main
+        assert main([]) == 2
+        assert "usage: gaia <case>" in capsys.readouterr().out
+
+    def test_version(self, capsys):
+        import gaia
+        from gaia.cli import main
+        assert main(["--version"]) == 0
+        assert capsys.readouterr().out.strip() == f"Gaia {gaia.__version__}"
+
+    def test_dispatches_to_case(self, capsys):
+        from gaia.cli import main
+        assert main(["forest", "--trees", "100", "--units", "30",
+                     "--format", "json", "--summary-only"]) == 0
+        d = json.loads(capsys.readouterr().out)
+        assert d["ecosystem"]["name"] == "Oak Valley Forest"
+        assert d["summary"]["total_units_extracted"] == 30
+
+    @pytest.mark.parametrize("alias", ["costa-brava", "amazon", "amazon-forest"])
+    def test_aliases(self, alias, capsys):
+        from gaia.cli import main
+        assert main([alias, "--trees", "1000", "--units", "10",
+                     "--format", "json", "--summary-only"]) == 0
+        assert json.loads(capsys.readouterr().out)["mode"] == "extraction"
+
+    def test_unknown_case(self, capsys):
+        from gaia.cli import main
+        assert main(["moon"]) == 2
+        assert "unknown case 'moon'" in capsys.readouterr().err
+
+    def test_case_error_is_exit_status_1(self, capsys):
+        from gaia.cli import main
+        assert main(["forest", "--trees", "100", "--units", "500"]) == 1
+        assert "exceeds" in capsys.readouterr().err
+
+    def test_python_dash_m_gaia(self):
+        import subprocess
+        import sys
+
+        import gaia
+        out = subprocess.run([sys.executable, "-m", "gaia", "--version"],
+                             capture_output=True, text=True, check=True)
+        assert out.stdout.strip() == f"Gaia {gaia.__version__}"

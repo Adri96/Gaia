@@ -1,8 +1,10 @@
 """
-Gaia v0.8.1 — Shared CLI utilities.
+Gaia — Shared CLI utilities and the ``gaia`` command.
 
 Provides common argument definitions used across all case files,
-deprecation handling, and output routing (text vs JSON).
+deprecation handling, and output routing (text vs JSON), plus ``main``:
+the ``gaia`` console script and ``python -m gaia``, a thin dispatcher
+``gaia <case> [args]`` that forwards to the case module's ``main(argv)``.
 """
 
 import argparse
@@ -259,3 +261,67 @@ def output_result(
             f.write("\n")
     else:
         print(output)
+
+
+# ── The ``gaia`` command ──────────────────────────────────────────────────────
+
+# Case name on the command line → module in gaia.cases (each has main(argv)).
+CASES = {
+    "forest": "forest",
+    "costa_brava": "costa_brava",
+    "posidonia": "posidonia",
+    "amazon_forest": "amazon_forest",
+}
+_CASE_ALIASES = {
+    "costa-brava": "costa_brava",
+    "amazon": "amazon_forest",
+    "amazon-forest": "amazon_forest",
+}
+
+_USAGE = (
+    "usage: gaia <case> [options]\n"
+    "       gaia <case> --help\n"
+    "       gaia --version\n"
+    "\n"
+    "Cases: " + ", ".join(CASES) + "\n"
+    "\n"
+    "Each case takes the same options as python -m gaia.cases.<case>.\n"
+)
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Entry point of ``gaia`` and ``python -m gaia``: ``gaia <case> [args]``.
+
+    Forwards ``args`` to ``gaia.cases.<case>.main``. Returns the exit
+    status (0 on success; 2 for an unknown case, as argparse does).
+    """
+    import importlib
+
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in ("-h", "--help"):
+        print(_USAGE, end="")
+        return 0 if args else 2
+    if args[0] == "--version":
+        print(f"Gaia {__version__}")
+        return 0
+    name = _CASE_ALIASES.get(args[0], args[0])
+    if name not in CASES:
+        print(_USAGE, end="", file=sys.stderr)
+        print(f"gaia: error: unknown case {args[0]!r}", file=sys.stderr)
+        return 2
+    module = importlib.import_module(f"gaia.cases.{CASES[name]}")
+    try:
+        module.main(args[1:])
+    except SystemExit as exc:
+        code = exc.code
+        if code is None:
+            return 0
+        if isinstance(code, int):
+            return code
+        print(code, file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
