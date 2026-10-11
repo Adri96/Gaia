@@ -214,6 +214,11 @@ pip install "Cython>=3.0" && pip install --no-build-isolation -e .   # with the 
 gaia forest --trees 10000 --units 5000
 ```
 
+JSON output (`--format json`) includes per-step data up to 10,000 steps; above
+that it is summary-only by default (with a warning). `--steps-every N` keeps
+every Nth step and the last (`--steps-every 1`: all), `--summary-only` none.
+Non-finite numbers are written as `null` with a `<key>_null_reason`.
+
 Cython is optional: without it (or without a C compiler) the build still
 succeeds and the pure-Python loop is used. Lint and types: `ruff check gaia
 tests scripts` and `mypy` (configured in `pyproject.toml`); CI runs both plus

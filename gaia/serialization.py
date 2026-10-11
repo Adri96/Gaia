@@ -424,15 +424,33 @@ def _strict(obj: Any) -> Any:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
+def _sampled(steps: list, every: int) -> list:
+    """Every ``every``-th step (steps every, 2·every, ...) plus the last one."""
+    if every <= 1:
+        return list(steps)
+    picked = [s for i, s in enumerate(steps, start=1) if i % every == 0]
+    if steps and (not picked or picked[-1] is not steps[-1]):
+        picked.append(steps[-1])
+    return picked
+
+
+def _validate_steps_every(steps_every: int) -> None:
+    if isinstance(steps_every, bool) or not isinstance(steps_every, int) or steps_every < 1:
+        raise ValueError(f"steps_every must be an integer >= 1, got {steps_every!r}")
+
+
 def simulation_result_to_dict(
     result: SimulationResult,
     include_steps: bool = True,
+    steps_every: int = 1,
 ) -> Dict[str, Any]:
     """Convert a SimulationResult to a JSON-serializable dict.
 
     Args:
         result: Completed SimulationResult from run_extraction().
         include_steps: If True (default), include per-step data array.
+        steps_every: Include every Nth step and the last (default 1: all);
+            the output then carries "steps_every": N.
 
     Returns:
         A dict ready for json.dumps().
@@ -478,9 +496,12 @@ def simulation_result_to_dict(
             agents, result.agent_cascade_annual_costs,
         )
 
+    _validate_steps_every(steps_every)
     if include_steps:
+        d["steps_every"] = steps_every
         d["steps"] = [
-            _simulation_step_to_dict(s, agents) for s in result.steps
+            _simulation_step_to_dict(s, agents)
+            for s in _sampled(result.steps, steps_every)
         ]
 
     substrate = _extraction_substrate(result)
@@ -506,12 +527,14 @@ def restoration_result_to_dict(
     result: RestorationResult,
     include_steps: bool = True,
     notes: Optional[List[str]] = None,
+    steps_every: int = 1,
 ) -> Dict[str, Any]:
     """Convert a RestorationResult to a JSON-serializable dict.
 
     Args:
         result: Completed RestorationResult from run_restoration().
         include_steps: If True (default), include per-step data array.
+        steps_every: Include every Nth step and the last (default 1: all).
         notes: Optional list of annotation strings (e.g. marine annual note).
 
     Returns:
@@ -567,9 +590,12 @@ def restoration_result_to_dict(
             agents, result.steps[-1].agent_service_values,
         )
 
+    _validate_steps_every(steps_every)
     if include_steps:
+        d["steps_every"] = steps_every
         d["steps"] = [
-            _restoration_step_to_dict(s, agents) for s in result.steps
+            _restoration_step_to_dict(s, agents)
+            for s in _sampled(result.steps, steps_every)
         ]
 
     # Maturation timeline (v0.4)
@@ -622,6 +648,7 @@ def to_json(
     include_steps: bool = True,
     indent: int = 2,
     notes: Optional[List[str]] = None,
+    steps_every: int = 1,
 ) -> str:
     """Convert a SimulationResult or RestorationResult to a JSON string.
 
@@ -630,6 +657,7 @@ def to_json(
         include_steps: Include per-step data (default True).
         indent: JSON indentation level (default 2).
         notes: Optional annotation strings for the output.
+        steps_every: Include every Nth step and the last (default 1: all).
 
     Returns:
         JSON string: strict JSON, non-finite numbers as null plus a
@@ -639,12 +667,15 @@ def to_json(
         TypeError: If result is not a supported type.
     """
     if isinstance(result, SimulationResult):
-        d = simulation_result_to_dict(result, include_steps=include_steps)
+        d = simulation_result_to_dict(
+            result, include_steps=include_steps, steps_every=steps_every,
+        )
         if notes:
             d["notes"] = notes
     elif isinstance(result, RestorationResult):
         d = restoration_result_to_dict(
             result, include_steps=include_steps, notes=notes,
+            steps_every=steps_every,
         )
     else:
         raise TypeError(

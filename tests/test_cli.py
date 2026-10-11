@@ -350,15 +350,14 @@ class TestUnitsLost:
 
     def test_deprecated_cut_alias_sets_units_restored(self, capsys):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+            warnings.simplefilter("ignore", FutureWarning)
             d = _json_run(forest_main, ["--trees", "100", "--cut", "30",
                                         "--units-lost", "60", "--mode", "restore"], capsys)
         assert d["summary"]["total_units_restored"] == 30
         assert d["summary"]["units_lost"] == 60
 
-    def test_warned_in_extraction_mode(self, capsys, monkeypatch):
+    def test_warned_in_extraction_mode(self, capsys):
         argv = ["--trees", "100", "--units", "50", "--units-lost", "60"]
-        monkeypatch.setattr("sys.argv", ["forest"] + argv)
         with pytest.warns(UserWarning, match="--units-lost is only used in restore mode"):
             forest_main(argv)
         capsys.readouterr()
@@ -412,3 +411,120 @@ class TestGaiaCommand:
         out = subprocess.run([sys.executable, "-m", "gaia", "--version"],
                              capture_output=True, text=True, check=True)
         assert out.stdout.strip() == f"Gaia {gaia.__version__}"
+
+
+
+# ── CLI UX (Step 6.6, E10) ───────────────────────────────────────────────────
+
+
+class TestUnusedRestorationArgs:
+    def test_from_parsed_args_not_sys_argv(self, capsys, monkeypatch):
+        """main(argv) from code: sys.argv is irrelevant, both ways."""
+        monkeypatch.setattr("sys.argv", ["prog", "--planting-cost", "9", "--time-horizon", "5"])
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            forest_main(["--trees", "100", "--units", "10", "--format", "json",
+                         "--summary-only"])
+        assert not [x for x in w if "only used in restore mode" in str(x.message)]
+        capsys.readouterr()
+
+    def test_every_flag_given_is_warned_once(self, capsys):
+        argv = ["--trees", "100", "--units", "10", "--planting-cost", "50",
+                "--maintenance-years", "10", "--format", "json", "--summary-only"]
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            forest_main(argv)
+        messages = [str(x.message) for x in w if "only used in restore mode" in str(x.message)]
+        assert len(messages) == 2
+        assert messages[0].startswith("--planting-cost")
+        assert messages[1].startswith("--maintenance-years")
+        capsys.readouterr()
+
+    def test_value_equal_to_default_still_warned(self, capsys):
+        """Explicit flags are recorded even when the value is the default."""
+        args = forest_parse(["--planting-cost", "50.0"])
+        assert args.explicit_flags == ["--planting-cost"]
+        assert getattr(forest_parse([]), "explicit_flags", []) == []
+
+    def test_not_warned_in_restore_mode(self, capsys):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            forest_main(["--trees", "100", "--units", "10", "--mode", "restore",
+                         "--planting-cost", "20", "--format", "json", "--summary-only"])
+        assert not [x for x in w if "only used in restore mode" in str(x.message)]
+        capsys.readouterr()
+
+
+class TestOutputErrors:
+    def test_unwritable_output_is_a_clean_error(self, tmp_path, capsys):
+        target = tmp_path / "missing_dir" / "out.json"
+        with pytest.raises(SystemExit) as exc:
+            forest_main(["--trees", "100", "--units", "10", "--output", str(target)])
+        assert "cannot write --output" in str(exc.value.code)
+        assert "Traceback" not in capsys.readouterr().err
+
+    def test_gaia_command_exit_status_1(self, tmp_path, capsys):
+        from gaia.cli import main
+        target = tmp_path / "missing_dir" / "out.json"
+        assert main(["forest", "--trees", "100", "--units", "10",
+                     "--output", str(target)]) == 1
+        assert "cannot write --output" in capsys.readouterr().err
+
+
+class TestWarningFormat:
+    def test_cli_warnings_have_no_source_line(self):
+        import subprocess
+        import sys
+        out = subprocess.run(
+            [sys.executable, "-m", "gaia", "forest", "--trees", "100", "--units", "10",
+             "--format", "json", "--summary-only", "--cut", "10"],
+            capture_output=True, text=True, check=True,
+        )
+        assert "Warning (CalibrationWarning): Oak Valley Forest" in out.stderr
+        assert "Warning (FutureWarning): --cut is deprecated, use --units instead" in out.stderr
+        assert "warnings.warn" not in out.stderr and ".py:" not in out.stderr
+
+    def test_library_formatting_untouched(self):
+        import gaia.cli
+        before = warnings.formatwarning
+        with gaia.cli.user_facing_warnings():
+            assert warnings.formatwarning is not before
+        assert warnings.formatwarning is before
+        forest_parse([])
+        assert warnings.formatwarning is before
+
+
+class TestJsonSteps:
+    def test_steps_every_downsamples_and_keeps_last(self, capsys):
+        forest_main(["--trees", "100", "--units", "25", "--format", "json",
+                     "--steps-every", "10"])
+        d = json.loads(capsys.readouterr().out)
+        assert d["steps_every"] == 10
+        assert [s["step"] for s in d["steps"]] == [10, 20, 25]
+        assert d["summary"]["num_steps"] == 25
+
+    def test_steps_every_must_be_positive(self, capsys):
+        with pytest.raises(SystemExit):
+            forest_parse(["--steps-every", "0"])
+        capsys.readouterr()
+
+    def test_large_runs_default_to_summary_only(self, capsys, monkeypatch):
+        import gaia.cli
+        monkeypatch.setattr(gaia.cli, "MAX_JSON_STEPS", 20)
+        with pytest.warns(UserWarning, match="per-step data omitted"):
+            forest_main(["--trees", "100", "--units", "25", "--format", "json"])
+        d = json.loads(capsys.readouterr().out)
+        assert "steps" not in d
+        forest_main(["--trees", "100", "--units", "25", "--format", "json",
+                     "--steps-every", "1"])
+        assert len(json.loads(capsys.readouterr().out)["steps"]) == 25
+
+    def test_to_json_steps_every(self):
+        from gaia.cases.forest import build_forest_ecosystem
+        from gaia.serialization import to_json
+        from gaia.simulation import run_extraction
+        result = run_extraction(build_forest_ecosystem(total_trees=100), 30)
+        d = json.loads(to_json(result, steps_every=15))
+        assert [s["step"] for s in d["steps"]] == [15, 30]
+        with pytest.raises(ValueError, match="steps_every"):
+            to_json(result, steps_every=0)

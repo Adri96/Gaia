@@ -129,6 +129,7 @@ from gaia.cli import (
     add_common_arguments,
     add_restoration_arguments,
     apply_carbon_price_view,
+    cli_entry,
     drop_pricing_in_restore_mode,
     handle_deprecated_alias,
     output_result,
@@ -680,6 +681,7 @@ _POSIDONIA_NOTES = [
 ]
 
 
+@cli_entry
 def main(argv: Optional[List[str]] = None) -> None:
     args = _parse_args(argv)
     warn_unused_restoration_args(args)

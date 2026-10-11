@@ -284,7 +284,7 @@ _NON_MONETARY_KEYS = {
     "carbon_price_growth", "carbon_released_tco2", "carbon_absorption_lost_tco2_yr",
     "dependency_weight", "trophic_level", "keystone_threshold", "strength",
     # extraction summary and steps
-    "total_units_extracted", "final_ecosystem_health", "num_steps", "step",
+    "total_units_extracted", "final_ecosystem_health", "num_steps", "steps_every", "step",
     "units_extracted", "depletion_ratio", "ecosystem_health", "agent_damages",
     "agent_direct_damages", "agent_cascade_damages", "model_confidence",
     "substrate_erosion", "effective_k", "k_fraction",
