@@ -1019,8 +1019,6 @@ def _parse_substrate(raw: Any, reader: _Reader, bucket: List[Param]) -> Dict[str
     for k in _SUBSTRATE_NUMBERS:
         if k in obj and obj[k] is not None:
             out[k] = reader.number(obj[k], _key(path, k), f"substrate.{k}", bucket)
-    # Keyword order of SubstrateProfile does not matter; field order does
-    # not either (Params are already collected in the document's order).
     return out
 
 
