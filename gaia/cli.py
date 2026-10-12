@@ -1,18 +1,23 @@
 """
-Gaia — Shared CLI utilities and the ``gaia`` command.
+Gaia — the ``gaia`` command and its shared CLI utilities.
 
-Provides common argument definitions used across all case files,
-deprecation handling, and output routing (text vs JSON), plus ``main``:
-the ``gaia`` console script and ``python -m gaia``, a thin dispatcher
-``gaia <case> [args]`` that forwards to the case module's ``main(argv)``.
+``gaia run <case | file.json> [options]`` (``run_main``) loads a case
+document (gaia.cases.load_case), builds its parser with the case's defaults
+(``build_case_parser``) and runs it (``run_case``). ``main`` is the ``gaia``
+console script and ``python -m gaia``; it also forwards the deprecated
+``gaia <case> [options]`` to the case's compatibility wrapper, which runs
+the same code with the 0.9 flags (``LegacyCLI``). The rest is shared
+argument definitions, deprecation handling and output routing (text vs
+JSON).
 """
 
 import argparse
 import contextlib
+import dataclasses
 import functools
 import sys
 import warnings
-from typing import Any, Callable, Iterator, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from gaia import __version__
 
@@ -378,63 +383,264 @@ def cli_entry(main_fn: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
+# ── Running a case ────────────────────────────────────────────────────────────
+
+
+@dataclasses.dataclass(frozen=True)
+class LegacyCLI:
+    """The 0.9 command line of a case module (deprecated, for one release).
+
+    Attributes:
+        case: The case name, e.g. "forest".
+        total_units_flag: The flag for the number of units, e.g. "--trees".
+        total_units_help: Its help text.
+        units_alias: Deprecated alias of --units, e.g. "--cut".
+        unit_value_alias: Deprecated alias of --unit-value, e.g. "--tree-value".
+        labels: Provenance labels of user-supplied values
+            (gaia.ecosystem_io.DEFAULT_LABELS keys), as in 0.9.
+    """
+
+    case: str
+    total_units_flag: str
+    total_units_help: str
+    units_alias: str
+    unit_value_alias: str
+    labels: Dict[str, str]
+
+
+def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> argparse.ArgumentParser:
+    """The argument parser of a case, with the case's defaults.
+
+    Args:
+        case: A gaia.ecosystem_io.Case.
+        prog: Program name shown in usage, e.g. "gaia run forest".
+        legacy: The 0.9 flags of a compatibility wrapper (``--trees`` /
+            ``--hectares`` and the deprecated aliases), or None for
+            ``gaia run`` (``--total-units``).
+    """
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description=f"Gaia {__version__} — {case.name}: externality (extract) and restoration (restore) simulation",
+        epilog=(
+            f"Case document: {case.origin}. Run 'gaia --help' for the shipped cases."
+            if legacy is None else
+            f"Deprecated: use 'gaia run {legacy.case}' (same options; "
+            f"{legacy.total_units_flag} is --total-units). Removed in Gaia 0.11."
+        ),
+    )
+    total = case.total_units.value
+    if legacy is None:
+        parser.add_argument(
+            "--total-units", type=int, default=total, metavar="N",
+            help=f"Total number of units ({case.unit}) in the resource (default: {total})",
+        )
+    else:
+        parser.add_argument(
+            legacy.total_units_flag, dest="total_units", type=int, default=total, metavar="N",
+            help=f"{legacy.total_units_help} (default: {total})",
+        )
+    parser.add_argument(
+        "--threshold", type=float, default=case.safe_threshold_ratio.value, metavar="RATIO",
+        help=(
+            f"Safe extraction threshold ratio, 0.0 < threshold < 1.0 "
+            f"(default: {case.safe_threshold_ratio.value:g})"
+        ),
+    )
+    parser.add_argument(
+        "--units", type=int, default=case.default_units, metavar="N",
+        help=f"Number of units to extract or restore (default: {case.default_units})",
+    )
+    parser.add_argument(
+        "--unit-value", type=float, default=case.unit_value.value, metavar="EUROS",
+        help=f"Revenue per unit extracted in euros, one-off (default: {case.unit_value.value:g})",
+    )
+    if legacy is not None:
+        parser.add_argument(legacy.units_alias, dest="units_alias", type=int, default=None,
+                            metavar="N", help=argparse.SUPPRESS)
+        parser.add_argument(legacy.unit_value_alias, dest="unit_value_alias", type=float,
+                            default=None, metavar="EUROS", help=argparse.SUPPRESS)
+    add_common_arguments(parser)
+    defaults = case.restoration_defaults()
+    add_restoration_arguments(
+        parser,
+        planting_cost_default=defaults["planting_cost_per_unit"],
+        maintenance_cost_default=defaults["annual_maintenance_per_unit"],
+        maintenance_years_default=defaults["maintenance_years"],
+    )
+    return parser
+
+
+def parse_case_args(
+    case,
+    argv: Optional[List[str]] = None,
+    legacy: Optional[LegacyCLI] = None,
+    prog: Optional[str] = None,
+) -> argparse.Namespace:
+    """Parse a case command line (see build_case_parser); resolves the
+    deprecated aliases of a legacy command line with a FutureWarning."""
+    if prog is None:
+        prog = f"gaia {legacy.case}" if legacy is not None else "gaia run"
+    args = build_case_parser(case, prog, legacy).parse_args(argv)
+    if legacy is not None:
+        handle_deprecated_alias(args, "units_alias", "units", legacy.units_alias, "--units")
+        handle_deprecated_alias(args, "unit_value_alias", "unit_value", legacy.unit_value_alias, "--unit-value")
+    return args
+
+
+def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = None) -> None:
+    """Build the case's ecosystem from parsed arguments, run it, output it.
+
+    Raises:
+        SystemExit: (status 1, "Error: ..." on stderr) on a ValueError.
+    """
+    from gaia.simulation import run_extraction, run_restoration
+
+    warn_unused_restoration_args(args)
+    drop_pricing_in_restore_mode(args)
+    try:
+        ecosystem = case.build_ecosystem(
+            total_units=args.total_units,
+            safe_threshold_ratio=args.threshold,
+            unit_value=args.unit_value,
+            with_pricing=args.with_pricing,
+            area_ha=args.area_ha,
+            labels=labels,
+        )
+        apply_carbon_price_view(ecosystem, args.carbon_price)
+        result: Any
+        if args.mode == "restore":
+            cost = case.restoration_cost(
+                planting_cost_per_unit=args.planting_cost,
+                annual_maintenance_per_unit=args.maintenance_cost,
+                maintenance_years=args.maintenance_years,
+            )
+            ecosystem.provenance.extend(case.restoration_provenance(cost, args.time_horizon > 0))
+            result = run_restoration(
+                ecosystem, args.units, cost, case.recovery_functions(ecosystem),
+                units_lost=args.units_lost,
+                succession_curve=case.succession_curve if args.time_horizon > 0 else None,
+                time_horizon_years=args.time_horizon,
+            )
+        else:
+            result = run_extraction(ecosystem, args.units)
+        text_report = case.report(result)
+        output_result(text_report, result, args, notes=list(case.json_notes) or None)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+@cli_entry
+def case_main(
+    case,
+    argv: Optional[List[str]] = None,
+    legacy: Optional[LegacyCLI] = None,
+    prog: Optional[str] = None,
+) -> None:
+    """Run a case from a command line (``gaia run`` or a legacy wrapper).
+
+    A legacy command line warns (FutureWarning) that it is deprecated.
+    """
+    if legacy is not None:
+        warnings.warn(
+            f"'gaia {legacy.case}' and 'python -m gaia.cases.{legacy.case}' are "
+            f"deprecated and will be removed in Gaia 0.11; use 'gaia run "
+            f"{legacy.case}' (same options; {legacy.total_units_flag} is --total-units)",
+            FutureWarning,
+            stacklevel=2,
+        )
+    args = parse_case_args(case, argv, legacy, prog)
+    run_case(case, args, legacy.labels if legacy is not None else None)
+
+
 # ── The ``gaia`` command ──────────────────────────────────────────────────────
 
-# Case name on the command line → module in gaia.cases (each has main(argv)).
-CASES = {
-    "forest": "forest",
-    "costa_brava": "costa_brava",
-    "posidonia": "posidonia",
-    "amazon_forest": "amazon_forest",
-}
-_CASE_ALIASES = {
-    "costa-brava": "costa_brava",
-    "amazon": "amazon_forest",
-    "amazon-forest": "amazon_forest",
-}
-
-_USAGE = (
-    "usage: gaia <case> [options]\n"
-    "       gaia <case> --help\n"
-    "       gaia --version\n"
-    "\n"
-    "Cases: " + ", ".join(CASES) + "\n"
-    "\n"
-    "Each case takes the same options as python -m gaia.cases.<case>.\n"
+_RUN_USAGE = (
+    "usage: gaia run <case | file.json> [options]\n"
+    "       gaia run <case | file.json> --help\n"
 )
 
 
-def main(argv: Optional[List[str]] = None) -> int:
-    """Entry point of ``gaia`` and ``python -m gaia``: ``gaia <case> [args]``.
+def _usage() -> str:
+    from gaia.cases import CASE_ALIASES, CASE_NAMES
 
-    Forwards ``args`` to ``gaia.cases.<case>.main``. Returns the exit
-    status (0 on success; 2 for an unknown case, as argparse does).
-    """
-    import importlib
+    aliases = ", ".join(f"{a} = {n}" for a, n in CASE_ALIASES.items())
+    return (
+        _RUN_USAGE
+        + "       gaia --version\n"
+        "\n"
+        f"Cases: {', '.join(CASE_NAMES)} (aliases: {aliases}),\n"
+        "or the path of a case document (JSON; see gaia/ecosystem_io.py).\n"
+        "\n"
+        "Deprecated (removed in Gaia 0.11): gaia <case> [options] and\n"
+        "python -m gaia.cases.<case> [options], with the 0.9 flags.\n"
+    )
+
+
+def _exit_status(exc: SystemExit) -> int:
+    code = exc.code
+    if code is None:
+        return 0
+    if isinstance(code, int):
+        return code
+    print(code, file=sys.stderr)
+    return 1
+
+
+def run_main(argv: Optional[List[str]] = None) -> int:
+    """``gaia run <case | file.json> [options]``. Returns the exit status
+    (2 for a missing or unknown case, as argparse does)."""
+    from gaia.cases import load_case
 
     args = list(sys.argv[1:] if argv is None else argv)
     if not args or args[0] in ("-h", "--help"):
-        print(_USAGE, end="")
+        print(_usage(), end="")
+        return 0 if args else 2
+    spec = args[0]
+    try:
+        case = load_case(spec)
+    except ValueError as exc:
+        print(_RUN_USAGE, end="", file=sys.stderr)
+        print(f"gaia run: error: {exc}", file=sys.stderr)
+        return 2
+    try:
+        case_main(case, args[1:], prog=f"gaia run {spec}")
+    except SystemExit as exc:
+        return _exit_status(exc)
+    return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Entry point of ``gaia`` and ``python -m gaia``.
+
+    ``gaia run <case | file.json> [options]`` runs a case. The deprecated
+    ``gaia <case> [options]`` forwards to the compatibility wrapper
+    ``gaia.cases.<case>.main``. Returns the exit status (0 on success; 2
+    for an unknown command or case, as argparse does).
+    """
+    import importlib
+
+    from gaia.cases import resolve_case_name
+
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in ("-h", "--help"):
+        print(_usage(), end="")
         return 0 if args else 2
     if args[0] == "--version":
         print(f"Gaia {__version__}")
         return 0
-    name = _CASE_ALIASES.get(args[0], args[0])
-    if name not in CASES:
-        print(_USAGE, end="", file=sys.stderr)
-        print(f"gaia: error: unknown case {args[0]!r}", file=sys.stderr)
+    if args[0] == "run":
+        return run_main(args[1:])
+    name = resolve_case_name(args[0])
+    if name is None:
+        print(_usage(), end="", file=sys.stderr)
+        print(f"gaia: error: unknown command or case {args[0]!r}", file=sys.stderr)
         return 2
-    module = importlib.import_module(f"gaia.cases.{CASES[name]}")
+    module = importlib.import_module(f"gaia.cases.{name}")
     try:
         module.main(args[1:])
     except SystemExit as exc:
-        code = exc.code
-        if code is None:
-            return 0
-        if isinstance(code, int):
-            return code
-        print(code, file=sys.stderr)
-        return 1
+        return _exit_status(exc)
     return 0
 
 

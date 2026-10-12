@@ -5,9 +5,13 @@ Shared by ``tests/test_golden.py`` (which compares) and
 ``scripts/regen_golden.py`` (which regenerates ``tests/golden/*.json``).
 
 Each scenario runs a case CLI ``main(argv)`` exactly as a user would, with
-``--format json --summary-only``. The case module's ``output_result`` is
-wrapped so that both the raw result object (full float precision) and the
-printed JSON summary are captured from the same run.
+``--format json --summary-only``: the 0.9 command line of the case's
+compatibility wrapper (gaia.cases.<case>.main), which runs the case's data
+file (gaia/cases/data/<case>.json) through gaia.cli.run_case. Since the
+cases became data files (Step 7), the unchanged snapshots are the proof that
+the files reproduce the code-defined 0.9.0 cases. ``gaia.cli.output_result``
+is wrapped so that both the raw result object (full float precision) and
+the printed JSON summary are captured from the same run.
 
 Snapshot layout (one JSON file per scenario):
     scenario   — case name and CLI argv
@@ -28,6 +32,7 @@ import importlib
 import io
 import json
 import math
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -185,24 +190,23 @@ def run_scenario(name: str) -> Tuple[Any, Dict[str, Any]]:
     """Run one scenario via its case CLI; return (result_obj, summary_json)."""
     case, argv = SCENARIOS[name]
     module = importlib.import_module(f"gaia.cases.{case}")
-    original = getattr(module, "output_result", None)
-    if original is None:
-        raise RuntimeError(
-            f"gaia.cases.{case} has no output_result; update golden_support"
-        )
+    import gaia.cli as cli
+
+    original = cli.output_result
     captured: Dict[str, Any] = {}
 
     def _capture(text_report, result_obj, *args, **kwargs):
         captured["result"] = result_obj
         return original(text_report, result_obj, *args, **kwargs)
 
-    module.output_result = _capture
+    cli.output_result = _capture
     buf = io.StringIO()
     try:
-        with contextlib.redirect_stdout(buf):
+        with contextlib.redirect_stdout(buf), warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)  # the 0.9 command line
             module.main(list(argv) + ["--format", "json", "--summary-only"])
     finally:
-        module.output_result = original
+        cli.output_result = original
     if "result" not in captured:
         raise RuntimeError(f"Scenario {name} produced no result")
     return captured["result"], json.loads(buf.getvalue())

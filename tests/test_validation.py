@@ -438,12 +438,20 @@ def test_default_discount_is_validated(monkeypatch):
 
 
 @pytest.mark.parametrize("mode", ["extract", "restore"])
-def test_cli_rejects_divergent_discount(monkeypatch, capsys, mode):
-    monkeypatch.setattr(forest_case, "_OAK_VALLEY_DISCOUNT", _DIVERGENT)
-    with pytest.raises(SystemExit) as exc:
-        forest_case.main(["--mode", mode, "--trees", "100", "--units", "10",
-                          "--carbon-price", "ets"])
-    assert exc.value.code == 1
+def test_cli_rejects_divergent_discount(tmp_path, capsys, mode):
+    """A case document with a divergent discount fails cleanly in gaia run."""
+    import json
+
+    from gaia.cases import case_data_path
+    from gaia.cli import main
+
+    doc = json.loads(case_data_path("forest").read_text(encoding="utf-8"))
+    doc["discount"]["rate_schedule"] = 0.014
+    doc["discount"]["scarcity_rate"] = 0.03
+    path = tmp_path / "divergent.json"
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    assert main(["run", str(path), "--mode", mode, "--total-units", "100", "--units", "10",
+                 "--carbon-price", "ets"]) == 1
     assert "scarcity_rate (3.00%/yr) must be below" in capsys.readouterr().err
 
 
@@ -494,7 +502,7 @@ def test_reject_nonfinite_edge_strength(value):
 @pytest.mark.parametrize("field", ["erosion_rate_unprotected", "formation_rate"])
 def test_reject_nonfinite_substrate_rates(field):
     from gaia.validation import validate_substrate_profile
-    profile = dataclasses.replace(forest_case._OAK_VALLEY_SUBSTRATE, **{field: float("inf")})
+    profile = dataclasses.replace(forest_case.build_forest_ecosystem().resource.substrate, **{field: float("inf")})
     with pytest.raises(ValueError, match=field):
         validate_substrate_profile(profile)
 
@@ -502,7 +510,7 @@ def test_reject_nonfinite_substrate_rates(field):
 @pytest.mark.parametrize("field", ["stored_carbon_tonnes", "annual_absorption_tonnes"])
 def test_reject_nonfinite_carbon_profile(field):
     from gaia.validation import validate_carbon_profile
-    profile = dataclasses.replace(forest_case._FOREST_CARBON, **{field: float("nan")})
+    profile = dataclasses.replace(forest_case.build_forest_ecosystem().resource.carbon_profile, **{field: float("nan")})
     with pytest.raises(ValueError, match=field):
         validate_carbon_profile(profile)
 
@@ -598,7 +606,7 @@ def test_damage_invariant_convexity_past_threshold():
 def test_run_restoration_validates_succession_curve():
     """The succession curve passed to run_restoration is validated (it was
     only checked on the removed Agent.succession_curve field)."""
-    bad = dataclasses.replace(forest_case._FOREST_SUCCESSION, pioneer_end_year=-1.0)
+    bad = dataclasses.replace(forest_case.CASE.succession_curve, pioneer_end_year=-1.0)
     eco = forest_case.build_forest_ecosystem(total_trees=100)
     recovery = [logistic_recovery(threshold=0.3) for _ in eco.agents]
     with pytest.raises(ValueError, match="pioneer_end_year"):

@@ -2,11 +2,11 @@
 Gaia — parameter provenance and calibration status (Step 5, findings D2/S3).
 
 Implements the project's own rule: every number traceable to a source, and
-placeholders flagged in the output. A case records each economically or
-ecologically meaningful parameter as a ``Param`` (value, unit, source,
-confidence, note) and passes ``param.value`` — a plain float — to the model,
-so neither engine ever sees a ``Param``. The case attaches the list to
-``Ecosystem.provenance``; ``calibration_status`` adds the model-wide
+placeholders flagged in the output. A case file records each economically or
+ecologically meaningful parameter as {value, unit, source, confidence, note}
+(gaia.ecosystem_io), which becomes a ``Param``; the model receives
+``param.value`` — a plain float — so neither engine ever sees a ``Param``.
+The list is attached to ``Ecosystem.provenance``; ``calibration_status`` adds the model-wide
 parameters (trophic and keystone constants, carbon price, default discount)
 and every result carries the outcome in its ``calibration`` field, which the
 text report and the JSON output both print.
@@ -34,7 +34,7 @@ import math
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class Confidence(str, Enum):
@@ -119,56 +119,6 @@ def user_or_default(default: Param, value: float, flag: str) -> Param:
         ),
         name=default.name,
     )
-
-
-def weight_params(
-    agents: Sequence, source: Optional[str], confidence: Confidence, note: str = "",
-) -> List[Param]:
-    """One Param per agent dependency weight (the share of value it carries)."""
-    return [
-        Param(a.dependency_weight, "share", source, confidence, note,
-              name=f"agent[{a.name}].dependency_weight")
-        for a in agents
-    ]
-
-
-def keystone_params(
-    agents: Sequence, source: Optional[str], confidence: Confidence, note: str = "",
-) -> List[Param]:
-    """One Param per keystone agent's collapse threshold (health)."""
-    return [
-        Param(a.keystone_threshold, "health", source, confidence, note,
-              name=f"agent[{a.name}].keystone_threshold")
-        for a in agents if a.is_keystone
-    ]
-
-
-def edge_params(
-    interactions: Sequence,
-    source: Optional[str],
-    confidence: Confidence,
-    note: str = "",
-    retuned: Optional[Dict[Tuple[str, str], float]] = None,
-    retuned_note: str = "",
-) -> List[Param]:
-    """One Param per interaction edge strength.
-
-    ``retuned`` maps (source, target) to the value before an edge was
-    rescaled to the in-degree cap (Step 3.8); those edges are placeholders
-    whatever ``confidence``, with ``retuned_note``.
-    """
-    retuned = retuned or {}
-    out: List[Param] = []
-    for e in interactions:
-        is_retuned = (e.source, e.target) in retuned
-        out.append(Param(
-            e.strength, "fraction of source damage",
-            source,
-            Confidence.PLACEHOLDER if is_retuned else confidence,
-            retuned_note if is_retuned else note,
-            name=f"edge[{e.source} → {e.target}].strength",
-        ))
-    return out
 
 
 def anchor_params(pricing) -> List[Param]:
@@ -310,7 +260,7 @@ def _default_discount_params() -> List[Param]:
     ]
 
 
-# Shared by the forest case and DEFAULT_DISCOUNT.
+# DEFAULT_DISCOUNT's scarcity rate (the forest case file states the same value).
 SCARCITY_2PCT_PARAM = Param(
     0.02, "1/yr", None, Confidence.LOW,
     "2% relative price change of ecosystem services. Above the estimates of "
@@ -464,12 +414,6 @@ def group_flagged(status: CalibrationStatus) -> List[Tuple[str, List[Param]]]:
 
 # ── Shared case helpers ───────────────────────────────────────────────────────
 
-IDENTICAL_CURVES_NOTE: str = (
-    "The same placeholder curve for every agent, inflection just past the "
-    "safe threshold; not fitted to field data (hence calibration regime B)."
-)
-
-
 def area_param(area_ha: float, given: bool, density: Param, unit: str) -> Param:
     """The resource area: user-supplied, or units / the reference density.
 
@@ -491,42 +435,3 @@ def area_param(area_ha: float, given: bool, density: Param, unit: str) -> Param:
         area_ha, "ha", density.source, density.confidence, note,
         name="resource.area_ha",
     )
-
-
-def restoration_params(
-    cost,
-    defaults: Dict[str, Param],
-    succession: Optional[Dict[str, Param]] = None,
-) -> List[Param]:
-    """Provenance of a restoration run: costs, recovery curve, succession.
-
-    Args:
-        cost: The RestorationCost used.
-        defaults: The case's documented cost defaults, keyed by
-            RestorationCost field.
-        succession: The case's succession-curve Params (keyed by
-            SuccessionCurve field) when a maturation timeline is run.
-    """
-    import inspect
-
-    from gaia.recovery import logistic_recovery
-
-    flags = {
-        "planting_cost_per_unit": "--planting-cost",
-        "annual_maintenance_per_unit": "--maintenance-cost",
-        "maintenance_years": "--maintenance-years",
-    }
-    out = [
-        user_or_default(p, getattr(cost, p.name.split(".")[-1]), flags[p.name.split(".")[-1]])
-        for p in named("restoration", defaults)
-    ]
-    steepness = inspect.signature(logistic_recovery).parameters["steepness"].default
-    out.append(Param(
-        steepness, "dimensionless", None, Confidence.PLACEHOLDER,
-        "Logistic recovery-efficiency curve of every agent (gaia.recovery "
-        "default; inflection at 60% of lost units replanted).",
-        name="recovery.logistic_steepness",
-    ))
-    if succession is not None:
-        out.extend(named("succession", succession))
-    return out

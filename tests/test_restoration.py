@@ -22,6 +22,12 @@ from gaia.recovery import logistic_recovery, linear_recovery
 from gaia.simulation import run_extraction, run_restoration
 
 
+def _forest_succession():
+    from gaia.cases import load_case
+
+    return load_case("forest").succession_curve
+
+
 # ── Fixtures ─────────────────────────────────────────────────────────────────────
 
 TOTAL_TREES = 10_000
@@ -228,7 +234,7 @@ def test_restoration_cost_ratio_none_without_revenue():
 
 
 def _penalty_result(curve=None, units=500, lost=None):
-    from gaia.cases.forest import _FOREST_SUCCESSION
+    _FOREST_SUCCESSION = _forest_succession()
     eco = build_forest_ecosystem(total_trees=1000)
     fns = [logistic_recovery(threshold=0.3) for _ in eco.agents]
     return run_restoration(
@@ -251,7 +257,7 @@ def test_penalty_components_sum_and_bounds():
 
 
 def test_penalty_monotone_in_maturation_time():
-    from gaia.cases.forest import _FOREST_SUCCESSION
+    _FOREST_SUCCESSION = _forest_succession()
     totals = [
         _penalty_result(dataclasses.replace(
             _FOREST_SUCCESSION, maturation_delay=d)).destroy_then_restore_penalty.total
@@ -463,7 +469,7 @@ def test_recovered_value_strictly_monotonic_in_units_restored():
 
 def test_downstream_values_scale_with_recovered_value():
     """Maturation gap and service PV follow the recovered value (C1 / C2)."""
-    from gaia.cases.forest import _FOREST_SUCCESSION
+    _FOREST_SUCCESSION = _forest_succession()
     eco, fns = _small()
     cut = run_extraction(eco, 1_000)
     small = run_restoration(eco, 500, RESTORATION_COST, fns, starting_state=cut,
@@ -492,7 +498,7 @@ def test_substrate_caps_recovery_once():
     """Substrate model: the ceiling caps the mature value and health, and the
     yearly streams deliver min(s(t), ceiling) of the biological recovery —
     the permanent shortfall is not counted again in the maturation gap."""
-    from gaia.cases.forest import _FOREST_SUCCESSION
+    _FOREST_SUCCESSION = _forest_succession()
     from gaia.succession import succession_service
     eco, fns = _small()
     intact = dataclasses.replace(eco.resource, substrate=None)

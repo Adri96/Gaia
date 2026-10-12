@@ -11,7 +11,7 @@ import math
 
 import pytest
 
-from gaia.cases import amazon_forest, costa_brava, forest, posidonia
+from gaia.cases import amazon_forest, costa_brava, forest, load_case, posidonia
 from gaia.models import Agent, Ecosystem, Resource, RestorationCost
 from gaia.damage import logistic_damage
 from gaia.provenance import (
@@ -34,23 +34,18 @@ BUILDERS = {
     "posidonia": (posidonia.build_posidonia_ecosystem, "total_hectares", 1000),
     "amazon_forest": (amazon_forest.build_amazon_ecosystem, "total_trees", 4000),
 }
-MODULES = {
-    "forest": forest,
-    "costa_brava": costa_brava,
-    "posidonia": posidonia,
-    "amazon_forest": amazon_forest,
-}
-
-
 def _build(case, **kwargs):
     builder, size_arg, size = BUILDERS[case]
     return builder(**{size_arg: size}, **kwargs)
 
 
 def _run_cli(case, argv):
+    """``gaia run <case>``, the 0.9 size flags mapped to --total-units."""
+    from gaia.cli import case_main
+
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        MODULES[case].main(argv)
+        case_main(load_case(case), ["--total-units" if a in ("--trees", "--hectares") else a for a in argv])
     return buf.getvalue()
 
 

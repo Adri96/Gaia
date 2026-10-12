@@ -894,8 +894,9 @@ class TestExperimentalLabel:
         assert "pricing" not in d
 
     def test_cli_help(self, capsys):
-        from gaia.cases.forest import main
+        from gaia.cases import load_case
+        from gaia.cli import case_main
 
         with pytest.raises(SystemExit):
-            main(["--help"])
+            case_main(load_case("forest"), ["--help"])
         assert "EXPERIMENTAL" in " ".join(capsys.readouterr().out.split())

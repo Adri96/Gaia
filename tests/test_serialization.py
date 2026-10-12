@@ -9,7 +9,8 @@ import json
 
 import pytest
 
-from gaia.cases.forest import _FOREST_SUCCESSION, build_forest_ecosystem
+from gaia.cases import load_case
+from gaia.cases.forest import build_forest_ecosystem
 from gaia.models import RestorationCost
 from gaia.recovery import logistic_recovery
 from gaia.serialization import (
@@ -19,6 +20,8 @@ from gaia.serialization import (
     to_json,
 )
 from gaia.simulation import run_extraction, run_restoration
+
+_FOREST_SUCCESSION = load_case("forest").succession_curve
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
