@@ -44,7 +44,12 @@
     "edge[*].strength": {
       "unit": "fraction of source damage",
       "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
-      "confidence": "placeholder"
+      "confidence": "placeholder",
+      "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/÷3 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+      "relative_range": [
+        0.5,
+        1.5
+      ]
     }
   },
   "agent_defaults": {
@@ -64,7 +69,12 @@
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B)."
+        "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B). Monte Carlo range 6-18, uniform (Step 8e.4, as Posidonia: a judgement; the placeholder x/÷3 gave 4-36).",
+        "range": [
+          6.0,
+          18.0
+        ],
+        "distribution": "uniform"
       }
     }
   },
@@ -87,7 +97,17 @@
       "dependency_weight": 0.15,
       "trophic_level": 0,
       "is_keystone": true,
-      "keystone_threshold": 0.25
+      "keystone_threshold": {
+        "value": 0.25,
+        "unit": "health",
+        "confidence": "placeholder",
+        "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.10-0.40, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/÷3 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+        "range": [
+          0.1,
+          0.4
+        ],
+        "distribution": "uniform"
+      }
     },
     {
       "name": "Soil Decomposers",
@@ -101,7 +121,17 @@
       "dependency_weight": 0.09,
       "trophic_level": 1,
       "is_keystone": true,
-      "keystone_threshold": 0.35
+      "keystone_threshold": {
+        "value": 0.35,
+        "unit": "health",
+        "confidence": "placeholder",
+        "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.20-0.50, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/÷3 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+        "range": [
+          0.2,
+          0.5
+        ],
+        "distribution": "uniform"
+      }
     },
     {
       "name": "Seed Dispersers",
@@ -149,7 +179,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "keystone",
       "description": "Mycorrhizal collapse cuts phosphorus supply to canopy on P-depleted Oxisol"
@@ -162,7 +196,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "dependency",
       "description": "Understory loses mycorrhizal nutrient access"
@@ -175,7 +213,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "dependency",
       "description": "Canopy loss removes shade → understory heat/drought stress"
@@ -183,7 +225,17 @@
     {
       "source": "Canopy Trees",
       "target": "Epiphytes & Bromeliads",
-      "strength": 0.35,
+      "strength": {
+        "value": 0.35,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.333
+        ]
+      },
       "type": "dependency",
       "description": "Epiphytes lose structural substrate when canopy trees fall"
     },
@@ -246,7 +298,17 @@
     {
       "source": "Understory",
       "target": "Epiphytes & Bromeliads",
-      "strength": 0.2,
+      "strength": {
+        "value": 0.2,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.333
+        ]
+      },
       "type": "dependency",
       "description": "Understory structural support for lower-level epiphytes"
     },
@@ -279,7 +341,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "dependency",
       "description": "Decomposer decline reduces nutrient availability for trees"
@@ -292,7 +358,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "dependency",
       "description": "Reduced decomposition limits understory nutrient access"
@@ -312,7 +382,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "keystone",
       "description": "Pollinator loss blocks reproduction for 90%+ of canopy species"
@@ -325,7 +399,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "keystone",
       "description": "Pollinator loss collapses understory plant reproduction"
@@ -333,7 +411,17 @@
     {
       "source": "Pollinators",
       "target": "Epiphytes & Bromeliads",
-      "strength": 0.1,
+      "strength": {
+        "value": 0.1,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.333
+        ]
+      },
       "type": "dependency",
       "description": "Some epiphyte reproduction depends on specialist pollinators"
     },
@@ -345,7 +433,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "dependency",
       "description": "Loss of dispersers reduces tree recruitment and genetic connectivity"
@@ -358,7 +450,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "dependency",
       "description": "Understory seed dispersal decline"
@@ -413,7 +509,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "dependency",
       "description": "Riparian nutrient transport supports floodplain forest"
@@ -433,7 +533,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.004
+        ]
       },
       "type": "dependency",
       "description": "Epiphytes contribute to canopy water retention and microhabitat"
@@ -446,7 +550,11 @@
         "unit": "fraction of source damage",
         "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
         "confidence": "placeholder",
-        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+        "relative_range": [
+          0.5,
+          1.005
+        ]
       },
       "type": "dependency",
       "description": "Bromeliad water reservoirs support understory moisture"

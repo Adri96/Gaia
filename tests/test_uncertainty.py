@@ -215,3 +215,67 @@ def test_ranges_round_trip_through_a_saved_ecosystem():
     again = {p.name: p for p in ecosystem_from_dict(d).provenance}
     for p in eco.provenance:
         assert again[p.name].bounds == p.bounds and again[p.name].distribution == p.distribution
+
+
+# ── Step 8e.4: every shipped case's Monte Carlo accepts its draws ────────────
+
+@pytest.mark.parametrize("name", ["forest", "costa_brava", "posidonia", "amazon_forest"])
+def test_monte_carlo_accepts_draws_for_every_case(name):
+    """Every shipped case gives valid P5/P50/P95: its draws pass
+    validation (costa_brava and amazon_forest rejected every draw before
+    Step 8e.4, their edges sitting at the in-degree cap), and no drawn
+    value is rescaled to the cap."""
+    from gaia.ecosystem_io import case_from_dict
+    from gaia.uncertainty import _with_values
+
+    case = load_case(name)
+    params = case.build_ecosystem().provenance
+    sampled = sampled_parameters(params, case.param_paths)
+    by_name = {s.name: s for s in sampled}
+    weights = {n: p for n, p in case.param_paths.items() if n.endswith(".dependency_weight")}
+    weights = weights if any(n in by_name for n in weights) else {}
+    rng = random.Random(20261012)
+    rejected = 0
+    for _ in range(300):
+        values = {s.name: s.draw(rng) for s in sampled}
+        try:
+            built = case_from_dict(_with_values(case.document, values, by_name, weights)).build_ecosystem()
+        except ValueError:
+            rejected += 1
+            continue
+        for s in sampled:  # the drawn value is the value used (no rescaling)
+            if s.name.startswith("edge["):
+                source, target = s.name[5:-len("].strength")].split(" → ")
+                edge = next(e for e in built.interactions if e.source == source and e.target == target)
+                assert edge.strength == pytest.approx(values[s.name], rel=1e-12)
+    # Posidonia keeps its documented x0.5-x1.5 edges, which can breach the
+    # cap for its most connected agent; the others never do
+    assert rejected <= (30 if name == "posidonia" else 0)
+    units = case.default_units if name != "amazon_forest" else 800
+    kwargs = {"total_units": 4000} if name == "amazon_forest" else {}
+    res = run_uncertainty(case, units, build_kwargs=kwargs, draws=12, tornado=False, normative=False)
+    assert res.draws == 12
+    for key, _ in HEADLINES:
+        s = res.summary[key]
+        assert s["p5"] <= s["p50"] <= s["p95"]
+    assert res.summary["pv_externality"]["p95"] > res.summary["pv_externality"]["p5"] > 0
+
+
+@pytest.mark.parametrize("name", ["costa_brava", "amazon_forest"])
+def test_edges_into_capped_agents_rise_only_to_the_cap(name):
+    """Step 8e.4: an edge's documented upper factor keeps the worst-case
+    in-degree of its target within the cap (x0.5 to x1.5 otherwise)."""
+    from gaia.validation import worst_case_incoming_strengths
+
+    case = load_case(name)
+    eco = case.build_ecosystem()
+    worst = worst_case_incoming_strengths(eco.agents, eco.interactions)
+    sampled = {s.name: s for s in sampled_parameters(eco.provenance, case.param_paths)}
+    for e in eco.interactions:
+        s = sampled[f"edge[{e.source} → {e.target}].strength"]
+        assert s.low == pytest.approx(0.5 * e.strength)
+        assert s.high <= 1.5 * e.strength + 1e-12
+        assert worst[e.target] * s.high / e.strength <= 1.0 + 1e-9
+    for p in eco.provenance:
+        if p.name.endswith(".keystone_threshold"):
+            assert p.distribution == "uniform" and p.bounds == pytest.approx((p.value - 0.15, p.value + 0.15))

@@ -229,6 +229,30 @@ Insects, pollination 31. The other nine prices are derived. The former
 unsourced Watershed anchor (€2.50/m³ × 100 m³/ha/yr) and the eight
 placeholders are dropped: reachability makes them unnecessary.
 
+**Monte Carlo ranges (Step 8e.4).** Until Step 8e the Monte Carlo
+rejected almost every draw (2 of 300 passed): the edges into Understory
+& Matorral sit at the in-degree cap (0.999 with the keystone boosts),
+those into Canopy Trees and Soil Microbiome near it (0.85, 0.80), so the
+placeholder ×/÷3 pushed them above it; a third of the draws of the fire
+curve's base fell at or below 1. The ranges were narrowed the way
+Posidonia's were, each a judgement for an unfitted parameter:
+- edge strengths: ×0.5 to ×1.5 (Posidonia's range), except that edges
+  into an agent whose incoming strengths exceed 1/1.5 of the cap rise
+  only to the cap: ×0.5 to ×1/(the target's worst-case in-degree), i.e.
+  ×1.0 into Understory & Matorral, ×1.176 into Canopy Trees, ×1.25 into
+  Soil Microbiome. The documented strength is then the top of the range,
+  because the cap is structural: those edges can only be weaker together.
+  Drawn values are never rescaled;
+- the fire curve's base: ×0.75 to ×1.5 (1.5–3), since it must stay > 1;
+- the logistic steepness: 6–18, uniform (as Posidonia, instead of 4–36);
+- the keystone thresholds: ±0.15, uniform (0.15–0.45 for the fungi,
+  0.25–0.55 for the pollinators; the ×/÷3 range reached 0.9–1.0, where
+  the boost fires at almost any damage).
+No draw is rejected now. Default run (1,000 draws, seed 20261012), PV of
+externality €9.13 M (P5 / P50 / P95 €5.63 / 9.45 / 15.29 M); annual
+externality €127,048 (63,778 / 122,976 / 215,806). The agent value
+(×/÷2) and the safe threshold drive it. No number changes.
+
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
 The v1.0 case (decision D6). Since Step 8.2 every parameter is sourced or
@@ -565,3 +589,23 @@ Canopy Trees), so the other eight prices are derived. The former spec §8
 anchors (rainfall recycling €150k, fisheries €20k, biodiversity €410k:
 sources unverified, audit S4) and the eight placeholders are dropped; the
 static agent value (€580/ha/yr) still rests on the spec's §8 sum.
+
+**Monte Carlo ranges (Step 8e.4).** Until Step 8e the Monte Carlo
+rejected every draw: the twelve edges into Canopy Trees and Understory
+were rescaled to the in-degree cap in Step 3.8 (0.996 and 0.995 with the
+keystone boosts), so any upward draw broke it. The ranges were narrowed
+the way Posidonia's were:
+- edge strengths: ×0.5 to ×1.5, except that edges into an agent whose
+  incoming strengths exceed 1/1.5 of the cap rise only to the cap
+  (×1.004 into Canopy Trees, ×1.005 into Understory, ×1.333 into
+  Epiphytes & Bromeliads): the documented strengths of the twelve
+  rescaled edges are the top of their range, since the cap is structural.
+  Drawn values are never rescaled;
+- the logistic steepness: 6–18, uniform;
+- the keystone thresholds: ±0.15, uniform (0.10–0.40 for the fungi,
+  0.20–0.50 for the pollinators).
+No draw is rejected now. Default run (1,000 draws, seed 20261012; about
+4 minutes for the 80,000-tree run), PV of externality €34.93 M (P5 / P50
+/ P95 €32.83 / 39.76 / 50.96 M); annual externality €116,000 (86,615 /
+146,136 / 313,375). The safe threshold (the run sits exactly at it), the
+agent value and the carbon stock drive it. No number changes.

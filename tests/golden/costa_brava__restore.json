@@ -186,8 +186,13 @@
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "damage.threshold_logistic_steepness",
-          "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent except Fire & Microclimate Regulation. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B).",
+          "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent except Fire & Microclimate Regulation. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B). Monte Carlo range 6-18, uniform (Step 8e.4, as Posidonia: a judgement; the placeholder x/\u00f73 gave 4-36).",
+          "range": [
+            6.0,
+            18.0
+          ],
           "source": null,
           "unit": "dimensionless",
           "value": 12.0
@@ -195,23 +200,37 @@
         {
           "confidence": "placeholder",
           "name": "damage.threshold_exponential_base",
-          "note": "Degradation of Fire & Microclimate Regulation past the safe threshold (area_loss, Step 8d.1): zero up to the threshold, then exponential over the post-threshold span (fire feedback, no plateau): (base^((D - t)/(1 - t)) - 1)/(base - 1); not fitted to fire data.",
+          "note": "Degradation of Fire & Microclimate Regulation past the safe threshold (area_loss, Step 8d.1): zero up to the threshold, then exponential over the post-threshold span (fire feedback, no plateau): (base^((D - t)/(1 - t)) - 1)/(base - 1); not fitted to fire data. Monte Carlo range 1.5-3 (x0.75 to x1.5, Step 8e.4): the base must stay above 1 for a growing curve, and the placeholder x/\u00f73 (0.67-6) put a third of the draws at or below 1, which validation rejects.",
+          "range": [
+            1.5,
+            3.0
+          ],
           "source": null,
           "unit": "dimensionless",
           "value": 2.0
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "agent[Mycorrhizal Fungi].keystone_threshold",
-          "note": "",
+          "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.15-0.45, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/\u00f73 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+          "range": [
+            0.15,
+            0.45
+          ],
           "source": null,
           "unit": "health",
           "value": 0.3
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "agent[Pollinators & Insects].keystone_threshold",
-          "note": "",
+          "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.25-0.55, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/\u00f73 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+          "range": [
+            0.25,
+            0.55
+          ],
           "source": null,
           "unit": "health",
           "value": 0.4
@@ -219,7 +238,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.176. The incoming strengths into Canopy Trees sum to 0.850 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.176 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.176), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.175,
+            0.41159999999999997
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.35
@@ -227,7 +250,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mycorrhizal Fungi \u2192 Understory & Matorral].strength",
-          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.001. The incoming strengths into Understory & Matorral sum to 0.999 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.001 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.001), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0925,
+            0.185185
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.185
@@ -235,7 +262,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mycorrhizal Fungi \u2192 Soil Microbiome].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.25. The incoming strengths into Soil Microbiome sum to 0.800 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.25 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.25), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.15,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -243,7 +274,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Pollinators & Insects \u2192 Understory & Matorral].strength",
-          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.001. The incoming strengths into Understory & Matorral sum to 0.999 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.001 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.001), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.111,
+            0.22222199999999998
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.222
@@ -251,7 +286,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Pollinators & Insects \u2192 Forest Birds].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -259,7 +298,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Understory & Matorral].strength",
-          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.001. The incoming strengths into Understory & Matorral sum to 0.999 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.001 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.001), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0925,
+            0.185185
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.185
@@ -267,7 +310,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Soil Microbiome].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.25. The incoming strengths into Soil Microbiome sum to 0.800 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.25 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.25), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.1,
+            0.25
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -275,7 +322,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Watershed & Water Cycle].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -283,7 +334,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Forest Mammals \u2192 Raptors & Apex Predators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -291,7 +346,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Forest Birds \u2192 Raptors & Apex Predators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -299,7 +358,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory & Matorral \u2192 Forest Mammals].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.25
@@ -307,7 +370,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory & Matorral \u2192 Pollinators & Insects].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -315,7 +382,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Soil Microbiome \u2192 Canopy Trees].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.176. The incoming strengths into Canopy Trees sum to 0.850 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.176 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.176), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.075,
+            0.17639999999999997
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.15
@@ -323,7 +394,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Soil Microbiome \u2192 Watershed & Water Cycle].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -331,7 +406,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Fire & Microclimate Regulation].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.175,
+            0.5249999999999999
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.35
@@ -339,7 +418,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Watershed & Water Cycle \u2192 Human Communities].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.25
@@ -347,7 +430,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Fire & Microclimate Regulation \u2192 Human Communities].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.1

@@ -189,7 +189,7 @@ def test_known_flags_are_honest():
     assert param("costa_brava", "damage.threshold_exponential_base").confidence is Confidence.PLACEHOLDER
     retuned = [
         p for case in ("costa_brava", "amazon_forest") for p in _build(case).provenance
-        if "in-degree cap" in p.note
+        if "to the in-degree cap (Step 3.8" in p.note
     ]
     assert len(retuned) == 3 + 12
     assert all(p.confidence is Confidence.PLACEHOLDER for p in retuned)

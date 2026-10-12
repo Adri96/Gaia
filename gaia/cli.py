@@ -325,7 +325,8 @@ def add_uncertainty_arguments(parser: argparse.ArgumentParser) -> None:
             f"[extract mode] Monte Carlo over the case's parameter ranges: "
             f"P5/P50/P95 of the headline numbers, a sensitivity ranking and the "
             f"normative choices (N draws, default {DEFAULT_DRAWS:,} when given "
-            f"without N; about 4 s per 1,000 draws for Posidonia)"
+            f"without N; about 4 s per 1,000 draws for Posidonia, 4 min for the "
+            f"default 80,000-tree Amazon run)"
         ),
     )
     parser.add_argument(
