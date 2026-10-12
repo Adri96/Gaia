@@ -604,7 +604,7 @@ ruff check gaia tests scripts && mypy
 
 ## Status
 
-**v0.8.1 plus the 2026-10 audit fixes** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`). The version string stays 0.8.1 until the owner decides on a release.
+**v0.9.0: the 2026-10 audit fixes** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`).
 
 What works: extraction and restoration for four cases with unit-consistent flows, present values and one-off amounts; €/ha/yr scaling; restoration from a real starting state; carbon at the social cost of carbon; substrate restoration ceilings; convergent discounting with horizon sensitivity; the destroy-then-restore penalty; strict JSON; parameter provenance and calibration status in every output; an optional Cython loop behind a parity test; packaging and CI.
 

@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased — audit fixes (2026-10)
+## 0.9.0 — audit fixes (2026-10-12)
 
-The fixes from the 2026-10 audit (`TOP_PRIORITIES_REPORT.md`, Steps 0–6 and Step 5), on branch `audit-fixes` after tag `v0.8.1-pre-audit`. The commit messages record every changed number and the reason for it. The version string is still 0.8.1. The changes break the API, CLI and JSON (see *Migration* below), so a minor-version bump (e.g. 0.9.0) is warranted when this is released.
+The fixes from the 2026-10 audit (`TOP_PRIORITIES_REPORT.md`, Steps 0–6), on branch `audit-fixes` after tag `v0.8.1-pre-audit`. The commit messages record every changed number and the reason for it. The changes break the API, CLI and JSON (see *Migration* below), hence the minor-version bump.
 
 **Results are illustrative.** Every output now says how many of its parameters are placeholders or low-confidence. The numbers test the model's internal consistency, not the world.
 

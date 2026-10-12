@@ -516,7 +516,7 @@ def run_forest_restoration(
 
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Gaia v0.8.1 — Oak Valley Forest externality and restoration simulation",
+        description="Gaia v0.9.0 — Oak Valley Forest externality and restoration simulation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
