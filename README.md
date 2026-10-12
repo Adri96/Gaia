@@ -639,23 +639,24 @@ ruff check gaia tests scripts && mypy
 
 ## Status
 
-**v0.9.0: the 2026-10 audit fixes** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`).
+**v0.10.0: Step 8, the Posidonia v1.0 case** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`), on top of v0.9.0, the 2026-10 audit fixes.
 
 What works: extraction and restoration for four cases with unit-consistent flows, present values and one-off amounts; €/ha/yr scaling; restoration from a real starting state; carbon at the social cost of carbon; substrate restoration ceilings; convergent discounting with horizon sensitivity; the destroy-then-restore penalty; strict JSON; parameter provenance and calibration status in every output; a direct-evaluation engine (no per-unit loop, no compiled extension); packaging and CI.
 
 Experimental: endogenous pricing (`--with-pricing`), quarantined.
 
-Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
+Since 0.10.0 (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
 
 Not done:
 - Calibrated damage curves and edges: no case has them, Posidonia included.
 - External expert review of the Posidonia methods note.
 - A path-dependent engine: decided as a committed milestone after v1.0 (D5 option A, `version_specs/V09_SPEC.md`).
 
-Unreleased (Step 8):
+In 0.10.0 (Step 8):
 - The engine evaluates its static function directly; the Cython extension is gone (D5 option B, D7).
 - The Posidonia v1.0 case: every parameter sourced or flagged, benchmarks, Monte Carlo bounds (`--uncertainty`), and a methods note ready for review.
 - The first user and question, confirmed by the owner: a Catalan coastal authority or marine NGO reviewing the impact assessment of a port or marina expansion that destroys *N* ha of meadow (`PROJECT_DEFINITION.md`, v1.0).
+- The owner's answers (Steps 8c, 8d): small losses priced linearly in every case, the Posidonia service ledger (the diving value only near dive sites), project inputs for the reference meadow and the matte's fate, a few sourced anchors for the EXPERIMENTAL pricing.
 
 ---
 

@@ -6,8 +6,8 @@ Gaia is a Python library for simulating and quantifying externalities in economi
 
 The core thesis is simple: **profits are privatized, but externalities are socialized.** Gaia exists to make those externalities visible, measurable, and expressible in monetary terms — in both directions. It computes the **cost of destruction** and the **value of restoration**, giving decision-makers a complete picture of the true economics at play.
 
-> **Current status (2026-10): v0.9.0 (the audit fixes), illustrative and
-> uncalibrated.** The model structure below is implemented, but most
+> **Current status (2026-10): v0.10.0 (Step 8, the Posidonia v1.0 case, on
+> top of the 0.9.0 audit fixes), illustrative and uncalibrated.** The model structure below is implemented, but most
 > parameters of the shipped cases are placeholders or low-confidence values,
 > and every output says so (an `ILLUSTRATIVE` banner, a Parameter Provenance
 > section, a JSON `calibration` block). Results are not real-world
