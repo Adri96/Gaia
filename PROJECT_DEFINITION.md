@@ -606,8 +606,8 @@ Full specification: `version_specs/V081_SPEC.md`
 
 - [x] Pick the case (D6: Posidonia)
 - [ ] Owner confirms the user and the question above (proposal in place)
-- [ ] Every parameter of the case DOI-backed or explicitly flagged in the provenance (`docs/POSIDONIA_LITERATURE_REVIEW.md`)
-- [ ] Per-hectare values cross-checked against independent benchmarks (Campagne et al. 2015, de Groot et al. 2012 / ESVD, Costanza et al. 2014, Stamatiadou et al. 2025)
+- [x] Every parameter of the case DOI-backed or explicitly flagged in the provenance (`docs/POSIDONIA_LITERATURE_REVIEW.md`)
+- [x] Per-hectare values cross-checked against independent benchmarks (Campagne et al. 2015, de Groot et al. 2012 / ESVD, Costanza et al. 2014, Stamatiadou et al. 2025)
 - [ ] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95, a sensitivity (tornado) ranking; the heuristic band is retired
 - [ ] A 4–6 page methods note (`docs/POSIDONIA_METHODS_NOTE.md`)
 - [ ] Reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues

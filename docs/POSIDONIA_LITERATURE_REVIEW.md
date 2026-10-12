@@ -155,3 +155,33 @@ The quarantined endogenous pricing (decision D4) keeps the two anchors it had. B
 - **P. oceanica-specific figures** for matte accretion, leaf-biomass carbon and transplanting cost.
 - **The "80× fish biomass in the Medes Islands" claim** in the former case notes. No source found; the claim is removed. García-Rubies, Hereu & Zabala (2013), *PLoS ONE* 8:e73922, doi:10.1371/journal.pone.0073922, report instead that exploited fish in the Medes no-take reserve took 25–35 years to reach carrying-capacity biomass, with limited spillover.
 - **Grey literature cited by the sources but not read:** Pergent et al. (2012, IUCN/RAC-SPA), Boudouresque et al. (2012, RAC/SPA), Mateo et al. (2019, LIFE Blue Natura), González-Correa et al. (2005, *JEMBE* 320:65–76, doi:10.1016/j.jembe.2004.12.032, metadata only).
+
+## 10. Benchmarks: where Gaia's per-hectare values fall (Step 8.3)
+
+The case file lists published per-hectare values (`run.benchmarks`). Every extraction report and JSON output (`"benchmarks"`) compares Gaia's figures with them (`gaia/benchmarks.py`). Values are shown in their own currency and price year, unconverted: this is an order-of-magnitude check, not a test.
+
+Gaia's figures for the default run (50 of 4,582 ha destroyed):
+
+| Gaia figure | €/ha/yr |
+|---|---|
+| Service value of one hectare at full damage, carbon excluded | 284.83 |
+| … plus its carbon burial at the year-0 social cost of carbon (0.953 tCO₂ × €166.35) | 443.41 |
+| What the run actually charges per hectare lost (annual externality / 50 ha) | 126.49 |
+
+Linear benefit transfer for the 50 ha: 50 × 284.83 = €14,242/yr, against Gaia's €6,325/yr.
+
+| Benchmark | Value | Includes | Gaia vs benchmark |
+|---|---|---|---|
+| Campagne et al. 2015, *P. oceanica*, carbon excluded | 277–285 €2014/ha/yr | 5 goods and benefits | within (by construction: the case's values come from it) |
+| Campagne et al. 2015, carbon included | 284–514 €2014/ha/yr | + carbon at €35/t | within (Gaia with burial: 443) |
+| Stamatiadou, Mazaris & Katsanevakis 2025, *Ecosystem Services* 72:101704, doi:10.1016/j.ecoser.2025.101704: Mediterranean seagrass meta-regression (ESVD-style, 17 studies, 91 observations) | basin mean 8,712 Int$2020/ha/yr; countries 1,588–95,767 | 8 services incl. recreation/tourism, climate regulation | below: the mean is ~20× Gaia |
+| de Groot et al. 2012, *Ecosystem Services* 1:50–61, doi:10.1016/j.ecoser.2012.07.005 (the ESVD/TEEB database), coastal systems, as tabulated by Costanza et al. 2014 Table 4 | total of means 28,917 Int$2007/ha/yr (totals of minima–maxima 26,167–42,063) | all coastal systems, not seagrass alone | below: ~65× |
+| Costanza et al. 2014, *Global Environmental Change* 26:152–158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3: seagrass/algae beds | 28,916 $2007/ha/yr | 26,223 of it nutrient cycling | below: ~65× |
+| Vassallo et al. 2013 (emergy, supply side) | 172 €/m²/yr = 1.72 million €/ha/yr | resources invested by nature, not willingness to pay | not comparable; not in the output |
+
+### Reading the benchmarks
+
+1. **Gaia sits at the bottom of the published range, and deliberately so.** It uses the one primary *P. oceanica*-specific valuation, which values five goods and benefits and leaves tourism, recreation and non-use values out. The Mediterranean meta-regression is about 20× higher. It includes recreation and tourism, and it scales with GDP per capita (Spain sits between the basin's extremes; its country value was not in the abstract read). The global syntheses are 65× higher, mostly because of a nutrient-cycling value transferred from estuaries. Applying it to a Mediterranean meadow would be a large benefit-transfer leap.
+2. **The gap is in services that are not valued, not in the services that are.** For coastal protection, water purification and fisheries, Gaia uses the published Posidonia figures. A user who needs a central rather than a lower-bound estimate would need a recreation and non-use valuation for Catalan meadows. The methods note lists this as the main open data need.
+3. **The damage curves charge less than a linear transfer.** At the user's scale (a few percent of the stock), each hectare lost is charged €126/ha/yr in services, 44% of its average value. The rest of the gap comes from the placeholder logistic's initial slope (0.25) and the cascades. A linear benefit transfer charges 100%. Both figures are reported, and the Monte Carlo varies the curve parameters (§3).
+4. **Carbon dominates.** The one-off release costs about €126,000 per hectare at the social cost of carbon. That is roughly ten times the present value of the services the run charges per hectare: about €11,800, over 200 years with scarcity uplift, or €26,700 at the full per-hectare value. No benchmark above includes it, because they value flows only.

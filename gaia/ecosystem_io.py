@@ -404,6 +404,7 @@ class Case:
     units: Optional[int]
     report_note: str = ""
     json_notes: Tuple[str, ...] = field(default_factory=tuple)
+    benchmarks: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
 
     # ── Defaults ──────────────────────────────────────────────────────────────
 
@@ -652,9 +653,19 @@ class Case:
         from gaia.report import format_report, format_restoration_report
         from gaia.models import RestorationResult
 
+        from gaia.benchmarks import format_benchmarks
+
         if isinstance(result, RestorationResult):
             return format_restoration_report(result) + self.report_note
-        return format_report(result) + self.report_note
+        return (format_report(result) + format_benchmarks(self.benchmark_block(result))
+                + self.report_note)
+
+    def benchmark_block(self, result: Any) -> Optional[Dict[str, Any]]:
+        """run.benchmarks compared with an extraction result (gaia.benchmarks),
+        or None."""
+        from gaia.benchmarks import benchmark_comparison
+
+        return benchmark_comparison(result, self.benchmarks)
 
 
 def _discount_config(fields: Dict[str, Any]) -> DiscountConfig:
@@ -760,8 +771,12 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
             for k in _SUCCESSION_FIELDS
         }
 
-    run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes"))
+    run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes", "benchmarks"))
     units = _plain_int(run["units"], "$.run.units") if "units" in run else None
+    benchmarks = tuple(
+        _parse_benchmark(b, f"$.run.benchmarks[{i}]")
+        for i, b in enumerate(_list(run.get("benchmarks", []), "$.run.benchmarks"))
+    )
     report_note = _str(run.get("report_note", ""), "$.run.report_note")
     notes = tuple(_str(n, f"$.run.json_notes[{i}]") for i, n in enumerate(_list(run.get("json_notes", []), "$.run.json_notes")))
 
@@ -799,11 +814,37 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         units=units,
         report_note=report_note,
         json_notes=notes,
+        benchmarks=benchmarks,
     )
     # A trial build checks what only building can: curve parameters at the
     # document's threshold, the area, the pricing block.
     case.recovery_functions(case.build_ecosystem(with_pricing=pricing is not None))
     return case
+
+
+def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
+    """One run.benchmarks entry: a published per-hectare value to compare with."""
+    obj = _object(raw, path, ("name", "low", "high", "unit", "source"), ("central", "note", "includes_carbon"))
+    low = _plain_number(obj["low"], _key(path, "low"))
+    high = _plain_number(obj["high"], _key(path, "high"))
+    if low > high:
+        raise ValueError(f"{path}: low ({low}) is above high ({high})")
+    out: Dict[str, Any] = {
+        "name": _str(obj["name"], _key(path, "name")),
+        "low": float(low),
+        "high": float(high),
+        "unit": _str(obj["unit"], _key(path, "unit")),
+        "source": _str(obj["source"], _key(path, "source")),
+        "note": _str(obj.get("note", ""), _key(path, "note")),
+        "includes_carbon": _bool(obj.get("includes_carbon", False), _key(path, "includes_carbon")),
+        "central": None,
+    }
+    if "central" in obj:
+        central = _plain_number(obj["central"], _key(path, "central"))
+        if not low <= central <= high:
+            raise ValueError(f"{path}: central ({central}) is outside [low, high]")
+        out["central"] = float(central)
+    return out
 
 
 def _parse_provenance_defaults(raw: Any) -> Dict[str, Dict[str, Any]]:

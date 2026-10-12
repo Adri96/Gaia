@@ -633,6 +633,54 @@
     "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the meadow is gone. P. oceanica grows centimetres a year;\n     natural recolonisation leaves limited cover after a century (Kendrick et\n     al. 2005). The values are a LOWER BOUND: tourism, recreation and non-use\n     values are not valued. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md.",
     "json_notes": [
       "Marine externality costs are ANNUAL (€/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. The per-hectare values are a lower bound: tourism, recreation and non-use values are not valued."
+    ],
+    "benchmarks": [
+      {
+        "name": "Campagne et al. 2015, P. oceanica, carbon excluded",
+        "low": 276.83,
+        "high": 284.83,
+        "unit": "€2014/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2",
+        "note": "The primary valuation the case's values come from (sum of the non-carbon goods and benefits): agreement here is by construction."
+      },
+      {
+        "name": "Campagne et al. 2015, P. oceanica, carbon included",
+        "low": 284.0,
+        "high": 514.0,
+        "unit": "€2014/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061",
+        "note": "Carbon sequestration 7.7-230 €/ha/yr at 35 €/t CO2; 11 of 25 services unvalued (mainly tourism and cultural).",
+        "includes_carbon": true
+      },
+      {
+        "name": "Stamatiadou et al. 2025, Mediterranean seagrass meta-regression (country range)",
+        "low": 1588.0,
+        "high": 95767.0,
+        "unit": "Int$2020/ha/yr",
+        "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704",
+        "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita.",
+        "includes_carbon": true,
+        "central": 8712.0
+      },
+      {
+        "name": "de Groot et al. 2012 (ESVD/TEEB), coastal systems",
+        "low": 26167.0,
+        "high": 42063.0,
+        "unit": "Int$2007/ha/yr",
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, as tabulated by Costanza et al. (2014) Table 4",
+        "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone.",
+        "includes_carbon": true,
+        "central": 28917.0
+      },
+      {
+        "name": "Costanza et al. 2014, seagrass/algae beds",
+        "low": 28916.0,
+        "high": 28916.0,
+        "unit": "$2007/ha/yr",
+        "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3",
+        "note": "Global unit value; 26,223 of it is nutrient cycling.",
+        "includes_carbon": true
+      }
     ]
   }
 }

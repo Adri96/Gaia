@@ -698,6 +698,7 @@ def to_json(
     indent: int = 2,
     notes: Optional[List[str]] = None,
     steps_every: int = 1,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Convert a SimulationResult or RestorationResult to a JSON string.
 
@@ -707,6 +708,8 @@ def to_json(
         indent: JSON indentation level (default 2).
         notes: Optional annotation strings for the output.
         steps_every: Include every Nth step and the last (default 1: all).
+        extra: Optional top-level blocks to add (e.g. "benchmarks",
+            "uncertainty"); None values are left out.
 
     Returns:
         JSON string: strict JSON, non-finite numbers as null plus a
@@ -731,4 +734,7 @@ def to_json(
             f"Expected SimulationResult or RestorationResult, "
             f"got {type(result).__name__}"
         )
+    for key, block in (extra or {}).items():
+        if block is not None:
+            d[key] = block
     return json.dumps(_strict(d), indent=indent, ensure_ascii=False, allow_nan=False)

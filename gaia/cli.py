@@ -295,6 +295,7 @@ def output_result(
     result_obj,
     args: argparse.Namespace,
     notes: Optional[List[str]] = None,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Output the result in the requested format.
 
@@ -308,6 +309,7 @@ def output_result(
         args: Parsed CLI arguments (needs output_format, output,
             summary_only; steps_every is optional).
         notes: Optional annotation strings for JSON output.
+        extra: Optional top-level JSON blocks (benchmarks, uncertainty).
 
     Raises:
         SystemExit: (status 1, clean message) if ``--output`` cannot be
@@ -332,6 +334,7 @@ def output_result(
             include_steps=include_steps,
             notes=notes,
             steps_every=steps_every or 1,
+            extra=extra,
         )
     else:
         output = text_report
@@ -524,7 +527,9 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
         else:
             result = run_extraction(ecosystem, args.units)
         text_report = case.report(result)
-        output_result(text_report, result, args, notes=list(case.json_notes) or None)
+        extra = {"benchmarks": case.benchmark_block(result)}
+        output_result(text_report, result, args, notes=list(case.json_notes) or None,
+                      extra=extra)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
