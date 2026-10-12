@@ -107,7 +107,7 @@
         {
           "confidence": "low",
           "name": "agent[Coralligenous & Red Coral].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving on the coralligenous, 18.95 EUR/ha/yr = EUR 60 per dive x 60,000 Medes dives a year / 190,000 ha of mapped seabed. A Catalan primary study; the attribution to a hectare of meadow is the seascape rule used for every service of the wider seascape: the regional value spread evenly over the mapped seabed (an assumption, not a source: no study links coralligenous condition to the nearby meadow). Range 9.5-43.8 EUR/ha/yr: half the attribution to EUR 108.01/dive (Zunino et al. 2020, total loss of coralligenous) x 77,000 dives.",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving on the coralligenous, 18.95 EUR/ha/yr = EUR 60 per dive x 60,000 Medes dives a year / 190,000 ha of mapped seabed. A Catalan primary study; the attribution to a hectare of meadow is the seascape rule used for every service of the wider seascape: the regional value spread evenly over the mapped seabed. PROVISIONAL: an attribution assumption, not a source (no study links coralligenous condition to the nearby meadow), accepted by the owner as provisional (Step 8d.3) until an area-weighted link to nearby reefs can be sourced. Range 9.5-43.8 EUR/ha/yr: half the attribution to EUR 108.01/dive (Zunino et al. 2020, total loss of coralligenous) x 77,000 dives.",
           "range": [
             86.21052631578947,
             398.3295105263158
@@ -155,7 +155,7 @@
         {
           "confidence": "low",
           "name": "agent[Marine Megafauna].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting marine mammals (dolphins) and, by extension, sea turtles, 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting marine mammals (dolphins) and, by extension, sea turtles, 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule, PROVISIONAL: an attribution assumption accepted by the owner as provisional, Step 8d.3) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
           "range": [
             226.60837812564083,
             2060.076164778553
@@ -167,7 +167,7 @@
         {
           "confidence": "low",
           "name": "agent[Seabirds].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting seabirds (Audouin's gull, shags, shearwaters), 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting seabirds (Audouin's gull, shags, shearwaters), 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule, PROVISIONAL: an attribution assumption accepted by the owner as provisional, Step 8d.3) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
           "range": [
             181.28670250051263,
             1648.0609318228421

@@ -103,7 +103,7 @@ A Posidonia extraction run records 60 parameters (70 with restoration): 26 sourc
 | Seabirds | non-use: protecting seabirds | 30.18 | the other half |
 | **Total** | | **818.66** | |
 
-Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption. The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2). **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
+Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption that the owner accepted as **provisional** (Step 8d.3; labelled so in the provenance). The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2). **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 
@@ -263,7 +263,7 @@ Every output lists every parameter with its source, confidence and, where docume
 - Which matte-loss fraction and half-life apply to a port or marina footprint (excavated vs. buried vs. exposed)? Is 10 years a defensible central half-life for matte left exposed?
 
 **Environmental economist (Track 2).**
-- Is the service ledger (each final service counted once, intermediate agents owning sourced shares moved from other agents, seascape services spread over the mapped seabed) the right way to price every agent without double counting?
+- Is the service ledger (each final service counted once, intermediate agents owning sourced shares moved from other agents, seascape services spread over the mapped seabed, a provisional assumption) the right way to price every agent without double counting?
 - Is Campagne et al.'s per-hectare value transferable to Catalonia?
 - Are the diving and non-use benefit transfers (Zunino et al. 2020, Rodrigues et al. 2016, Börger et al. 2014) acceptable, and which study should replace them or fill the remaining gaps (beach tourism, the meadow's existence value)?
 - Is the SCC-based carbon valuation, with the release spread over time by a half-life and each year valued at that year's SCC, appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.

@@ -232,12 +232,14 @@ figure and the owner's weights keep their role in the health index
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
   for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
   Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the
-  "seascape rule": a seascape service spread over the mapped seabed).
+  "seascape rule": a seascape service spread over the mapped seabed;
+  accepted by the owner as a PROVISIONAL assumption, Step 8d.3, and
+  labelled so in the provenance).
 - Marine Megafauna and Seabirds: the non-use value of protecting
   porpoises, seals and seabirds (Börger et al. 2014, UK, £30.32 per
   household per year for 5 years), annualised at 2.3%, converted to €,
-  times Catalonia's 2,989,357 households, spread over 190,000 ha and
-  split equally: 30.18 each.
+  times Catalonia's 2,989,357 households, spread over 190,000 ha (the
+  provisional seascape rule) and split equally: 30.18 each.
 
 Total €818.66/ha/yr (€284.83 before). Splits move value between agents
 and leave totals unchanged. The diving and non-use entries are benefit

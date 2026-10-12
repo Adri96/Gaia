@@ -2,6 +2,10 @@
 
 ## Unreleased — the owner's answers, second round (Step 8d)
 
+### Changed
+
+- **Seascape attribution labelled provisional** (Posidonia; Step 8d.3). The owner accepted spreading the coralligenous diving value and the megafauna and seabird non-use values evenly over the 190,000 ha of mapped seabed as a provisional assumption. The three agents' provenance notes and ledger entries say PROVISIONAL; the docs no longer list it as an open question. No number changes.
+
 ### Added
 
 - **`--matte-fate {exposed,excavated,buried}`** (Posidonia; Step 8d.2): what the project does to the matte, a preset of `--carbon-release-fraction` and `--carbon-release-half-life` (which still override it), from the sourced table of the literature review §4. **exposed** (default, unchanged): 0.63, half-life 10 yr; **excavated**: 0.96, at once (IPCC 2013); **buried**: 0.125, half-life 10 yr, *inferred, no source*. `--help`, the README and the methods note explain the three fates in plain words. The case format gains `carbon.release_fates` (`--<subject>-fate` for any case that defines it; `Case.fate_check()`). No number changes.
