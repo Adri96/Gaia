@@ -45,33 +45,62 @@ Context, not a parameter:
 - **Regional decline.** Telesca et al. (2015), *Sci. Rep.* 5:12505, doi:10.1038/srep12505, map 1,224,707 ha of known *P. oceanica* and estimate a 34% regression over the last 50 years.
 - **Anchoring loss rate.** The Label Bas-Carbone method takes 0.29%/yr as its default regression rate under anchoring, from Telesca et al.'s 9% for France over 1980–2011.
 
-## 2. Agent values: final ecosystem services
+## 2. Agent values: the service ledger (Step 8c.2)
 
-**Mapping.** Gaia's cost for agent *i* is damage × weight × `annual_value_per_ha` × area. Each agent's `annual_value_per_ha` is therefore set to (service value per ha) / weight. This makes weight × value the sourced €/ha/yr. The owner's weights keep their role in the health index.
+**Mapping.** Gaia's cost for agent *i* is damage × weight × `annual_value_per_ha` × area. Each agent's `annual_value_per_ha` is therefore set to (its services per ha) / weight, which makes weight × value the sourced €/ha/yr. The owner's weights keep their role in the health index.
 
-**Why only final services carry euros.** Ecosystem-service accounting values a benefit once, where people receive it (Boyd & Banzhaf 2007, *Ecological Economics* 63:616–626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, *Ecological Economics* 68:643–653, doi:10.1016/j.ecolecon.2008.09.014). The meadow, epiphytes and invertebrates produce the fisheries, the coastal protection and the water quality. A separate euro value on them would count the same benefit twice. In Gaia they keep their health weights and their edges, so their damage still raises the damage of the final services.
+**The owner's rule (Step 8c.2).** Every agent must cost money, and double counting must still be avoided rigorously. Ecosystem-service accounting values a benefit once, where people receive it: the **final** services (Boyd & Banzhaf 2007, *Ecological Economics* 63:616–626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, *Ecological Economics* 68:643–653, doi:10.1016/j.ecolecon.2008.09.014). The case file therefore carries an explicit **service ledger** (`service_ledger`):
+- each final service appears **exactly once**, with its €/ha/yr, its method, its source and its benefit-transfer method;
+- each service is assigned to **exactly one** agent: the one that is its best owner;
+- where an agent is intermediate and has no final service of its own, it gets a **sourced share of a final service moved from another agent**. The total is unchanged, and the split and its source are recorded (`split_of`, `share`, `share_source`).
 
-**Primary valuation.** Campagne, Salles, Boissery & Deter (2015), "The seagrass *Posidonia oceanica*: ecosystem services identification and economic evaluation of goods and benefits", *Marine Pollution Bulletin* 97:391–400, doi:10.1016/j.marpolbul.2015.05.061. Table 2, € 2014/ha/yr, French Mediterranean meadows (read from the article). The paper:
-- identifies 25 services, of which 14 could be valued;
-- totals 284–514 €/ha/yr including carbon;
-- states that the figure is an undervaluation, mainly because tourism and most cultural services could not be valued.
+Parsing rejects a service listed twice, a service also counted through its shares, shares adding up to more than 1, and a value ≤ 0. A test checks the shipped case: no service counted twice, every agent's value > 0, and each agent's weight × value equal to the sum of its ledger entries (`Case.ledger_check()`).
 
-| Agent | €/ha/yr at full damage (weight × value) | Source and mapping | Range | Confidence |
-|---|---|---|---|---|
-| Coastal Protection | 188 | Campagne et al. 2015: "protection from coastal erosion" (damage cost avoided, 160,000 € per protected km in the Mediterranean, 2001 data inflated to 2014). Covers three services: wave attenuation, beach-cast banquettes, matte stabilisation. Physical basis: wave height falls ~50% over ~1 km of meadow (Infantes et al. 2012, *MEPS* 456:63–72, doi:10.3354/meps09754). | single estimate; ×/÷2 in the Monte Carlo (judgement) | medium |
-| Water Quality | 60 | Campagne et al. 2015: "wastewater treatment" (benefit transfer of the French water-protection tax, 0.19 €/m³, one third attributed to coastal systems after Costanza et al. 1997) | single, crude estimate; ×/÷2 (judgement) | medium |
-| Fish Populations | 35 | Campagne et al. 2015: "fishery contribution", 27–35 €/ha/yr (production function; upper end used) | 27–74. The 74 is **derived here, not published**: Jackson et al. (2015), *Conservation Biology* 29:899–909, doi:10.1111/cobi.12436, attribute €58–91 million/yr of Mediterranean commercial landings to seagrass. Divided by the known *P. oceanica* area (1,224,707 ha, Telesca et al. 2015) that is €47–74/ha/yr, an overestimate per hectare of *P. oceanica* because other seagrasses also contribute. | medium |
-| Human Communities | 1.83 | Campagne et al. 2015: bioindicator use 1.5 + knowledge contribution 0.33 | **tourism, recreation and non-use NOT valued** | medium |
-| Posidonia Meadow, Epiphytes & Algae, Marine Invertebrates | 0 | Intermediate services (Boyd & Banzhaf 2007; Fisher et al. 2009) | — | low |
-| Coralligenous & Red Coral | 0 | A neighbouring habitat affected through sedimentation; its own values (diving, coral) are not part of a Posidonia valuation | — | low |
-| Marine Megafauna, Seabirds | 0 | Non-use and wildlife-watching values: no per-hectare estimate tied to Posidonia was found | — | low |
+**The seascape rule.** Some services belong to the wider seascape rather than to the meadow hectare itself: diving on coralligenous reefs, and the non-use values of mobile species. Their regional value is spread evenly over the **mapped Catalan seabed to 50 m, ~190,000 ha** (the Generalitat's 2025 map, §1), so a meadow hectare carries the average seascape share. This is an attribution assumption, not a source: no study links these services to a hectare of meadow, and meadows are probably above average. Services of the meadow itself are spread over the meadow area (4,582 ha).
 
-**Total:** €284.83/ha/yr at full damage, excluding carbon (valued separately, §4). The former owner-specified values totalled €1,066/ha/yr (no source).
+**The ledger** (€/ha/yr at full damage; carbon excluded, §4):
+
+| Agent | Final service | €/ha/yr | Method | Source | Transfer | Confidence |
+|---|---|---|---|---|---|---|
+| Coastal Protection | Protection from coastal erosion (wave attenuation, banquettes, matte) | 188.00 | damage cost avoided | Campagne et al. 2015, Table 2 | French Mediterranean → Catalonia, unit value, € 2014 | medium |
+| Water Quality | Water purification (wastewater treatment) | 60.00 | benefit transfer of the French water-protection tax (⅓ to coastal systems) | Campagne et al. 2015, Table 2 | as above | medium |
+| Fish Populations | Commercial fisheries: meadow-associated fish | 30.625 | production function at auction prices; **14/16 of 35** | Campagne et al. 2015, Table 2 and §3.2.4 | as above | medium |
+| Marine Invertebrates | Commercial fisheries: meadow-associated invertebrates (sea urchin *Paracentrotus lividus*, cuttlefish *Sepia officinalis*) | 4.375 | **2/16 of 35**, moved from Fish Populations | Campagne et al. 2015 §3.2.4: 2 of the 16 species sold | as above; share by species count (assumption) | low |
+| Human Communities | Bioindicator use: shoot, leaf and lower-limit metrics | 1.286 | market prices (monitoring); **3/3.5 of 1.5** | Campagne et al. 2015; Gobert et al. 2009 | as above | medium |
+| Epiphytes & Algae | Bioindicator use: epiphyte metric (E/L ratio) | 0.214 | **0.5/3.5 of 1.5**, moved from Human Communities | Gobert et al. (2009), *Mar. Pollut. Bull.* 58:1727–1733, doi:10.1016/j.marpolbul.2009.06.012 (full text): PREI EQR′ = (N density + N leaf surface + N(E/L) + N lower limit)/3.5, with N(E/L) = [1 − E/L] × 0.5 | as above | low |
+| Human Communities | Knowledge contribution (research funding) | 0.33 | market prices (EU LIFE funding per ha) | Campagne et al. 2015, Table 2 | EU average → Catalonia | medium |
+| Posidonia Meadow | Recreational diving: the meadow's amenity | 454.52 | choice experiment: €34.71 per dive for a total loss of *P. oceanica* cover × 60,000 Medes Islands dives/yr ÷ 4,582 ha | Zunino et al. (2020), *Front. Mar. Sci.* 6:823, doi:10.3389/fmars.2019.00823 (abstract and full text, Table 3); dives: Ràdio Capital (26 May 2026, the Parc Natural / SUBMON study: "prop de 60.000 immersions anuals"), cap raised from 60,000 to ~77,000 in 2015 (Ara, 19 June 2015) | Italian divers → Medes dives, unit value, no income adjustment, € 2016–17 | low |
+| Coralligenous & Red Coral | Recreational diving: coralligenous seascape | 18.95 | choice experiment: €60 per dive for the local extinction of gorgonians × 60,000 dives ÷ 190,000 ha (seascape rule) | Rodrigues et al. (2016), *Environ. Resource Econ.* 63:289–311, doi:10.1007/s10640-015-9935-8 (abstract, UAB research portal) | none for the value (Catalan, Medes Islands); seascape attribution (assumption) | low |
+| Marine Megafauna | Non-use: protection of marine megafauna | 30.18 | choice experiment: UK households pay £30.32/yr for 5 years to protect porpoises, seals and seabirds on 50% of the Dogger Bank, annualised at 2.3% (£3.26/yr), at 0.84926 £/€ (€3.84), × 2,989,357 Catalan households ÷ 190,000 ha, **half** of the bundled attribute | Börger et al. (2014), *Ecol. Econ.* 108:229–241, doi:10.1016/j.ecolecon.2014.10.006 (full text, open access); households: Idescat, *Households by size* 2021 (INE census); ECB 2013 average rate | UK → Catalonia, unit value, no income adjustment; a 50%-protection scenario read as the value at full damage (lower in scope) | low |
+| Seabirds | Non-use: protection of seabirds | 30.18 | the other half of the same attribute | as above | as above | low |
+| **Total** | | **818.66** | | | | |
+
+The total was €284.83/ha/yr before Step 8c.2, when only Campagne et al.'s services carried euros.
+
+**Notes on each choice:**
+- **Splits (total unchanged).**
+  - The fisheries contribution (35 €/ha/yr) is split 14/16 fish, 2/16 invertebrates. That is the species count of Campagne et al.'s list of meadow-associated species sold at the Sète auction. Equal value per species is an assumption. The upper end of the invertebrates' range, 25.4%, is the cephalopod and other-invertebrate share of Catalan white-fish, cephalopod and other-invertebrate first-sale value in 2014 (Generalitat open data, *Estadístiques de pesca per grups biològics*, dataset ge3m-4jgm: €13.65 M + €0.34 M against €41.06 M). It is a proxy, not specific to the meadow.
+  - The bioindicator value (1.5 €/ha/yr) is split by the PREI's own weights. The epiphyte/leaf biomass metric carries at most 0.5 of 3.5.
+- **The meadow's own service.** The meadow is the keystone, but its regulating services are already booked under Coastal Protection and Water Quality, and its habitat role under fisheries. Its own distinct final service is the underwater amenity, which Campagne et al. list as unvalued ("Visit of *P. oceanica* meadows: snorkelling and submarine vision boat"). Two caveats:
+  - Every Medes dive is assumed to include meadow, which biases the value up.
+  - Every other Catalan dive site is left out, which biases it down.
+
+  The range is 214–1,294 €/ha/yr: €18.12/dive (the 50%-loss value, i.e. half the dives over meadow) × 54,000 dives, to €77/dive (latent class 1) × 77,000 dives.
+- **Two diving values, one dive.** The meadow's value (Zunino et al.) and the coralligenous's value (Rodrigues et al.) are different attributes of the same dives. Zunino et al.'s own model estimates both habitats as separate, additive attributes (coralligenous total loss −€108, *P. oceanica* −€34). Adding a Catalan coralligenous value to an Italian meadow value assumes the same additivity across studies.
+- **Non-use values.** These are the weakest entries: a transfer from a North Sea study, a protection scenario read as the value of the species, an equal split of a bundled attribute, and the seascape attribution. They are flagged `low`, with a ×0.33–×3 range. Börger et al.'s 25%-protection value (£24.02) gives 23.9 €/ha/yr each.
+- **Still not valued:**
+  - beach tourism (the meadow's role in keeping beaches and clear water for tourists);
+  - the meadow's own non-use (existence) value;
+  - recreational fishing as welfare;
+  - the non-use value of the coralligenous.
+
+  The ledger total therefore remains a lower bound, though a much smaller gap than before (§10).
 
 **Searched for but not used:**
-- **Divers' willingness to pay.** Zunino et al. (2020), *Front. Mar. Sci.* 6:823, doi:10.3389/fmars.2019.00823: Italian divers' WTP per dive falls by €18 for a 50% loss of P. oceanica cover and by €34 for a total loss. These are values per dive, not per hectare; converting them needs dive counts per hectare, which are not available.
-- **Recreational fisheries.** Jackson et al. (2015) attribute €112 million/yr of Mediterranean recreational-fisheries **expenditure** to seagrass. Expenditure is not a welfare measure.
-- **Emergy (supply-side) values.** Vassallo et al. (2013), *Mar. Pollut. Bull.* 75:157–167, doi:10.1016/j.marpolbul.2013.07.044: 172 €/m²/yr as quoted by Campagne et al., 99% of it from sediment retention. Rigo et al. (2021), *Diversity* 13:499, doi:10.3390/d13100499. These measure the resources nature invests, not what people would pay, so they are not comparable with the values above. They are kept as a benchmark only (§10).
+- **Recreational fisheries.** Jackson et al. (2015), *Conservation Biology* 29:899–909, doi:10.1111/cobi.12436, attribute €112 million/yr of Mediterranean recreational-fisheries **expenditure** to seagrass. Expenditure is not a welfare measure.
+- **A Mediterranean or Catalan stated-preference value for megafauna, seabirds or the meadow's existence.** Only pilot or per-visit studies were found: Stithou & Scarpa (2012) on Zakynthos (loggerhead turtle and monk seal, per visit), and Kontogianni et al. (2012) on Lesvos (monk seal, payment frequency unknown). Both are reported in Lew (2015), *Front. Mar. Sci.* 2:96, doi:10.3389/fmars.2015.00096. Ressurreição et al. (2011, doi:10.1016/j.ecolecon.2010.11.009; 2012, doi:10.1016/j.biocon.2011.10.026) value species loss by taxon in the Azores and two other European seas; their WTP figures could not be read (no abstract or open full text reachable).
+- **The per-service breakdown of the Mediterranean meta-regression** (Stamatiadou et al. 2025). The article was not accessible beyond its abstract.
+- **Emergy (supply-side) values.** Vassallo et al. (2013), *Mar. Pollut. Bull.* 75:157–167, doi:10.1016/j.marpolbul.2013.07.044 (172 €/m²/yr as quoted by Campagne et al., 99% of it sediment retention), and Rigo et al. (2021), *Diversity* 13:499, doi:10.3390/d13100499. They measure what nature invests, not what people would pay, so they are kept as a benchmark only (§10).
 
 ## 3. Damage curves, health weights, cascade network
 
@@ -204,7 +233,7 @@ The quarantined endogenous pricing (decision D4) keeps the two anchors it had. B
 
 - **A Posidonia damage-response curve.** No study relating the fraction of a meadow lost to the fraction of each service lost.
 - **Interaction strengths.** None for the case's 15 edges.
-- **Tourism, recreation and non-use values per hectare of P. oceanica.** No direct study found. The Mediterranean meta-regression of Stamatiadou et al. (2025) includes recreation (§10).
+- **Tourism and non-use values per hectare of P. oceanica.** No direct study found. Since Step 8c.2 recreation (diving) and the non-use values of megafauna and seabirds are in the ledger through benefit transfer (§2). Beach tourism and the meadow's own existence value are still missing. The Mediterranean meta-regression of Stamatiadou et al. (2025) includes recreation (§10).
 - **The Costa Brava share of the Catalan stock.** Not found; the Generalitat's dataset was not downloaded.
 - **P. oceanica-specific figures** for matte accretion, leaf-biomass carbon and transplanting cost.
 - **The "80× fish biomass in the Medes Islands" claim** in the former case notes. No source found; the claim is removed. García-Rubies, Hereu & Zabala (2013), *PLoS ONE* 8:e73922, doi:10.1371/journal.pone.0073922, report instead that exploited fish in the Medes no-take reserve took 25–35 years to reach carrying-capacity biomass, with limited spillover.
@@ -218,24 +247,24 @@ Gaia's figures for the default run (50 of 4,582 ha destroyed):
 
 | Gaia figure | €/ha/yr |
 |---|---|
-| Service value of one hectare at full damage, carbon excluded | 284.83 |
-| … plus its carbon burial at the year-0 social cost of carbon (0.953 tCO₂ × €166.35) | 443.41 |
-| What the run actually charges per hectare lost (annual externality / 50 ha) | 126.49 |
+| Service value of one hectare at full damage (the service ledger, §2), carbon excluded | 818.66 |
+| … plus its carbon burial at the year-0 social cost of carbon (0.953 tCO₂ × €166.35) | 977.25 |
+| What the run actually charges per hectare lost (annual externality / 50 ha) | 818.66 |
 
-Linear benefit transfer for the 50 ha: 50 × 284.83 = €14,242/yr, against Gaia's €6,325/yr.
+Since Step 8c.3 small losses are priced linearly, so the run charges exactly the linear benefit transfer: 50 × 818.66 = €40,933/yr. Before Step 8c it charged €6,325/yr, 44% of the then €14,242/yr transfer of €284.83/ha/yr.
 
 | Benchmark | Value | Includes | Gaia vs benchmark |
 |---|---|---|---|
-| Campagne et al. 2015, *P. oceanica*, carbon excluded | 277–285 €2014/ha/yr | 5 goods and benefits | within (by construction: the case's values come from it) |
-| Campagne et al. 2015, carbon included | 284–514 €2014/ha/yr | + carbon at €35/t | within (Gaia with burial: 443) |
-| Stamatiadou, Mazaris & Katsanevakis 2025, *Ecosystem Services* 72:101704, doi:10.1016/j.ecoser.2025.101704: Mediterranean seagrass meta-regression (ESVD-style, 17 studies, 91 observations) | basin mean 8,712 Int$2020/ha/yr; countries 1,588–95,767 | 8 services incl. recreation/tourism, climate regulation | below: the mean is ~20× Gaia |
-| de Groot et al. 2012, *Ecosystem Services* 1:50–61, doi:10.1016/j.ecoser.2012.07.005 (the ESVD/TEEB database), coastal systems, as tabulated by Costanza et al. 2014 Table 4 | total of means 28,917 Int$2007/ha/yr (totals of minima–maxima 26,167–42,063) | all coastal systems, not seagrass alone | below: ~65× |
-| Costanza et al. 2014, *Global Environmental Change* 26:152–158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3: seagrass/algae beds | 28,916 $2007/ha/yr | 26,223 of it nutrient cycling | below: ~65× |
+| Campagne et al. 2015, *P. oceanica*, carbon excluded | 277–285 €2014/ha/yr | 5 goods and benefits | above (×2.9): the ledger adds recreation and non-use values to the services it takes from Campagne et al. |
+| Campagne et al. 2015, carbon included | 284–514 €2014/ha/yr | + carbon at €35/t | above (Gaia with burial at the SCC: 977) |
+| Stamatiadou, Mazaris & Katsanevakis 2025, *Ecosystem Services* 72:101704, doi:10.1016/j.ecoser.2025.101704: Mediterranean seagrass meta-regression (ESVD-style, 17 studies, 91 observations) | basin mean 8,712 Int$2020/ha/yr; countries 1,588–95,767 | 8 services incl. recreation/tourism, climate regulation | below: the mean is ~11× Gaia |
+| de Groot et al. 2012, *Ecosystem Services* 1:50–61, doi:10.1016/j.ecoser.2012.07.005 (the ESVD/TEEB database), coastal systems, as tabulated by Costanza et al. 2014 Table 4 | total of means 28,917 Int$2007/ha/yr (totals of minima–maxima 26,167–42,063) | all coastal systems, not seagrass alone | below: ~35× |
+| Costanza et al. 2014, *Global Environmental Change* 26:152–158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3: seagrass/algae beds | 28,916 $2007/ha/yr | 26,223 of it nutrient cycling | below: ~35× |
 | Vassallo et al. 2013 (emergy, supply side) | 172 €/m²/yr = 1.72 million €/ha/yr | resources invested by nature, not willingness to pay | not comparable; not in the output |
 
 ### Reading the benchmarks
 
-1. **Gaia sits at the bottom of the published range, and deliberately so.** It uses the one primary *P. oceanica*-specific valuation, which values five goods and benefits and leaves tourism, recreation and non-use values out. The Mediterranean meta-regression is about 20× higher. It includes recreation and tourism, and it scales with GDP per capita (Spain sits between the basin's extremes; its country value was not in the abstract read). The global syntheses are 65× higher, mostly because of a nutrient-cycling value transferred from estuaries. Applying it to a Mediterranean meadow would be a large benefit-transfer leap.
-2. **The gap is in services that are not valued, not in the services that are.** For coastal protection, water purification and fisheries, Gaia uses the published Posidonia figures. A user who needs a central rather than a lower-bound estimate would need a recreation and non-use valuation for Catalan meadows. The methods note lists this as the main open data need.
-3. **The damage curves charge less than a linear transfer.** At the user's scale (a few percent of the stock), each hectare lost is charged €126/ha/yr in services, 44% of its average value. The rest of the gap comes from the placeholder logistic's initial slope (0.25) and the cascades. A linear benefit transfer charges 100%. Both figures are reported, and the Monte Carlo varies the curve parameters (§3).
-4. **Carbon dominates.** The one-off release costs about €126,000 per hectare at the social cost of carbon. That is roughly ten times the present value of the services the run charges per hectare: about €11,800, over 200 years with scarcity uplift, or €26,700 at the full per-hectare value. No benchmark above includes it, because they value flows only.
+1. **Gaia sits low in the published range, now inside its lower part rather than at its floor.** Before Step 8c.2 it used only the primary *P. oceanica* valuation (Campagne et al.), which leaves out tourism, recreation and non-use values. The service ledger adds recreational diving and the non-use values of megafauna and seabirds, which nearly triples the per-hectare value (€285 → €819). The Mediterranean meta-regression is about 11× higher (central over Gaia, 8.9 with carbon burial). It includes recreation and tourism and scales with GDP per capita; Spain's country value was not in the abstract read. The global syntheses are about 35× higher, mostly because of a nutrient-cycling value transferred from estuaries. Applying that to a Mediterranean meadow would be a large benefit-transfer leap.
+2. **The remaining gap is in services that are still not valued.** These are beach tourism and the meadow's own existence value. For coastal protection, water purification and fisheries, Gaia uses the published Posidonia figures. The new recreation and non-use entries are benefit transfers with low confidence (§2). A Catalan stated-preference study of the meadow itself remains the main open data need.
+3. **Small losses are now charged their average value** (§3). The run's per-hectare charge equals the ledger total, so the realised loss and the linear transfer coincide. Past the safe threshold, the remaining meadow degrades and the charge per hectare rises.
+4. **Carbon still dominates, less than before.** The release costs about €111,000 per hectare in PV at the SCC, with the 10-year half-life (§4). The PV of the services charged per hectare is about €77,000 (over 200 years with scarcity uplift), and the foregone burial €19,000. No benchmark above includes the release, because they value flows only.

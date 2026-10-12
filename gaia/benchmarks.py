@@ -83,8 +83,8 @@ def benchmark_comparison(result: Any, benchmarks: Sequence[Dict[str, Any]]) -> O
         "annual_externality_eur_yr": round(result.annual_externality, 2),
         "method": (
             "Benchmarks in their own currency and price year, not converted: an "
-            "order-of-magnitude comparison. Gaia's carbon release (one-off) is "
-            "not in any per-hectare yearly figure."
+            "order-of-magnitude comparison. Gaia's carbon release (a stock, "
+            "released at once or over time) is not in any per-hectare yearly figure."
         ),
         "benchmarks": rows,
     }

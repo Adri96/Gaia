@@ -37,19 +37,24 @@ def test_posidonia_ecosystem_has_ten_agents():
 
 
 def test_posidonia_values_are_the_sourced_final_services():
-    """Step 8.2: weight × value per hectare is the sourced service value of
-    the four final services (Campagne et al. 2015); the six ecological
-    agents carry no euro value of their own (final-services accounting)."""
+    """Step 8c.2: weight × value per hectare is the agent's share of the
+    service ledger: every agent carries euros, the total is unchanged where
+    services were split (fisheries, bioindicator use)."""
     eco = build_posidonia_ecosystem()
     per_ha = {a.name: a.dependency_weight * a.annual_value_per_ha for a in eco.agents}
     assert per_ha["Coastal Protection"] == pytest.approx(188.0, rel=1e-12)
     assert per_ha["Water Quality"] == pytest.approx(60.0, rel=1e-12)
-    assert per_ha["Fish Populations"] == pytest.approx(35.0, rel=1e-12)
-    assert per_ha["Human Communities"] == pytest.approx(1.83, rel=1e-12)
-    for name in ("Posidonia Meadow", "Coralligenous & Red Coral", "Epiphytes & Algae",
-                 "Marine Invertebrates", "Marine Megafauna", "Seabirds"):
-        assert per_ha[name] == 0.0
-    assert sum(per_ha.values()) == pytest.approx(284.83, rel=1e-12)
+    # Campagne et al.'s fisheries (35) split 14/16 fish, 2/16 invertebrates
+    assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(35.0, rel=1e-12)
+    assert per_ha["Marine Invertebrates"] == pytest.approx(35.0 * 2 / 16, rel=1e-12)
+    # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
+    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83, rel=1e-12)
+    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5, rel=1e-12)
+    assert per_ha["Posidonia Meadow"] == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
+    assert per_ha["Coralligenous & Red Coral"] == pytest.approx(60.0 * 60_000 / 190_000, rel=1e-12)
+    assert per_ha["Marine Megafauna"] == pytest.approx(per_ha["Seabirds"], rel=1e-12)
+    assert all(v > 0.0 for v in per_ha.values())
+    assert sum(per_ha.values()) == pytest.approx(818.6635785921815, rel=1e-12)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -475,3 +480,68 @@ def test_damage_model_round_trips():
     assert again.damage_model == "area_loss"
     assert run_extraction(again, 1200).annual_externality == run_extraction(
         eco, 1200).annual_externality
+
+
+# ── Step 8c.2: the service ledger ────────────────────────────────────────────
+
+def test_service_ledger_counts_each_service_once_and_prices_every_agent():
+    """Each final service appears exactly once and belongs to one agent;
+    every agent's value is > 0 and is exactly its ledger services."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    ledger = case.service_ledger
+    services = [e["service"] for e in ledger]
+    assert len(services) == len(set(services))
+    # a split service is never also counted whole, and its shares add to 1
+    parents = {e["split_of"] for e in ledger if e["split_of"]}
+    assert not parents & set(services)
+    for parent in parents:
+        assert sum(e["share"] for e in ledger if e["split_of"] == parent) == pytest.approx(1.0)
+    by_agent = case.ledger_by_agent()
+    eco = case.build_ecosystem()
+    assert set(by_agent) == {a.name for a in eco.agents}
+    for a in eco.agents:
+        assert a.annual_value_per_ha > 0.0
+        assert a.dependency_weight * a.annual_value_per_ha == pytest.approx(by_agent[a.name], rel=1e-12)
+    assert case.ledger_check() == []
+    for e in ledger:
+        assert e["source"] and e["method"]
+        assert "doi:" in e["source"] or "Idescat" in e["source"]
+
+
+def test_service_ledger_rejects_double_counting():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"].append(dict(doc["service_ledger"][0], agent="Seabirds"))
+    with pytest.raises(ValueError, match="counted once"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    whole = dict(doc["service_ledger"][0], service="Commercial fisheries contribution (35 EUR/ha/yr)")
+    doc["service_ledger"].append(whole)
+    with pytest.raises(ValueError, match="counted whole"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"][2]["share"] = 0.95
+    with pytest.raises(ValueError, match="add up to"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"][0]["value"] = 0.0
+    with pytest.raises(ValueError, match="must be > 0"):
+        case_from_dict(doc)
+
+
+def test_ledger_check_finds_an_unbooked_value():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["agents"][0]["annual_value_per_ha"]["value"] *= 2
+    problems = case_from_dict(doc).ledger_check()
+    assert len(problems) == 1 and problems[0].startswith("Posidonia Meadow")

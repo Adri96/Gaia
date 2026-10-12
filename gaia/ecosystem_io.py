@@ -49,6 +49,8 @@ A document (every key below is optional unless marked *required*):
     recovery            the recovery curve of every agent:
                         {type: logistic, steepness} | {type: linear, slope}
     succession          gaia.models.SuccessionCurve fields (all required)
+    service_ledger      the final ecosystem services behind the agent values
+                        (Step 8c.2; see SERVICE_LEDGER below)
     run                 run defaults: units (the default --units), report_note
                         (appended to the text report), json_notes (list),
                         benchmarks (list of published per-hectare values:
@@ -67,6 +69,18 @@ density: area = total_units / units_per_ha, so changing the number of units
 changes the area). With "unit": "ha" each unit is one hectare and the area
 always equals total_units. "unit" is otherwise the plural unit name, as in
 "trees/ha".
+
+Service ledger (Step 8c.2): a list of final services, each counted once
+and owned by one agent: {service*, agent*, value* (€/ha/yr at full
+damage), section* ("provisioning" | "regulation and maintenance" |
+"cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
+split_of, share, share_source}. A service that is a share of another
+(split_of, with its share and the share's source) is the part of a final
+service moved to the agent that is its best owner. Parsing rejects a
+service listed twice, an unknown agent and a value <= 0; ``Case.
+ledger_check()`` lists the agents whose weight × annual_value_per_ha
+differs from the sum of their ledger values (the shipped files have none;
+it is not enforced on parse, so the Monte Carlo can perturb agent values).
 
 Provenance (Step 5): every numeric parameter is either a bare number or an
 object {"value", "unit", "source", "confidence", "note"} (value, unit and
@@ -161,7 +175,7 @@ _TOP_LEVEL = (
     "gaia_schema", "name", "description", "calibration_regime", "damage_model", "resource",
     "provenance_defaults", "agent_defaults", "damage_curves", "agents",
     "interactions", "carbon", "resilience", "substrate", "discount", "pricing",
-    "restoration", "recovery", "succession", "run",
+    "restoration", "recovery", "succession", "service_ledger", "run",
 )
 
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
@@ -451,6 +465,7 @@ class Case:
     report_note: str = ""
     json_notes: Tuple[str, ...] = field(default_factory=tuple)
     benchmarks: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
+    service_ledger: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
     # The parsed document and the JSON path of every recorded parameter, for
     # gaia.uncertainty (which re-parses perturbed copies of the document)
     document: Optional[Dict[str, Any]] = field(default=None, compare=False, repr=False)
@@ -735,6 +750,33 @@ class Case:
         threshold = ecosystem.resource.safe_threshold_ratio
         return [_build_curve(curve, threshold, _RECOVERY_FACTORIES) for _ in ecosystem.agents]
 
+    # ── Service ledger ────────────────────────────────────────────────────────
+
+    def ledger_by_agent(self) -> Dict[str, float]:
+        """{agent: sum of its service_ledger values (€/ha/yr)}."""
+        out: Dict[str, float] = {}
+        for entry in self.service_ledger:
+            out[entry["agent"]] = out.get(entry["agent"], 0.0) + entry["value"]
+        return out
+
+    def ledger_check(self, rel_tol: float = 1e-9) -> List[str]:
+        """Agents whose euro value at full damage (dependency_weight ×
+        annual_value_per_ha) is not the sum of their ledger services; empty
+        when the ledger accounts for every euro (or there is no ledger)."""
+        if not self.service_ledger:
+            return []
+        ledger = self.ledger_by_agent()
+        problems: List[str] = []
+        for a in self.agents:
+            value = a.weight * a.value
+            booked = ledger.get(a.name, 0.0)
+            if not math.isclose(value, booked, rel_tol=rel_tol, abs_tol=1e-12):
+                problems.append(
+                    f"{a.name}: weight × annual_value_per_ha = {value:.6g} €/ha/yr, "
+                    f"ledger = {booked:.6g}"
+                )
+        return problems
+
     # ── Running ───────────────────────────────────────────────────────────────
 
     def run_extraction(self, units: Optional[int] = None, **overrides: Any):
@@ -903,6 +945,36 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
             for k in _SUCCESSION_FIELDS
         }
 
+    ledger = tuple(
+        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names))
+        for i, e in enumerate(_list(doc.get("service_ledger", []), "$.service_ledger"))
+    )
+    seen: Dict[str, int] = {}
+    for i, entry in enumerate(ledger):
+        if entry["service"] in seen:
+            raise ValueError(
+                f"$.service_ledger[{i}].service: {entry['service']!r} is already "
+                f"counted at $.service_ledger[{seen[entry['service']]}] (a final "
+                f"service is counted once)"
+            )
+        seen[entry["service"]] = i
+    shares: Dict[str, float] = {}
+    for i, entry in enumerate(ledger):
+        parent = entry["split_of"]
+        if parent is None:
+            continue
+        if parent in seen:
+            raise ValueError(
+                f"$.service_ledger[{i}].split_of: {parent!r} is also counted whole at "
+                f"$.service_ledger[{seen[parent]}] (its shares would count it twice)"
+            )
+        shares[parent] = shares.get(parent, 0.0) + entry["share"]
+        if shares[parent] > 1.0 + 1e-9:
+            raise ValueError(
+                f"$.service_ledger[{i}].share: the shares of {parent!r} add up to "
+                f"{shares[parent]:g} > 1"
+            )
+
     run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes", "benchmarks"))
     units = _plain_int(run["units"], "$.run.units") if "units" in run else None
     benchmarks = tuple(
@@ -948,6 +1020,7 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         report_note=report_note,
         json_notes=notes,
         benchmarks=benchmarks,
+        service_ledger=ledger,
         document=copy.deepcopy(doc),
         param_paths=dict(reader.paths),
     )
@@ -955,6 +1028,54 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     # document's threshold, the area, the pricing block.
     case.recovery_functions(case.build_ecosystem(with_pricing=pricing is not None))
     return case
+
+
+_LEDGER_SECTIONS = ("provisioning", "regulation and maintenance", "cultural")
+_LEDGER_KINDS = ("use", "non-use")
+
+
+def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
+    """One service_ledger entry: a final service, its owner and its value."""
+    obj = _object(
+        raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
+        ("transfer", "note", "split_of", "share", "share_source"),
+    )
+    agent = _str(obj["agent"], _key(path, "agent"))
+    if agent not in agents:
+        raise ValueError(f"{_key(path, 'agent')}: unknown agent {agent!r}")
+    value = _plain_number(obj["value"], _key(path, "value"))
+    if not value > 0.0:
+        raise ValueError(f"{_key(path, 'value')}: a final service in the ledger must be > 0, got {value}")
+    section = _str(obj["section"], _key(path, "section"))
+    if section not in _LEDGER_SECTIONS:
+        raise ValueError(f"{_key(path, 'section')}: expected one of {list(_LEDGER_SECTIONS)}, got {section!r}")
+    kind = _str(obj["kind"], _key(path, "kind"))
+    if kind not in _LEDGER_KINDS:
+        raise ValueError(f"{_key(path, 'kind')}: expected one of {list(_LEDGER_KINDS)}, got {kind!r}")
+    out: Dict[str, Any] = {
+        "service": _str(obj["service"], _key(path, "service")),
+        "agent": agent,
+        "value": float(value),
+        "section": section,
+        "kind": kind,
+        "method": _str(obj["method"], _key(path, "method")),
+        "source": _str(obj["source"], _key(path, "source")),
+        "transfer": _str(obj.get("transfer", ""), _key(path, "transfer")),
+        "note": _str(obj.get("note", ""), _key(path, "note")),
+        "split_of": None,
+        "share": None,
+        "share_source": "",
+    }
+    if ("split_of" in obj) != ("share" in obj):
+        raise ValueError(f"{path}: give both split_of and share, or neither")
+    if "split_of" in obj:
+        share = _plain_number(obj["share"], _key(path, "share"))
+        if not 0.0 < share < 1.0:
+            raise ValueError(f"{_key(path, 'share')}: must be in (0, 1), got {share}")
+        out["split_of"] = _str(obj["split_of"], _key(path, "split_of"))
+        out["share"] = float(share)
+        out["share_source"] = _str(obj.get("share_source", ""), _key(path, "share_source"))
+    return out
 
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:

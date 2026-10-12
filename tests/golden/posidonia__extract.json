@@ -13,38 +13,38 @@
   ],
   "cli_summary_json": {
     "benchmarks": {
-      "annual_externality_eur_yr": 1240692.72,
+      "annual_externality_eur_yr": 3429443.25,
       "benchmarks": [
         {
-          "benchmark_central_over_gaia": 0.99,
+          "benchmark_central_over_gaia": 0.34,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 284.83,
+          "gaia_value_eur_per_ha_yr": 818.66,
           "high": 284.83,
           "includes_carbon": false,
           "low": 276.83,
           "name": "Campagne et al. 2015, P. oceanica, carbon excluded",
-          "note": "The primary valuation the case's values come from (sum of the non-carbon goods and benefits): agreement here is by construction.",
-          "position": "within",
+          "note": "The primary valuation behind four of the ledger's services (coastal protection, water purification, fisheries, bioindicator and knowledge). Gaia is above it because the ledger adds recreational diving and non-use values (Step 8c.2).",
+          "position": "above",
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2",
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 0.9,
+          "benchmark_central_over_gaia": 0.41,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 443.41,
+          "gaia_value_eur_per_ha_yr": 977.25,
           "high": 514.0,
           "includes_carbon": true,
           "low": 284.0,
           "name": "Campagne et al. 2015, P. oceanica, carbon included",
           "note": "Carbon sequestration 7.7-230 \u20ac/ha/yr at 35 \u20ac/t CO2; 11 of 25 services unvalued (mainly tourism and cultural).",
-          "position": "within",
+          "position": "above",
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061",
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 19.65,
+          "benchmark_central_over_gaia": 8.91,
           "central": 8712.0,
-          "gaia_value_eur_per_ha_yr": 443.41,
+          "gaia_value_eur_per_ha_yr": 977.25,
           "high": 95767.0,
           "includes_carbon": true,
           "low": 1588.0,
@@ -55,9 +55,9 @@
           "unit": "Int$2020/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 65.21,
+          "benchmark_central_over_gaia": 29.59,
           "central": 28917.0,
-          "gaia_value_eur_per_ha_yr": 443.41,
+          "gaia_value_eur_per_ha_yr": 977.25,
           "high": 42063.0,
           "includes_carbon": true,
           "low": 26167.0,
@@ -68,9 +68,9 @@
           "unit": "Int$2007/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 65.21,
+          "benchmark_central_over_gaia": 29.59,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 443.41,
+          "gaia_value_eur_per_ha_yr": 977.25,
           "high": 28916.0,
           "includes_carbon": true,
           "low": 28916.0,
@@ -82,12 +82,12 @@
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
-      "full_damage_eur_per_ha_yr": 284.83,
-      "full_damage_with_burial_eur_per_ha_yr": 443.41,
+      "full_damage_eur_per_ha_yr": 818.66,
+      "full_damage_with_burial_eur_per_ha_yr": 977.25,
       "hectares_lost": 2000.0,
-      "linear_transfer_eur_yr": 569660.0,
-      "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (one-off) is not in any per-hectare yearly figure.",
-      "realised_loss_eur_per_ha_yr": 620.35
+      "linear_transfer_eur_yr": 1637327.16,
+      "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
+      "realised_loss_eur_per_ha_yr": 1714.72
     },
     "calibration": {
       "calibration_regime": "B",
@@ -172,67 +172,91 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Not valued in euros. Supporting/intermediate: the meadow's value reaches people through the final services (coastal protection, water quality, fisheries, cultural), so a euro value here would count it twice. The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, 454.52 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 4,582 ha. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper-bias) and leaves out every other Catalan dive site (a lower-bias). Range 214-1,294 EUR/ha/yr: EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap). Weight x value = the service.",
+          "range": [
+            1943.2928852029681,
+            11775.185508511566
+          ],
+          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015)",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 4136.110868616325
         },
         {
           "confidence": "low",
           "name": "agent[Coralligenous & Red Coral].annual_value_per_ha",
-          "note": "Not valued in euros. Neighbouring habitat linked by sedimentation; its own value (diving, red coral) is not part of a Posidonia valuation and is not counted. The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving on the coralligenous, 18.95 EUR/ha/yr = EUR 60 per dive x 60,000 Medes dives a year / 190,000 ha of mapped seabed. A Catalan primary study; the attribution to a hectare of meadow is the seascape rule used for every service of the wider seascape: the regional value spread evenly over the mapped seabed (an assumption, not a source: no study links coralligenous condition to the nearby meadow). Range 9.5-43.8 EUR/ha/yr: half the attribution to EUR 108.01/dive (Zunino et al. 2020, total loss of coralligenous) x 77,000 dives.",
+          "range": [
+            86.21052631578947,
+            398.3295105263158
+          ],
+          "source": "Rodrigues, van den Bergh, Loureiro, Nunes & Rossi (2016), Environmental and Resource Economics 63:289-311, doi:10.1007/s10640-015-9935-8: choice experiment with scuba divers at the Medes Islands MPA (Catalonia); the local extinction of gorgonians, the emblem of the coralligenous, costs divers about EUR 60 per dive; about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha)",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 172.42105263157893
         },
         {
           "confidence": "low",
           "name": "agent[Epiphytes & Algae].annual_value_per_ha",
-          "note": "Not valued in euros. Supporting/intermediate (primary production, food web): valued through the final services. The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): an intermediate agent with no final service of its own: it owns the epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica. Range x0.5-x2 (judgement).",
+          "range": [
+            1.3928571428571428,
+            5.571428571428571
+          ],
+          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 2.7857142857142856
         },
         {
           "confidence": "low",
           "name": "agent[Marine Invertebrates].annual_value_per_ha",
-          "note": "Not valued in euros. Supporting/intermediate (food web, filtration): valued through fisheries and water quality. The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): the invertebrate share of the fisheries service, moved from Fish Populations (total unchanged): 35 x 2/16 = 4.375 EUR/ha/yr, by species count (2 of Campagne et al.'s 16 species; equal value per species is an assumption). Range 3.4-18.8 EUR/ha/yr: 27 x 2/16 to 74 x 0.254, the cephalopod and other-invertebrate share of Catalan white-fish, cephalopod and other-invertebrate first-sale value in 2014 (Generalitat, Estad\u00edstiques de pesca per grups biol\u00f2gics, dataset ge3m-4jgm: EUR 13.65 M + 0.34 M against 41.06 M; a proxy, not meadow-specific).",
+          "range": [
+            34.125,
+            190.12326666666667
+          ],
+          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr from 16 meadow-associated species sold at the S\u00e8te auction, two of them invertebrates (Paracentrotus lividus, Sepia officinalis), \u00a73.2.4",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 44.236111111111114
         },
         {
           "confidence": "medium",
           "name": "agent[Fish Populations].annual_value_per_ha",
-          "note": "35 EUR/ha/yr of service at full damage = weight \u00d7 value (35 / 0.153846). Range 27-74 EUR/ha/yr. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica, since other seagrasses also contribute).",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): the fish share of the fisheries service, 35 x 14/16 = 30.625 EUR/ha/yr (14 of the 16 species are fish; the two invertebrates go to Marine Invertebrates). Range 23.6-64.8 EUR/ha/yr: (27 to 74) x 14/16. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica).",
           "range": [
-            175.5,
-            481.0
+            153.5625,
+            420.875
           ],
-          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end of the range used",
+          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end used",
           "unit": "\u20ac/ha/yr",
-          "value": 227.5
+          "value": 199.0625
         },
         {
           "confidence": "low",
           "name": "agent[Marine Megafauna].annual_value_per_ha",
-          "note": "Not valued in euros. Non-use and wildlife-watching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting marine mammals (dolphins) and, by extension, sea turtles, 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+          "range": [
+            226.60837812564083,
+            2060.076164778553
+          ],
+          "source": "B\u00f6rger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha); ECB euro reference rate, GBP per EUR, 2013 annual average 0.84926",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 686.6920549261843
         },
         {
           "confidence": "low",
           "name": "agent[Seabirds].annual_value_per_ha",
-          "note": "Not valued in euros. Non-use and birdwatching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges.",
-          "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): non-use value of protecting seabirds (Audouin's gull, shags, shearwaters), 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule) and split equally between Marine Megafauna and Seabirds, which B\u00f6rger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+          "range": [
+            181.28670250051263,
+            1648.0609318228421
+          ],
+          "source": "B\u00f6rger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha); ECB euro reference rate, GBP per EUR, 2013 annual average 0.84926",
           "unit": "\u20ac/ha/yr",
-          "value": 0.0
+          "value": 549.3536439409473
         },
         {
           "confidence": "medium",
           "name": "agent[Coastal Protection].annual_value_per_ha",
-          "note": "188 EUR/ha/yr of service at full damage = weight \u00d7 value (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
+          "note": "188 EUR/ha/yr of service at full damage = weight \u00d7 value (service ledger, Step 8c.2) (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
           "range": [
             658.0,
             2632.0
@@ -244,7 +268,7 @@
         {
           "confidence": "medium",
           "name": "agent[Water Quality].annual_value_per_ha",
-          "note": "60 EUR/ha/yr of service at full damage = weight \u00d7 value (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
+          "note": "60 EUR/ha/yr of service at full damage = weight \u00d7 value (service ledger, Step 8c.2) (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
           "range": [
             248.1818181818182,
             992.7272727272727
@@ -256,14 +280,14 @@
         {
           "confidence": "medium",
           "name": "agent[Human Communities].annual_value_per_ha",
-          "note": "1.83 EUR/ha/yr of service at full damage = weight \u00d7 value (1.83 / 0.087912). Only the cultural services Campagne et al. could value. Tourism, recreation and non-use values are NOT valued (no Posidonia-specific per-hectare welfare estimate was found): the main reason the total is a lower bound. Recreational fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not a welfare value, and is not used.",
+          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): bioindicator use without its epiphyte share (1.5 x 3/3.5) + knowledge contribution 0.33 = 1.6157 EUR/ha/yr. Beach tourism is still NOT valued (no Posidonia-specific welfare estimate); recreational-fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not welfare, and is not used. Its spread in the Monte Carlo (x/\u00f72) is a judgement.",
           "range": [
-            10.408125000000002,
-            41.63250000000001
+            9.189375000000002,
+            36.75750000000001
           ],
-          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr",
+          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr; the epiphyte share of the bioindicator (0.5/3.5 of the PREI, Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012) moved to Epiphytes & Algae",
           "unit": "\u20ac/ha/yr",
-          "value": 20.816250000000004
+          "value": 18.378750000000004
         },
         {
           "confidence": "low",
@@ -704,10 +728,10 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 4136.110868616325,
+          "annual_value_eur_yr": 20680554.343081627,
           "dependency_weight": 0.10989010989010989,
-          "description": "Meadow integrity, the foundation (keystone) species: shoot density and matte \u2014 no euro value of its own (an intermediate service)",
+          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020)",
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
@@ -715,10 +739,10 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 172.42105263157893,
+          "annual_value_eur_yr": 862105.2631578946,
           "dependency_weight": 0.10989010989010989,
-          "description": "Coralligenous reefs next to the meadow, smothered when it is lost (sedimentation) \u2014 not valued",
+          "description": "Coralligenous reefs next to the meadow, smothered when it is lost (sedimentation); its own final service: recreational diving on coralligenous (Rodrigues et al. 2016, Medes Islands)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Coralligenous & Red Coral",
@@ -726,10 +750,10 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 2.7857142857142856,
+          "annual_value_eur_yr": 13928.571428571428,
           "dependency_weight": 0.07692307692307693,
-          "description": "Epiphytic algae and plant community: primary production, food web base \u2014 not valued separately",
+          "description": "Epiphytic algae and plant community: primary production, food web base; owns the epiphyte share of the bioindicator service (PREI E/L metric)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Epiphytes & Algae",
@@ -737,10 +761,10 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 44.236111111111114,
+          "annual_value_eur_yr": 221180.55555555556,
           "dependency_weight": 0.0989010989010989,
-          "description": "Sponges, urchins, octopus, lobsters, shellfish: grazers and filter feeders \u2014 not valued separately",
+          "description": "Sponges, urchins, octopus, lobsters, shellfish: grazers and filter feeders; owns the invertebrate share of the commercial fisheries contribution (sea urchin, cuttlefish)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Marine Invertebrates",
@@ -748,10 +772,10 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 227.5,
-          "annual_value_eur_yr": 1137500.0,
+          "annual_value_eur_per_ha_yr": 199.0625,
+          "annual_value_eur_yr": 995312.5,
           "dependency_weight": 0.15384615384615385,
-          "description": "Fish nursery and feeding habitat: contribution to commercial fisheries (Campagne et al. 2015)",
+          "description": "Fish nursery and feeding habitat: contribution to commercial fisheries, fish species (Campagne et al. 2015)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Fish Populations",
@@ -759,10 +783,10 @@
           "trophic_level": 2
         },
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 686.6920549261843,
+          "annual_value_eur_yr": 3433460.2746309214,
           "dependency_weight": 0.04395604395604395,
-          "description": "Dolphins, sea turtles: apex indicators \u2014 non-use values not valued",
+          "description": "Dolphins, sea turtles: apex predators; their own final service: the non-use (existence) value of protecting charismatic marine megafauna (B\u00f6rger et al. 2014, benefit transfer)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Marine Megafauna",
@@ -770,10 +794,10 @@
           "trophic_level": 3
         },
         {
-          "annual_value_eur_per_ha_yr": 0.0,
-          "annual_value_eur_yr": 0.0,
+          "annual_value_eur_per_ha_yr": 549.3536439409473,
+          "annual_value_eur_yr": 2746768.2197047365,
           "dependency_weight": 0.054945054945054944,
-          "description": "Seabirds that feed on meadow fish (Audouin's gull) \u2014 non-use values not valued",
+          "description": "Seabirds that feed on meadow fish (Audouin's gull); their own final service: the non-use (existence) value of protecting seabirds (B\u00f6rger et al. 2014, benefit transfer)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Seabirds",
@@ -803,10 +827,10 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 20.816250000000004,
-          "annual_value_eur_yr": 104081.25000000001,
+          "annual_value_eur_per_ha_yr": 18.378750000000004,
+          "annual_value_eur_yr": 91893.75000000001,
           "dependency_weight": 0.0879120879120879,
-          "description": "Cultural services: bioindicator use and knowledge (Campagne et al. 2015); tourism, recreation and non-use NOT valued",
+          "description": "Cultural services: bioindicator use (leaf, shoot and lower-limit metrics) and knowledge (Campagne et al. 2015)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Human Communities",
@@ -951,7 +975,7 @@
     "gaia_version": "<gaia_version>",
     "mode": "extraction",
     "notes": [
-      "Marine externality costs are ANNUAL (\u20ac/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. The per-hectare values are a lower bound: tourism, recreation and non-use values are not valued."
+      "Marine externality costs are ANNUAL (\u20ac/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. Every agent's euro value is a final ecosystem service booked once in the case's service ledger (Step 8c.2); beach tourism and the meadow's own non-use value are still not valued, so the services total remains a lower bound."
     ],
     "npv_analysis": {
       "carbon_absorption_lost_tco2_yr": 1906.6667,
@@ -984,9 +1008,9 @@
         "scarcity_rate": 0.01
       },
       "horizon_years": 200,
-      "services_eur_pv": 116121574.5,
-      "substrate_unrecoverable_eur_pv": 7406.03,
-      "total_eur_pv": 376695568.38
+      "services_eur_pv": 320975808.74,
+      "substrate_unrecoverable_eur_pv": 20471.27,
+      "total_eur_pv": 581549802.63
     },
     "substrate": {
       "capacity_lost_units": 1,
@@ -997,10 +1021,10 @@
     "summary": {
       "agent_cascade_externality_eur_yr": {
         "Coastal Protection": 50785.63,
-        "Coralligenous & Red Coral": 0.0,
-        "Epiphytes & Algae": 0.0,
+        "Coralligenous & Red Coral": 5758.17,
+        "Epiphytes & Algae": 50.65,
         "Fish Populations": 0.0,
-        "Human Communities": 870.14,
+        "Human Communities": 768.25,
         "Marine Invertebrates": 0.0,
         "Marine Megafauna": 0.0,
         "Posidonia Meadow": 0.0,
@@ -1009,77 +1033,77 @@
       },
       "agent_direct_externality_eur_yr": {
         "Coastal Protection": 746973.36,
-        "Coralligenous & Red Coral": 0.0,
-        "Epiphytes & Algae": 0.0,
-        "Fish Populations": 175000.0,
-        "Human Communities": 7271.07,
-        "Marine Invertebrates": 0.0,
-        "Marine Megafauna": 0.0,
-        "Posidonia Meadow": 0.0,
-        "Seabirds": 0.0,
+        "Coralligenous & Red Coral": 75282.87,
+        "Epiphytes & Algae": 851.41,
+        "Fish Populations": 153125.0,
+        "Human Communities": 6419.66,
+        "Marine Invertebrates": 21875.0,
+        "Marine Megafauna": 150921.33,
+        "Posidonia Meadow": 1805918.07,
+        "Seabirds": 150921.33,
         "Water Quality": 238395.75
       },
       "agent_externality_eur_yr": {
         "Coastal Protection": 797758.99,
-        "Coralligenous & Red Coral": 0.0,
-        "Epiphytes & Algae": 0.0,
-        "Fish Populations": 175000.0,
-        "Human Communities": 8141.21,
-        "Marine Invertebrates": 0.0,
-        "Marine Megafauna": 0.0,
-        "Posidonia Meadow": 0.0,
-        "Seabirds": 0.0,
+        "Coralligenous & Red Coral": 81041.04,
+        "Epiphytes & Algae": 902.06,
+        "Fish Populations": 153125.0,
+        "Human Communities": 7187.9,
+        "Marine Invertebrates": 21875.0,
+        "Marine Megafauna": 150921.33,
+        "Posidonia Meadow": 1805918.07,
+        "Seabirds": 150921.33,
         "Water Quality": 259792.53
       },
-      "annual_externality_eur_yr": 1240692.72,
+      "annual_externality_eur_yr": 3429443.25,
       "discount_is_default": false,
       "final_ecosystem_health": 0.098122,
-      "net_social_cost_eur_pv": 371695568.38,
+      "net_social_cost_eur_pv": 576549802.63,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 376695568.38,
-      "pv_externality_h100_eur_pv": 320523646.7,
-      "pv_externality_h200_eur_pv": 376695568.38,
-      "pv_externality_h50_eur_pv": 276509166.45,
+      "pv_externality_eur_pv": 581549802.63,
+      "pv_externality_h100_eur_pv": 454606786.21,
+      "pv_externality_h200_eur_pv": 581549802.63,
+      "pv_externality_h50_eur_pv": 358178193.21,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
   },
   "per_agent": {
     "Coastal Protection": 797758.9921467853,
-    "Coralligenous & Red Coral": 0.0,
-    "Epiphytes & Algae": 0.0,
-    "Fish Populations": 175000.0,
-    "Human Communities": 8141.205882095546,
-    "Marine Invertebrates": 0.0,
-    "Marine Megafauna": 0.0,
-    "Posidonia Meadow": 0.0,
-    "Seabirds": 0.0,
+    "Coralligenous & Red Coral": 81041.03880604345,
+    "Epiphytes & Algae": 902.0639682449918,
+    "Fish Populations": 153125.0,
+    "Human Communities": 7187.903085597239,
+    "Marine Invertebrates": 21875.0,
+    "Marine Megafauna": 150921.33075300753,
+    "Posidonia Meadow": 1805918.0694730433,
+    "Seabirds": 150921.3307530075,
     "Water Quality": 259792.52557007154
   },
   "result": {
     "agent_cascade_annual_costs": [
       0.0,
-      0.0,
-      0.0,
+      5758.169367609364,
+      50.650563881749015,
       0.0,
       0.0,
       0.0,
       0.0,
       50785.63205210033,
       21396.772348363567,
-      870.1354088334521
+      768.2460166983874
     ],
     "agent_direct_annual_costs": [
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      175000.0,
-      0.0,
-      0.0,
+      1805918.0694730433,
+      75282.86943843408,
+      851.4134043632428,
+      21875.0,
+      153125.0,
+      150921.33075300753,
+      150921.3307530075,
       746973.3600946849,
       238395.75322170794,
-      7271.070473262093
+      6419.65706889885
     ],
     "agent_trophic_amplification": [
       1.0,
@@ -1093,7 +1117,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 1240692.7235989522,
+    "annual_externality": 3429443.2545558005,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -1124,19 +1148,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 222493638.07241184,
       "carbon_released_t": 1510740.0,
-      "direct": 116121574.49527211,
+      "direct": 320975808.7449997,
       "horizon": 200,
-      "substrate_unrecoverable": 7406.027959148623,
-      "total": 376695568.3805222
+      "substrate_unrecoverable": 20471.267497949702,
+      "total": 581549802.6302499
     },
     "final_ecosystem_health": 0.09812199065106542,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 371695568.3805222,
-    "pv_externality": 376695568.3805222,
+    "net_social_cost": 576549802.6302499,
+    "pv_externality": 581549802.6302499,
     "pv_externality_by_horizon": {
-      "100": 320523646.7046877,
-      "200": 376695568.3805222,
-      "50": 276509166.452788
+      "100": 454606786.2149027,
+      "200": 581549802.6302499,
+      "50": 358178193.21146685
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,
@@ -1154,16 +1178,16 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      152092934.5024795,
-      0.0,
-      0.0,
+      1385776063.321715,
+      62869368.066675894,
+      698203.0015322072,
+      16745823.88595211,
+      133081317.68966964,
+      142368626.68519,
+      131902430.04587136,
       618180303.8029157,
       202337548.19833297,
-      6512524.932479875
+      5749934.190971703
     ],
     "agent_cascade_damages": [
       0.0,
@@ -1201,12 +1225,12 @@
       609.778730638634,
       609.778730638634
     ],
-    "annual_externality": 979123311.4362078,
+    "annual_externality": 2699709618.888819,
     "depletion_ratio": 400.2,
     "ecosystem_health": 1272.9854959325012,
     "effective_k": 9998000.0,
     "k_fraction": 1999.9745031208731,
-    "marginal_annual_externality": 1240692.7235989522,
+    "marginal_annual_externality": 3429443.2545558005,
     "model_confidence": 1349.812500000001,
     "revenue": 5002500000.0,
     "step": 2001000.0,
@@ -1216,16 +1240,16 @@
   "steps": [
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        35.00000000000001,
-        0.0,
-        0.0,
+        454.5176778699259,
+        18.947368421052627,
+        0.2142857142857143,
+        4.375,
+        30.625000000000004,
+        30.184266150601506,
+        30.1842661506015,
         188.0,
         60.0,
-        1.83
+        1.6157142857142859
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1264,14 +1288,14 @@
         0.0002
       ],
       "agent_prices": [],
-      "annual_externality": 284.83,
+      "annual_externality": 818.6635785921815,
       "depletion_ratio": 0.0002,
       "ecosystem_health": 0.9998,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999998,
       "keystone_triggered": [],
-      "marginal_annual_externality": 284.83,
+      "marginal_annual_externality": 818.6635785921815,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1282,16 +1306,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        7035.0,
-        0.0,
-        0.0,
+        91358.05325185509,
+        3808.421052631578,
+        43.07142857142857,
+        879.375,
+        6155.625,
+        6067.037496270903,
+        6067.037496270901,
         37788.0,
         12060.0,
-        367.83000000000004
+        324.7585714285715
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1330,14 +1354,14 @@
         0.0402
       ],
       "agent_prices": [],
-      "annual_externality": 57250.83,
+      "annual_externality": 164551.37929702847,
       "depletion_ratio": 0.0402,
       "ecosystem_health": 0.9598,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999934657844,
       "keystone_triggered": [],
-      "marginal_annual_externality": 284.83000000000175,
+      "marginal_annual_externality": 818.6635785921535,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1348,16 +1372,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        14035.0,
-        0.0,
-        0.0,
+        182261.58882584024,
+        7597.894736842103,
+        85.92857142857142,
+        1754.3749999999998,
+        12280.625,
+        12103.890726391202,
+        12103.8907263912,
         75387.99999999999,
         24059.999999999993,
-        733.8299999999999
+        647.9014285714285
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1396,14 +1420,14 @@
         0.0802
       ],
       "agent_prices": [],
-      "annual_externality": 114216.82999999997,
+      "annual_externality": 328284.09501546476,
       "depletion_ratio": 0.0802,
       "ecosystem_health": 0.9198,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999998969987456,
       "keystone_triggered": [],
-      "marginal_annual_externality": 284.82999999997264,
+      "marginal_annual_externality": 818.6635785921244,
       "model_confidence": 0.8395999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1414,16 +1438,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        21035.0,
-        0.0,
-        0.0,
+        273165.12439982546,
+        11387.36842105263,
+        128.78571428571428,
+        2629.375,
+        18405.625,
+        18140.743956511506,
+        18140.743956511502,
         112987.99999999999,
         36060.0,
-        1099.8300000000002
+        971.0442857142858
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1462,14 +1486,14 @@
         0.1202
       ],
       "agent_prices": [],
-      "annual_externality": 171182.83,
+      "annual_externality": 492016.8107339011,
       "depletion_ratio": 0.1202,
       "ecosystem_health": 0.8798,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999994811320924,
       "keystone_triggered": [],
-      "marginal_annual_externality": 284.8299999999872,
+      "marginal_annual_externality": 818.6635785921826,
       "model_confidence": 0.7595999999999999,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1480,16 +1504,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        28035.000000000004,
-        0.0,
-        0.0,
+        364068.65997381066,
+        15176.842105263157,
+        171.64285714285714,
+        3504.375,
+        24530.625000000004,
+        24177.597186631807,
+        24177.597186631803,
         150588.0,
         48060.0,
-        1465.8300000000002
+        1294.187142857143
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1528,14 +1552,14 @@
         0.1602
       ],
       "agent_prices": [],
-      "annual_externality": 228148.83,
+      "annual_externality": 655749.5264523374,
       "depletion_ratio": 0.1602,
       "ecosystem_health": 0.8398,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999983640720822,
       "keystone_triggered": [],
-      "marginal_annual_externality": 284.8299999999872,
+      "marginal_annual_externality": 818.6635785921244,
       "model_confidence": 0.6795999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1546,16 +1570,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        35240.027576309636,
-        0.0,
-        0.0,
+        455808.6840887467,
+        19016.870786190902,
+        215.03233421865625,
+        4395.933502961149,
+        30835.024129270932,
+        30495.029261993335,
+        30400.860094230986,
         188672.3262331865,
         60230.13786134634,
-        1838.2828323329027
+        1623.0272313571531
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1594,14 +1618,14 @@
         0.2005680774507478
       ],
       "agent_prices": [],
-      "annual_externality": 285980.77450317534,
+      "annual_externality": 821692.9255235028,
       "depletion_ratio": 0.2002,
       "ecosystem_health": 0.7990538419015809,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999960113238897,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1150.7745031753439,
+      "marginal_annual_externality": 3029.346931321081,
       "model_confidence": 0.599925,
       "price_result": null,
       "resilience_zone": "red",
@@ -1612,16 +1636,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        84405.65339510146,
-        0.0,
-        0.0,
+        727789.1522706852,
+        33398.99667885018,
+        370.0367081338263,
+        8726.580705114413,
+        73854.94672071378,
+        92618.17785677104,
+        74315.03062497728,
         328018.9028247786,
         107723.52589829125,
-        3532.0835713733773
+        3118.4906473249725
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1660,14 +1684,14 @@
         0.32024679686010554
       ],
       "agent_prices": [],
-      "annual_externality": 523680.16568954464,
+      "annual_externality": 1449933.8409356407,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917622486862,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1222.0726887522615,
+      "marginal_annual_externality": 3246.558032121975,
       "model_confidence": 0.585,
       "price_result": null,
       "resilience_zone": "red",
@@ -1678,16 +1702,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        132759.71463835958,
-        0.0,
-        0.0,
+        1022440.2948245282,
+        48156.1822291934,
+        530.7153860996159,
+        13135.332837197873,
+        116164.75030856463,
+        149128.4995707785,
+        116225.04147900056,
         471715.32009497425,
         156039.4726715542,
-        5205.049509741748
+        4595.558934830536
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1726,14 +1750,14 @@
         0.4499012225954084
       ],
       "agent_prices": [],
-      "annual_externality": 765719.5569146298,
+      "annual_externality": 2098131.168336722,
       "depletion_ratio": 0.28,
       "ecosystem_health": 0.410180583244278,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.999984734338123,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1176.145584270358,
+      "marginal_annual_externality": 3180.134065244114,
       "model_confidence": 0.57,
       "price_result": null,
       "resilience_zone": "red",
@@ -1744,16 +1768,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        173668.0578083266,
-        0.0,
-        0.0,
+        1317047.4792175803,
+        61744.90472469732,
+        681.111311401678,
+        17110.66834974033,
+        151959.55058228577,
+        150921.33075300753,
+        149871.044341546,
         605104.1614857289,
         199907.9765950866,
-        6648.3784238243215
+        5869.8797793484055
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1792,14 +1816,14 @@
         0.5795363055579518
       ],
       "agent_prices": [],
-      "annual_externality": 985328.5743129664,
+      "annual_externality": 2660218.107140423,
       "depletion_ratio": 0.32,
       "ecosystem_health": 0.25085180796275575,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999739415723898,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1002.0696913150605,
+      "marginal_annual_externality": 2629.15223742323,
       "model_confidence": 0.5549999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -1810,16 +1834,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        175000.0,
-        0.0,
-        0.0,
+        1585165.897437104,
+        72881.0433999897,
+        807.158399542727,
+        20245.655927735148,
+        153125.0,
+        150921.33075300753,
+        150921.3307530075,
         715644.4388004696,
         235146.24909127865,
-        7519.659837220852
+        6639.137608038082
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1858,14 +1882,14 @@
         0.6975156191353894
       ],
       "agent_prices": [],
-      "annual_externality": 1133310.347728969,
+      "annual_externality": 3091497.242170173,
       "depletion_ratio": 0.36,
       "ecosystem_health": 0.1608237711540168,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999582173599941,
       "keystone_triggered": [],
-      "marginal_annual_externality": 637.8632986107841,
+      "marginal_annual_externality": 1934.9072976219468,
       "model_confidence": 0.5399999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -1876,16 +1900,16 @@
     },
     {
       "agent_annual_costs": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        175000.0,
-        0.0,
-        0.0,
+        1805918.0694730433,
+        81041.03880604345,
+        902.0639682449918,
+        21875.0,
+        153125.0,
+        150921.33075300753,
+        150921.3307530075,
         797758.9921467853,
         259792.52557007154,
-        8141.205882095546
+        7187.903085597239
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1924,14 +1948,14 @@
         0.7946525107390265
       ],
       "agent_prices": [],
-      "annual_externality": 1240692.7235989522,
+      "annual_externality": 3429443.2545558005,
       "depletion_ratio": 0.4,
       "ecosystem_health": 0.09812199065106542,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999362217745381,
       "keystone_triggered": [],
-      "marginal_annual_externality": 437.639825043967,
+      "marginal_annual_externality": 1438.3383127613924,
       "model_confidence": 0.5249999999999999,
       "price_result": null,
       "resilience_zone": "red",

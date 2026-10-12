@@ -39,7 +39,7 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 14,242 | 7,847,271 | 98.9% | 49 of 60 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 49 of 60 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
 <!-- END:example -->
 
@@ -320,9 +320,9 @@ The JSON output starts with the calibration status:
     "n_medium": 11
   },
   "summary": {
-    "annual_externality_eur_yr": 14241.5,
-    "pv_externality_eur_pv": 7847270.86,
-    "net_social_cost_eur_pv": 7722270.86
+    "annual_externality_eur_yr": 40933.18,
+    "pv_externality_eur_pv": 10345455.73,
+    "net_social_cost_eur_pv": 10220455.73
   }
 }
 ```

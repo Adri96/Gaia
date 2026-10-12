@@ -207,25 +207,46 @@ destroyed.
 revenue is one-off (€2,500/ha, a project-specific placeholder the user
 replaces with `--unit-value`), and they meet only through present values.
 
-**Agent values: final services only (Step 8.2).** The euro values sit on
-the four final services that a primary *P. oceanica* valuation measured
-(Campagne et al. 2015, Table 2, € 2014/ha/yr): coastal protection 188,
-water purification (wastewater treatment) 60, fisheries 35 (range 27–74,
-the upper end derived from Jackson et al. 2015), and the cultural services
-they could value, 1.83 (bioindicator use 1.5 + knowledge 0.33). Total
-€284.83/ha/yr at full damage. Each is entered as
-`annual_value_per_ha = service value / dependency_weight`, so that
-weight × value is the sourced figure and the owner's weights keep their
-role in the health index. The six ecological agents (the meadow itself,
-coralligenous, epiphytes, invertebrates, megafauna, seabirds) carry no euro
-value of their own: they are intermediate services whose value reaches
-people through the final ones (Boyd & Banzhaf 2007; Fisher et al. 2009), or
-non-use values for which no per-hectare estimate tied to *Posidonia* was
-found. They keep their health weights and their edges, so their damage
-still raises the damage of the final services. **The total is a lower
-bound**: tourism, recreation and non-use values are not valued (Campagne et
-al. say the same of their own figure). Before Step 8.2 the agent values
-restated an owner specification (€1,066/ha/yr in total, no source).
+**Agent values: the service ledger (Step 8c.2).** The owner's rule:
+every agent costs money, and no service is counted twice. The case file's
+`service_ledger` books each final ecosystem service once, to the one
+agent that is its best owner, with its €/ha/yr, method, source and
+benefit-transfer method; each agent's `annual_value_per_ha` is its
+ledger total / dependency_weight, so weight × value is the sourced
+figure and the owner's weights keep their role in the health index
+(`Case.ledger_check()` and a test hold the two together). € 2014-2017/ha/yr:
+
+- Coastal Protection: protection from coastal erosion 188 (Campagne et
+  al. 2015).
+- Water Quality: water purification 60 (Campagne et al. 2015).
+- Fish Populations and Marine Invertebrates: Campagne et al.'s fisheries
+  contribution (35) split by species count, 14/16 fish (30.625) and 2/16
+  invertebrates, sea urchin and cuttlefish (4.375).
+- Human Communities and Epiphytes & Algae: the bioindicator use (1.5)
+  split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
+  Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
+  plus knowledge 0.33 to Human Communities.
+- Posidonia Meadow: the meadow's diving amenity, €34.71 per dive for a
+  total loss of cover (Zunino et al. 2020) × ~60,000 Medes Islands dives
+  a year ÷ 4,582 ha = 454.52.
+- Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
+  for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
+  Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the
+  "seascape rule": a seascape service spread over the mapped seabed).
+- Marine Megafauna and Seabirds: the non-use value of protecting
+  porpoises, seals and seabirds (Börger et al. 2014, UK, £30.32 per
+  household per year for 5 years), annualised at 2.3%, converted to €,
+  times Catalonia's 2,989,357 households, spread over 190,000 ha and
+  split equally: 30.18 each.
+
+Total €818.66/ha/yr (€284.83 before). Splits move value between agents
+and leave totals unchanged. The diving and non-use entries are benefit
+transfers with low confidence and wide Monte Carlo ranges. Beach tourism
+and the meadow's own existence value are still not valued, so the total
+remains a lower bound. Full table and caveats:
+`docs/POSIDONIA_LITERATURE_REVIEW.md` §2. Before Step 8.2 the agent
+values restated an owner specification (€1,066/ha/yr in total, no
+source).
 
 **Carbon (S5, Step 8.2a).** Valued only by `gaia.carbon`:
 - absorption 0.953 tCO₂/ha/yr, i.e. 26 g C/m²/yr of burial in Balearic

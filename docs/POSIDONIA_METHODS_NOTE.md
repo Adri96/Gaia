@@ -87,17 +87,23 @@ Single-pass cascades cut chains longer than one hop. Under regime B, the cascade
 
 A Posidonia extraction run records 59 parameters (69 with restoration). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
-**Service values (final services only).** These come from the primary *P. oceanica* valuation of Campagne et al. (2015, *Mar. Pollut. Bull.* 97:391–400, Table 2, € 2014/ha/yr):
+**Service values: the service ledger (Step 8c.2).** Every agent carries euros, and each final service is counted once, owned by one agent. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009). € /ha/yr at full damage:
 
-| Service | €/ha/yr | Range |
-|---|---|---|
-| Coastal protection (damage cost avoided) | 188 | — |
-| Water purification (benefit transfer) | 60 | — |
-| Fisheries (production function) | 35 | 27–74; the upper end is derived from Jackson et al. 2015 |
-| Bioindicator and knowledge | 1.83 | — |
-| **Total** | **284.83** | |
+| Agent | Final service | €/ha/yr | Source (method) |
+|---|---|---|---|
+| Coastal Protection | protection from coastal erosion | 188 | Campagne et al. 2015 (damage cost avoided) |
+| Water Quality | water purification | 60 | Campagne et al. 2015 (benefit transfer) |
+| Fish Populations | fisheries, fish species (14/16 of 35) | 30.63 | Campagne et al. 2015 (production function); range up to 74 × 14/16, from Jackson et al. 2015 |
+| Marine Invertebrates | fisheries, sea urchin and cuttlefish (2/16 of 35) | 4.38 | Campagne et al. 2015 (moved from fish; share by species count) |
+| Human Communities | bioindicator use (3/3.5 of 1.5) and knowledge (0.33) | 1.62 | Campagne et al. 2015; PREI weights, Gobert et al. 2009 |
+| Epiphytes & Algae | bioindicator use, epiphyte metric (0.5/3.5 of 1.5) | 0.21 | Gobert et al. 2009 (moved from Human Communities) |
+| Posidonia Meadow | recreational diving: the meadow's amenity | 454.52 | Zunino et al. 2020, −€34.71 per dive for total loss × ~60,000 Medes dives/yr ÷ 4,582 ha (transfer from Italian divers) |
+| Coralligenous & Red Coral | recreational diving: coralligenous | 18.95 | Rodrigues et al. 2016, −€60 per dive for gorgonian extinction (Medes) × 60,000 ÷ 190,000 ha of mapped seabed |
+| Marine Megafauna | non-use: protecting marine mammals | 30.18 | Börger et al. 2014 (UK choice experiment, £30.32/household/yr for 5 years), annualised, × Catalan households ÷ 190,000 ha, half of a bundled attribute |
+| Seabirds | non-use: protecting seabirds | 30.18 | the other half |
+| **Total** | | **818.66** | |
 
-The meadow, coralligenous, epiphytes and invertebrates are intermediate services: their value reaches people through the final services. A separate value would count it twice (Boyd & Banzhaf 2007; Fisher et al. 2009), so they carry no euro value. Megafauna and seabirds also carry none, because no per-hectare non-use estimate tied to *Posidonia* was found. All six keep their health weights and their edges. **Tourism, recreation and non-use values are not valued, so the services figure is a lower bound.**
+Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption. The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2). **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 
@@ -212,7 +218,7 @@ Destroying and then restoring is therefore much worse than not destroying: the d
 ## 8. Limitations
 
 1. **Static engine; no path dependence.** The timing of the works, the possibility of phased destruction, hysteresis after keystone collapse, and slower restoration after a delay are not represented. Option A (time axis and real-time substrate erosion → relaxation and keystone hysteresis → damage-dependent recovery) is a **committed milestone after v1.0** (`version_specs/V09_SPEC.md`). The data format is reserved for it (schema 2, `dynamics` block).
-2. **Lower-bound valuation.** Tourism, recreation and non-use values are not valued. The total value of the services is at the bottom of the published range (§7).
+2. **Lower-bound valuation.** Beach tourism and the meadow's own existence value are not valued. The recreation and non-use values in the ledger are benefit transfers (Italian and UK studies, the Medes Islands' dive counts, an attribution rule for seascape services). The total value of the services sits in the lower part of the published range (§7).
 3. **Unfitted response curves and edges** (§4). These are the main structural uncertainty for the services part, and they are outside the Monte Carlo bounds.
 4. **Benefit transfer.** The service values come from French Mediterranean meadows (2014 euros, no price-year adjustment), the carbon stocks from Corsica, and the burial rate from the Balearic Islands. No Catalan primary data are used.
 5. **Scale and space.** The resource is the regional stock, treated as one homogeneous meadow. Depth, shoot density, wave exposure and distance to beaches, which all change a hectare's services and carbon, are not represented. The default 50 ha is illustrative.
@@ -244,8 +250,8 @@ Every output lists every parameter with its source, confidence and, where docume
 - Which matte-loss fraction and half-life apply to a port or marina footprint (excavated vs. buried vs. exposed)? Is 10 years a defensible central half-life for matte left exposed?
 
 **Environmental economist (Track 2).**
-- Is final-services accounting with zero euro value on intermediate agents the right way to avoid double counting here?
+- Is the service ledger (each final service counted once, intermediate agents owning sourced shares moved from other agents, seascape services spread over the mapped seabed) the right way to price every agent without double counting?
 - Is Campagne et al.'s per-hectare value transferable to Catalonia?
-- Which recreation or non-use study should fill the main gap?
+- Are the diving and non-use benefit transfers (Zunino et al. 2020, Rodrigues et al. 2016, Börger et al. 2014) acceptable, and which study should replace them or fill the remaining gaps (beach tourism, the meadow's existence value)?
 - Is the SCC-based carbon valuation, with the release spread over time by a half-life and each year valued at that year's SCC, appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.
 - Is treating the normative choices as sensitivities rather than distributions the right presentation for a decision-maker?
