@@ -24,7 +24,7 @@ A timber company that cuts 5,000 trees books the revenue. The water quality, hab
 - **Extraction mode** removes units of a resource (trees, hectares of seagrass) one at a time, computes how much of each dependent agent's yearly service is lost, and reports the **yearly externality (€/yr)**, its **present value (€ PV)** including carbon, and the **net social cost** = PV of the externality − the one-off private revenue.
 - **Restoration mode** starts from a degraded state, replants some of the lost units, and reports the **recovered yearly value**, the **net present value** of the restoration, the **maturation gap** while succession proceeds, and the **destroy-then-restore penalty**: what cutting and later restoring costs society compared with not cutting.
 
-Four cases are included: a temperate forest, a Mediterranean holm-oak forest and a Posidonia seagrass meadow on the Costa Brava, and a Central Amazon rainforest patch.
+Four cases are included: a temperate forest, a Mediterranean holm-oak forest, the *Posidonia oceanica* meadows of the Catalan coast (Costa Brava) and a Central Amazon rainforest patch. Posidonia is the v1.0 case (decision D6): every parameter is sourced or flagged (`docs/POSIDONIA_LITERATURE_REVIEW.md`), its results come with Monte Carlo bounds (`--uncertainty`), and a methods note awaits external review (`docs/POSIDONIA_METHODS_NOTE.md`).
 
 ---
 
@@ -39,7 +39,7 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
-| Costa Brava Posidonia Meadow (marine): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 6,325 | 7,826,571 | 99.4% | 48 of 59 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 6,325 | 7,826,571 | 99.4% | 48 of 59 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
 <!-- END:example -->
 
@@ -402,7 +402,7 @@ gaia run forest                                        # extraction, case defaul
 gaia run forest --total-units 10000 --threshold 0.3 --units 5000 --unit-value 100
 gaia run forest --total-units 10000 --units 5000 --area-ha 40
 gaia run costa_brava --units 2500                      # at the 25% safe threshold
-gaia run posidonia --total-units 5000 --units 2000     # Posidonia's unit is the hectare
+gaia run posidonia --units 50 --unit-value 2500 --uncertainty   # a 50 ha project, with Monte Carlo bounds
 gaia run amazon --total-units 4000 --units 800         # a 10 ha patch at 400 trees/ha
 
 gaia run forest --units 5000 --mode restore            # replant the 5,000 trees cut
@@ -477,13 +477,16 @@ result = run_extraction(ecosystem, units_to_extract=500)
 |---|---|---|---|---|---|
 | `forest` — Oak Valley Forest, temperate | 10,000 trees on 40 ha | 4 / 2 | 30% | €100/tree | 2.3%, 2% scarcity, 100 yr |
 | `costa_brava` — Holm Oak Forest, Mediterranean | 10,000 trees on 100 ha | 11 / 17 | 25% | €60/tree | 2.3%, 1.28% scarcity, 100 yr |
-| `posidonia` — Posidonia oceanica meadow, marine | 5,000 ha | 10 / 15 | 20% | €2,500/ha | 2.3% → 1.4%, 1% scarcity, 200 yr |
+| `posidonia` — Posidonia oceanica, Catalan coast, marine | 4,582 ha (50 destroyed by default) | 10 / 15 | 20% | €2,500/ha | 2.3% → 1.4%, 1% scarcity, 200 yr |
 | `amazon_forest` — Central Amazon old growth, tropical | 400,000 trees on 1,000 ha | 11 / 34 | 20% | €1.50/tree | 2.3%, 1.28% scarcity, 100 yr |
 
 What the values rest on. The authoritative, per-parameter list is in each output's calibration status:
 
 - **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012) and Costanza et al. (2014), minus climate regulation (carbon is valued separately). The figures are partly from memory and have no currency or price-year conversion: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
-- **Posidonia**: the per-agent values are an owner specification, about 25× below global seagrass meta-analyses. Its carbon absorption is the IPCC (2013) Wetlands Supplement Tier 1 seagrass rate.
+- **Posidonia** (the v1.0 case, Step 8):
+  - **Euro values.** Only the four final services a primary *P. oceanica* valuation measured carry euros (Campagne et al. 2015: coastal protection, water purification, fisheries, knowledge; €285/ha/yr in total). The six ecological agents carry none, to avoid double counting. Tourism, recreation and non-use are not valued, so the total is a lower bound, ~20× below the Mediterranean seagrass meta-regression.
+  - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion. Carbon dominates the result.
+  - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
 - **Amazon**: the agent value is the sum of the non-carbon anchors of its spec (`gaia/cases/definitions/AMAZON_FOREST.md`). Several of those anchors' sources are unverified. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
 - **All cases**: identical placeholder logistic damage curves (steepness 12), placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
 
@@ -623,12 +626,14 @@ Experimental: endogenous pricing (`--with-pricing`), quarantined.
 Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
 
 Not done:
-- Calibrated parameters.
-- Uncertainty bounds: the band is heuristic, and Monte Carlo is planned.
+- Calibrated damage curves and edges: no case has them, Posidonia included.
+- External expert review of the Posidonia methods note.
 - A path-dependent engine: decided as a committed milestone after v1.0 (D5 option A, `version_specs/V09_SPEC.md`).
-- External expert review.
 
-The proposed next milestone (pending owner decision D6) is **one credible, fully sourced case with uncertainty bounds, reviewed by an ecologist and an environmental economist**. See `PROJECT_DEFINITION.md`.
+Unreleased (Step 8):
+- The engine evaluates its static function directly; the Cython extension is gone (D5 option B, D7).
+- The Posidonia v1.0 case: every parameter sourced or flagged, benchmarks, Monte Carlo bounds (`--uncertainty`), and a methods note ready for review.
+- The first user and question are a proposal awaiting the owner (`PROJECT_DEFINITION.md`, v1.0).
 
 ---
 
