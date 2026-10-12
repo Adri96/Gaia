@@ -346,25 +346,31 @@ def test_amazon_mycorrhizal_keystone_edge_is_strongest():
     assert max_edge.strength == 0.190
 
 
+AMAZON_VALUE_PER_HA = 3220 * 0.808165  # Step 8e.5: de Groot et al. 2012, PPP to €
+
+
 def test_amazon_max_externality_matches_per_hectare_calibration():
     """
-    sum(weight × rate) equals the spec §8 non-carbon anchors (€580/ha/yr:
-    water cycling + fisheries + biodiversity) times the reference area, so
-    the agent rates scale with the stated hectares.
+    sum(weight × rate) equals de Groot et al.'s (2012) tropical-forest value
+    without climate regulation (Int$3,220/ha/yr, Table 2), converted at
+    Spain's 2007 PPP rate (€0.808165 per Int$): €2,602.29/ha/yr (Step
+    8e.5), times the reference area, so the agent rates scale with the
+    stated hectares.
     """
     eco = build_amazon_ecosystem()
     assert eco.resource.area_ha == AMAZON_AREA_HA
     amazon_max = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
-    assert amazon_max == pytest.approx(580.0 * AMAZON_AREA_HA, rel=1e-9)
+    assert amazon_max == pytest.approx(AMAZON_VALUE_PER_HA * AMAZON_AREA_HA, rel=1e-9)
 
 
 def test_amazon_pricing_anchors_are_sourced_market_values():
     """Step 8d.6: three market-based anchors from de Groot et al. (2012)
     Table 2, tropical forest (Int$/ha/yr × 1,000 ha): food 200 (Canopy
     Trees), pollination 30 (Pollinators), water 27 (Aquatic System); every
-    other price is derived. The static agent value (€580/ha/yr, the spec's
-    §8 anchors) is not tied to them, and is larger than their sum."""
+    other price is derived. The static agent value (€2,602.29/ha/yr, de
+    Groot et al.'s tropical forest without climate regulation, Step 8e.5)
+    contains them and is larger than their sum."""
     eco = build_amazon_ecosystem(with_pricing=True)
     anchors = {p.agent_name: p.anchor_value for p in eco.pricing.anchors}
     assert anchors == {"Canopy Trees": 200_000.0, "Pollinators": 30_000.0,
@@ -372,7 +378,23 @@ def test_amazon_pricing_anchors_are_sourced_market_values():
     assert all("doi:10.1016/j.ecoser.2012.07.005" in p.source for p in eco.pricing.anchors)
     agents = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
-    assert agents == pytest.approx(580.0 * AMAZON_AREA_HA, rel=1e-12)
+    assert agents == pytest.approx(AMAZON_VALUE_PER_HA * AMAZON_AREA_HA, rel=1e-12)
+    assert agents > sum(anchors.values())
+
+
+def test_amazon_agent_value_is_de_groot_without_climate_regulation():
+    """Step 8e.5: Int$5,264 − 2,044 = 3,220 (de Groot et al. 2012, Table 2),
+    × the World Bank PPP factor for Spain, 2007 (0.808165 €/Int$); 2007
+    price level, no income adjustment; low confidence."""
+    from gaia.cases import load_case
+    from gaia.provenance import Confidence
+
+    eco = load_case("amazon_forest").build_ecosystem()
+    value = next(p for p in eco.provenance if p.name == "agents.annual_value_per_ha")
+    assert value.value == pytest.approx((5264 - 2044) * 0.808165, rel=1e-12)
+    assert value.confidence is Confidence.LOW
+    assert "doi:10.1016/j.ecoser.2012.07.005" in value.source and "PA.NUS.PRVT.PP" in value.source
+    assert "no income adjustment" in value.note and "2007" in value.note
 
 
 def test_amazon_carbon_density_matches_literature():

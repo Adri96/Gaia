@@ -521,21 +521,42 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
-Agent values (decisions D1, D2):
-    Every agent uses €580/ha/yr and the dependency weights split it, so
-    sum(weight × value) = €580/ha/yr × area_ha at full damage (€580,000/yr
-    for the 1,000 ha reference area) [PLACEHOLDER].
+Agent values (decisions D1, D2; re-based in Step 8e.5):
+    Every agent uses €2,602.29/ha/yr and the dependency weights split it,
+    so sum(weight × value) = €2,602.29/ha/yr × area_ha at full damage
+    (€2.60 M/yr for the 1,000 ha reference area) [low].
 
-    €580/ha/yr is the sum of the non-carbon spec §8 anchors for 1,000 ha:
+    Since Step 8e.5 (the owner's answer) the value is de Groot et al.
+    (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005,
+    Table 2 (read in full), tropical forest: total economic value
+    Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr
+    (2007 international dollars; climate regulation is left out because
+    carbon is valued by gaia.carbon, decision D3). Converted to euros with
+    the World Bank's PPP conversion factor for household (private)
+    consumption, PA.NUS.PRVT.PP — the series de Groot et al. used — for
+    Spain, 2007: 0.808165 € per Int$ (World Development Indicators API,
+    read). 3,220 × 0.808165 = €2,602.29/ha/yr, in 2007 euros at Spanish
+    purchasing power. Why PPP and Spain: an international dollar has the
+    purchasing power of a US dollar in the US and must be converted with
+    a country's PPP rate, not the market rate (de Groot et al., footnote
+    5); Gaia's euro figures are for its Catalan user; the series has no
+    2007 euro-area value. At the 2007 market rate (0.7297 €/US$) it would
+    be €2,350. No price-year (inflation) and no income adjustment, the
+    owner's rule for benefit transfers (Step 8d.5). Low confidence: a
+    global mean of 96 estimates, not a Central Amazon valuation (the
+    totals of the service medians are less than half the means, Table 3).
+    The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27)
+    are parts of the 3,220 and are still used as € at face value.
+
+    Before Step 8e.5, €580/ha/yr was the sum of the non-carbon spec §8 anchors for 1,000 ha:
     water cycling €150k + fisheries €20k + biodiversity/habitat €410k =
     €580k/yr. Carbon is valued only by gaia.carbon (decision D3), so the
     carbon anchors (stock protection €508k, sequestration €88k, REDD+) are
     gone. The former €840/ha/yr had no derivation of its own (the anchors,
     carbon included, summed to ~€1,160/ha/yr), so the agent value was
     brought to the documented anchors, not the reverse — see
-    definitions/AMAZON_FOREST.md §8. For scale, de Groot et
-    al. (2012) report a global tropical-forest mean of Int$5,264/ha/yr
-    (2007), of which climate regulation is Int$2,044.
+    definitions/AMAZON_FOREST.md §8. Several of those anchors' sources were
+    unverified (audit S4), which is why the value was re-based.
 
     Revenue (€1.50/tree) is one-off; it is compared with the present value of
     the yearly externality, never with the €/yr figure.
@@ -573,7 +594,7 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
 "area_loss"`, as Posidonia; `threshold_logistic` curves). The default run
 destroys exactly the 20% threshold (80,000 of 400,000 trees), so it now
 costs exactly the linear transfer, 20% × €580/ha/yr × 1,000 ha =
-€116,000/yr (was €177,757, of which the logistic's damage inside the
+€116,000/yr (€520,458 since Step 8e.5, at €2,602.29/ha/yr) (was €177,757, of which the logistic's damage inside the
 "safe" zone, amplified for consumers and spread by 34 edges, made the
 excess); PV €34.93 M instead of €38.81 M (the carbon release is
 unchanged). **The CalibrationWarning is gone.** What remains: the
@@ -587,8 +608,8 @@ reference): Canopy Trees, food 200; Pollinators, pollination 30; Aquatic
 System, water 27. The network has no root (every agent is reached from
 Canopy Trees), so the other eight prices are derived. The former spec §8
 anchors (rainfall recycling €150k, fisheries €20k, biodiversity €410k:
-sources unverified, audit S4) and the eight placeholders are dropped; the
-static agent value (€580/ha/yr) still rests on the spec's §8 sum.
+sources unverified, audit S4) and the eight placeholders are dropped. Since
+Step 8e.5 the static agent value rests on de Groot et al. too (above).
 
 **Monte Carlo ranges (Step 8e.4).** Until Step 8e the Monte Carlo
 rejected every draw: the twelve edges into Canopy Trees and Understory
@@ -605,7 +626,9 @@ the way Posidonia's were:
 - the keystone thresholds: ±0.15, uniform (0.10–0.40 for the fungi,
   0.20–0.50 for the pollinators).
 No draw is rejected now. Default run (1,000 draws, seed 20261012; about
-4 minutes for the 80,000-tree run), PV of externality €34.93 M (P5 / P50
-/ P95 €32.83 / 39.76 / 50.96 M); annual externality €116,000 (86,615 /
-146,136 / 313,375). The safe threshold (the run sits exactly at it), the
-agent value and the carbon stock drive it. No number changes.
+4 minutes for the 80,000-tree run), at the Step 8e.4 value of €580/ha/yr:
+PV of externality €34.93 M (P5 / P50 / P95 €32.83 / 39.76 / 50.96 M);
+since the Step 8e.5 value of €2,602.29/ha/yr: €60.35 M (53.71 / 71.40 /
+120.05 M), annual externality €520,458 (388,616 / 655,670 / 1,406,023).
+The safe threshold (the run sits exactly at it), the agent value and the
+carbon stock drive it.

@@ -1,7 +1,7 @@
 {
   "gaia_schema": 1,
   "name": "Central Amazon Old-Growth Lowland Forest",
-  "description": "Central Amazon old-growth lowland rainforest on Oxisol: 11 agents, mycorrhizal fungi and pollinators keystone, 400 trees/ha on a 1,000 ha reference area; twelve edges into Canopy Trees and Understory are rescaled to the in-degree cap (Step 3.8). Small losses are priced linearly (damage model area_loss, Step 8d.1). Illustrative. Sources: gaia/cases/definitions/AMAZON_FOREST.md; derivations: CASE_NOTES.md there.",
+  "description": "Central Amazon old-growth lowland rainforest on Oxisol: 11 agents, mycorrhizal fungi and pollinators keystone, 400 trees/ha on a 1,000 ha reference area; twelve edges into Canopy Trees and Understory are rescaled to the in-degree cap (Step 3.8). Small losses are priced linearly (damage model area_loss, Step 8d.1). Agent value: de Groot et al. (2012) tropical forest without climate regulation, PPP-converted (Step 8e.5). Illustrative. Sources: gaia/cases/definitions/AMAZON_FOREST.md; derivations: CASE_NOTES.md there.",
   "calibration_regime": "B",
   "damage_model": "area_loss",
   "resource": {
@@ -54,11 +54,11 @@
   },
   "agent_defaults": {
     "annual_value_per_ha": {
-      "value": 580.0,
+      "value": 2602.2913,
       "unit": "€/ha/yr",
-      "source": "sum of the non-carbon anchors of AMAZON_FOREST.md §8 for 1,000 ha: water cycling €150k, fisheries €20k, biodiversity/habitat €410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): tropical forest, total economic value Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr (2007 international dollars, 2007 price level; 96 estimates, Table 3); converted to euros with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 12 October 2026)",
       "confidence": "low",
-      "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044."
+      "note": "Every agent; the dependency weights split it (Step 8e.5, the owner's answer: re-based on de Groot et al. 2012). 3,220 x 0.808165 = EUR 2,602.29/ha/yr in 2007 euros at Spanish purchasing power: international dollars carry US purchasing power and must be converted with a country's PPP rate, not the market exchange rate (de Groot et al., footnote 5); Spain is the country of Gaia's euro figures (the Catalan Posidonia user); the euro area has no 2007 value in this series. At the 2007 market rate (0.7297 EUR/USD, PA.NUS.FCRF) it would be EUR 2,350. Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). Of the 3,220: provisioning 1,828 (food 200, water 27, raw materials 84, genetic 13, medicinal 1,504), regulating without climate 485, habitat 39, cultural (recreation) 867 (the rows sum to 3,219: rounding in Table 2). A global tropical-forest mean, not a Central Amazon valuation: the totals of the service medians (2,355 with climate) are less than half the means (Table 3), so low confidence and the default x/÷2 Monte Carlo range. It replaces EUR 580/ha/yr, the sum of the spec's partly unverified §8 anchors (audit S4). The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27) are parts of the 3,220, still used as EUR at face value."
     },
     "damage": "threshold_logistic"
   },

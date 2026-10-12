@@ -91,10 +91,10 @@
         {
           "confidence": "low",
           "name": "agents.annual_value_per_ha",
-          "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044.",
-          "source": "sum of the non-carbon anchors of AMAZON_FOREST.md \u00a78 for 1,000 ha: water cycling \u20ac150k, fisheries \u20ac20k, biodiversity/habitat \u20ac410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+          "note": "Every agent; the dependency weights split it (Step 8e.5, the owner's answer: re-based on de Groot et al. 2012). 3,220 x 0.808165 = EUR 2,602.29/ha/yr in 2007 euros at Spanish purchasing power: international dollars carry US purchasing power and must be converted with a country's PPP rate, not the market exchange rate (de Groot et al., footnote 5); Spain is the country of Gaia's euro figures (the Catalan Posidonia user); the euro area has no 2007 value in this series. At the 2007 market rate (0.7297 EUR/USD, PA.NUS.FCRF) it would be EUR 2,350. Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). Of the 3,220: provisioning 1,828 (food 200, water 27, raw materials 84, genetic 13, medicinal 1,504), regulating without climate 485, habitat 39, cultural (recreation) 867 (the rows sum to 3,219: rounding in Table 2). A global tropical-forest mean, not a Central Amazon valuation: the totals of the service medians (2,355 with climate) are less than half the means (Table 3), so low confidence and the default x/\u00f72 Monte Carlo range. It replaces EUR 580/ha/yr, the sum of the spec's partly unverified \u00a78 anchors (audit S4). The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27) are parts of the 3,220, still used as EUR at face value.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): tropical forest, total economic value Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr (2007 international dollars, 2007 price level; 96 estimates, Table 3); converted to euros with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 12 October 2026)",
           "unit": "\u20ac/ha/yr",
-          "value": 580.0
+          "value": 2602.2913
         },
         {
           "confidence": "low",
@@ -846,8 +846,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.15,
           "description": "Emergent + canopy layer (400+ species/ha) \u2014 primary biomass, rainfall recycling",
           "is_keystone": false,
@@ -857,8 +857,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.08,
           "description": "Sub-canopy trees, palms, ferns, epiphytes \u2014 shade-tolerant reproduction, microclimate regulation",
           "is_keystone": false,
@@ -868,8 +868,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.15,
           "description": "Arbuscular + ectomycorrhizae \u2014 KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
           "is_keystone": true,
@@ -879,8 +879,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "Termites, fungi, bacteria, dung beetles \u2014 organic matter breakdown, nutrient return",
           "is_keystone": false,
@@ -890,8 +890,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.09,
           "description": "Bees, butterflies, hummingbirds, bats \u2014 reproduction for 90%+ of canopy species",
           "is_keystone": true,
@@ -901,8 +901,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.08,
           "description": "Monkeys, toucans, agoutis, tapirs \u2014 forest regeneration, genetic connectivity",
           "is_keystone": false,
@@ -912,8 +912,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.07,
           "description": "Capybaras, sloths, leafcutter ants, insects \u2014 energy transfer, population dynamics",
           "is_keystone": false,
@@ -923,8 +923,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.05,
           "description": "Snakes (boa, anaconda), caimans, ocelots, anteaters \u2014 mid-trophic regulation",
           "is_keystone": false,
@@ -934,8 +934,8 @@
           "trophic_level": 2
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.03,
           "description": "Jaguars, harpy eagles \u2014 top-down population control, KEYSTONE trophic role",
           "is_keystone": false,
@@ -945,8 +945,8 @@
           "trophic_level": 3
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "River fish (3,000+ species), river dolphins, aquatic plants \u2014 nutrient transport, fisheries",
           "is_keystone": false,
@@ -956,8 +956,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "Orchids, bromeliads, lichens (~25,000 species) \u2014 water retention, microhabitat creation",
           "is_keystone": false,
