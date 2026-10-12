@@ -45,6 +45,8 @@ Kernel = Tuple[int, float, float, float, float]
 KERNEL_LOGISTIC: int = 0     # (inflection, raw_0, span, steepness)
 KERNEL_EXPONENTIAL: int = 1  # (scale, raw_1, base, 0.0)
 KERNEL_PIECEWISE: int = 2    # (threshold, pre_slope, post_slope, pre_slope_ratio)
+KERNEL_THRESHOLD_LOGISTIC: int = 3  # (inflection, raw_t, span, steepness)
+KERNEL_THRESHOLD_EXPONENTIAL: int = 4  # (threshold, scale, raw_1, base)
 
 
 def _require_threshold(threshold: float, factory: str) -> None:
@@ -240,3 +242,107 @@ def piecewise_damage(threshold: float, pre_slope_ratio: Optional[float] = None) 
     _piecewise.threshold = threshold  # type: ignore[attr-defined]
     _piecewise.kernel = (KERNEL_PIECEWISE, threshold, pre_slope, post_slope, pre_slope_ratio)  # type: ignore[attr-defined]
     return _piecewise
+
+
+def threshold_logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:
+    """
+    Logistic damage that starts at the threshold: zero below it (Step 8c.3).
+
+    The degradation curve of the "area_loss" damage model
+    (gaia.propagation.area_loss_damages), where each unit lost takes its
+    own services (the linear part) and this curve describes how the
+    REMAINING resource degrades once depletion passes the safe threshold
+    (fragmentation, loss of structure). Being exactly zero below the
+    threshold, it has zero slope at small losses, so the total damage
+    D + (1 − D) × degradation has slope 1 there: the marginal unit costs
+    its average value, as in a linear benefit transfer.
+
+    Formula (same inflection rule as logistic_damage):
+        inflection = threshold + (1 - threshold) * 0.15
+        raw(x) = 1 / (1 + exp(-steepness * (x - inflection)))
+        f(x)   = 0                                   for x <= threshold
+        f(x)   = (raw(x) - raw(t)) / (raw(1) - raw(t))  for x > threshold
+
+    f(0) = 0, f(1) = 1, monotone; the slope jumps from 0 to a positive
+    value at the threshold (invariant 5) and the curve is convex up to the
+    inflection, beyond the convexity window (invariant 6).
+
+    Args:
+        threshold: Depletion at which degradation starts, in (0, 1).
+        steepness: Sharpness of the S-curve past the threshold
+            [PLACEHOLDER — pending scientific calibration].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1) or steepness is not a
+            finite number > 0.
+    """
+    _require_threshold(threshold, "threshold_logistic_damage")
+    if not (isinstance(steepness, (int, float)) and math.isfinite(steepness)
+            and steepness > 0.0):
+        raise ValueError(
+            f"threshold_logistic_damage: steepness must be a finite number > 0, "
+            f"got {steepness!r}"
+        )
+    inflection: float = threshold + (1.0 - threshold) * 0.15
+    raw_t: float = 1.0 / (1.0 + math.exp(-steepness * (threshold - inflection)))
+    raw_1: float = 1.0 / (1.0 + math.exp(-steepness * (1.0 - inflection)))
+    span: float = raw_1 - raw_t
+
+    def _threshold_logistic(depletion_ratio: float) -> float:
+        if depletion_ratio <= threshold:
+            return 0.0
+        raw: float = 1.0 / (1.0 + math.exp(-steepness * (depletion_ratio - inflection)))
+        return (raw - raw_t) / span
+
+    _threshold_logistic.threshold = threshold  # type: ignore[attr-defined]
+    _threshold_logistic.kernel = (  # type: ignore[attr-defined]
+        KERNEL_THRESHOLD_LOGISTIC, inflection, raw_t, span, steepness,
+    )
+    return _threshold_logistic
+
+
+def threshold_exponential_damage(threshold: float, base: float = 2.0) -> DamageFunc:
+    """
+    Exponential damage that starts at the threshold: zero below it (Step 8d.1).
+
+    The "area_loss" counterpart of exponential_damage, for an agent whose
+    degradation has no plateau (Costa Brava's fire feedback): the REMAINING
+    resource is untouched up to the safe threshold, then degrades
+    exponentially over the post-threshold span. Being exactly zero below the
+    threshold it keeps the damage D + (1 − D) × degradation at slope 1 for
+    small losses (gaia.propagation.area_loss_damages).
+
+    Formula:
+        f(x) = 0                                              for x <= threshold
+        f(x) = (base^((x - t) / (1 - t)) - 1) / (base - 1)    for x > threshold
+
+    f(0) = 0, f(1) = 1, monotone and convex past the threshold, where the
+    slope jumps from 0 to ln(base) / ((1 - t)(base - 1)) (invariants 5, 6).
+
+    Args:
+        threshold: Depletion at which degradation starts, in (0, 1).
+        base: Exponential base, a finite number > 1
+            [PLACEHOLDER — pending scientific calibration].
+
+    Raises:
+        ValueError: If threshold is not in (0, 1) or base is not a finite
+            number > 1.
+    """
+    _require_threshold(threshold, "threshold_exponential_damage")
+    if not (isinstance(base, (int, float)) and math.isfinite(base) and base > 1.0):
+        raise ValueError(
+            f"threshold_exponential_damage: base must be a finite number > 1, got {base!r}"
+        )
+    scale: float = 1.0 / (1.0 - threshold)
+    raw_1: float = base - 1.0
+
+    def _threshold_exponential(depletion_ratio: float) -> float:
+        if depletion_ratio <= threshold:
+            return 0.0
+        return (base ** ((depletion_ratio - threshold) * scale) - 1.0) / raw_1
+
+    _threshold_exponential.threshold = threshold  # type: ignore[attr-defined]
+    _threshold_exponential.kernel = (  # type: ignore[attr-defined]
+        KERNEL_THRESHOLD_EXPONENTIAL, threshold, scale, raw_1, base,
+    )
+    return _threshold_exponential

@@ -155,10 +155,15 @@ def test_pricing_anchors_recorded_only_with_pricing(case):
     assert not any(n.startswith("pricing.") for n in without)
     eco = _build(case, with_pricing=True)
     anchors = [p for p in eco.provenance if p.name.startswith("pricing.anchor[")]
-    assert len(anchors) == len(eco.agents)
-    # derived (Step 4) anchors are placeholders; none claims more than low
-    assert all(p.confidence in (Confidence.LOW, Confidence.PLACEHOLDER) for p in anchors)
-    assert any(p.confidence is Confidence.PLACEHOLDER for p in anchors)
+    derived = [p for p in eco.provenance if p.name.startswith("pricing.derived[")]
+    # every agent is either anchored or derived (Step 8c.6), never both
+    assert len(anchors) + len(derived) == len(eco.agents)
+    assert all(p.confidence is Confidence.PLACEHOLDER for p in derived)
+    # a few sourced anchors (Steps 8c.6, 8d.6), every other price derived
+    expected = {"posidonia": (3, 7), "forest": (2, 2), "costa_brava": (2, 9), "amazon_forest": (3, 8)}
+    assert (len(anchors), len(derived)) == expected[case]
+    assert all(p.source and "doi:" in p.source for p in anchors)
+    assert all(p.confidence is not Confidence.PLACEHOLDER for p in anchors)
 
 
 def test_known_flags_are_honest():
@@ -175,11 +180,13 @@ def test_known_flags_are_honest():
     absorption = param("posidonia", "carbon.annual_absorption_tonnes")
     assert "doi:10.1002/lno.10510" in absorption.source and "S5" in absorption.note
     release = param("posidonia", "carbon.soil_release_fraction")
-    assert release.confidence is Confidence.LOW and "global assumption" in release.note
+    assert release.confidence is Confidence.LOW and "project input" in release.note
+    assert "0.96" in release.note  # excavation (IPCC 2013), Step 8c.5
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
-    for case in BUILDERS:
-        assert param(case, "damage.logistic_steepness").confidence is Confidence.PLACEHOLDER
+    for case in BUILDERS:  # every case prices small losses linearly (Steps 8c.3, 8d.1)
+        assert param(case, "damage.threshold_logistic_steepness").confidence is Confidence.PLACEHOLDER
+    assert param("costa_brava", "damage.threshold_exponential_base").confidence is Confidence.PLACEHOLDER
     retuned = [
         p for case in ("costa_brava", "amazon_forest") for p in _build(case).provenance
         if "in-degree cap" in p.note

@@ -1,8 +1,9 @@
 {
   "gaia_schema": 1,
   "name": "Costa Brava Holm Oak Forest",
-  "description": "Mediterranean holm oak forest: 11 agents from the mycorrhizal network (keystone) to raptors and the coastal tourism economy; Fire & Microclimate Regulation uses an exponential curve, and three edges into Understory & Matorral are rescaled to the in-degree cap (Step 3.8). Illustrative. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "description": "Mediterranean holm oak forest: 11 agents from the mycorrhizal network (keystone) to raptors and the coastal tourism economy; Fire & Microclimate Regulation degrades exponentially past the threshold, and three edges into Understory & Matorral are rescaled to the in-degree cap (Step 3.8). Small losses are priced linearly (damage model area_loss, Step 8d.1). Illustrative. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
+  "damage_model": "area_loss",
   "resource": {
     "name": "Costa Brava Holm Oak Forest",
     "unit": "trees",
@@ -25,7 +26,7 @@
       "unit": "ratio",
       "source": "owner specification (case docstring), no external source",
       "confidence": "low",
-      "note": "Safe extraction threshold, lower than temperate forest for drought and fire (stated rationale, no cited source); also the inflection of every damage curve."
+      "note": "Safe extraction threshold, lower than temperate forest for drought and fire (stated rationale, no cited source); under the area_loss damage model (Step 8d.1) the depletion beyond which the REMAINING resource starts to degrade; below it each hectare lost costs its average value."
     }
   },
   "provenance_defaults": {
@@ -52,25 +53,25 @@
       "confidence": "low",
       "note": "Every agent; the dependency weights split it. Figure partly from memory, to be checked against the paper (Step 8); 2007 Int$ used as € with no currency or price-year conversion; a global woodland mean, not a Mediterranean holm-oak valuation."
     },
-    "damage": "logistic"
+    "damage": "threshold_logistic"
   },
   "damage_curves": {
-    "logistic": {
-      "type": "logistic",
+    "threshold_logistic": {
+      "type": "threshold_logistic",
       "steepness": {
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+        "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent except Fire & Microclimate Regulation. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B)."
       }
     },
-    "exponential": {
-      "type": "exponential",
+    "threshold_exponential": {
+      "type": "threshold_exponential",
       "base": {
         "value": 2.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "Exponential damage of Fire & Microclimate Regulation (fire feedback, no plateau); not fitted to fire data."
+        "note": "Degradation of Fire & Microclimate Regulation past the safe threshold (area_loss, Step 8d.1): zero up to the threshold, then exponential over the post-threshold span (fire feedback, no plateau): (base^((D - t)/(1 - t)) - 1)/(base - 1); not fitted to fire data."
       }
     }
   },
@@ -137,7 +138,7 @@
       "name": "Fire & Microclimate Regulation",
       "description": "Fire risk amplification, loss of shade and moisture buffering — self-reinforcing, no plateau",
       "dependency_weight": 0.1,
-      "damage": "exponential",
+      "damage": "threshold_exponential",
       "trophic_level": -1
     },
     {
@@ -388,14 +389,21 @@
   },
   "pricing": {
     "reference_area_ha": 100.0,
-    "anchor_every_agent": true,
+    "anchor_every_agent": false,
     "anchors": [
       {
-        "agent_name": "Watershed & Water Cycle",
-        "anchor_value": 25000.0,
-        "source": "Municipal water treatment cost avoided: ~€2.50/m³ × 100 m³/ha/yr × 100 ha",
+        "agent_name": "Mycorrhizal Fungi",
+        "anchor_value": 5200.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$ 52; Table 1: 118 of the database's 133 food estimates are direct market prices",
         "confidence": "low",
-        "description": "Watershed: €2.50/m³ × 10,000 m³/yr recharge"
+        "description": "A market-based value (Step 8d.6): food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$, Int$52/ha/yr x 100 ha, a global woodlands mean, not a site valuation; for scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms (de-Miguel et al. 2014, Forest Ecology and Management 330:218-227, doi:10.1016/j.foreco.2014.07.014)"
+      },
+      {
+        "agent_name": "Pollinators & Insects",
+        "anchor_value": 3100.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, pollination Int$ 31; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices)",
+        "confidence": "low",
+        "description": "A market-based value (Step 8d.6): pollination Int$, Int$31/ha/yr x 100 ha, a global woodlands mean, not a site valuation"
       }
     ],
     "scarcity_functions": {

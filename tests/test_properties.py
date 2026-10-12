@@ -246,7 +246,19 @@ def test_cost_continuous_where_pricing_succeeds(case):
     coarse_inc = increments(coarse)
     fine_inc = increments(fine[:10 * k])
     assert min(fine_inc) >= -1e-9 * max(fine)
-    assert max(fine_inc) <= 0.5 * max(coarse_inc), (max(fine_inc), max(coarse_inc))
+    if max(fine_inc) <= 0.5 * max(coarse_inc):
+        return
+    # A steep but continuous rise narrower than the fine grid (since Step
+    # 8d.1 Costa Brava's pricing converges up to where an amplified agent's
+    # health nears 0 and its scarcity multiplier climbs to its cap) shrinks
+    # again when that one interval is refined 10× more; a jump would not.
+    i = max(range(len(fine_inc)), key=fine_inc.__getitem__)  # interval (i, i + 1] of 1000
+    eco, _ = build(case, 10_000, with_pricing=True)
+    steps = run_extraction(eco, 10 * (i + 1)).steps
+    finer = [steps[u - 1].annual_externality / (10_000 / density) if u else 0.0
+             for u in range(10 * i, 10 * (i + 1) + 1)]
+    assert finer[-1] == pytest.approx(fine[i], rel=1e-9)
+    assert max(increments(finer)[1:]) <= 0.5 * fine_inc[i], (max(increments(finer)[1:]), fine_inc[i])
 
 
 # ── 6. No hidden carbon (C5, D3) ─────────────────────────────────────────────
@@ -297,12 +309,25 @@ def _carbon_at_stake(eco, units):
     release = units * (cp.stored_carbon_tonnes
                        + cp.soil_carbon_tonnes * cp.soil_release_fraction)
     absorption = units * cp.annual_absorption_tonnes
+    # The release: at year 0, or spread by its half-life (Step 8c.5), the
+    # share released during year t valued at the price of year t
+    if cp.release_half_life_years == 0.0:
+        release_eur = release * SOCIAL_COST_OF_CARBON_EUR
+    else:
+        lam = math.log(2.0) / cp.release_half_life_years
+        release_eur = sum(
+            release * (math.exp(-lam * t) - math.exp(-lam * (t + 1)))
+            * SOCIAL_COST_OF_CARBON_EUR * (1 + discount.carbon_price_growth) ** t
+            * discount.discount_factor(t)
+            for t in range(discount.horizon_years)
+        )
+        assert release_eur < release * SOCIAL_COST_OF_CARBON_EUR
     foregone = sum(
         absorption * SOCIAL_COST_OF_CARBON_EUR
         * (1 + discount.carbon_price_growth) ** t * discount.discount_factor(t)
         for t in range(1, discount.horizon_years + 1)
     )
-    return release * SOCIAL_COST_OF_CARBON_EUR, foregone
+    return release_eur, foregone
 
 
 @pytest.mark.parametrize("succession", [True, False], ids=["succession", "instant"])

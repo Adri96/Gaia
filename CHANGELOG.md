@@ -1,12 +1,58 @@
 # Changelog
 
-## Unreleased — Posidonia v1.0 case (Step 8b; decision D6)
+## 0.10.0 — Step 8: the Posidonia v1.0 case (2026-10-12)
+
+Step 8 of `TOP_PRIORITIES_REPORT.md`: one credible case (decision D6), *Posidonia oceanica* meadows on the Catalan coast, for a named user (a Catalan coastal authority or marine NGO reviewing a port or marina expansion), with every parameter sourced or flagged, uncertainty bounds, benchmarks and a methods note ready for external review. It also releases Step 7 (PR #5: cases as JSON files, `gaia run`).
+
+- **PR #6 — Step 8a, static engine** (D5 option B, D7): the engine evaluates its static damage function directly and says so; Cython is dropped; no number changed. A path-dependent engine (option A) is a committed milestone after v1.0.
+- **PR #7 — Step 8b, the Posidonia v1.0 case**: literature review (every DOI checked, every number read), sourced carbon profile (S5 resolved), benchmarks, Monte Carlo uncertainty and a tornado ranking replacing the heuristic band (S7), methods note.
+- **PR #8 — Steps 8c and 8d, the owner's answers**:
+  - small losses priced linearly in every case (`damage_model: "area_loss"`), so no shipped case issues a CalibrationWarning;
+  - a service ledger that prices every Posidonia agent without double counting, with the meadow's diving value only near dive sites (`--dive-site-share`) and the seascape attribution labelled provisional;
+  - the reference resource, the carbon release fraction and its half-life as project inputs, with a plain-words `--matte-fate {exposed,excavated,buried}` preset;
+  - EXPERIMENTAL pricing from a few sourced anchors in every case, derived prices labelled (they add no independent information);
+  - benefit transfers without income or price-year adjustment, documented as a known limitation.
+
+Headline numbers of the default runs (annual externality, PV of externality), 0.9.0 → 0.10.0: Posidonia €4.70 M/yr and €589.7 M (2,000 of 5,000 ha, owner-specified values) → €40,933/yr and €10.35 M (50 of 4,582 ha; P5–P95 €8.73–15.98 M); forest €95,050 → €101,899/yr, €10.11 M → €10.70 M; Costa Brava €121,767 → €127,048/yr, €8.80 M → €9.13 M; Amazon €177,757 → €116,000/yr, €38.81 M → €34.93 M.
+
+The version has one source, `gaia/__init__.py` (read by `pyproject.toml`).
+
+### Step 8d — the owner's answers, second round (PR #8)
+
+#### Changed
+
+- **Small losses priced linearly in every case** (forest, costa_brava, amazon_forest; Step 8d.1), the owner's answer: the structure of Posidonia (Step 8c.3), `"damage_model": "area_loss"` with `threshold_logistic` curves, and for Costa Brava's Fire & Microclimate Regulation a new `threshold_exponential` curve (`gaia.damage.threshold_exponential_damage`, kernel 4: zero up to the threshold, then (base^((D − t)/(1 − t)) − 1)/(base − 1)). Below the threshold each unit lost costs its average value; past it the remaining forest degrades. **Their CalibrationWarnings are gone** (the check looks at the remaining resource, healthy up to the threshold; their former direct curves still warn, a test keeps that visible). Default runs, annual externality and PV: forest €95,050 → €101,899/yr, €10.11 M → €10.70 M; costa_brava €121,767 → €127,048/yr, €8.80 M → €9.13 M; amazon_forest (exactly at its 20% threshold, so now exactly the linear transfer) €177,757 → €116,000/yr, €38.81 M → €34.93 M. All 11 of their goldens change.
+- **EXPERIMENTAL pricing: a few sourced anchors in every case** (Step 8d.6), with the reachability rule of Step 8c.6. Forest: Watershed & Local Climate (water, Int$191/ha/yr) and Vegetation & Flora (food, 299), both roots; Costa Brava: Mycorrhizal Fungi (food, 52; the only root) and Pollinators & Insects (pollination, 31); Amazon: Canopy Trees (food, 200), Pollinators (pollination, 30), Aquatic System (water, 27). All from de Groot et al. (2012) Table 2, market-based values (Table 1), read in full. `anchor_every_agent` is off in every file and no placeholder anchor is left; the other prices are derived and labelled `(derived)`, `derived_prices`, `pricing.derived[…]`. **Derived prices are the anchors propagated through placeholder edge weights: they add no independent information.** Quarantine unchanged. The three pricing goldens change (annual externality at the last step: forest €1,153,079 → €70,101; costa_brava €83,902 → €1,208; amazon_forest €4,271 → €518): the former placeholders anchored each agent at its whole static value. `--with-pricing --help` no longer says every agent must be anchored.
+- **Seascape attribution labelled provisional** (Posidonia; Step 8d.3). The owner accepted spreading the coralligenous diving value and the megafauna and seabird non-use values evenly over the 190,000 ha of mapped seabed as a provisional assumption. The three agents' provenance notes and ledger entries say PROVISIONAL; the docs no longer list it as an open question. No number changes.
+- **Benefit transfers: no income or price-year adjustment** (Posidonia; Step 8d.5), the owner's decision for now. Documented as a known limitation in the methods note (§8) and the literature review (§2); no longer an open question. No number changes.
+
+#### Added
+
+- **The meadow's diving value only near dive sites** (Posidonia; Step 8d.4). The Medes dives (€34.71 × 60,000/yr) are divided over the meadow within reach of dive sites, 142.35 ha (the *P. oceanica* cover of the Costa Brava's five coastal Natura 2000 sites, EEA Standard Data Forms; a flagged proxy, cross-checked with the 8.8 ha Medes meadow of Romero et al. 2001): €14,630/ha/yr near dive sites. A new project input, `--dive-site-share F` (`Agent.site_share`, the case format's agent `sites` / `site_share`, recorded as user-supplied), says what share of the affected meadow is near dive sites; the default is the regional share 0.0311, which gives back the former regional average, so **the default run does not change** (last-digit float noise in the goldens). For 50 ha at a dive site: €749,714/yr, PV €76.7 M (P5–P95 58.4–173.5 M); far from any: €18,207/yr, PV €8.2 M. The service ledger books the near-site value (`site_restricted`), `Case.ledger_by_agent(regional=True)` the regional one; the meadow's EXPERIMENTAL pricing anchor scales with the share. 61 parameters for an extraction (one more, sourced by an official URL).
+- **`--matte-fate {exposed,excavated,buried}`** (Posidonia; Step 8d.2): what the project does to the matte, a preset of `--carbon-release-fraction` and `--carbon-release-half-life` (which still override it), from the sourced table of the literature review §4. **exposed** (default, unchanged): 0.63, half-life 10 yr; **excavated**: 0.96, at once (IPCC 2013); **buried**: 0.125, half-life 10 yr, *inferred, no source*. `--help`, the README and the methods note explain the three fates in plain words. The case format gains `carbon.release_fates` (`--<subject>-fate` for any case that defines it; `Case.fate_check()`). No number changes.
+
+### Step 8c — the owner's answers, first round (PR #8)
+
+The owner's answers to the seven open questions of #7, one commit each. **Posidonia numbers change; the other cases change only in four last-digit golden values (8c.7).**
+
+#### Changed
+
+- **Goldens bit for bit** (8c.7): four extraction values still held the old Cython rounding; `scripts/regen_golden.py --exact` compares bit for bit (CI keeps rel 1e-9).
+- **First user and question confirmed** (8c.1): a Catalan coastal authority or marine NGO reviewing a port or marina expansion; the "proposal" labels are gone.
+- **The reference resource is an input** (8c.4): for hectare cases `--area-ha` sets the reference (the meadow a project affects) and `--resource-name` names it; default the Catalan stock, 4,582 ha.
+- **Carbon release over time** (8c.5): `--carbon-release-fraction` and `--carbon-release-half-life` are project inputs; a positive half-life releases the soil carbon as a negative exponential, each year's tranche at that year's SCC, discounted (`CarbonProfile.release_half_life_years`).
+- **Small losses priced linearly** (8c.3, Posidonia): `damage_model: "area_loss"`, damage = D + (1 − D) × degradation(D), with a new `threshold_logistic` curve, zero up to the threshold; the marginal hectare costs its average value. Posidonia's CalibrationWarning is resolved by the model (the check looks at the remaining meadow).
+- **Service ledger, every agent priced** (8c.2): `service_ledger` books each final service once, with owner, value, method, source and transfer; parsing rejects double counting. Posidonia: €818.66/ha/yr (was €284.83), adding the meadow's diving amenity, coralligenous diving and the non-use values of megafauna and seabirds.
+- **A few anchors determine every price** (8c.6, EXPERIMENTAL pricing): reachability replaces "every agent anchored"; derived prices are labelled in text, JSON and provenance. Posidonia: three sourced anchors.
+- Posidonia default run (50 of 4,582 ha): €6,325 → €40,933/yr; PV €7.83 M → €10.35 M (P5–P95 8.73–15.98 M).
+
+### Step 8b — Posidonia v1.0 case (PR #7; decision D6)
 
 The Posidonia meadow is the v1.0 case (D6): one case with every parameter sourced or flagged, results with uncertainty bounds, and a methods note ready for external review. **Posidonia numbers change. For the other three cases, no number changes**; their golden files lose only the retired heuristic band.
 
-### Added
+#### Added
 
-- **Proposed first user and question** (`PROJECT_DEFINITION.md`, v1.0; for the owner to confirm): a Catalan coastal authority or marine NGO assessing a port or marina expansion that destroys *N* ha of meadow.
+- **First user and question** (`PROJECT_DEFINITION.md`, v1.0; confirmed by the owner in Step 8c): a Catalan coastal authority or marine NGO assessing a port or marina expansion that destroys *N* ha of meadow.
 - **`docs/POSIDONIA_LITERATURE_REVIEW.md`**: every parameter of the case with value, range, source and mapping.
   - Every DOI was checked through Crossref and every number read from the source: abstract, full text or official PDF.
   - 25 of 69 parameters are sourced (21 by DOI or arXiv id, 4 by an official URL); 44 are flagged (34 placeholders, the 10 owner-specified weights).
@@ -21,7 +67,7 @@ The Posidonia meadow is the v1.0 case (D6): one case with every parameter source
   The case format gains `"range"`, `"relative_range"` and `"distribution"` on any parameter or provenance template. The JSON calibration block shows them.
 - **Benchmarks** (`gaia/benchmarks.py`, `run.benchmarks` in the case format). Each extraction report and its JSON `"benchmarks"` block show where Gaia's per-hectare values fall among published ones. For Posidonia these are Campagne et al. 2015, Stamatiadou et al. 2025, de Groot et al. 2012 / ESVD and Costanza et al. 2014.
 
-### Changed (Posidonia)
+#### Changed (Posidonia)
 
 - **Carbon (S5 resolved).** One sourced value with a range for each term:
   - burial 0.953 tCO₂/ha/yr (Mazarrasa et al. 2017), was 1.577;
@@ -53,20 +99,20 @@ The Posidonia meadow is the v1.0 case (D6): one case with every parameter source
   - led by the carbon release fraction and the matte carbon stock.
 - **CalibrationWarning** (health 0.67 at the 20% threshold) remains. No source supports moving the curves; the review explains why.
 
-### Changed (all cases)
+#### Changed (all cases)
 
 - `DiscountConfig.discount_factor` caches the cumulative factors of a declining schedule. The values are bit-identical, and a present value costs O(H) instead of O(H²).
 - EXPERIMENTAL pricing (Posidonia): the six agents without a euro value get their former owner-specified impacts as PLACEHOLDER anchors.
 
-### Removed
+#### Removed
 
 - **The heuristic band** (S7): `SimulationResult.annual_externality_band`, `gaia.resilience.compute_confidence_band`, the text section and the JSON `summary.annual_externality_band`. The Monte Carlo replaces it. Resilience zones and model confidence remain.
 
-## Unreleased — static engine, evaluated directly (Step 8a; decisions D5, D7)
+### Step 8a — static engine, evaluated directly (PR #6; decisions D5, D7)
 
 The owner's decisions of 2026-10-12: **D5 option B now** (Gaia evaluates a static damage function of depletion and says so), **option A — a path-dependent engine — a firm commitment after v1.0**, and **D7: drop Cython**. **No output number changes**: the golden files are byte-identical, and the new engine reproduces the former pure-Python loop bit for bit on every step and field of the 14 golden scenarios, 25 synthetic configurations and the CLI text/JSON outputs of the four cases.
 
-### Changed
+#### Changed
 
 - **Direct evaluation replaces the per-unit loop** (`gaia/simulation.py`). `run_extraction` evaluates the static function at the final depletion (and the step before, for the marginal cost) and returns `result.steps` as a lazy `ExtractionSteps` sequence: a step is computed when it is indexed or iterated, with the same arithmetic as the old loop. `run_restoration` does the same (`RestorationSteps`). The substrate's per-step Riemann sum (the extraction spread over one year) is kept as is, computed once per run, so its numbers do not change. EXPERIMENTAL pricing still certifies every step on construction, so it still stops at the first step that cannot be certified; restoration still checks every recovery ratio it uses against [0, 1].
 - The text report's keystone crossings, zone transitions and irreversibility step come from scans of the quantities involved (`gaia.simulation.keystone_crossings`, `zone_transitions`, `first_irreversible_step`) instead of building every step; `--steps-every N` builds only the steps it prints.
@@ -76,15 +122,15 @@ The owner's decisions of 2026-10-12: **D5 option B now** (Gaia evaluates a stati
 - `scripts/profile_engine.py` times the one engine, summary only and with every step evaluated.
 - Packaging: the version is read by `pyproject.toml` (`[tool.setuptools.dynamic]`), so `setup.py` is gone.
 
-### Removed
+#### Removed
 
 - The Cython extension (`gaia/cy/simulation_cy.pyx`), its build (`setup.py`, the `speedups` extra), the engine switch (`_HAS_CYTHON`, `GAIA_FORCE_PYTHON`), the stale-build guard, the CI matrix entries that built it, the parity tests (`tests/test_engine_parity.py`, replaced by `tests/test_direct_evaluation.py`: lazy direct evaluation vs a sequential per-unit loop, exact equality) and `gaia.damage.evaluate_kernel` (the kernel tags stay; `gaia.ecosystem_io` uses them to write curves to files).
 
-## Unreleased — data-driven ecosystems (Step 7)
+### Step 7 — data-driven ecosystems (PR #5)
 
 Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number changes**: the golden snapshots are untouched, which proves that the case files reproduce the 0.9.0 code-defined cases exactly; text and JSON output of the 0.9 command lines are byte-identical.
 
-### Added
+#### Added
 
 - **Case file format** (`gaia/ecosystem_io.py`, E7): JSON, `"gaia_schema": 1`, stdlib only. `ecosystem_from_dict` / `ecosystem_to_dict`, `load_ecosystem` / `save_ecosystem`, `case_from_dict` / `load_case_file`. It covers everything the four cases use (resource with `area_ha`, a reference density or hectare units; agents, shared or inline damage curves, `annual_value_per_ha`; interactions and keystones; carbon, resilience, substrate, discount schedules or profiles; EXPERIMENTAL pricing; restoration costs, recovery and succession; `calibration_regime`). Every number is bare or `{value, unit, source, confidence, note}`, which becomes a `gaia.provenance.Param`; `provenance_defaults` covers repeated list items. Validation on load names the JSON path and rejects unknown keys, duplicate keys and NaN/Infinity. Round trips (ecosystem → dict → ecosystem, dict → ecosystem → dict) are exact and tested.
 - **`gaia run <case | file.json> [options]`** (E6): one CLI for shipped cases and your own files, with `--total-units` for the resource size and every 0.9 option; `gaia run <case> --help` shows the case's defaults. `gaia.cases.load_case(name_or_path)` returns a `Case` with `build_ecosystem(...)`, `run_extraction(...)`, `run_restoration(...)` and `report(result)`.
@@ -93,23 +139,23 @@ Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number chang
 - `version_specs/V09_SPEC.md`: **proposal, pending owner decision D5** (path dependence). Option A (a path-dependent engine: yearly time steps with extraction rates, relaxation, keystone hysteresis, substrate erosion over real time, recovery that depends on prior damage; a `dynamics` block in schema 2) and option B (drop the claim, evaluate the static function directly), with effects on Cython, golden tests and the format, effort estimates and a recommendation (B now, A staged later). Nothing is implemented.
 - `docs/ENGINE_PROFILE.md` and `scripts/profile_engine.py` (decision D7): pure Python vs Cython on the four cases, extract and restore, with and without pricing, and a 100,000-unit full-depletion sweep. The compiled loop gains 1.2–3.3× on a whole run; pricing never uses it and spends three quarters of its time in n + 1 linear solves per step, where two would do. Recommendation: keep Cython for now, do not extend it, drop it with either D5 option, and optimise the pricing solver before any `.pyx` work. `--smoke` (tiny sizes) is run by a test, with and without the extension.
 
-### Changed
+#### Changed
 
 - `python -m gaia ... --help` printed `usage: __main__.py`; the program name is now `gaia run <case>` (or `gaia <case>` for the legacy form).
 - The `run_*` library wrappers took literal defaults (e.g. `tree_value=100.0`) that could drift from the case's `Param` values; every default now comes from the data file.
 - `gaia --help` lists the cases and the deprecated forms; an unknown command or case exits with status 2.
 - EXPERIMENTAL pricing is 1.4–3.3× faster with bit-identical results: `solve_prices` runs one Gaussian elimination for the prices and the columns of `(I − S·W)⁻¹` (`gaia.pricing.solve_linear_systems`) instead of n + 1, and computes `S·W` by row scaling.
 
-### Deprecated (removed in 0.11)
+#### Deprecated (removed in 0.11)
 
 - `gaia <case> [options]` and `python -m gaia.cases.<case> [options]`, with the 0.9 flags (`--trees` / `--hectares`, and the `--cut`, `--destroy`, `--tree-value`, `--revenue` aliases). They run the same code and print the same output, plus a `FutureWarning` on stderr.
 - The case modules `gaia.cases.forest`, `costa_brava`, `posidonia`, `amazon_forest`: `build_<case>_ecosystem`, `run_<case>`, `run_<case>_restoration`, the reference-size constants and `main` remain as thin wrappers over the case files.
 
-### Removed
+#### Removed
 
 - The duplicated per-case plumbing (four copies of `run_X`, `run_X_restoration`, `_parse_args` and `main`) and the private module constants (`_FOREST_SUCCESSION`, `_OAK_VALLEY_SUBSTRATE`, ...): use `load_case(name)` and the built ecosystem. `gaia.cli.CASES` (now `gaia.cases.CASE_NAMES` / `CASE_ALIASES`). The provenance helpers only the case modules used: `weight_params`, `keystone_params`, `edge_params`, `restoration_params`, `IDENTICAL_CURVES_NOTE`.
 
-### Migration
+#### Migration
 
 | 0.9 | Now |
 |---|---|

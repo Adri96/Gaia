@@ -76,6 +76,32 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     tuning parameters to silence the warning.
 ```
 
+**Since Step 8d.1: small losses priced linearly** (the owner's answer; the
+structure of Posidonia, Step 8c.3). The case declares `"damage_model":
+"area_loss"`: each agent's damage at depletion D is D + (1 − D) ×
+degradation(D), so the trees cut take their hectares' services at the
+average value (€2,848/ha/yr, i.e. €11.39 a tree at 250 trees/ha), and
+past the 30% threshold the remaining forest degrades along a
+`threshold_logistic` (zero up to the threshold, then the former logistic:
+steepness 12, inflection 15% into the post-threshold span). The default
+run (50%, past the threshold) costs €101,899/yr instead of €95,050, PV
+€10.70 M instead of €10.11 M. **The CalibrationWarning above is gone**:
+under `area_loss` the check looks at the remaining forest, whose health at
+the threshold is 1.0 (it degrades only past it). Nothing was tuned: the
+warning measured the logistic's ~21% damage inside the "safe" zone, which
+the linear model replaces by the area lost. What remains is what the
+warning pointed at: the post-threshold curve and the 30% threshold are
+still unfitted placeholders.
+
+**EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors, both roots (no
+incoming edge), from de Groot et al. (2012) Table 2, temperate forest
+(Int$/ha/yr × the 40-ha reference): Watershed & Local Climate, water 191
+(the former anchor, typed "from memory", now read); Vegetation & Flora,
+food 299 (wild plants, fungi and game, mostly direct market prices). The
+prices of Animal Populations and Human Communities are derived (labelled
+so): the anchors passed through the placeholder edges, no independent
+information. `anchor_every_agent` is off; no placeholder anchor is left.
+
 ## Costa Brava Holm Oak Forest (`costa_brava`)
 
 ```text
@@ -181,6 +207,28 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     tuning edges to silence the warning.
 ```
 
+**Since Step 8d.1: small losses priced linearly** (`"damage_model":
+"area_loss"`, as Posidonia): the trees cut take their hectares' services
+at the average value (€1,593/ha/yr, €15.93 a tree), and past the 25%
+threshold the remaining forest degrades: ten agents along a
+`threshold_logistic`, Fire & Microclimate Regulation along a new
+`threshold_exponential` (zero up to the threshold, then (2^((D − t)/(1 −
+t)) − 1), no plateau: the fire feedback). Default run (40%): €127,048/yr
+instead of €121,767, PV €9.13 M instead of €8.80 M. **The
+CalibrationWarning is gone** (the remaining forest's health at the
+threshold is 1.0); what remains is the unfitted post-threshold curves and
+threshold.
+
+**EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors from de Groot et
+al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference):
+Mycorrhizal Fungi, the only root, food 52 (in Mediterranean woodland
+largely wild mushrooms, the fruiting bodies of mycorrhizal fungi; for
+scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms,
+de-Miguel et al. 2014, doi:10.1016/j.foreco.2014.07.014); Pollinators &
+Insects, pollination 31. The other nine prices are derived. The former
+unsourced Watershed anchor (€2.50/m³ × 100 m³/ha/yr) and the eight
+placeholders are dropped: reachability makes them unnecessary.
+
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
 The v1.0 case (decision D6). Since Step 8.2 every parameter is sourced or
@@ -189,36 +237,77 @@ parameter and a DOI or stable URL for every source, is
 `docs/POSIDONIA_LITERATURE_REVIEW.md`, and the method is described in
 `docs/POSIDONIA_METHODS_NOTE.md`. This section keeps the derivations.
 
-**Reference resource.** The Catalan *P. oceanica* stock, 4,582 ha (the
-Generalitat's 2025 marine habitat map, as reported); the unit is the
-hectare, so 4,582 units. The default run destroys an illustrative 50 ha
-(about 1.1% of the stock), the scale of a port or marina project (the
-proposed first user, `PROJECT_DEFINITION.md` v1.0). Before Step 8 the case
-used 5,000 ha, more than the whole Catalan stock, and 2,000 ha destroyed.
+**Reference resource.** By default the Catalan *P. oceanica* stock,
+4,582 ha (the Generalitat's 2025 marine habitat map, as reported); the unit
+is the hectare, so 4,582 units. The default run destroys an illustrative
+50 ha (about 1.1% of the stock), the scale of a port or marina project (the
+first user, `PROJECT_DEFINITION.md` v1.0). Since Step 8c.4 the reference is
+an input: the user replaces it with the specific meadow the project
+affects, `gaia run posidonia --area-ha 300 --resource-name "…"` (or
+`resource.total_units`/`area_ha` and `resource.name` in a copy of the
+file), recorded as user-supplied. The reference sets the depletion
+fraction: below the safe threshold the cost per hectare does not depend on
+it (Step 8c.3), above it the remaining meadow degrades. Before Step 8 the
+case used 5,000 ha, more than the whole Catalan stock, and 2,000 ha
+destroyed.
 
 **Monetary semantics.** As in every case: agent values are yearly flows,
 revenue is one-off (€2,500/ha, a project-specific placeholder the user
 replaces with `--unit-value`), and they meet only through present values.
 
-**Agent values: final services only (Step 8.2).** The euro values sit on
-the four final services that a primary *P. oceanica* valuation measured
-(Campagne et al. 2015, Table 2, € 2014/ha/yr): coastal protection 188,
-water purification (wastewater treatment) 60, fisheries 35 (range 27–74,
-the upper end derived from Jackson et al. 2015), and the cultural services
-they could value, 1.83 (bioindicator use 1.5 + knowledge 0.33). Total
-€284.83/ha/yr at full damage. Each is entered as
-`annual_value_per_ha = service value / dependency_weight`, so that
-weight × value is the sourced figure and the owner's weights keep their
-role in the health index. The six ecological agents (the meadow itself,
-coralligenous, epiphytes, invertebrates, megafauna, seabirds) carry no euro
-value of their own: they are intermediate services whose value reaches
-people through the final ones (Boyd & Banzhaf 2007; Fisher et al. 2009), or
-non-use values for which no per-hectare estimate tied to *Posidonia* was
-found. They keep their health weights and their edges, so their damage
-still raises the damage of the final services. **The total is a lower
-bound**: tourism, recreation and non-use values are not valued (Campagne et
-al. say the same of their own figure). Before Step 8.2 the agent values
-restated an owner specification (€1,066/ha/yr in total, no source).
+**Agent values: the service ledger (Step 8c.2).** The owner's rule:
+every agent costs money, and no service is counted twice. The case file's
+`service_ledger` books each final ecosystem service once, to the one
+agent that is its best owner, with its €/ha/yr, method, source and
+benefit-transfer method; each agent's `annual_value_per_ha` is its
+ledger total / dependency_weight, so weight × value is the sourced
+figure and the owner's weights keep their role in the health index
+(`Case.ledger_check()` and a test hold the two together). € 2014-2017/ha/yr:
+
+- Coastal Protection: protection from coastal erosion 188 (Campagne et
+  al. 2015).
+- Water Quality: water purification 60 (Campagne et al. 2015).
+- Fish Populations and Marine Invertebrates: Campagne et al.'s fisheries
+  contribution (35) split by species count, 14/16 fish (30.625) and 2/16
+  invertebrates, sea urchin and cuttlefish (4.375).
+- Human Communities and Epiphytes & Algae: the bioindicator use (1.5)
+  split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
+  Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
+  plus knowledge 0.33 to Human Communities.
+- Posidonia Meadow: the meadow's diving amenity, only near dive sites
+  (Step 8d.4): €34.71 per dive for a total loss of cover (Zunino et al.
+  2020) × ~60,000 Medes Islands dives a year ÷ 142.35 ha of meadow within
+  reach of dive sites (the P. oceanica cover of the five coastal Natura
+  2000 sites of the Costa Brava, EEA Standard Data Forms; a flagged
+  proxy; the Medes meadow alone is 8.8 ha, Romero et al. 2001) =
+  €14,630/ha/yr near dive sites, × the share of the affected meadow near
+  dive sites (`site_share`; `--dive-site-share F`, a project input). The
+  default share is the regional one, 142.35 / 4,582 = 0.0311, which gives
+  back the former regional average, 454.52.
+- Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
+  for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
+  Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the
+  "seascape rule": a seascape service spread over the mapped seabed;
+  accepted by the owner as a PROVISIONAL assumption, Step 8d.3, and
+  labelled so in the provenance).
+- Marine Megafauna and Seabirds: the non-use value of protecting
+  porpoises, seals and seabirds (Börger et al. 2014, UK, £30.32 per
+  household per year for 5 years), annualised at 2.3%, converted to €,
+  times Catalonia's 2,989,357 households, spread over 190,000 ha (the
+  provisional seascape rule) and split equally: 30.18 each.
+
+Every value is a unit-value benefit transfer at face value: no income
+adjustment to Catalonia and no price-year adjustment (the owner's
+decision, Step 8d.5; a known limitation in the methods note §8).
+
+Total €818.66/ha/yr (€284.83 before). Splits move value between agents
+and leave totals unchanged. The diving and non-use entries are benefit
+transfers with low confidence and wide Monte Carlo ranges. Beach tourism
+and the meadow's own existence value are still not valued, so the total
+remains a lower bound. Full table and caveats:
+`docs/POSIDONIA_LITERATURE_REVIEW.md` §2. Before Step 8.2 the agent
+values restated an owner specification (€1,066/ha/yr in total, no
+source).
 
 **Carbon (S5, Step 8.2a).** Valued only by `gaia.carbon`:
 - absorption 0.953 tCO₂/ha/yr, i.e. 26 g C/m²/yr of burial in Balearic
@@ -231,11 +320,43 @@ restated an owner specification (€1,066/ha/yr in total, no source).
 
 So 755 tCO₂ is released per hectare destroyed. The fraction depends on
 what the project does to the matte (excavated, buried, or eroded later),
-and it is the largest single source of uncertainty in the case.
+and it is the largest single source of uncertainty in the case. Since
+Step 8c.5 the fraction and the release's time profile are project inputs
+(`--carbon-release-fraction`, `--carbon-release-half-life`; recorded as
+user-supplied, not sampled). The default half-life is 10 years: the
+release is a negative exponential (Pendleton et al. 2012: half-life of the
+order of 5–10 years; seagrass evidence from 3 to ~50 years), and each
+year's tranche is valued at that year's SCC and discounted (€111,000 PV
+per hectare instead of €126,000 at once). Recommended inputs: excavated
+or dredged matte 0.96 and 0 (IPCC 2013); matte left exposed 0.63
+(0.25–1.0) and 10 years (0–27); matte buried under fill: no source,
+probably low. Since Step 8d.2 they are a preset, `--matte-fate
+{exposed,excavated,buried}` (`carbon.release_fates`; buried: 0.125 and
+10 years, inferred), explained in plain words in `--help`; the default
+stays "exposed" (owner's decision, no numeric change), and the two flags
+above still override it. Re-absorption is not modelled in the extraction view: a
+port footprint is permanent, and natural recolonisation around it would
+re-absorb about 8% of the PV of the foregone burial.
 
-**Damage curves, threshold, edges, keystone.** Unchanged placeholders:
-- the same logistic for every agent (steepness 12, inflection at 32%,
-  just past the 20% "safe" threshold), with nothing to fit it to;
+**Damage model: small losses priced linearly (Step 8c.3).** The owner's
+answer to open question 3: the marginal hectare costs its average value
+(standard benefit transfer), and the threshold behaviour is kept for
+larger losses. The case declares `"damage_model": "area_loss"`: each
+agent's damage at depletion D is D + (1 − D) × degradation(D). The
+hectares lost take their own services (the linear part, slope exactly 1),
+and the curve, trophic amplification and cascades describe how the
+REMAINING meadow degrades. The curve is a `threshold_logistic`: zero up
+to the safe threshold, then the former logistic (steepness 12, inflection
+15% into the post-threshold span, 32% loss). So below the threshold the
+annual externality is exactly N ha × the per-hectare total, whatever the
+reference resource and the curve parameters. Past it, the hectares just
+beyond the threshold cost about 3–4 times their average value, and once
+the remaining meadow is mostly degraded further hectares cost little.
+Applied per case at first; since Step 8d.1 (the owner's answer) the other
+three cases use the same model.
+
+**Damage curves, threshold, edges, keystone.** Placeholders:
+- the same degradation curve for every agent, with nothing to fit it to;
 - 15 hand-set edges; the links are documented (e.g. wave attenuation by
   the meadow, Infantes et al. 2012), their strengths are not;
 - a keystone threshold of 0.3.
@@ -246,15 +367,16 @@ structural lower bound for chains longer than one hop). In-degree cap:
 every agent's incoming strengths sum to at most 0.80 with the keystone
 boost, so no edge was changed.
 
-**CalibrationWarning (health 0.67 at the 20% threshold) remains.** No
-source supports a threshold-shaped response of Posidonia services to the
-fraction of meadow lost, and none supports a "safe" loss of 20% of a
-priority habitat. Fixing the warning would mean tuning placeholders to
-silence it. The warning is the honest signal that 20% is not safe. For
-small losses, which is the user's question, the curve gives each hectare
-about a quarter of its average per-hectare value (initial slope 0.25).
-That is why the review reports, next to Gaia's figure, the linear
-benefit transfer (N ha × €284.83/ha/yr).
+**CalibrationWarning: resolved by the damage model, not by tuning.**
+Before Step 8c.3 the placeholder logistic put heavy damage inside the
+"safe" zone (health 0.67 at 20%) and charged each hectare about a quarter
+of its average value at small losses. Under `area_loss` the health at
+depletion t is at most 1 − t by construction (the lost area's services
+are gone), so the old test (health ≥ 0.8 at t = 0.2) would only check
+that arithmetic. The check now looks at the remaining meadow: its health
+at the threshold is 1.0 (it starts degrading only past it), so there is
+no warning. Nothing makes a 20% loss of a priority habitat "safe": in
+this model it costs 20% of the services, priced linearly.
 
 **Restoration and succession.**
 - Planting cost €50,000/ha: of the order of the median marine
@@ -274,10 +396,19 @@ al. 2024, whose own aggregate estimate (1.66%) would make the 200-year PV
 diverge. The uncertainty analysis treats these as normative sensitivities,
 not as random parameters.
 
-**EXPERIMENTAL pricing.** Pricing requires a positive anchor for every
-agent. The six agents without a euro value get their former
-owner-specified impacts as PLACEHOLDER anchors. Pricing is quarantined and
-is not part of the v1.0 output.
+**EXPERIMENTAL pricing (Step 8c.6).** Three sourced anchors, all at
+their service-ledger values (the agent's static €/yr for the 4,582-ha
+reference, scaled with the area):
+- the Posidonia Meadow, required because it is the only agent with no
+  incoming edge, and anchored at a stated-preference value;
+- Fish Populations, a market price (auction prices);
+- Coastal Protection, a market cost (damage cost avoided).
+
+Every other agent is reachable from them, so its price is derived from
+upstream through the placeholder edge strengths, and it is labelled
+derived in every output. The former PLACEHOLDER anchors are removed
+(`anchor_every_agent: false`). Pricing is quarantined and is not part of
+the v1.0 output.
 
 **Context.**
 - *P. oceanica* meadows regressed by an estimated 34% in the last 50 years
@@ -390,3 +521,24 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     consumers, and fixing it means calibrating the curves (Step 8), not
     tuning edges to silence the warning.
 ```
+
+**Since Step 8d.1: small losses priced linearly** (`"damage_model":
+"area_loss"`, as Posidonia; `threshold_logistic` curves). The default run
+destroys exactly the 20% threshold (80,000 of 400,000 trees), so it now
+costs exactly the linear transfer, 20% × €580/ha/yr × 1,000 ha =
+€116,000/yr (was €177,757, of which the logistic's damage inside the
+"safe" zone, amplified for consumers and spread by 34 edges, made the
+excess); PV €34.93 M instead of €38.81 M (the carbon release is
+unchanged). **The CalibrationWarning is gone.** What remains: the
+basin-scale 20% tipping point applied to a 1,000-ha patch (S4), now the
+point where the remaining forest starts to degrade, and the unfitted
+post-threshold curve.
+
+**EXPERIMENTAL pricing (Step 8d.6).** Three sourced anchors from de Groot
+et al. (2012) Table 2, tropical forest (Int$/ha/yr × the 1,000-ha
+reference): Canopy Trees, food 200; Pollinators, pollination 30; Aquatic
+System, water 27. The network has no root (every agent is reached from
+Canopy Trees), so the other eight prices are derived. The former spec §8
+anchors (rainfall recycling €150k, fisheries €20k, biodiversity €410k:
+sources unverified, audit S4) and the eight placeholders are dropped; the
+static agent value (€580/ha/yr) still rests on the spec's §8 sum.

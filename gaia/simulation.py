@@ -62,6 +62,7 @@ from gaia.models import (
     SuccessionCurve,
 )
 from gaia.propagation import (
+    area_loss_damages,
     compute_trophic_amplification,
     propagate_interactions,
     trophic_amplification_factor,
@@ -247,6 +248,7 @@ class ExtractionSteps(Sequence):
         # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
         self._annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
         self._network: dict = _interaction_arrays(ecosystem)
+        self._area_loss: bool = ecosystem.damage_model == "area_loss"
         self._pricing: Optional[PricingConfig] = ecosystem.pricing
         self._cache: Dict[int, SimulationStep] = {}
 
@@ -279,12 +281,25 @@ class ExtractionSteps(Sequence):
     # ── The static function at one step ──────────────────────────────────
 
     def _damages(self, step: int) -> tuple:
-        """(direct, effective, cascade, keystone names) at ``step`` units."""
+        """(direct, effective, cascade, keystone names) at ``step`` units.
+
+        Under the "area_loss" damage model the curves, amplification and
+        cascades give the degradation of the remaining resource, and the
+        area lost is added (gaia.propagation.area_loss_damages): direct and
+        effective damage are D + (1 − D) × their degradation, so the
+        cascade part is (1 − D) × the cascade degradation.
+        """
+        depletion_ratio: float = step / self._total_units
         direct = _compute_damage(
             self._damage_functions, self._trophic_levels, self._has_trophic,
-            step / self._total_units,
+            depletion_ratio,
         )
         effective, cascade, keystone = _propagate(self._network, direct)
+        if self._area_loss:
+            remaining: float = 1.0 - depletion_ratio
+            direct = area_loss_damages(depletion_ratio, direct)
+            effective = area_loss_damages(depletion_ratio, effective)
+            cascade = [remaining * c for c in cascade]
         return direct, effective, cascade, keystone
 
     def _rates(self, step: int) -> list:
@@ -647,7 +662,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
         Phase 3 — Annual cost computation (€/yr flows):
             cost[i]          = effective_damage[i] * weight[i]
-                               * annual_value_per_ha[i] * area_ha
+                               * annual_value_per_ha[i] * site_share[i] * area_ha
             annual_externality = sum(cost[i])
             marginal         = annual_externality - previous annual_externality
             ecosystem_health = 1.0 - sum(weight[i] * effective_damage[i])

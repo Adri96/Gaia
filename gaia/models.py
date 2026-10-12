@@ -504,12 +504,19 @@ class CarbonProfile:
         annual_absorption_tonnes: Tonnes CO₂ absorbed per unit per year at climax.
         soil_carbon_tonnes: Tonnes CO₂ stored in soil beneath each unit.
         soil_release_fraction: Fraction of soil carbon released on extraction (0.0–1.0).
+        release_half_life_years: Time profile of the release (Step 8c.5):
+            0 (default) releases it all at extraction (year 0); a positive
+            half-life releases it as a negative exponential, the share
+            e^(−λt) − e^(−λ(t+1)) during year t (λ = ln 2 / half-life),
+            each tranche valued at the carbon price of year t and
+            discounted (gaia.carbon.pv_carbon_release).
     """
 
     stored_carbon_tonnes: float
     annual_absorption_tonnes: float
     soil_carbon_tonnes: float
     soil_release_fraction: float
+    release_half_life_years: float = 0.0
 
 
 @dataclass
@@ -620,7 +627,7 @@ class Agent:
 
     Annual service value lost at depletion level d (a yearly FLOW, €/yr):
         annual_cost = damage_function(d) * dependency_weight
-                      * annual_value_per_ha * resource.area_ha
+                      * annual_value_per_ha * site_share * resource.area_ha
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
@@ -632,6 +639,14 @@ class Agent:
             one-off total) and D2 (scaled by Resource.area_ha, so results do
             not depend on how finely the resource is divided into units).
         description: Short description of what damage means for this agent.
+        site_share: Share of the resource where the value applies (Step
+            8d.4), in [0, 1]; 1.0 (default) = everywhere. For a value
+            enjoyed only near some sites (Posidonia: the meadow's diving
+            amenity near dive sites) annual_value_per_ha is the value per
+            hectare NEAR them and site_share the share of the resource near
+            them.
+        sites: What the sites are (e.g. "dive sites"); "" when the value
+            applies everywhere.
     """
 
     name: str
@@ -645,9 +660,16 @@ class Agent:
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
     keystone_threshold: float = DEFAULT_KEYSTONE_THRESHOLD  # health below this triggers keystone cascade
 
+    # Step 8d.4: a value that applies only near some sites
+    site_share: float = 1.0
+    sites: str = ""
+
     def annual_value(self, area_ha: float) -> float:
-        """€/yr of service lost at full damage over ``area_ha`` hectares."""
-        return self.annual_value_per_ha * area_ha
+        """€/yr of service lost at full damage over ``area_ha`` hectares
+        (× site_share: the value applies only on that share)."""
+        if self.site_share == 1.0:
+            return self.annual_value_per_ha * area_ha
+        return self.annual_value_per_ha * self.site_share * area_ha
 
     @property
     def monetary_rate(self) -> float:
@@ -725,6 +747,15 @@ class Ecosystem:
         provenance: gaia.provenance.Param list, the source and confidence
             of each parameter the case set (Step 5). Never read by the
             engines; every result reports it in ``calibration``.
+        damage_model: How an agent's damage follows depletion D (Step 8c.3,
+            gaia.propagation.DAMAGE_MODELS). "direct" (default): the damage
+            curve, trophic amplification and cascades give the damage.
+            "area_loss": each unit lost takes its own services (damage D,
+            slope 1 at small losses: the marginal unit costs its average
+            value, a linear benefit transfer) and the remaining resource
+            degrades by the curve, amplification and cascades:
+            damage = D + (1 − D) × degradation(D). Its curves must be flat
+            at small losses (e.g. "threshold_logistic").
     """
 
     name: str
@@ -742,6 +773,9 @@ class Ecosystem:
 
     # Step 5: parameter provenance (List[gaia.provenance.Param])
     provenance: list = field(default_factory=list)
+
+    # Step 8c.3: "direct" or "area_loss" (gaia.propagation.DAMAGE_MODELS)
+    damage_model: str = "direct"
 
 
 @dataclass

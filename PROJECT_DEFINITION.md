@@ -6,8 +6,8 @@ Gaia is a Python library for simulating and quantifying externalities in economi
 
 The core thesis is simple: **profits are privatized, but externalities are socialized.** Gaia exists to make those externalities visible, measurable, and expressible in monetary terms — in both directions. It computes the **cost of destruction** and the **value of restoration**, giving decision-makers a complete picture of the true economics at play.
 
-> **Current status (2026-10): v0.9.0 (the audit fixes), illustrative and
-> uncalibrated.** The model structure below is implemented, but most
+> **Current status (2026-10): v0.10.0 (Step 8, the Posidonia v1.0 case, on
+> top of the 0.9.0 audit fixes), illustrative and uncalibrated.** The model structure below is implemented, but most
 > parameters of the shipped cases are placeholders or low-confidence values,
 > and every output says so (an `ILLUSTRATIVE` banner, a Parameter Provenance
 > section, a JSON `calibration` block). Results are not real-world
@@ -587,7 +587,7 @@ Full specification: `version_specs/V081_SPEC.md`
 
 - [x] Safety net: golden snapshots of every case and mode, Cython/Python parity (since replaced by a direct-evaluation vs sequential-loop test), property tests
 - [x] Model core: yearly flows vs present values vs one-off amounts (D1); €/ha/yr × `area_ha` (D2); restoration from a real starting state; carbon owned by `carbon.py` at the social cost of carbon (D3); the two 10× errors (Amazon density, erosion); convergent discounting with horizon sensitivity; `restoration_cost_ratio` and `destroy_then_restore_penalty`; in-degree cap, calibration regime and complementary cascade
-- [x] Endogenous pricing quarantined (D4): certified convergence, explicit failure, every agent anchored
+- [x] Endogenous pricing quarantined (D4): certified convergence, explicit failure, every price determined (a few sourced anchors per case, the other prices derived and labelled; Steps 8c.6, 8d.6)
 - [x] Honest outputs: parameter provenance and calibration status in every output; README and this document rewritten around what the model does
 - [x] Engineering: `pyproject.toml`, `gaia` command, CI, strict JSON, damage shape properties checked on every run, text report formats result fields only, dead code removed, ruff and mypy clean
 
@@ -595,17 +595,17 @@ Full specification: `version_specs/V081_SPEC.md`
 
 **Decided (owner, 2026-10-12):** the first v1.0 case is **Posidonia** (`gaia/cases/data/posidonia.json`). v1.0 = one credible case: every parameter sourced (or explicitly flagged), results with uncertainty bounds, and a methods note ready for external review (`docs/POSIDONIA_METHODS_NOTE.md`).
 
-**First user and question — PROPOSAL, for the owner to confirm (Step 8.6).** The owner chose the case, not the user. Proposed:
+**First user and question — confirmed by the owner (Step 8.6, confirmed in Step 8c):**
 
-- **User:** a Catalan coastal authority (the Generalitat's marine-environment and coastal services) or a Costa Brava marine NGO, reviewing the environmental impact assessment of a **proposed port or marina expansion** that would destroy part of a *Posidonia oceanica* meadow (dredging, breakwaters, fill). *P. oceanica* beds are a priority habitat under the EU Habitats Directive (1120\*), so such a project needs a documented, reviewable estimate of what is lost.
+- **User:** a Catalan coastal authority (the Generalitat's marine-environment and coastal services) or a Costa Brava marine NGO, reviewing the environmental impact assessment of a **port or marina expansion** that would destroy part of a *Posidonia oceanica* meadow (dredging, breakwaters, fill). *P. oceanica* beds are a priority habitat under the EU Habitats Directive (1120\*), so such a project needs a documented, reviewable estimate of what is lost.
 - **Question:** *If the project destroys N ha of the Catalan Posidonia stock, what is the present value of the ecosystem services and carbon lost, compared with the project's private gain — with P5/P50/P95 bounds — which parameters drive the answer, and how much of the loss could restoration recover, at what cost?*
 - **How Gaia answers it:** `gaia run posidonia --units N --unit-value <private gain per ha> --uncertainty` (extraction: annual loss, PV, net social cost, with Monte Carlo bounds and a sensitivity ranking), and `--mode restore` for the restoration side. The case's reference resource is the regional stock (4,582 ha mapped in Catalonia, 2025) and the default N is an illustrative 50 ha; the user sets N and the project's gain.
-- **Why this user:** the question is local, recurring (port, marina and anchoring projects), decision-relevant, and small in scale, which keeps the model in the range where its per-hectare valuation is best supported (a few percent of the stock lost). Alternatives the owner may prefer: a mooring/anchoring management plan (gradual degradation rather than destruction), or a restoration-funding question (cost per tonne of CO₂ or per € of service recovered).
+- **Why this user:** the question is local, recurring (port, marina and anchoring projects), decision-relevant, and small in scale, which keeps the model in the range where its per-hectare valuation is best supported (a few percent of the stock lost).
 
 **Done when:**
 
 - [x] Pick the case (D6: Posidonia)
-- [ ] Owner confirms the user and the question above (proposal in place)
+- [x] Owner confirms the user and the question above (confirmed, Step 8c)
 - [x] Every parameter of the case DOI-backed or explicitly flagged in the provenance (`docs/POSIDONIA_LITERATURE_REVIEW.md`)
 - [x] Per-hectare values cross-checked against independent benchmarks (Campagne et al. 2015, de Groot et al. 2012 / ESVD, Costanza et al. 2014, Stamatiadou et al. 2025)
 - [x] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95, a sensitivity (tornado) ranking; the heuristic band is retired

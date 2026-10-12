@@ -22,15 +22,16 @@ def test_posidonia_comparison_figures():
     result = case.run_extraction(50)
     block = case.benchmark_block(result)
     eco = result.ecosystem
-    full = sum(a.dependency_weight * a.annual_value_per_ha for a in eco.agents)
-    assert block["full_damage_eur_per_ha_yr"] == round(full, 2) == 284.83
+    full = sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
+    assert block["full_damage_eur_per_ha_yr"] == round(full, 2) == 818.66  # the ledger
     burial = eco.resource.carbon_profile.annual_absorption_tonnes * result.discount.carbon_price_at_year(0)
     assert block["carbon_burial_eur_per_ha_yr"] == round(burial, 2)
     assert block["hectares_lost"] == 50
     assert block["realised_loss_eur_per_ha_yr"] == round(result.annual_externality / 50, 2)
     assert block["linear_transfer_eur_yr"] == round(full * 50, 2)
     rows = {r["name"].split(",")[0] + str(r["includes_carbon"]): r for r in block["benchmarks"]}
-    assert rows["Campagne et al. 2015False"]["position"] == "within"  # by construction
+    # the ledger adds recreation and non-use values to Campagne et al.'s services
+    assert rows["Campagne et al. 2015False"]["position"] == "above"
     costanza = next(r for r in block["benchmarks"] if r["name"].startswith("Costanza"))
     assert costanza["position"] == "below" and costanza["benchmark_central_over_gaia"] > 10
 
@@ -42,7 +43,7 @@ def test_text_and_json_carry_the_block():
     from gaia.serialization import to_json
     d = json.loads(to_json(result, include_steps=False,
                            extra={"benchmarks": case.benchmark_block(result)}))
-    assert d["benchmarks"]["full_damage_eur_per_ha_yr"] == 284.83
+    assert d["benchmarks"]["full_damage_eur_per_ha_yr"] == 818.66
 
 
 def test_no_benchmarks_no_block():

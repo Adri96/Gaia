@@ -37,19 +37,25 @@ def test_posidonia_ecosystem_has_ten_agents():
 
 
 def test_posidonia_values_are_the_sourced_final_services():
-    """Step 8.2: weight × value per hectare is the sourced service value of
-    the four final services (Campagne et al. 2015); the six ecological
-    agents carry no euro value of their own (final-services accounting)."""
+    """Step 8c.2: weight × value per hectare is the agent's share of the
+    service ledger: every agent carries euros, the total is unchanged where
+    services were split (fisheries, bioindicator use)."""
     eco = build_posidonia_ecosystem()
-    per_ha = {a.name: a.dependency_weight * a.annual_value_per_ha for a in eco.agents}
+    # the value per hectare of the reference resource (× site_share, Step 8d.4)
+    per_ha = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
     assert per_ha["Coastal Protection"] == pytest.approx(188.0, rel=1e-12)
     assert per_ha["Water Quality"] == pytest.approx(60.0, rel=1e-12)
-    assert per_ha["Fish Populations"] == pytest.approx(35.0, rel=1e-12)
-    assert per_ha["Human Communities"] == pytest.approx(1.83, rel=1e-12)
-    for name in ("Posidonia Meadow", "Coralligenous & Red Coral", "Epiphytes & Algae",
-                 "Marine Invertebrates", "Marine Megafauna", "Seabirds"):
-        assert per_ha[name] == 0.0
-    assert sum(per_ha.values()) == pytest.approx(284.83, rel=1e-12)
+    # Campagne et al.'s fisheries (35) split 14/16 fish, 2/16 invertebrates
+    assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(35.0, rel=1e-12)
+    assert per_ha["Marine Invertebrates"] == pytest.approx(35.0 * 2 / 16, rel=1e-12)
+    # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
+    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83, rel=1e-12)
+    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5, rel=1e-12)
+    assert per_ha["Posidonia Meadow"] == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
+    assert per_ha["Coralligenous & Red Coral"] == pytest.approx(60.0 * 60_000 / 190_000, rel=1e-12)
+    assert per_ha["Marine Megafauna"] == pytest.approx(per_ha["Seabirds"], rel=1e-12)
+    assert all(v > 0.0 for v in per_ha.values())
+    assert sum(per_ha.values()) == pytest.approx(818.6635785921815, rel=1e-12)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -352,3 +358,329 @@ def test_posidonia_cascade_increases_coastal_protection_cost():
     assert cascade_dmg > 0, (
         f"Coastal Protection should have non-zero cascade damage, got {cascade_dmg:.6f}"
     )
+
+
+# ── Step 8c.4: the reference resource is an input ────────────────────────────
+
+def test_reference_resource_defaults_to_the_catalan_stock():
+    """Without an input the reference resource is the regional stock."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem()
+    assert eco.resource.total_units == 4582
+    assert eco.resource.area_ha == 4582.0
+
+
+def test_reference_resource_can_be_the_affected_meadow():
+    """--area-ha (and --resource-name) set the specific meadow a project
+    affects: it becomes the stock whose depletion the curves see, recorded
+    as user-supplied."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    eco = case.build_ecosystem(area_ha=300.0, resource_name="Meadow of the bay")
+    assert eco.resource.total_units == 300
+    assert eco.resource.area_ha == 300.0
+    assert eco.resource.name == "Meadow of the bay"
+    area = next(p for p in eco.provenance if p.name == "resource.area_ha")
+    assert area.confidence.value == "user-supplied"
+    assert "--area-ha" in area.source
+    # the same depletion of a smaller stock is reached with fewer hectares
+    small = run_extraction(eco, 60)
+    assert small.steps[-1].depletion_ratio == pytest.approx(0.2)
+
+
+def test_reference_resource_rejects_fractional_or_conflicting_areas():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    with pytest.raises(ValueError, match="whole number of hectares"):
+        case.build_ecosystem(area_ha=300.5)
+    with pytest.raises(ValueError, match="must equal the number of units"):
+        case.build_ecosystem(total_units=200, area_ha=300.0)
+    # repeating the same figure is fine
+    assert case.build_ecosystem(total_units=300, area_ha=300.0).resource.total_units == 300
+
+
+def test_reference_resource_cli(capsys):
+    """gaia run posidonia --area-ha N --resource-name NAME."""
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--area-ha", "300", "--resource-name",
+                 "Meadow of the bay", "--units", "30", "--format", "json",
+                 "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    resource = out["ecosystem"]["resource"]
+    assert resource["total_units"] == 300
+    assert resource["name"] == "Meadow of the bay"
+
+
+# ── Step 8c.3: small losses priced linearly ──────────────────────────────────
+
+def _average_value_per_ha(eco):
+    return sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
+
+
+@pytest.mark.parametrize("reference_ha", [4582, 300])
+@pytest.mark.parametrize("fraction", [0.001, 0.05, 0.19])
+def test_small_losses_cost_their_average_value(reference_ha, fraction):
+    """Below the safe threshold each hectare lost costs exactly its average
+    value (slope 1, linear benefit transfer), whatever the reference."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem(area_ha=float(reference_ha))
+    assert eco.damage_model == "area_loss"
+    k = max(1, int(fraction * reference_ha))
+    result = run_extraction(eco, k)
+    avg = _average_value_per_ha(eco)
+    assert result.annual_externality == pytest.approx(k * avg, rel=1e-12)
+    assert result.steps[0].marginal_annual_externality == pytest.approx(avg, rel=1e-12)
+    assert result.steps[-1].marginal_annual_externality == pytest.approx(avg, rel=1e-9)
+
+
+def test_threshold_behaviour_is_kept_past_the_threshold():
+    """Past the threshold the remaining meadow degrades: the hectares just
+    past it cost several times their average value (later ones less, once
+    the remaining meadow is mostly degraded), and the loss exceeds the
+    linear transfer."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem()
+    avg = _average_value_per_ha(eco)
+    n = eco.resource.total_units
+    result = run_extraction(eco, int(0.6 * n))
+    t_units = int(eco.resource.safe_threshold_ratio * n)
+    marginal = [s.marginal_annual_externality for s in result.steps]
+    assert marginal[t_units - 1] == pytest.approx(avg, rel=1e-9)
+    assert marginal[t_units + 50] > 1.5 * avg
+    assert result.annual_externality > 1.5 * len(result.steps) * avg
+
+
+def test_area_loss_rejects_curves_that_are_not_flat_at_small_losses():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["damage_curves"]["threshold_logistic"]["type"] = "logistic"
+    with pytest.raises(ValueError, match="flat at small losses"):
+        run_extraction(case_from_dict(doc).build_ecosystem(), 10)
+
+
+def test_damage_model_round_trips():
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import ecosystem_from_dict, ecosystem_to_dict
+
+    eco = load_case("posidonia").build_ecosystem()
+    doc = ecosystem_to_dict(eco)
+    assert doc["damage_model"] == "area_loss"
+    again = ecosystem_from_dict(doc)
+    assert again.damage_model == "area_loss"
+    assert run_extraction(again, 1200).annual_externality == run_extraction(
+        eco, 1200).annual_externality
+
+
+# ── Step 8c.2: the service ledger ────────────────────────────────────────────
+
+def test_service_ledger_counts_each_service_once_and_prices_every_agent():
+    """Each final service appears exactly once and belongs to one agent;
+    every agent's value is > 0 and is exactly its ledger services."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    ledger = case.service_ledger
+    services = [e["service"] for e in ledger]
+    assert len(services) == len(set(services))
+    # a split service is never also counted whole, and its shares add to 1
+    parents = {e["split_of"] for e in ledger if e["split_of"]}
+    assert not parents & set(services)
+    for parent in parents:
+        assert sum(e["share"] for e in ledger if e["split_of"] == parent) == pytest.approx(1.0)
+    by_agent = case.ledger_by_agent()
+    regional = case.ledger_by_agent(regional=True)
+    eco = case.build_ecosystem()
+    assert set(by_agent) == {a.name for a in eco.agents}
+    for a in eco.agents:
+        assert a.annual_value_per_ha > 0.0 and a.annual_value(1.0) > 0.0
+        # per hectare near the sites for a site-restricted agent (Step 8d.4)
+        assert a.dependency_weight * a.annual_value_per_ha == pytest.approx(by_agent[a.name], rel=1e-12)
+        # per hectare of the reference resource, as the run uses it
+        assert a.dependency_weight * a.annual_value(1.0) == pytest.approx(regional[a.name], rel=1e-12)
+    assert sum(regional.values()) == pytest.approx(818.6635785921815, rel=1e-12)
+    assert case.ledger_check() == []
+    # every agent stays > 0 at any project share above 0, and only the
+    # site-restricted agent depends on it
+    for share in (1.0, 0.5, 1e-3):
+        eco_s = case.build_ecosystem(site_share=share)
+        for a, b in zip(eco.agents, eco_s.agents):
+            assert b.annual_value(1.0) > 0.0
+            if a.name not in case.site_restricted_agents:
+                assert b.annual_value(1.0) == a.annual_value(1.0)
+    for e in ledger:
+        assert e["source"] and e["method"]
+        assert "doi:" in e["source"] or "Idescat" in e["source"]
+
+
+def test_service_ledger_rejects_double_counting():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"].append(dict(doc["service_ledger"][0], agent="Seabirds"))
+    with pytest.raises(ValueError, match="counted once"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    whole = dict(doc["service_ledger"][0], service="Commercial fisheries contribution (35 EUR/ha/yr)")
+    doc["service_ledger"].append(whole)
+    with pytest.raises(ValueError, match="counted whole"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"][2]["share"] = 0.95
+    with pytest.raises(ValueError, match="add up to"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["service_ledger"][0]["value"] = 0.0
+    with pytest.raises(ValueError, match="must be > 0"):
+        case_from_dict(doc)
+
+
+def test_ledger_check_finds_an_unbooked_value():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["agents"][0]["annual_value_per_ha"]["value"] *= 2
+    problems = case_from_dict(doc).ledger_check()
+    assert len(problems) == 1 and problems[0].startswith("Posidonia Meadow")
+
+
+# ── Step 8d.4: the meadow's diving value only near dive sites ────────────────
+
+def test_diving_value_applies_only_near_dive_sites():
+    """Dives divided over the meadow within reach of dive sites (142.35 ha),
+    times the share of the affected meadow near dive sites: the regional
+    default gives back the former regional average."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    assert case.site_restricted_agents == ["Posidonia Meadow"]
+    assert case.sites == "dive sites" and case.site_input == "dive-site-share"
+    near = 34.71 * 60_000 / 142.35
+    assert case.default_site_share == pytest.approx(142.35 / 4582, rel=1e-12)
+    entry = next(e for e in case.service_ledger if e["agent"] == "Posidonia Meadow")
+    assert entry["site_restricted"] and entry["value"] == pytest.approx(near, rel=1e-12)
+    assert not any(e["site_restricted"] for e in case.service_ledger if e is not entry)
+
+    def meadow(eco):
+        a = next(a for a in eco.agents if a.name == "Posidonia Meadow")
+        return a.dependency_weight * a.annual_value(1.0)
+
+    assert meadow(case.build_ecosystem()) == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
+    assert meadow(case.build_ecosystem(site_share=1.0)) == pytest.approx(near, rel=1e-12)
+    assert meadow(case.build_ecosystem(site_share=0.0)) == 0.0
+    # a project at a dive site: 50 ha below the threshold cost 50 × the
+    # ledger total with the meadow's near-site value
+    others = sum(case.ledger_by_agent().values()) - near
+    result = run_extraction(case.build_ecosystem(site_share=1.0), 50)
+    assert result.annual_externality == pytest.approx(50 * (others + near), rel=1e-12)
+    result = run_extraction(case.build_ecosystem(site_share=0.0), 50)
+    assert result.annual_externality == pytest.approx(50 * others, rel=1e-12)
+
+
+def test_site_share_is_a_recorded_project_input():
+    from gaia.cases import load_case
+    from gaia.provenance import Confidence
+    from gaia.uncertainty import run_uncertainty
+
+    case = load_case("posidonia")
+    default = {p.name: p for p in case.build_ecosystem().provenance}
+    share = default["agent[Posidonia Meadow].site_share"]
+    assert share.confidence is Confidence.LOW and "Natura 2000" in share.source
+    assert share.distribution == "fixed"
+    given = {p.name: p for p in case.build_ecosystem(site_share=1.0).provenance}
+    assert given["agent[Posidonia Meadow].site_share"].confidence is Confidence.USER
+    assert "--dive-site-share" in given["agent[Posidonia Meadow].site_share"].source
+    res = run_uncertainty(case, 50, build_kwargs={"site_share": 1.0}, draws=4,
+                          tornado=False, normative=False)
+    names = {s.name for s in res.sampled}
+    assert "agent[Posidonia Meadow].site_share" not in names
+    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    with pytest.raises(ValueError, match="site share must be in"):
+        case.build_ecosystem(site_share=1.5)
+    with pytest.raises(ValueError, match="no site-restricted agent"):
+        load_case("forest").build_ecosystem(site_share=0.5)
+
+
+def test_site_share_scales_the_meadow_anchor():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+
+    def anchor(eco):
+        return next(a.anchor_value for a in eco.pricing.anchors if a.agent_name == "Posidonia Meadow")
+
+    base = anchor(case.build_ecosystem(with_pricing=True))
+    near = anchor(case.build_ecosystem(with_pricing=True, site_share=1.0))
+    assert near == pytest.approx(base * 4582 / 142.35, rel=1e-12)
+
+
+def test_dive_site_share_cli(capsys):
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--dive-site-share", "1", "--format", "json",
+                 "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
+    assert meadow["site_share"] == 1.0 and meadow["sites"] == "dive sites"
+    assert main(["run", "posidonia", "--help"]) == 0
+    text = " ".join(capsys.readouterr().out.split())
+    assert "--dive-site-share F" in text and "within reach of dive sites" in text
+    assert main(["run", "forest", "--dive-site-share", "1"]) == 2
+
+
+def test_ledger_rejects_a_site_mismatch():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    entry = next(e for e in doc["service_ledger"] if e["agent"] == "Posidonia Meadow")
+    entry["site_restricted"] = False
+    with pytest.raises(ValueError, match="site_restricted: must be true"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")["sites"]
+    with pytest.raises(ValueError, match="give both sites and site_share"):
+        case_from_dict(doc)
+
+
+# ── Step 8d.1: every case prices small losses linearly ──────────────────────
+
+@pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest"])
+def test_other_cases_price_small_losses_linearly(case):
+    """Below the safe threshold the annual externality is exactly the area
+    lost × the per-hectare value at full damage, and each unit lost costs
+    its average value; past it the remaining forest degrades and units cost
+    more."""
+    from gaia.cases import load_case
+
+    eco = load_case(case).build_ecosystem()
+    assert eco.damage_model == "area_loss"
+    n, area = eco.resource.total_units, eco.resource.area_ha
+    full = sum(a.dependency_weight * a.annual_value(area) for a in eco.agents)
+    k = int(0.5 * eco.resource.safe_threshold_ratio * n)
+    result = run_extraction(eco, k)
+    assert result.annual_externality == pytest.approx(full * k / n, rel=1e-12)
+    assert result.steps[-1].marginal_annual_externality == pytest.approx(full / n, rel=1e-9)
+    past = run_extraction(eco, int((eco.resource.safe_threshold_ratio + 0.1) * n))
+    assert past.annual_externality > full * past.steps[-1].units_extracted / n

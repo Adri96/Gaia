@@ -6,11 +6,11 @@
 
 ## 1. The question
 
-**Proposed user (to be confirmed by the project owner):** a Catalan coastal authority or marine NGO reviewing the environmental impact assessment of a port or marina expansion that would destroy part of a *P. oceanica* meadow. *P. oceanica* beds are a priority habitat (1120\*) under the EU Habitats Directive.
+**User:** a Catalan coastal authority or marine NGO reviewing the environmental impact assessment of a port or marina expansion that would destroy part of a *P. oceanica* meadow. *P. oceanica* beds are a priority habitat (1120\*) under the EU Habitats Directive.
 
 **Question:** if the project destroys *N* hectares of the Catalan *Posidonia* stock, what is the present value of the ecosystem services and carbon lost? How does it compare with the project's private gain, and with what uncertainty? Which inputs drive the answer?
 
-The reference resource is the regional stock: 4,582 ha of *P. oceanica* mapped by the Generalitat de Catalunya in 2025, as reported. The default project destroys an illustrative 50 ha (1.1%) for a private gain of €2,500/ha (a placeholder; the user enters the project's own figure). Gaia answers with:
+The reference resource is, by default, the regional stock: 4,582 ha of *P. oceanica* mapped by the Generalitat de Catalunya in 2025, as reported. The user can replace it with the specific meadow the project affects (`--area-ha N --resource-name NAME`, or the case file's `resource` block). The default project destroys an illustrative 50 ha (1.1%) for a private gain of €2,500/ha (a placeholder; the user enters the project's own figure). Gaia answers with:
 
 - one deterministic run: `gaia run posidonia --units N --unit-value G`;
 - a Monte Carlo over the parameter ranges: `--uncertainty`.
@@ -36,9 +36,15 @@ Each agent *i* has:
 
 The meadow is a keystone: while its health is below 0.3, the strengths of its outgoing edges double. Validation caps each agent's incoming strengths at 1 (keystone boost included), so damage stays in [0, 1].
 
+**Damage model: the area lost plus the degradation of what remains (Step 8c.3).** The case declares `"damage_model": "area_loss"`. The hectares lost take their own services, a linear benefit transfer. The curves, amplification and cascades above describe the degradation g_i(D) of the meadow that **remains**:
+
+  damage_i(D) = D + (1 − D) · g_i(D)
+
+The degradation curve is zero up to the safe threshold, so damage_i has slope exactly 1 at small losses: the marginal hectare costs its average value.
+
 **Money.** At depletion D:
-- annual externality = Σ_i effective_i(D) · w_i · v_i · area;
-- ecosystem health = 1 − Σ_i w_i · effective_i(D).
+- annual externality = Σ_i damage_i(D) · w_i · v_i · area;
+- ecosystem health = 1 − Σ_i w_i · damage_i(D).
 
 **A static function, evaluated directly.** Every quantity above depends on D alone, so the cost of the 51st hectare is the difference between the function at 51 and at 50 hectares (decision D5, option B).
 
@@ -61,7 +67,7 @@ The succession curve spreads that value over time.
 |---|---|---|
 | Agent values, annual externality | €/yr (a flow) | Lost every year the meadow is gone; the loss is treated as permanent over the horizon (natural recolonisation leaves "limited cover after a century", Kendrick et al. 2005) |
 | Present value of the externality | € PV at year 0 | Σ_{t=1}^{200} flow × DF(t) × (1 + 1%)^t. DF uses 2.3%/yr for years 0–30, 1.8% to year 100 and 1.4% after; the 1%/yr relative price change of ecosystem services is the scarcity uplift (Drupp et al. 2018, 2024). Reported at 50, 100 and 200 years. |
-| Carbon released | € one-off at year 0 | ha × top-metre matte carbon (1,199 tCO₂/ha) × fraction lost (0.63) × the social cost of carbon (€166.35/t: US EPA 2023, $190 for 2020 emissions at 2%, at the ECB 2020 rate) |
+| Carbon released | € PV | ha × top-metre matte carbon (1,199 tCO₂/ha) × fraction lost (0.63), released as a negative exponential with a 10-year half-life: the share released in year t is valued at the social cost of carbon of year t (€166.35/t in year 0: US EPA 2023, $190 for 2020 emissions at 2%, at the ECB 2020 rate) and discounted. Both the fraction and the half-life are project inputs; a half-life of 0 releases everything at year 0 (excavation) |
 | Carbon burial lost | € PV | ha × 0.953 tCO₂/ha/yr × SCC(t), growing 1.3%/yr (EPA path) × DF(t) |
 | Private gain | € one-off | Compared with the PV only, never with the €/yr flow |
 | Net social cost | € PV | PV of externality − private gain; positive means society loses more than the project gains |
@@ -70,28 +76,44 @@ Carbon is valued only by the carbon module (decision D3): no agent value contain
 
 ## 4. Calibration regime and what the curves are
 
-The ten damage curves are the same normalised logistic. Its inflection is at 32% loss, just past the 20% "safe threshold", and its steepness is 12. **No study relates the fraction of a Posidonia meadow lost to the fraction of each service lost.** The curves are therefore placeholders, read as each agent's direct dependency on the meadow, and the edges add the indirect part (calibration regime B). Two consequences matter for the question:
+The ten degradation curves are the same `threshold_logistic`: zero up to the 20% "safe threshold", then a logistic with its inflection at 32% loss and steepness 12. **No study relates the fraction of a Posidonia meadow lost to the degradation of the rest.** The curves are therefore placeholders: each agent's direct degradation, with the edges adding the indirect part (calibration regime B). Two consequences matter for the question:
 
-1. **At small losses the curve charges less than the average value of a hectare.** The normalised logistic starts with slope ≈ 0.25. With cascades and trophic amplification, the default run charges €126 per hectare lost per year, against an average of €285/ha/yr. That is 44% of what a linear benefit transfer (hectares × average value) would charge. The ratio grows with the loss: €153/ha/yr at 200 ha, €385 at the 20% "threshold", €610 at 44%. Reviewers should judge whether a convex, threshold-shaped response is the right prior for a seagrass meadow. The alternative is a linear one (each hectare delivers its own services), possibly with fragmentation effects. Both figures are reported.
-2. **Health at the "safe" threshold is 0.67, and Gaia warns** (CalibrationWarning). No source supports calling the loss of 20% of a priority habitat safe. The warning is left in place rather than tuned away.
+1. **Small losses are priced linearly (the owner's decision, Step 8c.3).** Below the threshold the annual externality is exactly N ha × the per-hectare total of the service ledger (§5), whatever the reference resource and the curve parameters. Before Step 8c the plain logistic (initial slope ≈ 0.25) charged 44% of that. Past the threshold the remaining meadow degrades. The hectares just beyond it cost 3–4 times their average value, and once most of what remains is degraded, further hectares cost little. Reviewers should judge whether this "linear, then collapse of the remainder" shape is the right prior for a seagrass meadow, and where the threshold of a given meadow lies.
+2. **No CalibrationWarning.** Health at the threshold is 1 − t by construction (the lost area's services are gone). The check therefore looks at the remaining meadow, which does not degrade before the threshold. The 20% threshold is still unsourced; it marks where degradation of the remainder starts. It does not make a 20% loss "safe", because that loss still costs 20% of the services.
 
 Single-pass cascades cut chains longer than one hop. Under regime B, the cascade part is therefore a structural lower bound.
 
 ## 5. Parameters and sources
 
-A Posidonia extraction run records 59 parameters (69 with restoration). The literature review gives every one of them, with value, range, source and mapping. In summary:
+A Posidonia extraction run records 61 parameters (71 with restoration): 27 sourced (22 by DOI or arXiv id, 5 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
-**Service values (final services only).** These come from the primary *P. oceanica* valuation of Campagne et al. (2015, *Mar. Pollut. Bull.* 97:391–400, Table 2, € 2014/ha/yr):
+**Service values: the service ledger (Step 8c.2).** Every agent carries euros, and each final service is counted once, owned by one agent. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009). € /ha/yr at full damage:
 
-| Service | €/ha/yr | Range |
+| Agent | Final service | €/ha/yr | Source (method) |
+|---|---|---|---|
+| Coastal Protection | protection from coastal erosion | 188 | Campagne et al. 2015 (damage cost avoided) |
+| Water Quality | water purification | 60 | Campagne et al. 2015 (benefit transfer) |
+| Fish Populations | fisheries, fish species (14/16 of 35) | 30.63 | Campagne et al. 2015 (production function); range up to 74 × 14/16, from Jackson et al. 2015 |
+| Marine Invertebrates | fisheries, sea urchin and cuttlefish (2/16 of 35) | 4.38 | Campagne et al. 2015 (moved from fish; share by species count) |
+| Human Communities | bioindicator use (3/3.5 of 1.5) and knowledge (0.33) | 1.62 | Campagne et al. 2015; PREI weights, Gobert et al. 2009 |
+| Epiphytes & Algae | bioindicator use, epiphyte metric (0.5/3.5 of 1.5) | 0.21 | Gobert et al. 2009 (moved from Human Communities) |
+| Posidonia Meadow | recreational diving: the meadow's amenity, **only near dive sites** | 454.52 at the regional share | Zunino et al. 2020, −€34.71 per dive for total loss × ~60,000 Medes dives/yr ÷ 142.35 ha of meadow within reach of dive sites (EEA Natura 2000 forms) = €14,630/ha/yr near dive sites, × the share of the affected meadow near dive sites (default 0.0311, the regional share; `--dive-site-share`) |
+| Coralligenous & Red Coral | recreational diving: coralligenous | 18.95 | Rodrigues et al. 2016, −€60 per dive for gorgonian extinction (Medes) × 60,000 ÷ 190,000 ha of mapped seabed |
+| Marine Megafauna | non-use: protecting marine mammals | 30.18 | Börger et al. 2014 (UK choice experiment, £30.32/household/yr for 5 years), annualised, × Catalan households ÷ 190,000 ha, half of a bundled attribute |
+| Seabirds | non-use: protecting seabirds | 30.18 | the other half |
+| **Total** | | **818.66** | |
+
+Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption that the owner accepted as **provisional** (Step 8d.3; labelled so in the provenance). The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2).
+
+**The diving value applies only near dive sites (Step 8d.4).** The meadow within reach of dive sites is estimated at 142.35 ha, the *P. oceanica* cover of the Costa Brava's five coastal Natura 2000 sites (Cap de Creus, Montgrí–Medes–Baix Ter, Litoral del Baix Empordà, Cadiretes, L'Albera; EEA Standard Data Forms), a flagged proxy. The Medes dives are divided over it (€14,630/ha/yr), and the user states the share of the affected meadow near dive sites (`--dive-site-share`). The default, the regional share 0.0311, reproduces the former regional average, so the default results do not change. For the default 50 ha:
+
+| `--dive-site-share` | Annual externality | PV of externality (P5 / P50 / P95) |
 |---|---|---|
-| Coastal protection (damage cost avoided) | 188 | — |
-| Water purification (benefit transfer) | 60 | — |
-| Fisheries (production function) | 35 | 27–74; the upper end is derived from Jackson et al. 2015 |
-| Bioindicator and knowledge | 1.83 | — |
-| **Total** | **284.83** | |
+| 0.0311 (default, location unknown) | €40,933 | €10.35 M (8.73 / 12.31 / 15.98) |
+| 1 (a project at a dive site) | €749,714 | €76.68 M (58.41 / 100.64 / 173.46) |
+| 0 (far from any dive site) | €18,207 | €8.22 M (6.26 / 9.09 / 12.88) |
 
-The meadow, coralligenous, epiphytes and invertebrates are intermediate services: their value reaches people through the final services. A separate value would count it twice (Boyd & Banzhaf 2007; Fisher et al. 2009), so they carry no euro value. Megafauna and seabirds also carry none, because no per-hectare non-use estimate tied to *Posidonia* was found. All six keep their health weights and their edges. **Tourism, recreation and non-use values are not valued, so the services figure is a lower bound.**
+At a dive site the meadow's diving value dominates everything else; far from one, carbon does. **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 
@@ -99,13 +121,24 @@ The meadow, coralligenous, epiphytes and invertebrates are intermediate services
 |---|---|---|---|
 | Burial | 0.953 tCO₂/ha/yr (26 g C/m²/yr) | Mazarrasa et al. 2017, Balearic Islands | 0.28–3.09 (Pergent-Martini et al. 2021) |
 | Top-metre matte stock | 1,199 tCO₂/ha (327 t C/ha) | Monnier et al. 2022, the French Label Bas-Carbone default | 741–1,844 (Leduc et al. 2023) |
-| Fraction lost on conversion | 0.63 | Pendleton et al. 2012 | 0.25–1.0 |
+| Fraction lost on conversion (project input) | 0.63 | Pendleton et al. 2012 | 0.25–1.0 |
+| Release half-life (project input) | 10 yr | Pendleton et al. 2012 (5–10 yr); seagrass evidence 3–50 yr (Arias-Ortiz et al. 2018; Macreadie et al. 2015; Serrano et al. 2016) | 0–27 yr |
 | Biomass | none counted separately | the leaves are negligible next to the matte | — |
 
-On the fraction lost: the IPCC (2013) Wetlands Supplement treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon (0.96).
+On the fraction lost and its timing, which depend on what the project does to the matte (literature review §4, "Release over time versus re-absorption"). The user states it with `--matte-fate` (Step 8d.2), a preset of `--carbon-release-fraction` and `--carbon-release-half-life`, which still override it:
+
+| `--matte-fate` | What happens to the matte, in plain words | Fraction released | Half-life | Basis |
+|---|---|---|---|---|
+| `exposed` (default) | The meadow dies but its matte stays in place, uncovered (shading, turbidity, anchoring, scour). Open to oxygen, the dead matte erodes and its carbon escapes over years to decades. | 0.63 (range 0.25–1.0) | 10 yr (range 0–27) | Pendleton et al. 2012 (sourced); the 10-yr central half-life is inferred |
+| `excavated` | The matte is dug out or dredged (port basins, channels, docks). The carbon-rich soil is removed and broken up, so nearly all its carbon goes in the year of the works. | 0.96 | 0 (at once) | IPCC (2013) Wetlands Supplement, Tier 1 for port excavation (sourced) |
+| `buried` | The matte is covered by fill (breakwaters, reclaimed land). Kept without oxygen, it probably keeps most of its carbon. | 0.125 | 10 yr | **inferred, no source**: the midpoint of the inferred 0–0.25 range; the half-life is the exposed default |
+
+The default stays "exposed" (the owner's decision, Step 8d.2). A fate other than the default is recorded as a user-supplied project input, with its basis, and is held fixed in the Monte Carlo.
+
+Re-absorption is not modelled in the extraction view. On the footprint the conversion is permanent. Around it, natural recolonisation over centuries would re-absorb about 8% of the PV of the foregone burial, about 1.5% of the release.
 
 **Unsourced, flagged.**
-- The damage curves, threshold and steepness.
+- The degradation curve, threshold and steepness.
 - The 15 edge strengths. Several links are documented qualitatively, e.g. wave height falls ~50% over ~1 km of meadow (Infantes et al. 2012), but none has a published strength.
 - The keystone threshold.
 - The owner's health weights.
@@ -129,8 +162,7 @@ Each recorded parameter that can change an extraction result is sampled:
 - **Constraints.** Ratios are kept in [0, 1]. A draw that fails the model's validation (e.g. edges above the in-degree cap) is redrawn and counted.
 - **Not sampled:**
   - the health weights: they are fixed, because weight × value is the sourced euro figure;
-  - zero values;
-  - the user's inputs: area, hectares destroyed, private gain;
+  - the user's inputs: the reference area, hectares destroyed and private gain, plus the carbon release fraction and half-life when the user enters them;
   - the model-wide constants;
   - the normative choices: discount schedule, scarcity, horizon, carbon price. These are value judgements, not unknowns with a distribution, and are reported as separate sensitivities.
 - **Mechanics.** Each draw sets the sampled values in a copy of the case file, which is re-parsed with full validation and run. The generator is seeded (default 20261012). 1,000 draws take about 4 s.
@@ -147,67 +179,77 @@ This replaces the former heuristic band, which multiplied the externality by 1 �
 
 | Quantity | Base | P5 | P50 | P95 |
 |---|---|---|---|---|
-| Annual externality (services), €/yr | 6,325 | 1,099 | 7,468 | 25,898 |
-| PV services lost (200 yr) | 0.59 M | 0.10 M | 0.70 M | 2.42 M |
-| PV carbon released (one-off) | 6.28 M | 3.63 M | 6.49 M | 10.01 M |
-| PV carbon burial lost | 0.95 M | 0.59 M | 1.33 M | 2.52 M |
-| **PV of externality** | **7.83 M** | **5.62 M** | **8.78 M** | **12.78 M** |
-| **Net social cost** (− €125,000 private gain) | **7.70 M** | **5.49 M** | **8.66 M** | **12.65 M** |
+| Annual externality (services), €/yr | 40,933 | 37,892 | 52,975 | 77,138 |
+| PV services lost (200 yr) | 3.83 M | 3.55 M | 4.96 M | 7.22 M |
+| PV carbon released (10-yr half-life) | 5.56 M | 3.02 M | 5.59 M | 9.12 M |
+| PV carbon burial lost | 0.95 M | 0.57 M | 1.37 M | 2.57 M |
+| **PV of externality** | **10.35 M** | **8.73 M** | **12.31 M** | **15.98 M** |
+| **Net social cost** (− €125,000 private gain) | **10.22 M** | **8.61 M** | **12.19 M** | **15.85 M** |
 
-*1,000 draws, seed 20261012. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed (burial, release fraction, fisheries).*
+*1,000 draws, seed 20261012. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed: the meadow's diving value, burial, the non-use values, the release fraction. The base annual externality is exactly 50 ha × €818.66/ha/yr, because below the threshold small losses are priced linearly (§4).*
 
 **Drivers** (swing in net social cost between each parameter's P5 and P95):
 
 | Parameter | Swing |
 |---|---|
-| Carbon release fraction | €5.1 M |
-| Matte carbon stock | €4.0 M |
+| Carbon release fraction | €4.5 M |
+| The meadow's diving value | €3.5 M |
+| Matte carbon stock | €3.5 M |
 | Burial rate | €2.0 M |
-| Curve steepness | €1.5 M |
-| Safe threshold | €1.2 M |
-| Coastal-protection value | €0.34 M |
+| Release half-life | €1.0 M |
+| Coastal-protection value | €0.91 M |
+| Water-quality value | €0.29 M |
+| Megafauna, seabird non-use values | €0.26 M each |
 
-The fisheries and water-quality values and the edge strengths each swing it by less than €0.15 M.
+The fisheries, coralligenous and invertebrate values each swing it by less than €0.15 M. The curve steepness and the safe threshold no longer matter for a project below the threshold.
 
 **Normative choices** (net social cost, base parameters):
 
 | Choice | Net social cost |
 |---|---|
-| Market/ETS carbon price (€80/t) | €3.95 M |
-| EPA SC-CO₂ at a 2.5% near-term rate ($120/t) | €5.04 M |
-| EPA SC-CO₂ at a 1.5% near-term rate ($340/t) | €13.41 M |
-| 2.0% constant discount rate | €7.57 M |
-| No relative price change | €7.42 M |
-| 100-year horizon | €7.10 M |
+| Market/ETS carbon price (€80/t) | €6.84 M |
+| EPA SC-CO₂ at a 2.5% near-term rate ($120/t) | €7.82 M |
+| EPA SC-CO₂ at a 1.5% near-term rate ($340/t) | €15.36 M |
+| 2.0% constant discount rate | €10.03 M |
+| No relative price change | €8.41 M |
+| 100-year horizon | €8.50 M |
 
 **Benchmarks** (per hectare per year):
-- Gaia's service value at full damage, €285/ha/yr (€443 with carbon burial at the SCC), sits inside Campagne et al.'s 284–514 €/ha/yr (including carbon), as constructed.
-- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, about 20× higher. It includes recreation and tourism.
-- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014) are about 65× higher, mostly a transferred nutrient-cycling value.
+- Gaia's service value at full damage is €819/ha/yr (€977 with carbon burial at the SCC). That is about 2.9× Campagne et al.'s non-carbon services, because the ledger adds recreation and non-use values to theirs.
+- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, about 11× higher. It includes recreation and tourism.
+- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014) are about 35× higher, mostly a transferred nutrient-cycling value.
 
 **Reading.**
-1. The externality of the default project is dominated by the carbon released from the matte, about €126,000 per hectare destroyed at the SCC. The PV of the valued services is about €11,800 per hectare charged.
-2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 30–110 times the default private gain (ETS carbon price: 32×; P5: 44×; P95: 101×). To break even, a project would need a private gain of about €80,000 (ETS carbon price) to €270,000 per hectare: the PV of the externality per hectare, which is €112,000 at P5 and €256,000 at P95.
-3. That conclusion rests mostly on the carbon terms, and their dominant uncertainty, the fraction of matte carbon released, depends on what the project physically does to the matte: excavation, burial under fill, or later erosion. The user's environmental impact assessment can resolve it far better than the literature can.
+1. Carbon and services now weigh about the same for the default project. Per hectare destroyed:
+   - the release costs about €111,000 in PV (SCC, 10-year half-life);
+   - the services charged cost about €77,000 in PV;
+   - the foregone burial costs about €19,000 in PV.
+2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 55–125 times the default private gain (ETS carbon price: 55×; P5: 69×; P95: 127×). To break even, a project would need a private gain of about €140,000 (ETS carbon price) to €320,000 per hectare: the PV of the externality per hectare, which is €175,000 at P5 and €320,000 at P95.
+3. That conclusion rests on two uncertain terms:
+   - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve (`--matte-fate`): excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
+   - the meadow's diving value, a benefit transfer that a Catalan valuation should replace, and which since Step 8d.4 applies only near dive sites: the user's `--dive-site-share` decides whether it is €0 or the largest term.
 
 **Restoration** of the same 50 ha (`--mode restore --units 50 --time-horizon 200`, €200,000/ha including maintenance):
-- net restoration value −€7.75 M (PV);
-- only about €0.12 M of benefits within 200 years, because recolonisation is slow;
+- net restoration value −€7.51 M (PV);
+- only about €0.36 M of benefits within 200 years, because recolonisation is slow;
 - the carbon breakeven price is far above any credible carbon price.
 
-Destroying and then restoring is therefore much worse than not destroying: the destroy-then-restore penalty is €15.6 M in PV, about 125 times the foregone gain.
+Destroying and then restoring is therefore much worse than not destroying: the destroy-then-restore penalty is €17.9 M in PV, about 143 times the foregone gain.
 
 ## 8. Limitations
 
 1. **Static engine; no path dependence.** The timing of the works, the possibility of phased destruction, hysteresis after keystone collapse, and slower restoration after a delay are not represented. Option A (time axis and real-time substrate erosion → relaxation and keystone hysteresis → damage-dependent recovery) is a **committed milestone after v1.0** (`version_specs/V09_SPEC.md`). The data format is reserved for it (schema 2, `dynamics` block).
-2. **Lower-bound valuation.** Tourism, recreation and non-use values are not valued. The total value of the services is at the bottom of the published range (§7).
+2. **Lower-bound valuation.** Beach tourism and the meadow's own existence value are not valued. The recreation and non-use values in the ledger are benefit transfers (Italian and UK studies, the Medes Islands' dive counts, an attribution rule for seascape services). The total value of the services sits in the lower part of the published range (§7).
 3. **Unfitted response curves and edges** (§4). These are the main structural uncertainty for the services part, and they are outside the Monte Carlo bounds.
-4. **Benefit transfer.** The service values come from French Mediterranean meadows (2014 euros, no price-year adjustment), the carbon stocks from Corsica, and the burial rate from the Balearic Islands. No Catalan primary data are used.
+4. **Benefit transfer, with no income or price-year adjustment (a known limitation, the owner's decision, Step 8d.5).** The service values come from French Mediterranean meadows (Campagne et al., € 2014), Italian divers (Zunino et al., € 2016–17), Medes Islands divers (Rodrigues et al.) and UK households (Börger et al., £ 2013, converted at the 2013 ECB rate); the carbon stocks come from Corsica and the burial rate from the Balearic Islands. No Catalan primary data are used for the values. Every transfer is a **unit-value transfer at face value**:
+   - **no income adjustment**: willingness to pay is not scaled for the difference in income per head between the study population and Catalonia (no income elasticity is applied), so the transfer error from income differences is in the values unknown in size and sign;
+   - **no price-year adjustment**: values are used in their own price year (2013–2017), not inflated to a common year, so in current euros they are understated by the general inflation since then, while the SCC is in 2020 euros (limitation 7).
+   The owner chose not to adjust for now. The Monte Carlo ranges do not include these transfer errors.
 5. **Scale and space.** The resource is the regional stock, treated as one homogeneous meadow. Depth, shoot density, wave exposure and distance to beaches, which all change a hectare's services and carbon, are not represented. The default 50 ha is illustrative.
-6. **Carbon fate** (§5, §7): the release fraction is a global assumption range.
+6. **Carbon fate** (§5, §7): the release fraction and its half-life are project inputs; the defaults (0.63, 10 years) are a global assumption range and an inferred central half-life for matte left exposed. No Mediterranean measurement of the release rate from exposed *P. oceanica* matte was found.
 7. **Currency.** The SCC is in 2020 euros and the services in 2014 euros, and the two are not harmonised; the benchmarks are not converted at all.
 8. **Not varied:** the model-wide trophic and keystone constants, and the health weights.
-9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded.
+9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded. Since Step 8c.6 three sourced anchors (meadow, fisheries, coastal protection) determine every price through the network. The other seven prices are derived through placeholder edge strengths, labelled as such, and are not estimates.
 10. **Restoration** evidence for *P. oceanica* is thin and mostly negative.
 
 ## 9. Reproducing the figures
@@ -217,6 +259,8 @@ gaia run posidonia                                   # deterministic run, benchm
 gaia run posidonia --uncertainty                     # + Monte Carlo (1,000 draws, seed 20261012)
 gaia run posidonia --uncertainty --format json --summary-only
 gaia run posidonia --units N --unit-value G --uncertainty   # the user's project
+gaia run posidonia --units N --unit-value G --area-ha M --resource-name "…" \
+    --matte-fate excavated                           # an excavated footprint in a meadow of M ha
 gaia run posidonia --mode restore --units 50 --time-horizon 200
 ```
 
@@ -225,15 +269,15 @@ Every output lists every parameter with its source, confidence and, where docume
 ## 10. Questions for the reviewers
 
 **Ecologist (Track 1).**
-- Is a convex, threshold-shaped response to the fraction of meadow lost a defensible prior, or should small losses be linear per hectare?
+- Small losses are now priced linearly and the remaining meadow degrades past a threshold. Is that a defensible prior, and where would the threshold of a real meadow lie (fragmentation, patch size)?
 - Is the agent and edge structure right? Are the six intermediate agents and the 15 edges the relevant ones?
 - Which edges matter most, and is there evidence for their strengths?
 - Is natural recolonisation (Kendrick et al. 2005) the right basis for the succession curve after transplanting?
-- Which matte-loss fraction applies to a port or marina footprint (excavated vs. buried vs. exposed)?
+- Which matte-loss fraction and half-life apply to a port or marina footprint (excavated vs. buried vs. exposed)? Is 10 years a defensible central half-life for matte left exposed?
 
 **Environmental economist (Track 2).**
-- Is final-services accounting with zero euro value on intermediate agents the right way to avoid double counting here?
+- Is the service ledger (each final service counted once, intermediate agents owning sourced shares moved from other agents, seascape services spread over the mapped seabed, a provisional assumption) the right way to price every agent without double counting?
 - Is Campagne et al.'s per-hectare value transferable to Catalonia?
-- Which recreation or non-use study should fill the main gap?
-- Is the SCC-based carbon valuation with a one-off release at year 0 appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.
+- Are the diving and non-use benefit transfers (Zunino et al. 2020, Rodrigues et al. 2016, Börger et al. 2014) acceptable, and which study should replace them or fill the remaining gaps (beach tourism, the meadow's existence value)?
+- Is the SCC-based carbon valuation, with the release spread over time by a half-life and each year valued at that year's SCC, appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.
 - Is treating the normative choices as sensitivities rather than distributions the right presentation for a decision-maker?

@@ -7,13 +7,15 @@ and explain in the commit message which numbers changed and why. A file
 is rewritten only when its snapshot differs from the stored one beyond the
 comparison tolerance (tests/golden_support.py: rel 1e-9), so float noise in
 the last digit (another libm, a compiler's fused multiply-add) never
-rewrites it.
+rewrites it. ``--exact`` compares bit for bit instead (tolerance 0), to
+rewrite a file whose stored numbers carry such noise.
 
 Usage:
     python3 scripts/regen_golden.py                    # regenerate all
     python3 scripts/regen_golden.py forest posidonia   # only these cases
     python3 scripts/regen_golden.py forest__restore    # only this scenario
     python3 scripts/regen_golden.py --check            # compare, write nothing
+    python3 scripts/regen_golden.py --exact            # rewrite any bit-level difference
     python3 scripts/regen_golden.py --list             # list scenarios
 """
 
@@ -59,6 +61,8 @@ def main(argv=None) -> int:
     parser.add_argument("--check", action="store_true",
                         help="Compare against existing files; write nothing")
     parser.add_argument("--list", action="store_true", help="List scenarios")
+    parser.add_argument("--exact", action="store_true",
+                        help="Compare bit for bit (tolerance 0) instead of rel 1e-9")
     args = parser.parse_args(argv)
 
     if args.list:
@@ -67,6 +71,7 @@ def main(argv=None) -> int:
         return 0
 
     GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
+    tol = {"rel": 0.0, "abs_tol": 0.0} if args.exact else {}
     failures = 0
     for name in _select(args.targets):
         snapshot = build_snapshot(name)
@@ -76,13 +81,13 @@ def main(argv=None) -> int:
                 print(f"MISSING  {name}")
                 failures += 1
                 continue
-            diffs = compare(load_golden(name), snapshot)
+            diffs = compare(load_golden(name), snapshot, **tol)
             print(f"{'OK      ' if not diffs else 'DIFF    '} {name}")
             for d in diffs[:20]:
                 print(f"    {d}")
             failures += bool(diffs)
             continue
-        if path.exists() and not compare(load_golden(name), snapshot):
+        if path.exists() and not compare(load_golden(name), snapshot, **tol):
             # Same numbers within the comparison tolerance: keep the file
             # byte for byte, so last-digit float noise never churns it.
             print(f"{'unchanged':9s} {path.relative_to(ROOT)}")

@@ -37,10 +37,10 @@ Default run of each case (extraction):
 <!-- BEGIN:example name="cases" table="cases" -->
 | Case (default run) | Extracted | Revenue (€, one-off) | Annual externality (€/yr) | PV of externality (€ PV) | Health after | Placeholder or low-confidence parameters |
 |---|---|---|---|---|---|---|
-| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
-| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 6,325 | 7,826,571 | 99.4% | 48 of 59 |
-| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
+| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 101,899 | 10,704,259 | 10.6% | 24 of 27 |
+| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 127,048 | 9,133,733 | 20.2% | 51 of 55 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 50 of 61 |
+| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 116,000 | 34,933,804 | 80.0% | 66 of 71 |
 <!-- END:example -->
 
 The forest case in full (the same run as the first row):
@@ -59,34 +59,35 @@ $ gaia run forest --total-units 10000 --units 5000
   Resource:              10,000 units  (Oak Valley Forest)
   Area:                    40.0 ha     (250.0 units/ha)
   Safe Threshold:         3,000 units  (30.0%)
+  Damage model:      area lost + degradation of what remains (each unit costs its average value below the threshold)
   Units Extracted:        5,000
   Depletion:              50.0%
-  Ecosystem Health:       16.6%
+  Ecosystem Health:       10.6%
 
   ── Private Gains ───────────────────────────────────────────────
   Revenue:                                     500,000.00€ (one-off)
 
   ── Annual Externalized Costs ───────────────────────────────────
-  Human Communities:                            17,788.95€/yr
+  Human Communities:                            19,602.00€/yr
     → Health costs, water treatment, lost recreation
-    → Direct: €17,234/yr | Cascade: €555/yr
+    → Direct: €19,248/yr | Cascade: €354/yr
   Animal Populations:                           34,176.00€/yr
     → Habitat loss, population decline, species loss
     → Trophic amplification: 1.6× (primary consumer)
-  Vegetation & Flora:                           12,925.45€/yr
+  Vegetation & Flora:                           14,436.33€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                    30,159.39€/yr
+  Watershed & Local Climate:                    33,684.78€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  ANNUAL EXTERNALITY:                           95,049.79€/yr
-  PV OF EXTERNALITY:                        10,111,612.54€ (PV)
+  ANNUAL EXTERNALITY:                          101,899.11€/yr
+  PV OF EXTERNALITY:                        10,704,259.24€ (PV)
     (services and carbon over 100 years; see NPV Analysis)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €     5,860,652
-      100-year horizon:                  €    10,111,613
-      200-year horizon:                  €    16,677,102
+      50-year horizon:                   €     6,178,693
+      100-year horizon:                  €    10,704,259
+      200-year horizon:                  €    17,711,574
   ---------------------------------------------------------------
-  NET SOCIAL COST (PV − revenue):            9,611,612.54€ (PV)
+  NET SOCIAL COST (PV − revenue):           10,204,259.24€ (PV)
 
   ── Resilience Assessment ───────────────────────────────────────
   Current zone:          ⚠⚠ RED — Resilience likely compromised
@@ -121,12 +122,12 @@ $ gaia run forest --total-units 10000 --units 5000
     (social cost of carbon, US EPA 2023)
 
   Externality present value (€ PV at year 0):
-    Ecosystem services (annual flow):    €     8,224,317
+    Ecosystem services (annual flow):    €     8,816,964
     Carbon released (one-off):           €       727,762
     Absorption lost (annual flow):       €     1,159,533
     ==================================== ===============
-    Total extraction PV:                 €    10,111,613
-    of which unrecoverable (substrate):  €         2,402
+    Total extraction PV:                 €    10,704,259
+    of which unrecoverable (substrate):  €         2,575
       (part of the services PV that restoration cannot recover; not added)
 
   ── Parameter Provenance ────────────────────────────────────────
@@ -152,14 +153,23 @@ $ gaia run forest --total-units 10000 --units 5000
     [placeholder] resource.unit_value = 100 €/tree
         Revenue per tree felled (one-off); no market source.
     [placeholder] resource.safe_threshold_ratio = 0.3 ratio
-        Safe extraction threshold; also the inflection of every
-        damage curve.
+        Safe extraction threshold; under the area_loss damage
+        model (Step 8d.1) the depletion beyond which the
+        REMAINING resource starts to degrade; below it each
+        hectare lost costs its average value.
     [placeholder] 4 × agent[…].dependency_weight = 0.15-0.35
     share
-    [placeholder] damage.logistic_steepness = 12 dimensionless
-        The same placeholder curve for every agent, inflection
-        just past the safe threshold; not fitted to field data
-        (hence calibration regime B).
+    [placeholder] damage.threshold_logistic_steepness = 12
+    dimensionless
+        Degradation of the REMAINING resource past the safe
+        threshold (damage model area_loss, Step 8d.1, as for
+        Posidonia): zero up to the threshold, then a logistic
+        with its inflection 15% into the post-threshold span, the
+        same curve for every agent. The damage of each agent is D
+        + (1 - D) x degradation, so its slope at small losses is
+        exactly 1 (each hectare lost costs its average value) and
+        the curve shapes only the threshold behaviour. Not fitted
+        to field data (calibration regime B).
     [placeholder] 2 × edge[…].strength = 0.1-0.2 fraction of
     source damage
     [placeholder] carbon: stored_carbon_tonnes = 0.8 tCO2/tree;
@@ -215,7 +225,7 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Units Restored:                     500
   Restoration Coverage:             50.0%  of total capacity
   Depletion:                       100.0%  → 50.0%
-  Ecosystem Health:                  0.0%  → 5.7%  (at maturity)
+  Ecosystem Health:                  0.0%  → 3.6%  (at maturity)
 
   ── Restoration Costs ───────────────────────────────────────────
   Planting cost/unit:                           50.00€
@@ -225,25 +235,25 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   TOTAL RESTORATION COST:                       75,000.00€ (one-off)
 
   ── Recovered Ecosystem Services ────────────────────────────────
-  Human Communities:                               170.51€/yr
+  Human Communities:                               108.62€/yr
     → Health costs, water treatment, lost recreation
   Animal Populations:                                0.00€/yr
     → Habitat loss, population decline, species loss
-  Vegetation & Flora:                              142.09€/yr
+  Vegetation & Flora:                               90.52€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                       331.55€/yr
+  Watershed & Local Climate:                       211.21€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  Damage reversal (upper bound):                 1,887.02€/yr
+  Damage reversal (upper bound):                 1,202.09€/yr
     (annual externality before − after restoring, same damage model)
-  ANNUAL RECOVERED VALUE:                          644.15€/yr
+  ANNUAL RECOVERED VALUE:                          410.35€/yr
   ---------------------------------------------------------------
-  NET RESTORATION VALUE:                        36,974.50€ (PV)
+  NET RESTORATION VALUE:                        23,494.61€ (PV)
     (PV of recovered services and carbon − PV of restoration costs)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €       -32,406
-      100-year horizon:                  €        36,974
-      200-year horizon:                  €       121,904
+      50-year horizon:                   €       -36,564
+      100-year horizon:                  €        23,495
+      200-year horizon:                  €        93,342
 
   ── Restoration Cost Ratio ──────────────────────────────────────
   (Revenue + restoration cost) / revenue:        2.50
@@ -256,7 +266,7 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Years to 90% service recovery:                   48 years
 
   ── Maturation Gap ──────────────────────────────────────────────
-  Lost services during maturation:              18,598.55€ (PV)
+  Lost services during maturation:              11,847.84€ (PV)
   (discounted services not delivered while succession proceeds,
    over the 100-year NPV horizon)
 
@@ -271,12 +281,12 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
 
   ── Investment Analysis (NPV, 100-year) ─────────────────────────
   Restoration cost (PV):                   €        69,216
-  Service recovery (PV):                   €        37,138
+  Service recovery (PV):                   €        23,658
   Carbon absorption (PV):                  €        69,053
-  Total benefits (PV):                     €       106,191
+  Total benefits (PV):                     €        92,711
   ---------------------------------------------------------------
-  Net Present Value:                       €        36,974
-  ROI (benefits / cost):                             1.53x
+  Net Present Value:                       €        23,495
+  ROI (benefits / cost):                             1.34x
   Carbon payback:                                      71 years
 
   ── Carbon Credit Breakeven ─────────────────────────────────────
@@ -290,14 +300,14 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Social cost of cutting these units and restoring them, over
   not cutting them:
     Restoration cost:                      €        69,216
-    Maturation gap (temporary):            €        18,599
-    Substrate loss (permanent):            €            51
-    Recovery shortfall (permanent):        €       107,490
+    Maturation gap (temporary):            €        11,848
+    Substrate loss (permanent):            €            32
+    Recovery shortfall (permanent):        €        68,474
     Carbon not recovered:                  €       119,677
     ====================================== ===============
-    Penalty:                               €       315,032
+    Penalty:                               €       269,247
     Foregone revenue (PV of not cutting):  €        50,000
-    Penalty per € of foregone revenue:                6.30
+    Penalty per € of foregone revenue:                5.38
   [... excerpt: the output continues with '── Parameter Provenance']
 ```
 <!-- END:example -->
@@ -312,17 +322,17 @@ The JSON output starts with the calibration status:
   "mode": "extraction",
   "calibration": {
     "status": "illustrative",
-    "statement": "ILLUSTRATIVE: 48 of 59 recorded parameters are placeholders (29) or low-confidence (19). Results are not real-world estimates.",
+    "statement": "ILLUSTRATIVE: 50 of 61 recorded parameters are placeholders (29) or low-confidence (21). Results are not real-world estimates.",
     "calibration_regime": "B",
-    "n_params": 59,
+    "n_params": 61,
     "n_placeholder": 29,
-    "n_low": 19,
+    "n_low": 21,
     "n_medium": 11
   },
   "summary": {
-    "annual_externality_eur_yr": 6324.51,
-    "pv_externality_eur_pv": 7826571.24,
-    "net_social_cost_eur_pv": 7701571.24
+    "annual_externality_eur_yr": 40933.18,
+    "pv_externality_eur_pv": 10345455.73,
+    "net_social_cost_eur_pv": 10220455.73
   }
 }
 ```
@@ -338,7 +348,7 @@ The JSON output starts with the calibration status:
 |---|---|---|---|
 | Agent value, externality, recovered value | € per year (a flow) | `€/yr` | `_eur_yr` |
 | Present value of a flow (plus carbon) | € at year 0 | `€ (PV)` | `_eur_pv` |
-| Revenue, restoration cost, carbon release | € once (a stock) | `€ (one-off)` | `_eur` |
+| Revenue, restoration cost, carbon release at once | € once (a stock) | `€ (one-off)` | `_eur` |
 | Agent value per hectare | € per ha per year | `€/ha/yr` | `_eur_per_ha_yr` |
 
 A yearly flow is never added to, or compared with, a one-off amount. Revenue is compared only with the present value of the yearly externality: `net_social_cost = pv_externality − revenue` (positive: society loses more than the extractor gains).
@@ -347,11 +357,13 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 
 **Damage and cascades.** Each agent's direct damage is a curve of the depletion ratio (logistic, exponential or piecewise), amplified for consumers by a trophic factor of 1.6×, 2.6× and 4.1× at levels 1–3 (placeholder constants). Interaction edges then add cascade damage in a single pass: `effective = direct + (1 − direct) × pressure`, where `pressure` is the sum of `strength × source direct damage` over incoming edges. That is, the cascade acts only on the service still standing, so damage stays in [0, 1] without clamping. Incoming strengths are capped at 1.0 per agent (keystone boosts included). Validation rejects anything above the cap; it never rescales. Keystone agents whose health falls below their threshold double their outgoing strengths.
 
-**Calibration regime.** Every ecosystem with edges must declare what its damage curves represent (`calibration_regime`): **A**, curves fitted to field data on total impact, in which case only keystone edges may be added; or **B**, curves that describe each agent's direct dependency only, with the edges adding the indirect part. All four cases are **B**: their curves are identical placeholder logistics, so A cannot be claimed. Under B, the single-pass cascade is a structural lower bound for chains longer than one hop. Every case also triggers a `CalibrationWarning`: health at the "safe" threshold is below 0.8, which says the placeholder curves put heavy damage inside the safe zone. Calibrating the curves fixes that warning; tuning parameters to silence it does not.
+**Damage model.** By default (`"damage_model": "direct"`) the above is each agent's damage. A case can instead declare `"area_loss"` (Posidonia does, Step 8c.3). There, each unit lost takes its own services, so damage = `D + (1 − D) × degradation(D)`, and the curves, amplification and cascades describe the degradation of the resource that remains. Its curves must be flat at small losses: `threshold_logistic` is zero up to the safe threshold. Small losses are then priced linearly, which is a benefit transfer of the average per-hectare value, and the threshold behaviour is kept beyond them.
+
+**Calibration regime.** Every ecosystem with edges must declare what its damage curves represent (`calibration_regime`): **A**, curves fitted to field data on total impact, in which case only keystone edges may be added; or **B**, curves that describe each agent's direct dependency only, with the edges adding the indirect part. All four cases are **B**: their curves are placeholders, so A cannot be claimed. Under B, the single-pass cascade is a structural lower bound for chains longer than one hop. The three terrestrial cases trigger a `CalibrationWarning`: health at the "safe" threshold is below 0.8, which says the placeholder curves put heavy damage inside the safe zone. Calibrating the curves fixes that warning; tuning parameters to silence it does not. Under `area_loss` the check looks at the health of the remaining resource, since health at a depletion t is at most 1 − t by construction. Posidonia's remaining meadow does not degrade before the threshold, so it does not warn.
 
 **A static damage function, evaluated directly.** Everything per step — damage, cascade, keystone boosts, annual externality, health, resilience zone — is a function of the depletion ratio alone, so the engine evaluates it at the final depletion (and the step before, for the marginal cost) instead of looping over units; per-step data are computed only when asked for (`--steps-every`). The order and timing of actions do not matter: no hysteresis, no accumulated cascade. Time enters through discounting, the succession curve after restoration, and the substrate ceiling, whose erosion is integrated over the steps with the whole extraction spread over one year. This is decision D5, option B (`PROJECT_DEFINITION.md` §13). A path-dependent engine — a time axis with extraction schedules, substrate erosion over real time, keystone hysteresis, damage-dependent recovery — is a **committed milestone after v1.0** (option A, staged A1 → A2 → A3 in `version_specs/V09_SPEC.md`), behind an optional `dynamics` block in a schema-2 case file.
 
-**Carbon** is valued only by `gaia/carbon.py`: no agent value and no pricing anchor contains carbon. The release of stored biomass and soil carbon is a one-off at year 0. The lost absorption is a yearly flow, discounted to a present value. Both are priced at the **social cost of carbon**: US EPA (2023), $190/t CO₂ for 2020 emissions (2020 USD, 2% near-term rate), converted at the ECB 2020 average rate to **€166.35/t**, growing at 1.3%/yr. The 2020 value is used as the year-0 price; EPA's path gives about $215 for 2026 emissions. `--carbon-price ets` switches to a labelled market/ETS view at €80/t, a private price that understates the damage.
+**Carbon** is valued only by `gaia/carbon.py`: no agent value and no pricing anchor contains carbon. The release of stored biomass and soil carbon is a one-off at year 0, unless the case or the user gives it a half-life. In that case it is released as a negative exponential, each year's tranche at that year's carbon price, discounted (Posidonia: 10 years by default; `--carbon-release-half-life`). `--carbon-release-fraction` sets the share of the soil stock released, a project input. The lost absorption is a yearly flow, discounted to a present value. Both are priced at the **social cost of carbon**: US EPA (2023), $190/t CO₂ for 2020 emissions (2020 USD, 2% near-term rate), converted at the ECB 2020 average rate to **€166.35/t**, growing at 1.3%/yr. The 2020 value is used as the year-0 price; EPA's path gives about $215 for 2026 emissions. `--carbon-price ets` switches to a labelled market/ETS view at €80/t, a private price that understates the damage.
 
 **Discounting.** Flows are valued at the end of years 1..H with a Ramsey rate (2.3% in three cases; a declining 2.3% → 1.8% → 1.4% schedule over 200 years for Posidonia) and a scarcity uplift (a relative price change of ecosystem services). Validation rejects any configuration whose scarcity rate or carbon-price growth is not strictly below the discount rate, so present values converge. The forest case (and the default profile) keeps a 2% scarcity uplift, which is above the estimates of Drupp et al. (2024), 1.28%/yr for forests and 1.66%/yr in aggregate; it is flagged for recalibration. Because the horizon is a choice, every output also reports the PV at **50, 100 and 200 years** (horizon sensitivity).
 
@@ -367,7 +379,7 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 
 **Benchmarks.** A case file may list published per-hectare values (`run.benchmarks`). An extraction report then shows where Gaia's per-hectare figures fall among them (`gaia/benchmarks.py`).
 
-**Experimental: endogenous pricing (`--with-pricing`).** A Leontief–Hannon price system (v0.7) is **quarantined** and must not be used for estimates. Every output that uses it carries an EXPERIMENTAL banner, and the JSON has `"pricing": {"experimental": true, ...}`. Every agent must be anchored, and agents without a documented anchor get a placeholder one. Convergence is certified at each step. A step that cannot be certified stops the run with `PricingConvergenceError` instead of falling back to static values; in the shipped cases this happens at about 22–35% depletion. The formulation still counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price. Pricing applies to extraction only.
+**Experimental: endogenous pricing (`--with-pricing`).** A Leontief–Hannon price system (v0.7) is **quarantined** and must not be used for estimates. Every output that uses it carries an EXPERIMENTAL banner, and the JSON has `"pricing": {"experimental": true, ...}`. Every price must be determined: each agent is anchored, or reachable from an anchored agent along the edges. Its price is then derived from upstream and labelled `(derived)`. Every case prices from two or three sourced, market-based anchors (Steps 8c.6, 8d.6; no placeholder anchor is left): Posidonia from its service ledger, the other three from de Groot et al. (2012) Table 2 (food, water, pollination); every other price is derived. **Derived prices are the anchors propagated through placeholder edge weights and hand-set scarcity multipliers: they add no independent information.** Convergence is certified at each step. A step that cannot be certified stops the run with `PricingConvergenceError` instead of falling back to static values; in the shipped cases this happens at about 24–35% depletion (the forest case converges throughout). The formulation still counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price. Pricing applies to extraction only.
 
 **Provenance.** Each case file records its parameters as `{value, unit, source, confidence, note}` objects, which become `gaia.provenance.Param`s. Confidence is `high`, `medium`, `low`, `placeholder`, or `user-supplied` for values given on the command line. The engines see only plain floats. Every result carries a `calibration` status that the text and JSON outputs print. The banner counts the recorded parameters at `placeholder` and `low` confidence; user-supplied values are counted separately and not assessed.
 
@@ -421,9 +433,13 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 |---|---|
 | `--total-units N` | Size of the resource in units (trees; hectares for Posidonia) |
 | `--units N` | Units to extract (extract mode) or to replant (restore mode) |
-| `--threshold RATIO` | Safe extraction threshold, also the inflection of every damage curve |
+| `--threshold RATIO` | Safe extraction threshold, which also places the inflection of every damage curve (for Posidonia, where the remaining meadow starts to degrade) |
 | `--unit-value EUROS` | One-off revenue per unit extracted |
-| `--area-ha HA` | Area of the resource (default: units / the case's reference density; for Posidonia it must equal `--total-units`) |
+| `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares |
+| `--resource-name NAME` | Name of the reference resource in the outputs |
+| `--carbon-release-fraction F`, `--carbon-release-half-life YEARS` | Project inputs: share of the soil carbon released, and the half-life of its release (0: all at once) |
+| `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share) |
+| `--matte-fate {exposed,excavated,buried}` | Posidonia: what the project does to the matte, a preset of the two inputs above (which still override it). **exposed** (default): the meadow dies but the matte stays uncovered and erodes, 0.63 released with a 10-year half-life. **excavated**: dug out or dredged, 0.96 released in the year of the works (IPCC 2013). **buried**: covered by fill and kept without oxygen, 0.125 (inferred, no source) |
 | `--mode {extract,restore}` | Simulation mode |
 | `--units-lost N` | [restore] Units missing at the start (default: `--units`) |
 | `--planting-cost`, `--maintenance-cost`, `--maintenance-years` | [restore] Restoration costs per unit |
@@ -484,11 +500,17 @@ What the values rest on. The authoritative, per-parameter list is in each output
 
 - **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012) and Costanza et al. (2014), minus climate regulation (carbon is valued separately). The figures are partly from memory and have no currency or price-year conversion: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
 - **Posidonia** (the v1.0 case, Step 8):
-  - **Euro values.** Only the four final services a primary *P. oceanica* valuation measured carry euros (Campagne et al. 2015: coastal protection, water purification, fisheries, knowledge; €285/ha/yr in total). The six ecological agents carry none, to avoid double counting. Tourism, recreation and non-use are not valued, so the total is a lower bound, ~20× below the Mediterranean seagrass meta-regression.
-  - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion. Carbon dominates the result.
+  - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money without double counting. €819/ha/yr in total:
+    - coastal protection, water purification, fisheries and bioindicator/knowledge (Campagne et al. 2015), with fisheries split between fish and invertebrates and the bioindicator use split with the epiphytes;
+    - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
+    - the non-use values of megafauna and seabirds (Börger et al. 2014, a benefit transfer).
+
+    Beach tourism and the meadow's own existence value are not valued, so the total is still a lower bound, ~11× below the Mediterranean seagrass meta-regression.
+  - **Small losses are priced linearly** (damage model `area_loss`): below the 20% threshold each hectare costs its average value; past it the remaining meadow degrades. The reference resource is the regional stock unless the user enters the meadow a project affects (`--area-ha`).
+  - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
 - **Amazon**: the agent value is the sum of the non-carbon anchors of its spec (`gaia/cases/definitions/AMAZON_FOREST.md`). Several of those anchors' sources are unverified. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
-- **All cases**: identical placeholder logistic damage curves (steepness 12), placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
+- **All cases**: small losses priced linearly (damage model `area_loss`, Steps 8c.3 and 8d.1): below the safe threshold each unit lost costs its average value, past it the remaining resource degrades along placeholder curves (steepness 12; Costa Brava's fire agent exponential), which start at the threshold. Placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
 
 ---
 
@@ -617,23 +639,24 @@ ruff check gaia tests scripts && mypy
 
 ## Status
 
-**v0.9.0: the 2026-10 audit fixes** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`).
+**v0.10.0: Step 8, the Posidonia v1.0 case** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`), on top of v0.9.0, the 2026-10 audit fixes.
 
 What works: extraction and restoration for four cases with unit-consistent flows, present values and one-off amounts; €/ha/yr scaling; restoration from a real starting state; carbon at the social cost of carbon; substrate restoration ceilings; convergent discounting with horizon sensitivity; the destroy-then-restore penalty; strict JSON; parameter provenance and calibration status in every output; a direct-evaluation engine (no per-unit loop, no compiled extension); packaging and CI.
 
 Experimental: endogenous pricing (`--with-pricing`), quarantined.
 
-Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
+Since 0.10.0 (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
 
 Not done:
 - Calibrated damage curves and edges: no case has them, Posidonia included.
 - External expert review of the Posidonia methods note.
 - A path-dependent engine: decided as a committed milestone after v1.0 (D5 option A, `version_specs/V09_SPEC.md`).
 
-Unreleased (Step 8):
+In 0.10.0 (Step 8):
 - The engine evaluates its static function directly; the Cython extension is gone (D5 option B, D7).
 - The Posidonia v1.0 case: every parameter sourced or flagged, benchmarks, Monte Carlo bounds (`--uncertainty`), and a methods note ready for review.
-- The first user and question are a proposal awaiting the owner (`PROJECT_DEFINITION.md`, v1.0).
+- The first user and question, confirmed by the owner: a Catalan coastal authority or marine NGO reviewing the impact assessment of a port or marina expansion that destroys *N* ha of meadow (`PROJECT_DEFINITION.md`, v1.0).
+- The owner's answers (Steps 8c, 8d): small losses priced linearly in every case, the Posidonia service ledger (the diving value only near dive sites), project inputs for the reference meadow and the matte's fate, a few sourced anchors for the EXPERIMENTAL pricing.
 
 ---
 

@@ -1,8 +1,9 @@
 {
   "gaia_schema": 1,
   "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
-  "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the resource is the regional stock (4,582 ha). Monetary values sit on the four final services that a primary Posidonia valuation measured (coastal protection, water purification, fisheries, knowledge use), per hectare; the six ecological agents carry health weight and cascade damage but no euro value of their own. Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the reference resource is the regional stock (4,582 ha) unless the user enters the meadow a project affects. Every agent carries euros: the service ledger books each final ecosystem service once, to one agent (coastal protection, water purification, fisheries split between fish and invertebrates, bioindicator use split with the epiphytes, knowledge, recreational diving on the meadow (only near dive sites: --dive-site-share) and on the coralligenous, non-use values of megafauna and seabirds). Small losses are priced linearly (damage model area_loss). Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
+  "damage_model": "area_loss",
   "resource": {
     "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
     "unit": "ha",
@@ -12,7 +13,7 @@
       "unit": "ha",
       "source": "Generalitat de Catalunya, Mapa d'hàbitats marins de Catalunya (presented 29 May 2025; Hipermapa): P. oceanica meadows 4,582 ha, 2.4% of ~190,000 ha mapped to 50 m depth, as reported by Ara (29 May 2025, https://en.ara.cat/society/from-portbou-to-alcanar-this-is-the-catalan-seabed_1_5395705.html)",
       "confidence": "medium",
-      "note": "The whole Catalan stock (Portbou to Alcanar), the reference resource for a regional authority; the Costa Brava holds much of it (Cap de Creus) but the map's breakdown by coast was not available to this review, nor the dataset itself (the Govern's press-release PDF returned HTTP 403). The former 5,000 ha exceeded the whole Catalan stock."
+      "note": "The default reference resource: the whole Catalan stock (Portbou to Alcanar). A user assessing one project replaces it with the specific meadow the project affects (--area-ha N [--resource-name NAME], or resource.total_units/area_ha and resource.name in a copy of this file); the reference sets the depletion fraction, which matters once a project passes the safe threshold. The Costa Brava holds much of it (Cap de Creus) but the map's breakdown by coast was not available to this review, nor the dataset itself (the Govern's press-release PDF returned HTTP 403). The former 5,000 ha exceeded the whole Catalan stock."
     },
     "unit_value": {
       "value": 2500.0,
@@ -24,7 +25,7 @@
       "value": 0.2,
       "unit": "ratio",
       "confidence": "placeholder",
-      "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification, kept because it shapes every damage curve (inflection at 32%). At small losses the curves give each hectare about a quarter of its average per-hectare value (initial slope 0.25); see the methods note. Monte Carlo range 0.1-0.3, uniform (judgement).",
+      "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification. Under the case's area_loss damage model (Step 8c.3) it is the depletion of the reference resource beyond which the REMAINING meadow starts to degrade; below it each hectare lost costs exactly its average per-hectare value (linear benefit transfer). Monte Carlo range 0.1-0.3, uniform (judgement).",
       "range": [
         0.1,
         0.3
@@ -50,16 +51,16 @@
     }
   },
   "agent_defaults": {
-    "damage": "logistic"
+    "damage": "threshold_logistic"
   },
   "damage_curves": {
-    "logistic": {
-      "type": "logistic",
+    "threshold_logistic": {
+      "type": "threshold_logistic",
       "steepness": {
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection at 32% loss (just past the 20% threshold); no Posidonia study relates the fraction of a meadow lost to the fraction of each service lost, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
+        "note": "Degradation of the remaining meadow past the safe threshold (damage model area_loss, Step 8c.3): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span (32% loss at the default threshold), the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. No Posidonia study relates the fraction of a meadow lost to the degradation of the rest, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
         "range": [
           6.0,
           18.0
@@ -71,14 +72,18 @@
   "agents": [
     {
       "name": "Posidonia Meadow",
-      "description": "Meadow integrity, the foundation (keystone) species: shoot density and matte — no euro value of its own (an intermediate service)",
+      "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020), only where the meadow is within reach of dive sites",
       "dependency_weight": 0.10989010989010989,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 133134.24657534246,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
         "confidence": "low",
-        "note": "Not valued in euros. Supporting/intermediate: the meadow's value reaches people through the final services (coastal protection, water quality, fisheries, cultural), so a euro value here would count it twice. The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; docs/POSIDONIA_LITERATURE_REVIEW.md §2): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES: 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
+        "range": [
+          62551.232876712325,
+          379022.8310502283
+        ]
       },
       "trophic_level": 0,
       "is_keystone": true,
@@ -92,87 +97,116 @@
           0.45
         ],
         "distribution": "uniform"
+      },
+      "sites": "dive sites",
+      "site_share": {
+        "value": 0.03106721955477957,
+        "unit": "fraction",
+        "source": "European Environment Agency, Natura 2000 Standard Data Forms, habitat 1120* (Posidonia beds) cover in ha, forms last updated December 2014, via the EEA Natura 2000 service (https://bio.discomap.eea.europa.eu/arcgis/rest/services/Bio/Natura2000_Dyna_WM/MapServer/13, queried 12 October 2026; site pages https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5120007 etc.): Cap de Creus (ES5120007) 64.14 ha, El Montgrí-Les Medes-El Baix Ter (ES5120016) 10.75 ha, Litoral del Baix Empordà (ES5120015) 24.10 ha, Massís de les Cadiretes (ES5120013) 42.36 ha, L'Albera (ES5120014) 1.00 ha: 142.35 ha in the coastal Natura 2000 sites of the Costa Brava (Girona coast); cross-check: the Medes Islands meadow covers 8.8 ha (Romero, Pérez & Renom 2001, Seguimiento de la pradera de Posidonia oceanica de las islas Medes, Ejercicio 2001, Universitat de Barcelona, http://hdl.handle.net/2445/25506); regional stock 4,582 ha (resource.area_ha)",
+        "confidence": "low",
+        "note": "The share of the affected meadow within reach of dive sites, where the meadow's diving value applies (Step 8d.4). A PROJECT INPUT: the user states it with --dive-site-share (1 for a project at a dive site, 0 far from any; recorded as user-supplied). The default is the regional share: 142.35 ha near dive sites / 4,582 ha, the expected share for a meadow of unknown location. The 142.35 ha are a proxy, flagged: the P. oceanica cover inside the coastal Natura 2000 sites of the Costa Brava, which hold its best-known dive sites (Medes Islands, Cap de Creus; dive sites elsewhere in these sites assumed, not verified); a site boundary is not the reach of a dive site, and the 2014 forms and the 2025 regional map differ in date and method. Held fixed in the Monte Carlo (\"distribution\": \"fixed\").",
+        "distribution": "fixed"
       }
     },
     {
       "name": "Coralligenous & Red Coral",
-      "description": "Coralligenous reefs next to the meadow, smothered when it is lost (sedimentation) — not valued",
+      "description": "Coralligenous reefs next to the meadow, smothered when it is lost (sedimentation); its own final service: recreational diving on coralligenous (Rodrigues et al. 2016, Medes Islands)",
       "dependency_weight": 0.10989010989010989,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 172.42105263157893,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Rodrigues, van den Bergh, Loureiro, Nunes & Rossi (2016), Environmental and Resource Economics 63:289-311, doi:10.1007/s10640-015-9935-8: choice experiment with scuba divers at the Medes Islands MPA (Catalonia); the local extinction of gorgonians, the emblem of the coralligenous, costs divers about EUR 60 per dive; about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha)",
         "confidence": "low",
-        "note": "Not valued in euros. Neighbouring habitat linked by sedimentation; its own value (diving, red coral) is not part of a Posidonia valuation and is not counted. The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): recreational diving on the coralligenous, 18.95 EUR/ha/yr = EUR 60 per dive x 60,000 Medes dives a year / 190,000 ha of mapped seabed. A Catalan primary study; the attribution to a hectare of meadow is the seascape rule used for every service of the wider seascape: the regional value spread evenly over the mapped seabed. PROVISIONAL: an attribution assumption, not a source (no study links coralligenous condition to the nearby meadow), accepted by the owner as provisional (Step 8d.3) until an area-weighted link to nearby reefs can be sourced. Range 9.5-43.8 EUR/ha/yr: half the attribution to EUR 108.01/dive (Zunino et al. 2020, total loss of coralligenous) x 77,000 dives.",
+        "range": [
+          86.21052631578947,
+          398.3295105263158
+        ]
       },
       "trophic_level": 0
     },
     {
       "name": "Epiphytes & Algae",
-      "description": "Epiphytic algae and plant community: primary production, food web base — not valued separately",
+      "description": "Epiphytic algae and plant community: primary production, food web base; owns the epiphyte share of the bioindicator service (PREI E/L metric)",
       "dependency_weight": 0.07692307692307693,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 2.7857142857142856,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
         "confidence": "low",
-        "note": "Not valued in euros. Supporting/intermediate (primary production, food web): valued through the final services. The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): an intermediate agent with no final service of its own: it owns the epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica. Range x0.5-x2 (judgement).",
+        "relative_range": [
+          0.5,
+          2.0
+        ]
       },
       "trophic_level": 0
     },
     {
       "name": "Marine Invertebrates",
-      "description": "Sponges, urchins, octopus, lobsters, shellfish: grazers and filter feeders — not valued separately",
+      "description": "Sponges, urchins, octopus, lobsters, shellfish: grazers and filter feeders; owns the invertebrate share of the commercial fisheries contribution (sea urchin, cuttlefish)",
       "dependency_weight": 0.0989010989010989,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 44.236111111111114,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr from 16 meadow-associated species sold at the Sète auction, two of them invertebrates (Paracentrotus lividus, Sepia officinalis), §3.2.4",
         "confidence": "low",
-        "note": "Not valued in euros. Supporting/intermediate (food web, filtration): valued through fisheries and water quality. The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): the invertebrate share of the fisheries service, moved from Fish Populations (total unchanged): 35 x 2/16 = 4.375 EUR/ha/yr, by species count (2 of Campagne et al.'s 16 species; equal value per species is an assumption). Range 3.4-18.8 EUR/ha/yr: 27 x 2/16 to 74 x 0.254, the cephalopod and other-invertebrate share of Catalan white-fish, cephalopod and other-invertebrate first-sale value in 2014 (Generalitat, Estadístiques de pesca per grups biològics, dataset ge3m-4jgm: EUR 13.65 M + 0.34 M against 41.06 M; a proxy, not meadow-specific).",
+        "range": [
+          34.125,
+          190.12326666666667
+        ]
       },
       "trophic_level": 1
     },
     {
       "name": "Fish Populations",
-      "description": "Fish nursery and feeding habitat: contribution to commercial fisheries (Campagne et al. 2015)",
+      "description": "Fish nursery and feeding habitat: contribution to commercial fisheries, fish species (Campagne et al. 2015)",
       "dependency_weight": 0.15384615384615385,
       "annual_value_per_ha": {
-        "value": 227.5,
+        "value": 199.0625,
         "unit": "€/ha/yr",
-        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end of the range used",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end used",
         "confidence": "medium",
-        "note": "35 EUR/ha/yr of service at full damage = weight × value (35 / 0.153846). Range 27-74 EUR/ha/yr. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica, since other seagrasses also contribute).",
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): the fish share of the fisheries service, 35 x 14/16 = 30.625 EUR/ha/yr (14 of the 16 species are fish; the two invertebrates go to Marine Invertebrates). Range 23.6-64.8 EUR/ha/yr: (27 to 74) x 14/16. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica).",
         "range": [
-          175.5,
-          481.0
+          153.5625,
+          420.875
         ]
       },
       "trophic_level": 2
     },
     {
       "name": "Marine Megafauna",
-      "description": "Dolphins, sea turtles: apex indicators — non-use values not valued",
+      "description": "Dolphins, sea turtles: apex predators; their own final service: the non-use (existence) value of protecting charismatic marine megafauna (Börger et al. 2014, benefit transfer)",
       "dependency_weight": 0.04395604395604395,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 686.6920549261843,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Börger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha); ECB euro reference rate, GBP per EUR, 2013 annual average 0.84926",
         "confidence": "low",
-        "note": "Not valued in euros. Non-use and wildlife-watching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): non-use value of protecting marine mammals (dolphins) and, by extension, sea turtles, 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule, PROVISIONAL: an attribution assumption accepted by the owner as provisional, Step 8d.3) and split equally between Marine Megafauna and Seabirds, which Börger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+        "relative_range": [
+          0.33,
+          3.0
+        ]
       },
       "trophic_level": 3
     },
     {
       "name": "Seabirds",
-      "description": "Seabirds that feed on meadow fish (Audouin's gull) — non-use values not valued",
+      "description": "Seabirds that feed on meadow fish (Audouin's gull); their own final service: the non-use (existence) value of protecting seabirds (Börger et al. 2014, benefit transfer)",
       "dependency_weight": 0.054945054945054944,
       "annual_value_per_ha": {
-        "value": 0.0,
+        "value": 549.3536439409473,
         "unit": "€/ha/yr",
-        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "source": "Börger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha); ECB euro reference rate, GBP per EUR, 2013 annual average 0.84926",
         "confidence": "low",
-        "note": "Not valued in euros. Non-use and birdwatching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges."
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): non-use value of protecting seabirds (Audouin's gull, shags, shearwaters), 30.18 EUR/ha/yr: the 5-year payment of GBP 30.32 annualised at the case's 2.3% (GBP 3.26/yr in perpetuity), converted at 0.84926 GBP/EUR (EUR 3.84), times 2,989,357 Catalan households (EUR 11.5 M/yr), spread over 190,000 ha of mapped seabed (the seascape rule, PROVISIONAL: an attribution assumption accepted by the owner as provisional, Step 8d.3) and split equally between Marine Megafauna and Seabirds, which Börger et al.'s attribute bundles. A unit-value benefit transfer from the UK (no income adjustment) of a protection scenario (50% of an area) read as the value at full damage: a lower bound in scope, an uncertain transfer. Range x0.33-x3 (judgement).",
+        "relative_range": [
+          0.33,
+          3.0
+        ]
       },
       "trophic_level": 2
     },
@@ -185,7 +219,7 @@
         "unit": "€/ha/yr",
         "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): protection from coastal erosion 188 EUR/ha/yr (damage cost avoided, Mediterranean scale, 2001 data inflated to 2014)",
         "confidence": "medium",
-        "note": "188 EUR/ha/yr of service at full damage = weight × value (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (×/÷2) is a judgement.",
+        "note": "188 EUR/ha/yr of service at full damage = weight × value (service ledger, Step 8c.2) (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (×/÷2) is a judgement.",
         "relative_range": [
           0.5,
           2.0
@@ -202,7 +236,7 @@
         "unit": "€/ha/yr",
         "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): wastewater treatment 60 EUR/ha/yr (benefit transfer of the French water-protection tax, one third attributed to coastal systems after Costanza et al. 1997)",
         "confidence": "medium",
-        "note": "60 EUR/ha/yr of service at full damage = weight × value (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (×/÷2) is a judgement.",
+        "note": "60 EUR/ha/yr of service at full damage = weight × value (service ledger, Step 8c.2) (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (×/÷2) is a judgement.",
         "relative_range": [
           0.5,
           2.0
@@ -212,14 +246,14 @@
     },
     {
       "name": "Human Communities",
-      "description": "Cultural services: bioindicator use and knowledge (Campagne et al. 2015); tourism, recreation and non-use NOT valued",
+      "description": "Cultural services: bioindicator use (leaf, shoot and lower-limit metrics) and knowledge (Campagne et al. 2015)",
       "dependency_weight": 0.0879120879120879,
       "annual_value_per_ha": {
-        "value": 20.816250000000004,
+        "value": 18.378750000000004,
         "unit": "€/ha/yr",
-        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr; the epiphyte share of the bioindicator (0.5/3.5 of the PREI, Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012) moved to Epiphytes & Algae",
         "confidence": "medium",
-        "note": "1.83 EUR/ha/yr of service at full damage = weight × value (1.83 / 0.087912). Only the cultural services Campagne et al. could value. Tourism, recreation and non-use values are NOT valued (no Posidonia-specific per-hectare welfare estimate was found): the main reason the total is a lower bound. Recreational fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not a welfare value, and is not used.",
+        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): bioindicator use without its epiphyte share (1.5 x 3/3.5) + knowledge contribution 0.33 = 1.6157 EUR/ha/yr. Beach tourism is still NOT valued (no Posidonia-specific welfare estimate); recreational-fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not welfare, and is not used. Its spread in the Monte Carlo (x/÷2) is a judgement.",
         "relative_range": [
           0.5,
           2.0
@@ -370,11 +404,49 @@
       "unit": "fraction",
       "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
       "confidence": "low",
-      "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality.",
+      "note": "A project input (--carbon-release-fraction): it depends on what the project does to the matte. Recommended values (docs/POSIDONIA_LITERATURE_REVIEW.md §4): excavated or dredged (port basins, channels) 0.96, the IPCC (2013) Wetlands Supplement Tier 1 for 'excavation to enable port, harbour and marina construction' (the top-metre soil carbon emitted in the year of extraction, minus 4% refractory); left exposed in place (meadow killed by shading, turbidity, anchoring or scour) 0.25-1.0, central 0.63 (this value, Pendleton et al.'s global range); buried under fill (breakwaters, reclaimed land) no source was found: the anoxic matte may keep much of its carbon (inferred, not sourced). The Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019). The dominant uncertainty of the carbon externality.",
       "range": [
         0.25,
         1.0
       ]
+    },
+    "release_half_life_years": {
+      "value": 10.0,
+      "unit": "years",
+      "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: at a converted site the rate of release 'likely follows a negative exponential curve with time', with 'a half-life on the order of 5-10 years' (their ref. 29, a cleared mangrove)",
+      "confidence": "low",
+      "note": "A project input (--carbon-release-half-life): the time profile of the release, valued year by year at the carbon price of that year and discounted. 10 years is the upper end of Pendleton et al.'s order of magnitude; seagrass evidence brackets it: the exposed share of Shark Bay's seagrass soil carbon was estimated released within three years of the 2010/11 die-off (Arias-Ortiz et al. 2018, Nature Climate Change 8:338-344, doi:10.1038/s41558-018-0096-y); soil stocks were 72% lower 50 years after a disturbance (Macreadie et al. 2015, Proc. R. Soc. B 282:20151537, doi:10.1098/rspb.2015.1537), i.e. a half-life of at most 27 years if the decay were exponential (inferred here); 4.8 of 6.4 kg Corg/m2 of the top 50 cm were lost under moorings deployed from the 1930s (Serrano et al. 2016, Sci. Rep. 6:23193, doi:10.1038/srep23193). Excavated matte: 0 (the IPCC emits it in the year of extraction). Range 0-27 years (judgement from these sources).",
+      "range": [
+        0.0,
+        27.0
+      ]
+    },
+    "release_fates": {
+      "subject": "matte",
+      "default": "exposed",
+      "fates": {
+        "exposed": {
+          "description": "The meadow dies but its matte stays in place, uncovered (killed by shading, turbidity, anchoring or scour around the works): the dead matte is open to oxygen and erodes, so its carbon escapes gradually over years to decades.",
+          "soil_release_fraction": 0.63,
+          "release_half_life_years": 10.0,
+          "basis": "sourced: Pendleton et al. 2012, doi:10.1371/journal.pone.0043542, 25-100% lost, central 63%, negative exponential with a half-life of the order of 5-10 years; the 10-year central half-life is inferred (docs/POSIDONIA_LITERATURE_REVIEW.md §4)",
+          "confidence": "low"
+        },
+        "excavated": {
+          "description": "The matte is dug out or dredged (port basins, access channels, marina docks): the carbon-rich soil is removed and broken up, so nearly all of its carbon is released in the year of the works.",
+          "soil_release_fraction": 0.96,
+          "release_half_life_years": 0.0,
+          "basis": "sourced: IPCC 2013 Wetlands Supplement, ch. 4, Tier 1 for 'excavation to enable port, harbour and marina construction': the top-metre soil carbon emitted in the year of extraction, minus 4% refractory",
+          "confidence": "medium"
+        },
+        "buried": {
+          "description": "The matte is covered by fill (breakwaters, reclaimed land, rock armour): it stays buried without oxygen, which probably preserves most of its carbon.",
+          "soil_release_fraction": 0.125,
+          "release_half_life_years": 10.0,
+          "basis": "INFERRED, no source: the midpoint of the inferred 0-0.25 range for anoxic burial; the half-life is the exposed default, for want of a measurement",
+          "confidence": "placeholder"
+        }
+      }
     }
   },
   "resilience": {
@@ -471,64 +543,29 @@
     }
   },
   "pricing": {
-    "reference_area_ha": 5000.0,
-    "anchor_every_agent": true,
+    "reference_area_ha": 4582.0,
+    "anchor_every_agent": false,
     "anchors": [
       {
-        "agent_name": "Human Communities",
-        "anchor_value": 500000.0,
-        "source": "Costa Brava tourism revenue attributable to coastal water quality per ~5 km",
+        "agent_name": "Posidonia Meadow",
+        "anchor_value": 18951660.000000004,
+        "source": "Service ledger (Step 8c.2, 8d.4): the meadow's recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; scaled with --dive-site-share",
         "confidence": "low",
-        "description": "Tourism: attributable water quality value for ~5 km coastline"
+        "description": "Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A stated-preference value, not a market price: no market price exists for the meadow itself"
       },
       {
         "agent_name": "Fish Populations",
-        "anchor_value": 75000.0,
-        "source": "Artisanal catch value: ~15 boats × €5,000/yr/boat",
-        "confidence": "low",
-        "description": "Fishing: 15 artisanal boats × €5,000/yr"
+        "anchor_value": 912104.375,
+        "source": "Service ledger (Step 8c.2): commercial fisheries, fish species, Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061 (production function at Sète auction prices), per hectare / dependency weight x 4,582 ha",
+        "confidence": "medium",
+        "description": "A market price: landings valued at auction prices"
       },
       {
-        "agent_name": "Posidonia Meadow",
-        "anchor_value": 800000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
-      },
-      {
-        "agent_name": "Coralligenous & Red Coral",
-        "anchor_value": 600000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
-      },
-      {
-        "agent_name": "Epiphytes & Algae",
-        "anchor_value": 250000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
-      },
-      {
-        "agent_name": "Marine Invertebrates",
-        "anchor_value": 350000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
-      },
-      {
-        "agent_name": "Marine Megafauna",
-        "anchor_value": 200000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
-      },
-      {
-        "agent_name": "Seabirds",
-        "anchor_value": 180000.0,
-        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
-        "confidence": "low",
-        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+        "agent_name": "Coastal Protection",
+        "anchor_value": 6029912.0,
+        "source": "Service ledger (Step 8c.2): protection from coastal erosion, Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061 (damage cost avoided), per hectare / dependency weight x 4,582 ha",
+        "confidence": "medium",
+        "description": "A market price: the protection expenditure avoided"
       }
     ],
     "scarcity_functions": {
@@ -676,11 +713,140 @@
       "note": "Years before a replanted meadow delivers any service; no source (placeholder)."
     }
   },
+  "service_ledger": [
+    {
+      "service": "Protection from coastal erosion",
+      "agent": "Coastal Protection",
+      "value": 188.0,
+      "section": "regulation and maintenance",
+      "kind": "use",
+      "method": "damage cost avoided (Mediterranean protection expenditure, 2001 data inflated to 2014)",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014",
+      "note": "Wave attenuation, banquettes and matte stabilisation together."
+    },
+    {
+      "service": "Water purification (wastewater treatment)",
+      "agent": "Water Quality",
+      "value": 60.0,
+      "section": "regulation and maintenance",
+      "kind": "use",
+      "method": "benefit transfer of the French water-protection tax (1/3 to coastal systems)",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014"
+    },
+    {
+      "service": "Commercial fisheries: meadow-associated fish",
+      "agent": "Fish Populations",
+      "value": 30.625,
+      "section": "provisioning",
+      "kind": "use",
+      "method": "production function at auction prices",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014",
+      "split_of": "Commercial fisheries contribution (35 EUR/ha/yr)",
+      "share": 0.875,
+      "share_source": "Campagne et al. 2015 §3.2.4: 14 of the 16 meadow-associated species sold are fish (share by species count, an assumption)"
+    },
+    {
+      "service": "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)",
+      "agent": "Marine Invertebrates",
+      "value": 4.375,
+      "section": "provisioning",
+      "kind": "use",
+      "method": "production function at auction prices",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014",
+      "split_of": "Commercial fisheries contribution (35 EUR/ha/yr)",
+      "share": 0.125,
+      "share_source": "Campagne et al. 2015 §3.2.4: Paracentrotus lividus and Sepia officinalis, 2 of the 16 species (share by species count, an assumption)"
+    },
+    {
+      "service": "Bioindicator use: shoot, leaf and lower-limit metrics",
+      "agent": "Human Communities",
+      "value": 1.2857142857142858,
+      "section": "cultural",
+      "kind": "use",
+      "method": "market prices (monitoring)",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014",
+      "split_of": "Use as bioindicator (1.5 EUR/ha/yr)",
+      "share": 0.8571428571428571,
+      "share_source": "Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012: PREI weights, 3 of 3.5"
+    },
+    {
+      "service": "Bioindicator use: epiphyte metric (E/L ratio)",
+      "agent": "Epiphytes & Algae",
+      "value": 0.21428571428571427,
+      "section": "cultural",
+      "kind": "use",
+      "method": "market prices (monitoring)",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "French Mediterranean to Catalonia, unit value, EUR 2014",
+      "split_of": "Use as bioindicator (1.5 EUR/ha/yr)",
+      "share": 0.14285714285714285,
+      "share_source": "Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012: N(E/L) = [1 - E/L] x 0.5 out of 3.5"
+    },
+    {
+      "service": "Knowledge contribution (research funding)",
+      "agent": "Human Communities",
+      "value": 0.33,
+      "section": "cultural",
+      "kind": "use",
+      "method": "market prices (EU LIFE funding per ha)",
+      "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica)",
+      "transfer": "EU average to Catalonia, unit value, EUR 2014"
+    },
+    {
+      "service": "Recreational diving: meadow amenity near dive sites",
+      "agent": "Posidonia Meadow",
+      "value": 14630.13698630137,
+      "section": "cultural",
+      "kind": "use",
+      "method": "choice experiment (WTP per dive) x annual dives / meadow area within reach of dive sites",
+      "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
+      "transfer": "Italian divers' per-dive WTP to Medes Islands dives, unit value, no income adjustment, EUR 2016-17",
+      "note": "Per hectare of meadow within reach of dive sites (Step 8d.4); the agent's value in a run is this x the share of the affected meadow near dive sites (default 142.35 / 4,582: the regional average, 454.52 EUR/ha/yr). Assumes every Medes dive includes meadow; dives at the other Costa Brava sites are not counted (not found).",
+      "site_restricted": true
+    },
+    {
+      "service": "Recreational diving: coralligenous seascape",
+      "agent": "Coralligenous & Red Coral",
+      "value": 18.94736842105263,
+      "section": "cultural",
+      "kind": "use",
+      "method": "choice experiment (WTP per dive) x annual dives / mapped seabed",
+      "source": "Rodrigues, van den Bergh, Loureiro, Nunes & Rossi (2016), Environmental and Resource Economics 63:289-311, doi:10.1007/s10640-015-9935-8: choice experiment with scuba divers at the Medes Islands MPA (Catalonia); the local extinction of gorgonians, the emblem of the coralligenous, costs divers about EUR 60 per dive; about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha)",
+      "transfer": "none for the value (Catalan primary study); seascape attribution to a hectare of meadow (PROVISIONAL assumption, accepted by the owner, Step 8d.3)"
+    },
+    {
+      "service": "Non-use: protection of marine megafauna",
+      "agent": "Marine Megafauna",
+      "value": 30.184266150601502,
+      "section": "cultural",
+      "kind": "non-use",
+      "method": "choice experiment (household WTP) x Catalan households / mapped seabed, half of a bundled attribute",
+      "source": "Börger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha)",
+      "transfer": "UK households to Catalan households, unit value, no income adjustment, GBP 2013 at 0.84926 GBP/EUR; 5-year payment annualised at 2.3%",
+      "note": "Seascape attribution: the Catalan total spread evenly over the 190,000 ha of mapped seabed (PROVISIONAL assumption, accepted by the owner, Step 8d.3)."
+    },
+    {
+      "service": "Non-use: protection of seabirds",
+      "agent": "Seabirds",
+      "value": 30.184266150601502,
+      "section": "cultural",
+      "kind": "non-use",
+      "method": "choice experiment (household WTP) x Catalan households / mapped seabed, half of a bundled attribute",
+      "source": "Börger, Hattam, Burdon, Atkins & Austen (2014), Ecological Economics 108:229-241, doi:10.1016/j.ecolecon.2014.10.006: choice experiment, UK households pay GBP 30.32/yr (mixed logit; 5-year tax) to protect porpoises, seals and seabirds on 50% of the UK Dogger Bank (GBP 24.02 on 25%); 2,989,357 households in Catalonia (Idescat, Households by size, 2021, from the INE Population and Housing Census); ~190,000 ha of seabed mapped to 50 m (Generalitat 2025 marine habitat map, as reported by Ara, 29 May 2025; see resource.area_ha)",
+      "transfer": "UK households to Catalan households, unit value, no income adjustment, GBP 2013 at 0.84926 GBP/EUR; 5-year payment annualised at 2.3%",
+      "note": "Seascape attribution: the Catalan total spread evenly over the 190,000 ha of mapped seabed (PROVISIONAL assumption, accepted by the owner, Step 8d.3)."
+    }
+  ],
   "run": {
     "units": 50,
-    "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the meadow is gone. P. oceanica grows centimetres a year;\n     natural recolonisation leaves limited cover after a century (Kendrick et\n     al. 2005). The values are a LOWER BOUND: tourism, recreation and non-use\n     values are not valued. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md.",
+    "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the meadow is gone. P. oceanica grows centimetres a year;\n     natural recolonisation leaves limited cover after a century (Kendrick et\n     al. 2005). Every agent's value is a final service booked once in the\n     case's service ledger; beach tourism and the meadow's own non-use value\n     are still not valued. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md.",
     "json_notes": [
-      "Marine externality costs are ANNUAL (€/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. The per-hectare values are a lower bound: tourism, recreation and non-use values are not valued."
+      "Marine externality costs are ANNUAL (€/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. Every agent's euro value is a final ecosystem service booked once in the case's service ledger (Step 8c.2); beach tourism and the meadow's own non-use value are still not valued, so the services total remains a lower bound."
     ],
     "benchmarks": [
       {
@@ -689,7 +855,7 @@
         "high": 284.83,
         "unit": "€2014/ha/yr",
         "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2",
-        "note": "The primary valuation the case's values come from (sum of the non-carbon goods and benefits): agreement here is by construction."
+        "note": "The primary valuation behind four of the ledger's services (coastal protection, water purification, fisheries, bioindicator and knowledge). Gaia is above it because the ledger adds recreational diving and non-use values (Step 8c.2)."
       },
       {
         "name": "Campagne et al. 2015, P. oceanica, carbon included",

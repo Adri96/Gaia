@@ -62,7 +62,8 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
     Adds: --version, --mode, --format, --output, --with-pricing, --summary-only,
-    --steps-every, --area-ha, --carbon-price.
+    --steps-every, --area-ha, --resource-name, --carbon-price,
+    --carbon-release-fraction, --carbon-release-half-life.
     """
     parser.add_argument(
         "--version",
@@ -95,10 +96,11 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         default=False,
         help=(
             "EXPERIMENTAL, quarantined (C8): v0.7 endogenous pricing, "
-            "extraction only (default: disabled). Every agent must be "
-            "anchored; a step whose price system cannot be certified "
-            "convergent stops the run with an error (no fallback values). "
-            "Not an estimate"
+            "extraction only (default: disabled). A few anchored agents "
+            "determine every price; the others are derived through the "
+            "placeholder edges and add no independent information. A step "
+            "whose price system cannot be certified convergent stops the run "
+            "with an error (no fallback values). Not an estimate"
         ),
     )
     parser.add_argument(
@@ -107,10 +109,24 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="HA",
         help=(
-            "Area of the resource in hectares (default: the number of units "
-            "divided by the case's reference density). Agent values are "
-            "€/ha/yr, so holding the area fixed while changing the number of "
-            "units changes per-unit figures but not the per-ha externality"
+            "Area of the reference resource in hectares (default: the case's; "
+            "for a case counted in units, the number of units divided by its "
+            "reference density). For a case counted in hectares (e.g. "
+            "posidonia) it is the reference resource itself — e.g. the "
+            "specific meadow a project affects instead of the regional stock — "
+            "and sets the number of units. Agent values are €/ha/yr, so holding "
+            "the area fixed while changing the number of units changes per-unit "
+            "figures but not the per-ha externality"
+        ),
+    )
+    parser.add_argument(
+        "--resource-name",
+        type=str,
+        default=None,
+        metavar="NAME",
+        help=(
+            "Name of the reference resource in the outputs, e.g. the meadow "
+            "the project affects (default: the case's)"
         ),
     )
     parser.add_argument(
@@ -121,6 +137,33 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "Carbon price: 'scc' (default), the social cost of carbon "
             "(US EPA 2023, ~€166/t CO₂); 'ets', the market/ETS view "
             "(EU ETS, €80/t), a private price that understates the damage"
+        ),
+    )
+    parser.add_argument(
+        "--carbon-release-fraction",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            "Project input: fraction (0-1) of the soil carbon stock the "
+            "project releases, which depends on what it does to the soil or "
+            "matte (default: the case's). Recommended for "
+            "Posidonia matte: 0.96 if excavated or dredged (IPCC 2013), 0.25-1.0 "
+            "(central 0.63) if left exposed (or use --matte-fate); see "
+            "docs/POSIDONIA_LITERATURE_REVIEW.md §4"
+        ),
+    )
+    parser.add_argument(
+        "--carbon-release-half-life",
+        type=float,
+        default=None,
+        metavar="YEARS",
+        help=(
+            "Project input: half-life of the release in years; 0 releases it all "
+            "at extraction, a positive value spreads it as a negative "
+            "exponential, each year valued at that year's carbon price and "
+            "discounted (default: the case's). Recommended for Posidonia "
+            "matte: 0 if excavated, about 10 (3-27) if left exposed; or use --matte-fate"
         ),
     )
     parser.add_argument(
@@ -139,6 +182,62 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             f"output; 1 = all steps. Default: all steps up to "
             f"{MAX_JSON_STEPS:,}, none (summary only, with a warning) above"
         ),
+    )
+
+
+def add_fate_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<subject>-fate`` (e.g. ``--matte-fate``) for a case whose
+    carbon block defines release fates (Step 8d.2): a preset of
+    --carbon-release-fraction and --carbon-release-half-life, explained in
+    plain words in the help."""
+    spec = getattr(case, "release_fates", None)
+    if spec is None:
+        return
+    subject, default = spec["subject"], spec["default"]
+    lines = []
+    for name, fate in spec["fates"].items():
+        half = fate["release_half_life_years"]
+        timing = "all at once" if half == 0 else f"half-life {half:g} yr"
+        lines.append(
+            f"'{name}'{' (default)' if name == default else ''}: {fate['description']} "
+            f"Releases {fate['soil_release_fraction']:g} of the {subject}'s carbon, {timing} "
+            f"[{fate['basis']}]"
+        )
+    parser.add_argument(
+        f"--{subject}-fate",
+        dest="carbon_fate",
+        choices=list(spec["fates"]),
+        default=None,
+        metavar="{" + ",".join(spec["fates"]) + "}",
+        help=(
+            f"Project input: what the project does to the {subject}, which sets how "
+            f"much of its carbon is released and how fast (a preset of "
+            f"--carbon-release-fraction and --carbon-release-half-life, which still "
+            f"override it). " + " ".join(lines)
+        ).replace("%", "%%"),
+    )
+
+
+def add_site_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<input>`` (e.g. ``--dive-site-share``) for a case with
+    site-restricted agent values (Step 8d.4)."""
+    agents = getattr(case, "site_restricted_agents", [])
+    if not agents:
+        return
+    share = case.default_site_share
+    parser.add_argument(
+        f"--{case.site_input}",
+        dest="site_share",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            f"Project input: the share (0-1) of the affected resource within reach "
+            f"of {case.sites}. The value of {', '.join(agents)} applies only there: "
+            f"1 if the project affects only resource at or next to {case.sites}, 0 if it is "
+            f"far from any (default {share:.4g}, the regional share, i.e. the expected "
+            f"value for a site of unknown location)"
+        ).replace("%", "%%"),
     )
 
 
@@ -187,6 +286,11 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
     overrides: Dict[str, Any] = {
         "total_units": args.total_units, "unit_value": args.unit_value,
         "area_ha": args.area_ha, "labels": labels,
+        "resource_name": getattr(args, "resource_name", None),
+        "carbon_release_fraction": getattr(args, "carbon_release_fraction", None),
+        "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
+        "carbon_fate": getattr(args, "carbon_fate", None),
+        "site_share": getattr(args, "site_share", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -490,7 +594,10 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     if legacy is None:
         parser.add_argument(
             "--total-units", type=int, default=total, metavar="N",
-            help=f"Total number of units ({case.unit}) in the resource (default: {total})",
+            help=(
+                f"Total number of units ({case.unit}) in the reference resource "
+                f"(default: {total})"
+            ),
         )
     else:
         parser.add_argument(
@@ -518,6 +625,8 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
         parser.add_argument(legacy.unit_value_alias, dest="unit_value_alias", type=float,
                             default=None, metavar="EUROS", help=argparse.SUPPRESS)
     add_common_arguments(parser)
+    add_fate_argument(parser, case)
+    add_site_argument(parser, case)
     add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
@@ -564,6 +673,11 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
             labels=labels,
+            resource_name=getattr(args, "resource_name", None),
+            carbon_release_fraction=getattr(args, "carbon_release_fraction", None),
+            carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
+            carbon_fate=getattr(args, "carbon_fate", None),
+            site_share=getattr(args, "site_share", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any

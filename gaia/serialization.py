@@ -85,6 +85,11 @@ def _agent_metadata(
             "is_keystone": a.is_keystone,
             "keystone_threshold": a.keystone_threshold if a.is_keystone else None,
         }
+        if a.sites:
+            # Step 8d.4: annual_value_eur_per_ha_yr is per hectare near the
+            # sites; the value applies on site_share of the resource
+            d["sites"] = a.sites
+            d["site_share"] = a.site_share
         if trophic_amplification:
             d["trophic_amplification"] = round(trophic_amplification[i], 6)
         out.append(d)
@@ -154,6 +159,9 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
         d["carbon_stored_per_unit"] = cp.stored_carbon_tonnes
         d["carbon_absorption_per_unit_yr"] = cp.annual_absorption_tonnes
+        if cp.release_half_life_years != 0.0:
+            d["carbon_release_fraction"] = cp.soil_release_fraction
+            d["carbon_release_half_life_years"] = cp.release_half_life_years
         d["carbon_price_eur_per_t"] = round(discount.carbon_price_current, 2)
         d["carbon_price_growth"] = discount.carbon_price_growth
         d["carbon_price_basis"] = carbon_price_label(discount)
@@ -201,6 +209,12 @@ def _calibration_to_dict(calibration) -> Dict[str, Any]:
         "n_user_supplied": calibration.count(Confidence.USER),
         "parameters": [_param_to_dict(p) for p in calibration.params],
     }
+
+
+def _damage_model(ecosystem) -> Dict[str, Any]:
+    """{"damage_model": ...} when it is not the default "direct" (Step 8c.3)."""
+    model = getattr(ecosystem, "damage_model", "direct")
+    return {} if model == "direct" else {"damage_model": model}
 
 
 def _calibration_regime(ecosystem) -> Optional[str]:
@@ -372,7 +386,18 @@ def _penalty_to_dict(pen: DestroyThenRestorePenalty) -> Dict[str, Any]:
 
 
 def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
-    """Convert PriceResult to dict."""
+    """Convert PriceResult to dict; ``derived_prices`` lists the agents whose
+    price has no anchor of its own (Step 8c.6), when there are any."""
+    from gaia.pricing import derived_agents
+
+    derived = derived_agents(pr)
+    extra: Dict[str, Any] = {}
+    if derived:
+        extra["derived_prices"] = derived
+        extra["derived_prices_note"] = (
+            "No anchor of their own: each price is derived from the anchored "
+            "agents upstream through the placeholder edge strengths (Step 8c.6)."
+        )
     return {
         "prices_eur_yr": {k: round(v, 2) for k, v in pr.prices.items()},
         "scarcity_multipliers": {
@@ -384,6 +409,7 @@ def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
         "spectral_radius_bound": round(pr.spectral_radius_bound, 6),
         "convergence_check": pr.convergence_check,
         "iterations": pr.iterations,
+        **extra,
     }
 
 
@@ -503,6 +529,7 @@ def simulation_result_to_dict(
             "interactions": _interaction_metadata(eco.interactions),
             "calibration_regime": _calibration_regime(eco),
             "has_pricing": eco.pricing is not None,
+            **_damage_model(eco),
         },
         "summary": {
             "total_units_extracted": result.total_units_extracted,
@@ -585,6 +612,7 @@ def restoration_result_to_dict(
             "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
             "calibration_regime": _calibration_regime(eco),
+            **_damage_model(eco),
         },
         "restoration_cost": {
             "planting_cost_per_unit_eur": (

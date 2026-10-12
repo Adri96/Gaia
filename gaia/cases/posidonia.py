@@ -39,8 +39,10 @@ def build_posidonia_ecosystem(
     """The Costa Brava Posidonia Meadow ecosystem (``CASE.build_ecosystem``); None = the data
     file's value.
 
-    The unit is the hectare: ``area_ha``, if given, must equal the number of
-    hectares (ValueError otherwise)."""
+    The unit is the hectare: ``area_ha``, if given, is the reference
+    resource (e.g. the meadow a project affects) and sets the number of
+    hectares; an explicit ``total_hectares`` must then equal it (ValueError
+    otherwise)."""
     return CASE.build_ecosystem(
         total_units=total_hectares,
         safe_threshold_ratio=safe_threshold_ratio,

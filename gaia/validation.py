@@ -41,7 +41,7 @@ from gaia.models import (
     SubstrateType,
     SuccessionCurve,
 )
-from gaia.propagation import ecosystem_health_at, worst_case_incoming_strengths
+from gaia.propagation import DAMAGE_MODELS, ecosystem_health_at, worst_case_incoming_strengths
 
 # Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
 _VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
@@ -165,6 +165,17 @@ def validate_ecosystem(
                 f"Agent '{agent.name}' annual_value_per_ha must be finite and "
                 f">= 0.0 (€/ha/yr at full damage), got {agent.annual_value_per_ha}"
             )
+        site_share = getattr(agent, "site_share", 1.0)
+        if not (isinstance(site_share, (int, float)) and math.isfinite(site_share)
+                and 0.0 <= site_share <= 1.0):
+            raise ValueError(
+                f"Agent '{agent.name}' site_share must be in [0.0, 1.0], got {site_share!r}"
+            )
+        if site_share != 1.0 and not getattr(agent, "sites", ""):
+            raise ValueError(
+                f"Agent '{agent.name}' has site_share {site_share:g} but no sites: "
+                f"name the sites where its value applies"
+            )
         weight_sum += agent.dependency_weight
 
     if abs(weight_sum - 1.0) > _WEIGHT_SUM_TOLERANCE:
@@ -195,6 +206,7 @@ def validate_ecosystem(
             name=f"Agent '{agent.name}' damage_function",
             threshold=threshold,
         )
+    _validate_damage_model(ecosystem)
 
     # v0.3: Validate interaction edges
     agent_names = {a.name for a in ecosystem.agents}
@@ -205,7 +217,11 @@ def validate_ecosystem(
 
     # v0.7: Validate optional pricing config
     if ecosystem.pricing is not None:
-        validate_pricing_config(ecosystem.pricing, agent_names)
+        validate_pricing_config(
+            ecosystem.pricing, agent_names,
+            interactions=ecosystem.interactions,
+            agent_order=[a.name for a in ecosystem.agents],
+        )
 
     if threshold_health_warning is not None:
         check_threshold_health(ecosystem, threshold_health_warning)
@@ -324,6 +340,41 @@ def validate_damage_function(
             f"second differences are negative at {violations} of {m - 1} points "
             f"in [{t:g}, {t + window:g}]"
         )
+
+
+# The "area_loss" model's curves must be flat at small losses: their slope
+# near 0, f(h) / h, at most this (Step 8c.3).
+_SMALL_LOSS_PROBE: float = 1e-4
+_SMALL_LOSS_SLOPE_TOLERANCE: float = 1e-6
+
+
+def _validate_damage_model(ecosystem: Ecosystem) -> None:
+    """Ecosystem.damage_model is known; under "area_loss" every curve is
+    flat at small losses, so the damage D + (1 − D) × degradation has
+    slope 1 there (the marginal unit costs its average value).
+
+    Raises:
+        ValueError: For an unknown model, or a curve with a positive slope
+            at small losses (e.g. a plain logistic: about 0.25).
+    """
+    model = ecosystem.damage_model
+    if model not in DAMAGE_MODELS:
+        raise ValueError(
+            f"Ecosystem '{ecosystem.name}' damage_model must be one of "
+            f"{list(DAMAGE_MODELS)}, got {model!r}"
+        )
+    if model != "area_loss":
+        return
+    h: float = _SMALL_LOSS_PROBE
+    for agent in ecosystem.agents:
+        slope: float = agent.damage_function(h) / h
+        if slope > _SMALL_LOSS_SLOPE_TOLERANCE:
+            raise ValueError(
+                f"Agent '{agent.name}': under the 'area_loss' damage model the "
+                f"damage curve describes the degradation of the remaining "
+                f"resource and must be flat at small losses (slope near 0 "
+                f"is {slope:.3g}); use e.g. a 'threshold_logistic' curve"
+            )
 
 
 def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
@@ -463,10 +514,17 @@ def check_threshold_health(
             f"threshold health warning level must be in (0.0, 1.0], got {min_health!r}"
         )
     threshold: float = ecosystem.resource.safe_threshold_ratio
-    health: float = ecosystem_health_at(ecosystem, threshold)
+    area_loss: bool = ecosystem.damage_model == "area_loss"
+    # Under "area_loss" the health at depletion t is at most 1 − t by
+    # construction (the area lost takes its services), so the check is on
+    # the degradation of the resource that remains (Step 8c.3).
+    health: float = ecosystem_health_at(ecosystem, threshold, remaining_only=area_loss)
     if health < min_health:
+        what: str = (
+            "health of the remaining resource" if area_loss else "ecosystem health"
+        )
         warnings.warn(
-            f"{ecosystem.name}: ecosystem health at the safe threshold "
+            f"{ecosystem.name}: {what} at the safe threshold "
             f"({threshold:.0%} depletion) is {health:.2f}, below {min_health:.2f}. "
             f"The damage curves or interaction edges put heavy damage inside "
             f"the 'safe' zone (over-steep curves or over-strong edges).",
@@ -566,6 +624,7 @@ def validate_carbon_profile(
     Checks:
         - All tonnage values >= 0
         - soil_release_fraction in [0.0, 1.0]
+        - release_half_life_years >= 0
 
     Raises:
         ValueError: If any constraint is violated.
@@ -590,6 +649,11 @@ def validate_carbon_profile(
         raise ValueError(
             f"{name}: soil_release_fraction must be in [0.0, 1.0], "
             f"got {profile.soil_release_fraction}"
+        )
+    if profile.release_half_life_years < 0.0:
+        raise ValueError(
+            f"{name}: release_half_life_years must be >= 0.0 (0 = all at "
+            f"extraction), got {profile.release_half_life_years}"
         )
 
 
@@ -982,12 +1046,18 @@ def validate_pricing_config(
     config: PricingConfig,
     agent_names: set,
     name: str = "PricingConfig",
+    interactions: Optional[list] = None,
+    agent_order: Optional[list] = None,
 ) -> None:
     """Validate a PricingConfig dataclass.
 
-    Every agent must be anchored (Step 4, C8): an unanchored agent used to
-    be priced at €0. gaia.pricing.anchor_every_agent gives the remaining
-    agents a PLACEHOLDER anchor at their own direct annual service value.
+    Every agent's price must be determined (C8: an unanchored agent used to
+    be priced at €0). Given the ecosystem's ``interactions``, the condition
+    is reachability (Step 8c.6, gaia.pricing.unreachable_agents): an agent
+    without an anchor must be reachable from an anchored one, and its price
+    is derived. Without ``interactions`` (no network to derive from) every
+    agent must be anchored, as in Step 4. gaia.pricing.anchor_every_agent
+    gives agents a PLACEHOLDER anchor at their own direct annual value.
 
     Raises:
         ValueError: If any constraint is violated.
@@ -999,13 +1069,27 @@ def validate_pricing_config(
     for i, anchor in enumerate(config.anchors):
         validate_anchor_point(anchor, agent_names, name=f"{name}.anchors[{i}]")
 
-    unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
-    if unanchored:
-        raise ValueError(
-            f"{name}: every agent must be anchored when pricing is on; no "
-            f"anchor for {unanchored}. Add an AnchorPoint for each (e.g. "
-            f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
-        )
+    if interactions is None:
+        unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
+        if unanchored:
+            raise ValueError(
+                f"{name}: every agent must be anchored when pricing is on and no "
+                f"interactions are given; no anchor for {unanchored}. Add an "
+                f"AnchorPoint for each (e.g. gaia.pricing.anchor_every_agent: the "
+                f"agent's own annual value)."
+            )
+    else:
+        from gaia.pricing import unreachable_agents
+
+        order = list(agent_order) if agent_order is not None else sorted(agent_names)
+        unreachable = unreachable_agents(order, interactions, config.anchors)
+        if unreachable:
+            raise ValueError(
+                f"{name}: no anchored agent reaches {unreachable} along the "
+                f"interaction edges, so their prices are not determined. Anchor "
+                f"them, or an agent upstream of them (Step 8c.6; or "
+                f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
+            )
 
     for agent_key, scarcity_fn in config.scarcity_functions.items():
         if agent_key not in agent_names:

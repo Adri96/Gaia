@@ -111,7 +111,7 @@ def test_gaia_run_help_shows_case_defaults(capsys):
     assert main(["run", "posidonia", "--help"]) == 0
     out = " ".join(capsys.readouterr().out.split())
     assert out.startswith("usage: gaia run posidonia")
-    assert "--total-units N Total number of units (ha) in the resource (default: 4582)" in out
+    assert "--total-units N Total number of units (ha) in the reference resource (default: 4582)" in out
     assert "(default: 50)" in out  # --units
     assert "(default: 50000.0)" in out  # --planting-cost from the file
 

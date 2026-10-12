@@ -56,7 +56,7 @@ def test_what_is_sampled(posidonia_mc):
     names = {s.name for s in posidonia_mc.sampled}
     # documented ranges, carbon first among the drivers
     assert {"carbon.soil_release_fraction", "carbon.soil_carbon_tonnes",
-            "carbon.annual_absorption_tonnes", "damage.logistic_steepness",
+            "carbon.annual_absorption_tonnes", "damage.threshold_logistic_steepness",
             "resource.safe_threshold_ratio"} <= names
     # never: normative, project inputs, irrelevant to extraction, fixed, zeros
     for prefix in ("discount.", "carbon_price.", "restoration.", "succession.",
@@ -64,7 +64,10 @@ def test_what_is_sampled(posidonia_mc):
         assert not any(n.startswith(prefix) for n in names)
     assert not names & {"resource.unit_value", "resource.area_ha"}
     assert not any(n.endswith("dependency_weight") for n in names)  # fixed in the file
-    assert "agent[Posidonia Meadow].annual_value_per_ha" not in names  # zero
+    # every agent carries a ledger value (Step 8c.2), so every one is sampled
+    assert {f"agent[{n}].annual_value_per_ha" for n in (
+        "Posidonia Meadow", "Coralligenous & Red Coral", "Epiphytes & Algae",
+        "Marine Invertebrates", "Marine Megafauna", "Seabirds")} <= names
     release = next(s for s in posidonia_mc.sampled if s.name == "carbon.soil_release_fraction")
     assert (release.low, release.value, release.high, release.documented) == (0.25, 0.63, 1.0, True)
     reasons = posidonia_mc.not_sampled

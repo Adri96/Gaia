@@ -1,8 +1,9 @@
 {
   "gaia_schema": 1,
   "name": "Oak Valley Forest",
-  "description": "Temperate deciduous forest: four agents sharing one placeholder logistic damage curve, valued at a global temperate-forest mean per hectare. Illustrative: every parameter is a placeholder or low-confidence. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "description": "Temperate deciduous forest: four agents whose small losses are priced linearly (damage model area_loss, Step 8d.1), the remaining forest degrading past the threshold along one placeholder curve, valued at a global temperate-forest mean per hectare. Illustrative: every parameter is a placeholder or low-confidence. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
+  "damage_model": "area_loss",
   "resource": {
     "name": "Oak Valley Forest",
     "unit": "trees",
@@ -23,7 +24,7 @@
       "value": 0.3,
       "unit": "ratio",
       "confidence": "placeholder",
-      "note": "Safe extraction threshold; also the inflection of every damage curve."
+      "note": "Safe extraction threshold; under the area_loss damage model (Step 8d.1) the depletion beyond which the REMAINING resource starts to degrade; below it each hectare lost costs its average value."
     }
   },
   "provenance_defaults": {
@@ -44,16 +45,16 @@
       "confidence": "low",
       "note": "Every agent; the dependency weights split it. Figures partly from memory, to be checked against the papers (Step 8); 2007 Int$ used as € with no currency or price-year conversion; a global biome mean, not a site valuation."
     },
-    "damage": "logistic"
+    "damage": "threshold_logistic"
   },
   "damage_curves": {
-    "logistic": {
-      "type": "logistic",
+    "threshold_logistic": {
+      "type": "threshold_logistic",
       "steepness": {
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+        "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B)."
       }
     }
   },
@@ -194,14 +195,21 @@
   },
   "pricing": {
     "reference_area_ha": 40.0,
-    "anchor_every_agent": true,
+    "anchor_every_agent": false,
     "anchors": [
       {
         "agent_name": "Watershed & Local Climate",
         "anchor_value": 7640.0,
-        "source": "de Groot et al. 2012, temperate forests, (fresh) water supply Int$191/ha/yr × 40 ha",
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
         "confidence": "low",
-        "description": "Water supply: €191/ha/yr × 40 ha (figure from memory, verify)"
+        "description": "A market-based value (Step 8d.6): water (provisioning) Int$, Int$191/ha/yr x 40 ha, a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')"
+      },
+      {
+        "agent_name": "Vegetation & Flora",
+        "anchor_value": 11960.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices",
+        "confidence": "low",
+        "description": "A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$, Int$299/ha/yr x 40 ha, a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream"
       }
     ],
     "scarcity_functions": {

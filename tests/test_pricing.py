@@ -804,13 +804,19 @@ class TestExplicitFailure:
         with pytest.raises(ValueError, match="Dimension mismatch"):
             solve_linear_systems([[1.0]], [[1.0, 2.0]])
 
-    def test_unanchored_agent_rejected_by_solver(self):
+    def test_unreachable_agent_rejected_by_solver(self):
+        """An agent with no anchor and nothing anchored upstream has no
+        determined price (it used to be priced at €0, C8)."""
         pricing = PricingConfig(
             anchors=[AnchorPoint("A", 100.0, "test", "high", "test")],
             scarcity_functions={},
         )
-        with pytest.raises(ValueError, match="must be anchored"):
+        with pytest.raises(ValueError, match="no anchor reaches"):
             solve_prices(["A", "B"], {"A": 1.0, "B": 1.0}, [], pricing)
+        # B upstream of A does not help: value flows source → target only
+        edge = InteractionEdge("B", "A", 0.5, "dependency", "B → A")
+        with pytest.raises(ValueError, match=r"no anchor reaches: \['B'\]"):
+            solve_prices(["A", "B"], {"A": 1.0, "B": 1.0}, [edge], pricing)
 
     def test_extraction_fails_explicitly_at_divergent_depletion(self):
         from gaia.cases.costa_brava import build_costa_brava_ecosystem
@@ -832,7 +838,8 @@ class TestExplicitFailure:
 
 
 class TestAnchoring:
-    """Every agent must be anchored when pricing is on."""
+    """Every price must be determined: anchored, or reachable from an anchor
+    (Step 8c.6)."""
 
     def test_validation_rejects_unanchored_agent(self):
         import dataclasses
@@ -843,7 +850,7 @@ class TestAnchoring:
         eco = build_forest_ecosystem(total_trees=100, with_pricing=True)
         validate_ecosystem(eco)
         eco.pricing = dataclasses.replace(eco.pricing, anchors=eco.pricing.anchors[:1])
-        with pytest.raises(ValueError, match="every agent must be anchored"):
+        with pytest.raises(ValueError, match="no anchored agent reaches"):
             validate_ecosystem(eco)
 
     def test_anchor_every_agent_derives_placeholders(self):
@@ -863,22 +870,24 @@ class TestAnchoring:
         assert "PLACEHOLDER" in by_agent["B"].source
         assert by_agent["B"].confidence == "low"
 
-    @pytest.mark.parametrize("case", ["forest", "costa_brava", "posidonia", "amazon_forest"])
-    def test_shipped_cases_anchor_every_agent_in_eur_per_year(self, case):
-        """Derived anchors equal the agent's static annual value (€/yr), so
-        anchors and static values share one scale."""
-        import importlib
+    @pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest", "posidonia"])
+    def test_shipped_cases_price_from_a_few_sourced_anchors(self, case):
+        """Step 8d.6: every case prices from two or three sourced anchors
+        (no PLACEHOLDER anchor left); every root agent (no incoming edge) is
+        anchored, every other agent is reached, and its price is derived."""
+        from gaia.cases import load_case
+        from gaia.pricing import unreachable_agents
 
-        module = importlib.import_module(f"gaia.cases.{case}")
-        builder = getattr(module, f"build_{case.replace('_forest', '') if case == 'amazon_forest' else case}_ecosystem")
-        eco = builder(with_pricing=True)
-        area = eco.resource.area_ha
-        anchored = {a.agent_name for a in eco.pricing.anchors}
-        assert anchored == {a.name for a in eco.agents}
-        for anchor in eco.pricing.anchors:
-            agent = next(a for a in eco.agents if a.name == anchor.agent_name)
-            if anchor.source.startswith("PLACEHOLDER: no documented anchor"):
-                assert anchor.anchor_value == pytest.approx(agent.annual_value(area))
+        eco = load_case(case).build_ecosystem(with_pricing=True)
+        assert not load_case(case).pricing.anchor_every_agent
+        anchors = eco.pricing.anchors
+        assert 2 <= len(anchors) <= 3
+        assert all(not a.source.startswith("PLACEHOLDER") and "doi:" in a.source for a in anchors)
+        names = [a.name for a in eco.agents]
+        targets = {e.target for e in eco.interactions if e.strength > 0}
+        roots = {n for n in names if n not in targets}
+        assert roots <= {a.agent_name for a in anchors}
+        assert unreachable_agents(names, eco.interactions, anchors) == []
 
 
 class TestExperimentalLabel:
@@ -920,3 +929,134 @@ class TestExperimentalLabel:
         with pytest.raises(SystemExit):
             case_main(load_case("forest"), ["--help"])
         assert "EXPERIMENTAL" in " ".join(capsys.readouterr().out.split())
+
+
+# ── Step 8c.6: a few anchors determine every price ───────────────────────────
+
+
+class TestDerivedPrices:
+    """Reachability replaces "every agent anchored": an unanchored agent
+    reachable from an anchored one gets a positive, derived price
+    V_i = S_i Σ_j W_ij V_j."""
+
+    def _chain(self):
+        edges = [
+            InteractionEdge("A", "B", 0.5, "dependency", "A → B"),
+            InteractionEdge("B", "C", 0.4, "dependency", "B → C"),
+            InteractionEdge("A", "C", 0.2, "dependency", "A → C"),
+        ]
+        pricing = PricingConfig(
+            anchors=[AnchorPoint("A", 100.0, "test", "high", "test")],
+            scarcity_functions={},
+            default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
+        )
+        return ["A", "B", "C"], edges, pricing
+
+    def test_one_anchor_prices_its_downstream(self):
+        from gaia.pricing import derived_agents, unreachable_agents
+
+        names, edges, pricing = self._chain()
+        assert unreachable_agents(names, edges, pricing.anchors) == []
+        healths = {"A": 1.0, "B": 0.5, "C": 0.8}
+        pr = solve_prices(names, healths, edges, pricing)
+        s = {n: compute_scarcity(h, pricing.default_scarcity) for n, h in healths.items()}
+        assert pr.prices["A"] == pytest.approx(s["A"] * 100.0, rel=1e-12)
+        assert pr.prices["B"] == pytest.approx(s["B"] * 0.5 * pr.prices["A"], rel=1e-12)
+        assert pr.prices["C"] == pytest.approx(
+            s["C"] * (0.4 * pr.prices["B"] + 0.2 * pr.prices["A"]), rel=1e-12)
+        assert derived_agents(pr) == ["B", "C"]
+        assert pr.anchor_contributions["A"] == pytest.approx(1.0)
+
+    def test_derived_prices_scale_with_the_anchor_and_the_edges(self):
+        """Derived prices carry no information of their own: doubling the
+        anchor doubles them, and they move one for one with edge strengths."""
+        import dataclasses
+
+        names, edges, pricing = self._chain()
+        healths = {n: 1.0 for n in names}
+        base = solve_prices(names, healths, edges, pricing).prices
+        doubled = solve_prices(names, healths, edges, dataclasses.replace(
+            pricing, anchors=[AnchorPoint("A", 200.0, "test", "high", "test")])).prices
+        for n in names:
+            assert doubled[n] == pytest.approx(2 * base[n], rel=1e-12)
+        stronger = [dataclasses.replace(edges[0], strength=1.0)] + edges[1:]
+        assert solve_prices(names, healths, stronger, pricing).prices["B"] == pytest.approx(
+            2 * base["B"], rel=1e-12)
+
+    def test_cycle_with_derived_agents_is_certified(self):
+        """Direct iteration certifies convergence although S·A has zeros."""
+        names = ["A", "B", "C"]
+        # row and column sums reach 1.5, but ρ(W) = √(0.9 × 0.5) ≈ 0.67
+        edges = [
+            InteractionEdge("A", "B", 0.9, "dependency", ""),
+            InteractionEdge("A", "C", 0.6, "dependency", ""),
+            InteractionEdge("B", "C", 0.9, "dependency", ""),
+            InteractionEdge("C", "B", 0.5, "dependency", ""),
+        ]
+        pricing = PricingConfig(
+            anchors=[AnchorPoint("A", 10.0, "test", "high", "test")],
+            scarcity_functions={},
+            default_scarcity=ScarcityFunction("smooth", 1.0, 0.3, 50.0),
+        )
+        pr = solve_prices(names, {"A": 1.0, "B": 1.0, "C": 1.0}, edges, pricing)
+        assert pr.spectral_radius_bound < 1.0
+        assert pr.convergence_check == "direct_iteration"
+        assert all(p > 0.0 for p in pr.prices.values())
+
+    def test_random_networks_price_exactly_the_reachable_agents(self):
+        """Property: solve_prices succeeds with every price > 0 iff every
+        unanchored agent is reachable from an anchor (when ρ(S·W) < 1)."""
+        import random
+
+        from gaia.pricing import unreachable_agents
+
+        rng = random.Random(8)
+        for _ in range(300):
+            n = rng.randint(2, 7)
+            names = [f"X{i}" for i in range(n)]
+            edges = [
+                InteractionEdge(names[i], names[j], rng.uniform(0.05, 0.3), "dependency", "")
+                for i in range(n) for j in range(n) if i != j and rng.random() < 0.3
+            ]
+            anchored = [x for x in names if rng.random() < 0.35] or [names[0]]
+            pricing = PricingConfig(
+                anchors=[AnchorPoint(x, rng.uniform(1.0, 100.0), "t", "high", "t") for x in anchored],
+                scarcity_functions={},
+            )
+            healths = {x: 1.0 for x in names}
+            unreachable = unreachable_agents(names, edges, pricing.anchors)
+            try:
+                pr = solve_prices(names, healths, edges, pricing)
+            except PricingConvergenceError:
+                continue  # ρ(S·W) >= 1 is a separate failure
+            except ValueError as exc:
+                assert unreachable and "no anchor reaches" in str(exc)
+                continue
+            assert not unreachable
+            assert all(p > 0.0 for p in pr.prices.values())
+
+    def test_posidonia_three_sourced_anchors(self):
+        """Posidonia: three sourced anchors (the meadow, the only root, and
+        two market prices), no placeholder; the other seven are derived and
+        labelled so in the provenance, the text and the JSON."""
+        import json
+
+        from gaia.cases import load_case
+        from gaia.report import format_report
+        from gaia.serialization import to_json
+        from gaia.simulation import run_extraction
+
+        eco = load_case("posidonia").build_ecosystem(with_pricing=True, total_units=1000)
+        anchors = {a.agent_name: a for a in eco.pricing.anchors}
+        assert set(anchors) == {"Posidonia Meadow", "Fish Populations", "Coastal Protection"}
+        assert not any(a.source.startswith("PLACEHOLDER") for a in anchors.values())
+        area = eco.resource.area_ha
+        for a in eco.agents:
+            if a.name in anchors:
+                assert anchors[a.name].anchor_value == pytest.approx(a.annual_value(area), rel=1e-12)
+        derived = {p.name for p in eco.provenance if p.name.startswith("pricing.derived[")}
+        assert len(derived) == 7
+        result = run_extraction(eco, 300)
+        assert format_report(result).count("(derived)") == 8  # 7 rows + the legend
+        block = json.loads(to_json(result, include_steps=False))["pricing"]
+        assert len(block["derived_prices"]) == 7

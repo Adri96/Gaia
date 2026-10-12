@@ -47,7 +47,7 @@ def benchmark_comparison(result: Any, benchmarks: Sequence[Dict[str, Any]]) -> O
         return None
     eco = result.ecosystem
     resource = eco.resource
-    full: float = sum(a.dependency_weight * a.annual_value_per_ha for a in eco.agents)
+    full: float = sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
     burial: float = 0.0
     if resource.carbon_profile is not None and result.discount is not None:
         burial = (
@@ -83,8 +83,8 @@ def benchmark_comparison(result: Any, benchmarks: Sequence[Dict[str, Any]]) -> O
         "annual_externality_eur_yr": round(result.annual_externality, 2),
         "method": (
             "Benchmarks in their own currency and price year, not converted: an "
-            "order-of-magnitude comparison. Gaia's carbon release (one-off) is "
-            "not in any per-hectare yearly figure."
+            "order-of-magnitude comparison. Gaia's carbon release (a stock, "
+            "released at once or over time) is not in any per-hectare yearly figure."
         ),
         "benchmarks": rows,
     }

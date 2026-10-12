@@ -16,6 +16,10 @@ A document (every key below is optional unless marked *required*):
     name                *required*, the ecosystem name
     description         free text (not used by the model)
     calibration_regime  "A" | "B" | null (gaia.models.CalibrationRegime)
+    damage_model        "direct" (default) | "area_loss" (gaia.models.Ecosystem:
+                        damage = depletion + (1 − depletion) × degradation,
+                        slope 1 at small losses; curves flat there, e.g.
+                        "threshold_logistic")
     resource            *required*: name, unit, total_units*, unit_value*,
                         safe_threshold_ratio*, and the area as area_ha or
                         units_per_ha (see below)
@@ -26,9 +30,13 @@ A document (every key below is optional unless marked *required*):
     agents              *required*, a non-empty list: name*, description,
                         dependency_weight*, annual_value_per_ha, damage (a
                         curve name or an inline curve), trophic_level,
-                        is_keystone, keystone_threshold
+                        is_keystone, keystone_threshold, sites and
+                        site_share (see "Site-restricted values" below)
     interactions        list: source*, target*, strength*, type, description
-    carbon              gaia.models.CarbonProfile fields (all four required)
+    carbon              gaia.models.CarbonProfile fields (the four tonnage
+                        and fraction fields required; release_half_life_years
+                        optional, default 0 = all released at extraction),
+                        and optional release_fates (see "Release fates" below)
     resilience          gaia.models.ResilienceConfig fields
     substrate           gaia.models.SubstrateProfile fields (substrate_type*)
     discount            gaia.models.DiscountConfig fields; rate_schedule is a
@@ -43,14 +51,20 @@ A document (every key below is optional unless marked *required*):
     recovery            the recovery curve of every agent:
                         {type: logistic, steepness} | {type: linear, slope}
     succession          gaia.models.SuccessionCurve fields (all required)
+    service_ledger      the final ecosystem services behind the agent values
+                        (Step 8c.2; see SERVICE_LEDGER below)
     run                 run defaults: units (the default --units), report_note
                         (appended to the text report), json_notes (list),
                         benchmarks (list of published per-hectare values:
                         name, low, high, optional central, unit, source,
                         note, includes_carbon; gaia.benchmarks)
 
-Curves: {"type": "logistic", "steepness": 12}, {"type": "exponential",
-"base": 2} or {"type": "piecewise", "pre_slope_ratio": 0.1}, each with an
+Curves: {"type": "logistic", "steepness": 12}, {"type": "threshold_logistic",
+"steepness": 12} (zero up to the threshold, a logistic after it),
+{"type": "threshold_exponential", "base": 2} (zero up to the threshold, an
+exponential after it),
+{"type": "exponential", "base": 2} or {"type": "piecewise",
+"pre_slope_ratio": 0.1}, each with an
 optional "threshold" (default: the resource's safe threshold, so a
 --threshold override moves every curve that does not set its own).
 
@@ -59,6 +73,45 @@ density: area = total_units / units_per_ha, so changing the number of units
 changes the area). With "unit": "ha" each unit is one hectare and the area
 always equals total_units. "unit" is otherwise the plural unit name, as in
 "trees/ha".
+
+Service ledger (Step 8c.2): a list of final services, each counted once
+and owned by one agent: {service*, agent*, value* (€/ha/yr at full
+damage), section* ("provisioning" | "regulation and maintenance" |
+"cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
+split_of, share, share_source, site_restricted}. An entry of a
+site-restricted agent says "site_restricted": true and books the value per
+hectare near the sites, like the agent's annual_value_per_ha (a run
+multiplies both by the agent's site_share). A service that is a share of another
+(split_of, with its share and the share's source) is the part of a final
+service moved to the agent that is its best owner. Parsing rejects a
+service listed twice, an unknown agent and a value <= 0; ``Case.
+ledger_check()`` lists the agents whose weight × annual_value_per_ha
+differs from the sum of their ledger values (the shipped files have none;
+it is not enforced on parse, so the Monte Carlo can perturb agent values).
+
+Site-restricted values (Step 8d.4): an agent whose service is enjoyed only
+near some sites (for Posidonia, the meadow's diving amenity near dive sites)
+names them, "sites": "dive sites", and gives "site_share": the share of the
+reference resource near them (a parameter with provenance, in (0, 1]; for
+a regional stock, the actual regional share). Its annual_value_per_ha is
+then the value per hectare NEAR the sites, and a run uses
+annual_value_per_ha × site_share (gaia.models.Agent.site_share). A project
+states its own share (``build_ecosystem(site_share=F)``; ``gaia run ...
+--<site>-share F``, e.g. --dive-site-share, recorded as user-supplied);
+explicit pricing anchors scale by F / the document's share. Its
+service-ledger entries carry "site_restricted": true and book the value
+per hectare near the sites. Every site-restricted agent of a case names
+the same sites.
+
+Release fates (Step 8d.2): carbon.release_fates names what a project can do
+to the soil (for Posidonia, the matte) and the release fraction and
+half-life each fate implies: {"subject": "matte", "default": "exposed",
+"fates": {"<fate>": {"description"*, "soil_release_fraction"*,
+"release_half_life_years"*, "basis"*, "confidence"*}}}. The default fate
+documents the carbon block's own values (``Case.fate_check()``). ``gaia run`` then offers
+``--<subject>-fate {<fates>}``, a preset of --carbon-release-fraction and
+--carbon-release-half-life (each still overridable); a fate other than the
+default is recorded as a user-supplied project input.
 
 Provenance (Step 5): every numeric parameter is either a bare number or an
 object {"value", "unit", "source", "confidence", "note"} (value, unit and
@@ -111,9 +164,13 @@ from gaia.damage import (
     KERNEL_EXPONENTIAL,
     KERNEL_LOGISTIC,
     KERNEL_PIECEWISE,
+    KERNEL_THRESHOLD_EXPONENTIAL,
+    KERNEL_THRESHOLD_LOGISTIC,
     exponential_damage,
     logistic_damage,
     piecewise_damage,
+    threshold_exponential_damage,
+    threshold_logistic_damage,
 )
 from gaia.models import (
     Agent,
@@ -143,17 +200,21 @@ DEFAULT_LABELS: Dict[str, str] = {
     "unit_value": "--unit-value / unit_value",
     "safe_threshold_ratio": "--threshold",
     "area_ha": "--area-ha / area_ha",
+    "soil_release_fraction": "--carbon-release-fraction",
+    "release_half_life_years": "--carbon-release-half-life",
 }
 
 _TOP_LEVEL = (
-    "gaia_schema", "name", "description", "calibration_regime", "resource",
+    "gaia_schema", "name", "description", "calibration_regime", "damage_model", "resource",
     "provenance_defaults", "agent_defaults", "damage_curves", "agents",
     "interactions", "carbon", "resilience", "substrate", "discount", "pricing",
-    "restoration", "recovery", "succession", "run",
+    "restoration", "recovery", "succession", "service_ledger", "run",
 )
 
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
     "logistic": (logistic_damage, ("steepness",)),
+    "threshold_logistic": (threshold_logistic_damage, ("steepness",)),
+    "threshold_exponential": (threshold_exponential_damage, ("base",)),
     "exponential": (exponential_damage, ("base",)),
     "piecewise": (piecewise_damage, ("pre_slope_ratio",)),
 }
@@ -166,6 +227,8 @@ _CARBON_FIELDS = (
     "stored_carbon_tonnes", "annual_absorption_tonnes", "soil_carbon_tonnes",
     "soil_release_fraction",
 )
+_CARBON_OPTIONAL = ("release_half_life_years",)
+_FATE_FIELDS = ("description", "soil_release_fraction", "release_half_life_years", "basis", "confidence")
 _RESILIENCE_FIELDS = (
     "warning_zone_width", "confidence_green", "confidence_yellow", "confidence_red",
     "irreversibility_flag_ratio",
@@ -377,6 +440,10 @@ class _AgentSpec:
     trophic_level: int
     is_keystone: bool
     keystone_threshold: float
+    # Step 8d.4: the share of the resource near the sites where the value
+    # applies (None: everywhere), and what the sites are
+    site_share: Optional[float] = None
+    sites: str = ""
 
 
 @dataclass(frozen=True)
@@ -402,6 +469,7 @@ class Case:
         area: The fixed area (area_ha) or None.
         density: The reference density (units_per_ha) or None.
         calibration_regime: CalibrationRegime or None.
+        damage_model: "direct" or "area_loss" (gaia.models.Ecosystem).
         units: Default number of units of a run (run.units).
         report_note: Text appended to the text report.
         json_notes: Notes added to the JSON output.
@@ -418,6 +486,7 @@ class Case:
     area: Optional[Quantity]
     density: Optional[Quantity]
     calibration_regime: Optional[CalibrationRegime]
+    damage_model: str
     agents: Tuple[_AgentSpec, ...]
     interactions: Tuple[Tuple[str, str, float, str, str], ...]
     buckets: Dict[str, Tuple[Param, ...]]
@@ -435,6 +504,9 @@ class Case:
     report_note: str = ""
     json_notes: Tuple[str, ...] = field(default_factory=tuple)
     benchmarks: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
+    service_ledger: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
+    # carbon.release_fates (Step 8d.2): {"subject", "default", "fates": {...}} or None
+    release_fates: Optional[Dict[str, Any]] = field(default=None, compare=False)
     # The parsed document and the JSON path of every recorded parameter, for
     # gaia.uncertainty (which re-parses perturbed copies of the document)
     document: Optional[Dict[str, Any]] = field(default=None, compare=False, repr=False)
@@ -489,30 +561,84 @@ class Case:
         area_ha: Optional[float] = None,
         with_pricing: Optional[bool] = None,
         labels: Optional[Dict[str, str]] = None,
+        resource_name: Optional[str] = None,
+        carbon_release_fraction: Optional[float] = None,
+        carbon_release_half_life: Optional[float] = None,
+        carbon_fate: Optional[str] = None,
+        site_share: Optional[float] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
+
+        The reference resource — the stock whose depletion the damage
+        curves see — is the document's (resource.name, total_units, area);
+        ``total_units``/``area_ha`` and ``resource_name`` replace it with,
+        e.g., the specific meadow a project affects (Step 8c.4).
 
         Args:
             total_units, safe_threshold_ratio, unit_value, area_ha: Override
                 the document's value; a different value is recorded as
-                user-supplied (gaia.provenance.user_or_default).
+                user-supplied (gaia.provenance.user_or_default). With unit
+                "ha" the area is the number of units, so ``area_ha`` (a
+                whole number of hectares) sets both; ``total_units`` may
+                then only repeat it, or stay at the document's value.
             with_pricing: Attach the EXPERIMENTAL pricing configuration
                 (default: the document's pricing.enabled).
             labels: How the user sets each value, for the user-supplied
                 provenance (default DEFAULT_LABELS).
+            resource_name: Name of the reference resource (default: the
+                document's resource.name).
+            carbon_release_fraction, carbon_release_half_life: Project
+                inputs (Step 8c.5) replacing the document's
+                carbon.soil_release_fraction and
+                carbon.release_half_life_years (what the project does to the
+                soil or matte); recorded as user-supplied.
+            carbon_fate: A fate of carbon.release_fates (Step 8d.2, e.g.
+                "excavated"): a preset of both inputs, each still overridden
+                by an explicit carbon_release_fraction /
+                carbon_release_half_life; recorded as user-supplied, with
+                the fate's basis, when it differs from the case default.
+            site_share: The share (0-1) of the affected resource near the
+                sites of the case's site-restricted agents (Step 8d.4, e.g.
+                the meadow near dive sites); default the documented
+                regional share. Recorded as user-supplied.
 
         Raises:
-            ValueError: With unit "ha", if area_ha differs from total_units;
-                with pricing requested and no pricing block.
+            ValueError: With unit "ha", if area_ha is not a whole number of
+                hectares or conflicts with an explicit total_units; with
+                pricing requested and no pricing block.
         """
         lab = dict(DEFAULT_LABELS, **(labels or {}))
+        if self.unit == "ha" and area_ha is not None:
+            if not (math.isfinite(area_ha) and area_ha > 0 and area_ha == int(area_ha)):
+                raise ValueError(
+                    f"{self.resource_name}: the unit is the hectare, so area_ha must be "
+                    f"a whole number of hectares > 0, got {area_ha}"
+                )
+            if total_units is not None and total_units not in (int(area_ha), self.total_units.value):
+                raise ValueError(
+                    f"{self.resource_name}: the unit is the hectare, so area_ha "
+                    f"({area_ha:g}) must equal the number of units ({total_units})"
+                )
+            total_units = int(area_ha)
+            lab["total_units"] = lab["area_ha"]
         total, total_param = _override(self.total_units, total_units, lab["total_units"])
         threshold, threshold_param = _override(
             self.safe_threshold_ratio, safe_threshold_ratio, lab["safe_threshold_ratio"]
         )
         value, value_param = _override(self.unit_value, unit_value, lab["unit_value"])
         area, a_param = self._area(total, area_ha, lab)
+        if carbon_fate is not None:
+            fate = self.release_fate(carbon_fate)
+            label = f"--{self.release_fates['subject']}-fate {carbon_fate}: {fate['basis']}"  # type: ignore[index]
+            if carbon_release_fraction is None:
+                carbon_release_fraction = fate["soil_release_fraction"]
+                lab["soil_release_fraction"] = label
+            if carbon_release_half_life is None:
+                carbon_release_half_life = fate["release_half_life_years"]
+                lab["release_half_life_years"] = label
+        carbon, carbon_params = self._carbon(carbon_release_fraction, carbon_release_half_life, lab)
 
+        shares = self._site_shares(site_share)
         agents = [
             Agent(
                 name=a.name,
@@ -523,17 +649,19 @@ class Case:
                 trophic_level=a.trophic_level,
                 is_keystone=a.is_keystone,
                 keystone_threshold=a.keystone_threshold,
+                site_share=shares.get(a.name, 1.0),
+                sites=a.sites,
             )
             for a in self.agents
         ]
         interactions = [InteractionEdge(*edge) for edge in self.interactions]
         resource = Resource(
-            name=self.resource_name,
+            name=self.resource_name if resource_name is None else resource_name,
             total_units=total,
             safe_threshold_ratio=threshold,
             unit_value=value,
             area_ha=area,
-            carbon_profile=CarbonProfile(**self.carbon) if self.carbon is not None else None,
+            carbon_profile=CarbonProfile(**carbon) if carbon is not None else None,
             resilience=ResilienceConfig(**self.resilience) if self.resilience is not None else None,
             substrate=SubstrateProfile(**self.substrate) if self.substrate is not None else None,
             discount=_discount_config(self.discount) if self.discount is not None else None,
@@ -544,13 +672,23 @@ class Case:
         if with_pricing:
             if self.pricing is None:
                 raise ValueError(f"{self.name}: the document has no pricing block")
-            pricing = self._pricing(agents, area)
+            pricing = self._pricing(agents, area, shares)
 
         provenance = [p for p in (total_param, a_param, value_param, threshold_param) if p is not None]
         for bucket in _BUCKETS:
-            provenance.extend(self.buckets.get(bucket, ()))
+            if bucket == "carbon":
+                provenance.extend(carbon_params)
+                continue
+            params = list(self.buckets.get(bucket, ()))
+            if bucket == "agent_values" and site_share is not None:
+                params = [
+                    user_or_default(p, float(site_share), f"--{self.site_input}")
+                    if p.name.endswith("].site_share") else p
+                    for p in params
+                ]
+            provenance.extend(params)
         if pricing is not None:
-            provenance.extend(anchor_params(pricing))
+            provenance.extend(anchor_params(pricing, [a.name for a in agents]))
         return Ecosystem(
             name=self.name,
             resource=resource,
@@ -558,6 +696,7 @@ class Case:
             interactions=interactions,
             pricing=pricing,
             calibration_regime=self.calibration_regime,
+            damage_model=self.damage_model,
             provenance=provenance,
         )
 
@@ -584,12 +723,117 @@ class Case:
         param = self.area.param
         return area, user_or_default(param, area, lab["area_ha"]) if param else None
 
-    def _pricing(self, agents: list, area: float) -> PricingConfig:
+    def _carbon(
+        self,
+        fraction: Optional[float],
+        half_life: Optional[float],
+        lab: Dict[str, str],
+    ) -> Tuple[Optional[Dict[str, float]], List[Param]]:
+        """The carbon fields and their Params, with the project's inputs
+        (release fraction, release half-life) replacing the document's."""
+        params: List[Param] = list(self.buckets.get("carbon", ()))
+        given = {"soil_release_fraction": fraction, "release_half_life_years": half_life}
+        if all(v is None for v in given.values()):
+            return self.carbon, params
+        if self.carbon is None:
+            raise ValueError(
+                f"{self.name}: the case has no carbon profile, so the carbon "
+                f"release fraction and half-life cannot be set"
+            )
+        carbon = dict(self.carbon)
+        for key, val in given.items():
+            if val is None:
+                continue
+            carbon[key] = float(val)
+            name = f"carbon.{key}"
+            idx = next((i for i, p in enumerate(params) if p.name == name), None)
+            if idx is not None:
+                params[idx] = user_or_default(params[idx], float(val), lab[key])
+            elif float(val) != self.carbon.get(key, 0.0):
+                params.append(Param(
+                    value=float(val),
+                    unit="fraction" if key == "soil_release_fraction" else "years",
+                    source=f"user-supplied ({lab[key]})",
+                    confidence=Confidence.USER,
+                    note="project input",
+                    name=name,
+                ))
+        return carbon, params
+
+    @property
+    def site_restricted_agents(self) -> List[str]:
+        """The agents whose value applies only near some sites (Step 8d.4)."""
+        return [a.name for a in self.agents if a.site_share is not None]
+
+    @property
+    def sites(self) -> str:
+        """The sites of the site-restricted agents (e.g. "dive sites"), or ""."""
+        return next((a.sites for a in self.agents if a.site_share is not None), "")
+
+    @property
+    def site_input(self) -> str:
+        """The flag name of the site share, from the sites ("dive sites" ->
+        "dive-site-share"), or ""."""
+        return site_flag(self.sites) if self.sites else ""
+
+    @property
+    def default_site_share(self) -> Optional[float]:
+        """The documented regional share of the site-restricted agents, or None."""
+        return next((a.site_share for a in self.agents if a.site_share is not None), None)
+
+    def _site_shares(self, given: Optional[float]) -> Dict[str, float]:
+        """{site-restricted agent: the share used} (Step 8d.4)."""
+        if given is not None:
+            if not self.site_restricted_agents:
+                raise ValueError(f"{self.name}: the case has no site-restricted agent, so a site share cannot be set")
+            if not (isinstance(given, (int, float)) and math.isfinite(given) and 0.0 <= given <= 1.0):
+                raise ValueError(f"{self.name}: the site share must be in [0, 1], got {given!r}")
+        return {
+            a.name: float(given) if given is not None else a.site_share
+            for a in self.agents if a.site_share is not None
+        }
+
+    def release_fate(self, name: str) -> Dict[str, Any]:
+        """The fate ``name`` of carbon.release_fates (Step 8d.2).
+
+        Raises:
+            ValueError: If the case has no release fates or no such fate.
+        """
+        if self.release_fates is None:
+            raise ValueError(f"{self.name}: the case defines no carbon release fates")
+        fates = self.release_fates["fates"]
+        if name not in fates:
+            raise ValueError(
+                f"{self.name}: unknown {self.release_fates['subject']} fate {name!r} "
+                f"(defined: {', '.join(fates)})"
+            )
+        return dict(fates[name])
+
+    def fate_check(self) -> List[str]:
+        """The carbon fields on which the default release fate and the carbon
+        block disagree (empty when they agree, or without fates)."""
+        if self.release_fates is None or self.carbon is None:
+            return []
+        fate = self.release_fates["fates"][self.release_fates["default"]]
+        return [
+            f"{key}: default fate {fate[key]:g}, carbon block {self.carbon.get(key, 0.0):g}"
+            for key in ("soil_release_fraction", "release_half_life_years")
+            if fate[key] != self.carbon.get(key, 0.0)
+        ]
+
+    def _pricing(self, agents: list, area: float, shares: Optional[Dict[str, float]] = None) -> PricingConfig:
         assert self.pricing is not None
         spec = self.pricing
+        # The anchor of a site-restricted agent is stated at its regional
+        # share; it scales with the share used (Step 8d.4).
+        defaults = {a.name: a.site_share for a in self.agents if a.site_share is not None}
+        factor = {name: (shares or {}).get(name, share) / share for name, share in defaults.items()}
         config = dataclasses.replace(
             spec.config,
-            anchors=[dataclasses.replace(a) for a in spec.config.anchors],
+            anchors=[
+                dataclasses.replace(a, anchor_value=a.anchor_value * factor.get(a.agent_name, 1.0))
+                for a in spec.config.anchors
+            ],
             scarcity_functions={k: dataclasses.replace(v) for k, v in spec.config.scarcity_functions.items()},
             default_scarcity=dataclasses.replace(spec.config.default_scarcity),
         )
@@ -644,6 +888,39 @@ class Case:
         curve = self.recovery or _Curve("logistic", (), None, "$.recovery")
         threshold = ecosystem.resource.safe_threshold_ratio
         return [_build_curve(curve, threshold, _RECOVERY_FACTORIES) for _ in ecosystem.agents]
+
+    # ── Service ledger ────────────────────────────────────────────────────────
+
+    def ledger_by_agent(self, regional: bool = False) -> Dict[str, float]:
+        """{agent: sum of its service_ledger values (€/ha/yr; a
+        site-restricted entry per hectare near its sites, or, with
+        ``regional``, × the agent's documented site_share)}."""
+        shares = {a.name: a.site_share for a in self.agents if a.site_share is not None}
+        out: Dict[str, float] = {}
+        for entry in self.service_ledger:
+            value = entry["value"]
+            if regional and entry["site_restricted"]:
+                value *= shares[entry["agent"]]
+            out[entry["agent"]] = out.get(entry["agent"], 0.0) + value
+        return out
+
+    def ledger_check(self, rel_tol: float = 1e-9) -> List[str]:
+        """Agents whose euro value at full damage (dependency_weight ×
+        annual_value_per_ha) is not the sum of their ledger services; empty
+        when the ledger accounts for every euro (or there is no ledger)."""
+        if not self.service_ledger:
+            return []
+        ledger = self.ledger_by_agent()
+        problems: List[str] = []
+        for a in self.agents:
+            value = a.weight * a.value
+            booked = ledger.get(a.name, 0.0)
+            if not math.isclose(value, booked, rel_tol=rel_tol, abs_tol=1e-12):
+                problems.append(
+                    f"{a.name}: weight × annual_value_per_ha = {value:.6g} €/ha/yr, "
+                    f"ledger = {booked:.6g}"
+                )
+        return problems
 
     # ── Running ───────────────────────────────────────────────────────────────
 
@@ -757,6 +1034,10 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         if regime_raw not in valid:
             raise ValueError(f"$.calibration_regime: expected one of {valid} or null, got {regime_raw!r}")
         regime = CalibrationRegime(regime_raw)
+    from gaia.propagation import DAMAGE_MODELS
+    damage_model = _str(doc.get("damage_model", "direct"), "$.damage_model")
+    if damage_model not in DAMAGE_MODELS:
+        raise ValueError(f"$.damage_model: expected one of {list(DAMAGE_MODELS)}, got {damage_model!r}")
 
     reader = _Reader(_parse_provenance_defaults(doc.get("provenance_defaults", {})))
     buckets: Dict[str, List[Param]] = {b: [] for b in _BUCKETS}
@@ -768,9 +1049,15 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     interactions = _parse_interactions(doc.get("interactions", []), reader, set(names), buckets["edges"])
 
     carbon = resilience = substrate = discount = None
+    release_fates: Optional[Dict[str, Any]] = None
     if doc.get("carbon") is not None:
-        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS)
-        carbon = {k: reader.number(obj[k], _key("$.carbon", k), f"carbon.{k}", buckets["carbon"]) for k in _CARBON_FIELDS}
+        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS, _CARBON_OPTIONAL + ("release_fates",))
+        carbon = {
+            k: reader.number(obj[k], _key("$.carbon", k), f"carbon.{k}", buckets["carbon"])
+            for k in _CARBON_FIELDS + _CARBON_OPTIONAL if k in obj
+        }
+        if "release_fates" in obj:
+            release_fates = _parse_release_fates(obj["release_fates"], "$.carbon.release_fates")
     if doc.get("resilience") is not None:
         obj = _object(doc["resilience"], "$.resilience", (), _RESILIENCE_FIELDS)
         resilience = {
@@ -806,6 +1093,45 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
             for k in _SUCCESSION_FIELDS
         }
 
+    ledger = tuple(
+        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names))
+        for i, e in enumerate(_list(doc.get("service_ledger", []), "$.service_ledger"))
+    )
+    seen: Dict[str, int] = {}
+    for i, entry in enumerate(ledger):
+        if entry["service"] in seen:
+            raise ValueError(
+                f"$.service_ledger[{i}].service: {entry['service']!r} is already "
+                f"counted at $.service_ledger[{seen[entry['service']]}] (a final "
+                f"service is counted once)"
+            )
+        seen[entry["service"]] = i
+    restricted = {a.name for a in agents if a.site_share is not None}
+    for i, entry in enumerate(ledger):
+        if entry["site_restricted"] != (entry["agent"] in restricted):
+            raise ValueError(
+                f"$.service_ledger[{i}].site_restricted: must be "
+                f"{str(entry['agent'] in restricted).lower()}, as agent {entry['agent']!r} "
+                f"{'has' if entry['agent'] in restricted else 'has no'} sites "
+                f"(a site-restricted value is booked per hectare near the sites)"
+            )
+    shares: Dict[str, float] = {}
+    for i, entry in enumerate(ledger):
+        parent = entry["split_of"]
+        if parent is None:
+            continue
+        if parent in seen:
+            raise ValueError(
+                f"$.service_ledger[{i}].split_of: {parent!r} is also counted whole at "
+                f"$.service_ledger[{seen[parent]}] (its shares would count it twice)"
+            )
+        shares[parent] = shares.get(parent, 0.0) + entry["share"]
+        if shares[parent] > 1.0 + 1e-9:
+            raise ValueError(
+                f"$.service_ledger[{i}].share: the shares of {parent!r} add up to "
+                f"{shares[parent]:g} > 1"
+            )
+
     run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes", "benchmarks"))
     units = _plain_int(run["units"], "$.run.units") if "units" in run else None
     benchmarks = tuple(
@@ -833,6 +1159,7 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         area=res["area"],
         density=res["density"],
         calibration_regime=regime,
+        damage_model=damage_model,
         agents=tuple(agents),
         interactions=tuple(interactions),
         buckets={k: tuple(v) for k, v in buckets.items()},
@@ -850,6 +1177,8 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         report_note=report_note,
         json_notes=notes,
         benchmarks=benchmarks,
+        service_ledger=ledger,
+        release_fates=release_fates,
         document=copy.deepcopy(doc),
         param_paths=dict(reader.paths),
     )
@@ -857,6 +1186,106 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     # document's threshold, the area, the pricing block.
     case.recovery_functions(case.build_ecosystem(with_pricing=pricing is not None))
     return case
+
+
+def site_flag(sites: str) -> str:
+    """The CLI flag name of a site share: "dive sites" -> "dive-site-share"."""
+    words = sites.split()
+    if words and words[-1].endswith("s"):
+        words[-1] = words[-1][:-1]
+    return "-".join(words + ["share"])
+
+
+def _parse_release_fates(raw: Any, path: str) -> Dict[str, Any]:
+    """carbon.release_fates (Step 8d.2): what a project can do to the soil
+    and the release fraction and half-life each fate implies. The default
+    fate documents the carbon block's own values (``Case.fate_check``; not
+    enforced on parse, so the Monte Carlo can perturb them)."""
+    obj = _object(raw, path, ("subject", "default", "fates"))
+    subject = _str(obj["subject"], _key(path, "subject"))
+    if not re.fullmatch(r"[a-z][a-z-]*", subject):
+        raise ValueError(f"{_key(path, 'subject')}: a lower-case word (it names the --<subject>-fate flag), got {subject!r}")
+    fates_raw = obj["fates"]
+    if not isinstance(fates_raw, dict):
+        raise ValueError(f"{_key(path, 'fates')}: expected an object, got {_kind(fates_raw)}")
+    if not fates_raw:
+        raise ValueError(f"{_key(path, 'fates')}: at least one fate is required")
+    fates: Dict[str, Dict[str, Any]] = {}
+    for name, entry in fates_raw.items():
+        fpath = _key(_key(path, "fates"), name)
+        if not re.fullmatch(r"[a-z][a-z-]*", name):
+            raise ValueError(f"{fpath}: a fate name is a lower-case word, got {name!r}")
+        f = _object(entry, fpath, _FATE_FIELDS)
+        fraction = _plain_number(f["soil_release_fraction"], _key(fpath, "soil_release_fraction"))
+        if not 0.0 <= fraction <= 1.0:
+            raise ValueError(f"{_key(fpath, 'soil_release_fraction')}: must be in [0, 1], got {fraction}")
+        half_life = _plain_number(f["release_half_life_years"], _key(fpath, "release_half_life_years"))
+        if not half_life >= 0.0:
+            raise ValueError(f"{_key(fpath, 'release_half_life_years')}: must be >= 0, got {half_life}")
+        confidence = _str(f["confidence"], _key(fpath, "confidence"))
+        valid = [c.value for c in Confidence if c != Confidence.USER]
+        if confidence not in valid:
+            raise ValueError(f"{_key(fpath, 'confidence')}: expected one of {valid}, got {confidence!r}")
+        fates[name] = {
+            "description": _str(f["description"], _key(fpath, "description")),
+            "soil_release_fraction": float(fraction),
+            "release_half_life_years": float(half_life),
+            "basis": _str(f["basis"], _key(fpath, "basis")),
+            "confidence": confidence,
+        }
+    default = _str(obj["default"], _key(path, "default"))
+    if default not in fates:
+        raise ValueError(f"{_key(path, 'default')}: unknown fate {default!r} (defined: {', '.join(fates)})")
+    return {"subject": subject, "default": default, "fates": fates}
+
+
+_LEDGER_SECTIONS = ("provisioning", "regulation and maintenance", "cultural")
+_LEDGER_KINDS = ("use", "non-use")
+
+
+def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
+    """One service_ledger entry: a final service, its owner and its value."""
+    obj = _object(
+        raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
+        ("transfer", "note", "split_of", "share", "share_source", "site_restricted"),
+    )
+    agent = _str(obj["agent"], _key(path, "agent"))
+    if agent not in agents:
+        raise ValueError(f"{_key(path, 'agent')}: unknown agent {agent!r}")
+    value = _plain_number(obj["value"], _key(path, "value"))
+    if not value > 0.0:
+        raise ValueError(f"{_key(path, 'value')}: a final service in the ledger must be > 0, got {value}")
+    section = _str(obj["section"], _key(path, "section"))
+    if section not in _LEDGER_SECTIONS:
+        raise ValueError(f"{_key(path, 'section')}: expected one of {list(_LEDGER_SECTIONS)}, got {section!r}")
+    kind = _str(obj["kind"], _key(path, "kind"))
+    if kind not in _LEDGER_KINDS:
+        raise ValueError(f"{_key(path, 'kind')}: expected one of {list(_LEDGER_KINDS)}, got {kind!r}")
+    out: Dict[str, Any] = {
+        "service": _str(obj["service"], _key(path, "service")),
+        "agent": agent,
+        "value": float(value),
+        "section": section,
+        "kind": kind,
+        "method": _str(obj["method"], _key(path, "method")),
+        "source": _str(obj["source"], _key(path, "source")),
+        "transfer": _str(obj.get("transfer", ""), _key(path, "transfer")),
+        "note": _str(obj.get("note", ""), _key(path, "note")),
+        "split_of": None,
+        "share": None,
+        "share_source": "",
+        "site_restricted": _bool(obj.get("site_restricted", False), _key(path, "site_restricted")),
+    }
+    if ("split_of" in obj) != ("share" in obj):
+        raise ValueError(f"{path}: give both split_of and share, or neither")
+    if "split_of" in obj:
+        share = _plain_number(obj["share"], _key(path, "share"))
+        if not 0.0 < share < 1.0:
+            raise ValueError(f"{_key(path, 'share')}: must be in (0, 1), got {share}")
+        out["split_of"] = _str(obj["split_of"], _key(path, "split_of"))
+        out["share"] = float(share)
+        out["share_source"] = _str(obj.get("share_source", ""), _key(path, "share_source"))
+    return out
 
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
@@ -1002,7 +1431,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         path = f"$.agents[{i}]"
         obj = _object(
             raw, path, ("name", "dependency_weight"),
-            ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone", "keystone_threshold"),
+            ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone",
+             "keystone_threshold", "sites", "site_share"),
         )
         name = _str(obj["name"], _key(path, "name"))
         if name in seen:
@@ -1022,6 +1452,22 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             values[name] = default_value
         else:
             raise ValueError(f"{_key(path, 'annual_value_per_ha')}: required (no agent_defaults value)")
+    sites: Dict[str, Tuple[float, str]] = {}
+    for path, name, obj in objs:
+        if ("sites" in obj) != ("site_share" in obj):
+            raise ValueError(f"{path}: give both sites and site_share, or neither")
+        if "sites" not in obj:
+            continue
+        label = _str(obj["sites"], _key(path, "sites"))
+        if not re.fullmatch(r"[a-z][a-z ]*", label):
+            raise ValueError(f"{_key(path, 'sites')}: lower-case words, e.g. 'dive sites', got {label!r}")
+        share = reader.number(obj["site_share"], _key(path, "site_share"), f"agent[{name}].site_share",
+                              buckets["agent_values"])
+        if not 0.0 < share <= 1.0:
+            raise ValueError(f"{_key(path, 'site_share')}: must be in (0, 1], got {share}")
+        sites[name] = (share, label)
+    if len({label for _, label in sites.values()}) > 1:
+        raise ValueError("$.agents: every agent with sites must name the same sites")
     weights = {
         name: reader.number(obj["dependency_weight"], _key(path, "dependency_weight"),
                             f"agent[{name}].dependency_weight", buckets["agent_weights"])
@@ -1059,6 +1505,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             trophic_level=_plain_int(obj.get("trophic_level", -1), _key(path, "trophic_level")),
             is_keystone=_bool(obj.get("is_keystone", False), _key(path, "is_keystone")),
             keystone_threshold=keystone[name],
+            site_share=sites[name][0] if name in sites else None,
+            sites=sites[name][1] if name in sites else "",
         )
         for path, name, obj in objs
     ]
@@ -1360,8 +1808,12 @@ def _curve_spec(fn: Any, agent: str) -> Tuple[str, Tuple[Tuple[str, float], ...]
     kind = kernel[0]
     if kind == KERNEL_LOGISTIC:
         spec: Tuple[str, Tuple[Tuple[str, float], ...]] = ("logistic", (("steepness", kernel[4]),))
+    elif kind == KERNEL_THRESHOLD_LOGISTIC:
+        spec = ("threshold_logistic", (("steepness", kernel[4]),))
     elif kind == KERNEL_EXPONENTIAL:
         spec = ("exponential", (("base", kernel[3]),))
+    elif kind == KERNEL_THRESHOLD_EXPONENTIAL:
+        spec = ("threshold_exponential", (("base", kernel[4]),))
     elif kind == KERNEL_PIECEWISE:
         spec = ("piecewise", (("pre_slope_ratio", kernel[4]),))
     else:
@@ -1413,6 +1865,8 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
     doc: Dict[str, Any] = {"gaia_schema": SCHEMA_VERSION, "name": ecosystem.name}
     regime = ecosystem.calibration_regime
     doc["calibration_regime"] = None if regime is None else CalibrationRegime(regime).value
+    if ecosystem.damage_model != "direct":
+        doc["damage_model"] = ecosystem.damage_model
     res: Dict[str, Any] = {}
     if resource.name != ecosystem.name:
         res["name"] = resource.name
@@ -1537,6 +1991,9 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
         kname = f"agent[{a.name}].keystone_threshold"
         if kname in pattern_fields["agent[*].keystone_threshold"]:
             item["keystone_threshold"] = listed(a.keystone_threshold, kname)
+        if a.sites:
+            item["sites"] = a.sites
+            item["site_share"] = num(a.site_share, f"agent[{a.name}].site_share")
         out_agents.append(item)
     doc["agents"] = out_agents
     if ecosystem.interactions:
@@ -1554,6 +2011,9 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
     if resource.carbon_profile is not None:
         cp = resource.carbon_profile
         doc["carbon"] = {k: num(getattr(cp, k), f"carbon.{k}") for k in _CARBON_FIELDS}
+        if cp.release_half_life_years != 0.0 or "carbon.release_half_life_years" in params:
+            doc["carbon"]["release_half_life_years"] = num(
+                cp.release_half_life_years, "carbon.release_half_life_years")
     if resource.resilience is not None:
         rc = resource.resilience
         doc["resilience"] = {k: num(getattr(rc, k), f"resilience.{k}") for k in _RESILIENCE_FIELDS}
