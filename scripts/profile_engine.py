@@ -1,30 +1,36 @@
 #!/usr/bin/env python3
 """
-Profile the simulation engine: pure Python vs the Cython extraction loop
-(decision D7, TOP_PRIORITIES_REPORT.md Step 7.4).
+Profile the simulation engine (docs/ENGINE_PROFILE.md).
 
-Runs each shipped case in-process (no CLI, no output formatting) and prints
-a Markdown table of wall-clock times (best of --repeat runs):
+Since decision D5 (option B) the engine evaluates the static damage function
+directly: a run computes its final state, and the per-step data are
+evaluated only when asked for. This script runs each shipped case in-process
+(no CLI, no output formatting) and prints a Markdown table of wall-clock
+times (best of --repeat runs):
+
+    summary      the run as the CLI's summary needs it (final state, NPVs,
+                 the substrate trajectory)
+    all steps    the same run, then every step evaluated once (what the
+                 former per-unit loop always did, and what the golden
+                 snapshots and --steps-every 1 still do)
+
+for these runs:
 
     default      the case's default run (gaia run <case>), extract and
                  restore (restore: --units-lost = --units, the default)
     pricing      EXPERIMENTAL --with-pricing, extract only, below each
-                 case's convergence limit (pricing always uses the Python
-                 loop: the Cython loop has no price solver)
+                 case's convergence limit (pricing certifies every step)
     sweep        full depletion (every unit) of a 100,000-unit resource,
                  fine steps (1 unit = 0.001%), extract
 
 Usage:
-    python3 scripts/profile_engine.py              # everything (minutes)
+    python3 scripts/profile_engine.py              # everything (about a minute)
     python3 scripts/profile_engine.py --quick      # smaller sizes
     python3 scripts/profile_engine.py --hotspots   # cProfile of the slowest runs
     python3 scripts/profile_engine.py --smoke      # tiny sizes, one repeat (a test runs it)
-
-Without the Cython extension the Cython column reads "n/a".
 """
 
 import argparse
-import contextlib
 import cProfile
 import functools
 import io
@@ -38,7 +44,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import gaia.simulation as sim  # noqa: E402
 from gaia.cases import CASE_NAMES, load_case  # noqa: E402
 
 # Pricing runs: (total units, units) below the depletion at which the price
@@ -51,16 +56,6 @@ PRICING = {
     "amazon_forest": (40_000, 8_000),
 }
 SWEEP_UNITS = 100_000
-
-
-@contextlib.contextmanager
-def engine(name: str):
-    saved = sim._HAS_CYTHON
-    sim._HAS_CYTHON = saved if name == "cython" else False
-    try:
-        yield
-    finally:
-        sim._HAS_CYTHON = saved
 
 
 def best_of(fn, repeat: int) -> float:
@@ -88,11 +83,17 @@ def runs(scale: int):
         yield ("sweep", name, "extract", n, n, False)
 
 
-def run_once(name: str, mode: str, total: int, units: int, with_pricing: bool):
+def run_once(name: str, mode: str, total: int, units: int, with_pricing: bool,
+             all_steps: bool = False):
     case = load_case(name)
     if mode == "extract":
-        return case.run_extraction(units, total_units=total, with_pricing=with_pricing)
-    return case.run_restoration(units, total_units=total)
+        result = case.run_extraction(units, total_units=total, with_pricing=with_pricing)
+    else:
+        result = case.run_restoration(units, total_units=total)
+    if all_steps:
+        for _ in result.steps:
+            pass
+    return result
 
 
 def main(argv=None) -> int:
@@ -112,45 +113,31 @@ def main(argv=None) -> int:
 
 def _profile(args: argparse.Namespace) -> int:
     scale = 1000 if args.smoke else 10 if args.quick else 1
-    has_cython = sim._HAS_CYTHON
-    if not has_cython:
-        print("The Cython extension is not built or is stale "
-              "(python3 setup.py build_ext --inplace): Python times only.", file=sys.stderr)
-
     print(f"Python {platform.python_version()} on {platform.machine()} "
           f"({platform.system()}), best of {args.repeat}\n")
-    print("| Run | Case | Mode | Units (of total) | Python (s) | Cython (s) | Python / Cython |")
-    print("|---|---|---|---|---|---|---|")
+    print("| Run | Case | Mode | Units (of total) | Summary (s) | All steps (s) |")
+    print("|---|---|---|---|---|---|")
     for label, name, mode, total, units, with_pricing in runs(scale):
-        times = {}
-        for eng in ("python", "cython") if has_cython else ("python",):
-            with engine(eng):
-                times[eng] = best_of(functools.partial(run_once, name, mode, total, units, with_pricing), args.repeat)
-        if has_cython:
-            cython = f"{times['cython']:.3f}"
-            ratio = f"{times['python'] / max(times['cython'], 1e-9):.1f}×"
-        else:
-            cython = ratio = "n/a"
+        call = functools.partial(run_once, name, mode, total, units, with_pricing)
+        summary = best_of(call, args.repeat)
+        every = best_of(functools.partial(call, all_steps=True), args.repeat)
         print(f"| {label} | {name} | {mode} | {units:,} of {total:,} "
-              f"| {times['python']:.3f} | {cython} | {ratio} |")
+              f"| {summary:.3f} | {every:.3f} |")
         sys.stdout.flush()
 
     if args.hotspots:
         sweep = max(SWEEP_UNITS // scale, 2)
         p_total, p_units = (max(n // scale, k) for n, k in zip(PRICING["amazon_forest"], (2, 1)))
-        for title, eng, call in (
-            ("sweep amazon_forest, Python loop", "python",
+        for title, call in (
+            ("sweep amazon_forest, summary",
              lambda: run_once("amazon_forest", "extract", sweep, sweep, False)),
-            ("sweep amazon_forest, Cython loop", "cython",
-             lambda: run_once("amazon_forest", "extract", sweep, sweep, False)),
-            ("pricing amazon_forest", "python",
+            ("sweep amazon_forest, all steps",
+             lambda: run_once("amazon_forest", "extract", sweep, sweep, False, True)),
+            ("pricing amazon_forest",
              lambda: run_once("amazon_forest", "extract", p_total, p_units, True)),
         ):
-            if eng == "cython" and not has_cython:
-                continue
             profiler = cProfile.Profile()
-            with engine(eng):
-                profiler.runcall(call)
+            profiler.runcall(call)
             out = io.StringIO()
             pstats.Stats(profiler, stream=out).sort_stats("tottime").print_stats(8)
             print(f"\n### Hotspots: {title}\n\n```text")

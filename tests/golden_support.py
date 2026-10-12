@@ -174,18 +174,6 @@ def _numeric_sums(records: List[Dict[str, Any]]) -> Dict[str, Any]:
 # ── Running scenarios ─────────────────────────────────────────────────────────
 
 
-@contextlib.contextmanager
-def forced_python_engine():
-    """Temporarily disable the Cython fast path."""
-    import gaia.simulation as sim
-    saved = sim._HAS_CYTHON
-    sim._HAS_CYTHON = False
-    try:
-        yield
-    finally:
-        sim._HAS_CYTHON = saved
-
-
 def run_scenario(name: str) -> Tuple[Any, Dict[str, Any]]:
     """Run one scenario via its case CLI; return (result_obj, summary_json)."""
     case, argv = SCENARIOS[name]
