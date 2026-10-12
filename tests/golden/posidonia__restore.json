@@ -17,9 +17,9 @@
       "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
       "ecosystem_provenance_recorded": true,
       "n_high": 0,
-      "n_low": 25,
+      "n_low": 26,
       "n_medium": 10,
-      "n_params": 70,
+      "n_params": 71,
       "n_placeholder": 34,
       "n_user_supplied": 1,
       "parameters": [
@@ -95,14 +95,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, 454.52 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 4,582 ha. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper-bias) and leaves out every other Catalan dive site (a lower-bias). Range 214-1,294 EUR/ha/yr: EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap). Weight x value = the service.",
+          "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES: 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
           "range": [
-            1943.2928852029681,
-            11775.185508511566
+            62551.232876712325,
+            379022.8310502283
           ],
-          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015)",
+          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
           "unit": "\u20ac/ha/yr",
-          "value": 4136.110868616325
+          "value": 133134.24657534246
         },
         {
           "confidence": "low",
@@ -211,6 +211,15 @@
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr; the epiphyte share of the bioindicator (0.5/3.5 of the PREI, Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012) moved to Epiphytes & Algae",
           "unit": "\u20ac/ha/yr",
           "value": 18.378750000000004
+        },
+        {
+          "confidence": "low",
+          "distribution": "fixed",
+          "name": "agent[Posidonia Meadow].site_share",
+          "note": "The share of the affected meadow within reach of dive sites, where the meadow's diving value applies (Step 8d.4). A PROJECT INPUT: the user states it with --dive-site-share (1 for a project at a dive site, 0 far from any; recorded as user-supplied). The default is the regional share: 142.35 ha near dive sites / 4,582 ha, the expected share for a meadow of unknown location. The 142.35 ha are a proxy, flagged: the P. oceanica cover inside the coastal Natura 2000 sites of the Costa Brava, which hold its best-known dive sites (Medes Islands, Cap de Creus; dive sites elsewhere in these sites assumed, not verified); a site boundary is not the reach of a dive site, and the 2014 forms and the 2025 regional map differ in date and method. Held fixed in the Monte Carlo (\"distribution\": \"fixed\").",
+          "source": "European Environment Agency, Natura 2000 Standard Data Forms, habitat 1120* (Posidonia beds) cover in ha, forms last updated December 2014, via the EEA Natura 2000 service (https://bio.discomap.eea.europa.eu/arcgis/rest/services/Bio/Natura2000_Dyna_WM/MapServer/13, queried 12 October 2026; site pages https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5120007 etc.): Cap de Creus (ES5120007) 64.14 ha, El Montgr\u00ed-Les Medes-El Baix Ter (ES5120016) 10.75 ha, Litoral del Baix Empord\u00e0 (ES5120015) 24.10 ha, Mass\u00eds de les Cadiretes (ES5120013) 42.36 ha, L'Albera (ES5120014) 1.00 ha: 142.35 ha in the coastal Natura 2000 sites of the Costa Brava (Girona coast); cross-check: the Medes Islands meadow covers 8.8 ha (Romero, P\u00e9rez & Renom 2001, Seguimiento de la pradera de Posidonia oceanica de las islas Medes, Ejercicio 2001, Universitat de Barcelona, http://hdl.handle.net/2445/25506); regional stock 4,582 ha (resource.area_ha)",
+          "unit": "fraction",
+          "value": 0.03106721955477957
         },
         {
           "confidence": "low",
@@ -725,7 +734,7 @@
           "value": 5.0
         }
       ],
-      "statement": "ILLUSTRATIVE: 59 of 70 recorded parameters are placeholders (34) or low-confidence (25); 1 user-supplied, not assessed. Results are not real-world estimates.",
+      "statement": "ILLUSTRATIVE: 60 of 71 recorded parameters are placeholders (34) or low-confidence (26); 1 user-supplied, not assessed. Results are not real-world estimates.",
       "status": "illustrative"
     },
     "carbon_breakeven": {
@@ -749,13 +758,15 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 4136.110868616325,
-          "annual_value_eur_yr": 20680554.343081627,
+          "annual_value_eur_per_ha_yr": 133134.24657534246,
+          "annual_value_eur_yr": 20680554.343081623,
           "dependency_weight": 0.10989010989010989,
-          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020)",
+          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
+          "site_share": 0.03106721955477957,
+          "sites": "dive sites",
           "trophic_level": 0
         },
         {
@@ -2064,7 +2075,7 @@
     "Human Communities": 7187.444653893648,
     "Marine Invertebrates": 21873.60485131802,
     "Marine Megafauna": 150911.70525834773,
-    "Posidonia Meadow": 1805802.891223243,
+    "Posidonia Meadow": 1805802.8912232427,
     "Seabirds": 150911.70525834773,
     "Water Quality": 259775.9564638024
   },
@@ -2155,7 +2166,7 @@
       645.1941845091334
     ],
     "agent_service_values": [
-      1299990332.4736657,
+      1299990332.4736655,
       58718218.270284735,
       652700.6321658029,
       16104295.924196962,
@@ -2190,7 +2201,7 @@
         1.5256234070910776e-08
       ],
       "agent_service_values": [
-        0.053178703792655706,
+        0.05317870379265569,
         0.0018476781433898037,
         2.1824167175084712e-05,
         0.0,
@@ -2201,10 +2212,10 @@
         0.00518765713712909,
         0.00012324857667285778
       ],
-      "cumulative_service_value": 0.07909918305141272,
+      "cumulative_service_value": 0.07909918305141271,
       "depletion_ratio": 0.3998,
       "ecosystem_health": 0.09812200321208753,
-      "marginal_service_value": 0.07909918305141272,
+      "marginal_service_value": 0.07909918305141271,
       "recovery_ratio": 0.0005,
       "restoration_cost_so_far": 200000.0,
       "step": 1,
@@ -2224,7 +2235,7 @@
         0.0010779181993958737
       ],
       "agent_service_values": [
-        3501.7012507965737,
+        3501.7012507965733,
         129.48084428615627,
         1.5058191827556444,
         25.910439498269707,
@@ -2235,7 +2246,7 @@
         391.16080510475865,
         8.708039167976667
       ],
-      "cumulative_service_value": 5361.388734802729,
+      "cumulative_service_value": 5361.388734802728,
       "depletion_ratio": 0.3598,
       "ecosystem_health": 0.09911714668840965,
       "marginal_service_value": 66.84885066689367,
@@ -2258,7 +2269,7 @@
         0.007546329855622133
       ],
       "agent_service_values": [
-        22581.963144200698,
+        22581.963144200694,
         891.6176409510853,
         10.208807000514756,
         220.26372732515333,
@@ -2272,7 +2283,7 @@
       "cumulative_service_value": 35549.68626652949,
       "depletion_ratio": 0.3198,
       "ecosystem_health": 0.10518932273458259,
-      "marginal_service_value": 278.11581081559416,
+      "marginal_service_value": 278.11581081560144,
       "recovery_ratio": 0.2005,
       "restoration_cost_so_far": 80200000.0,
       "step": 401,
@@ -2292,7 +2303,7 @@
         0.032823551033725896
       ],
       "agent_service_values": [
-        80076.84827530518,
+        80076.84827530516,
         3362.0203885949695,
         37.962843317211195,
         893.7347359870258,
@@ -2303,10 +2314,10 @@
         10608.039175843178,
         265.16740156531426
       ],
-      "cumulative_service_value": 136134.62532257626,
+      "cumulative_service_value": 136134.62532257623,
       "depletion_ratio": 0.2798,
       "ecosystem_health": 0.1300508728450901,
-      "marginal_service_value": 813.1270021788077,
+      "marginal_service_value": 813.1270021787786,
       "recovery_ratio": 0.3005,
       "restoration_cost_so_far": 120200000.0,
       "step": 601,
@@ -2326,7 +2337,7 @@
         0.0998493676823193
       ],
       "agent_service_values": [
-        213592.50769221157,
+        213592.5076922115,
         9440.697891939928,
         105.42090132343118,
         2605.837152961656,
@@ -2337,7 +2348,7 @@
         30135.29054569727,
         806.6402489193082
       ],
-      "cumulative_service_value": 392290.37411634513,
+      "cumulative_service_value": 392290.3741163451,
       "depletion_ratio": 0.2398,
       "ecosystem_health": 0.1985296589973562,
       "marginal_service_value": 1828.3511678166687,
@@ -2360,7 +2371,7 @@
         0.23629871492300242
       ],
       "agent_service_values": [
-        462992.84396473895,
+        462992.84396473883,
         21272.769246399595,
         235.62855775654688,
         5995.022326312943,
@@ -2371,10 +2382,10 @@
         68446.90843075557,
         1908.9560469851124
       ],
-      "cumulative_service_value": 894438.6962069409,
+      "cumulative_service_value": 894438.6962069407,
       "depletion_ratio": 0.1998,
       "ecosystem_health": 0.33857463982364133,
-      "marginal_service_value": 2464.895271338173,
+      "marginal_service_value": 2464.8952713379404,
       "recovery_ratio": 0.5005,
       "restoration_cost_so_far": 200200000.0,
       "step": 1001,
@@ -2394,7 +2405,7 @@
         0.3815821015521675
       ],
       "agent_service_values": [
-        754173.222444299,
+        754173.2224442988,
         34449.95339136341,
         382.04544913594185,
         9608.191936034546,
@@ -2405,10 +2416,10 @@
         110745.21013848987,
         3082.6382632535815
       ],
-      "cumulative_service_value": 1450778.100037412,
+      "cumulative_service_value": 1450778.1000374118,
       "depletion_ratio": 0.16,
       "ecosystem_health": 0.4860461434101291,
-      "marginal_service_value": 3043.4645797507837,
+      "marginal_service_value": 3043.464579750551,
       "recovery_ratio": 0.6,
       "restoration_cost_so_far": 240000000.0,
       "step": 1200,
@@ -2428,7 +2439,7 @@
         0.542010674031101
       ],
       "agent_service_values": [
-        1079591.544202032,
+        1079591.5442020318,
         49059.22441444265,
         544.6464523702248,
         13554.680453093413,
@@ -2442,7 +2453,7 @@
       "cumulative_service_value": 2068933.6895417562,
       "depletion_ratio": 0.12,
       "ecosystem_health": 0.6486729813017456,
-      "marginal_service_value": 3034.2813604136463,
+      "marginal_service_value": 3034.281360414112,
       "recovery_ratio": 0.7,
       "restoration_cost_so_far": 280000000.0,
       "step": 1400,
@@ -2462,7 +2473,7 @@
         0.6871027753337721
       ],
       "agent_service_values": [
-        1378119.3839447373,
+        1378119.383944737,
         62335.352879030615,
         692.7034683792712,
         17076.82087646119,
@@ -2473,10 +2484,10 @@
         200078.843387255,
         5550.808849303545
       ],
-      "cumulative_service_value": 2632145.075684818,
+      "cumulative_service_value": 2632145.0756848175,
       "depletion_ratio": 0.08,
       "ecosystem_health": 0.7955164526612147,
-      "marginal_service_value": 2552.7156739425845,
+      "marginal_service_value": 2552.715673942119,
       "recovery_ratio": 0.8,
       "restoration_cost_so_far": 320000000.0,
       "step": 1600,
@@ -2496,7 +2507,7 @@
         0.80228601012986
       ],
       "agent_service_values": [
-        1619221.346099418,
+        1619221.3460994177,
         72936.63161004063,
         811.2153016099197,
         19827.032130614672,
@@ -2510,7 +2521,7 @@
       "cumulative_service_value": 3083302.275372161,
       "depletion_ratio": 0.04,
       "ecosystem_health": 0.9118592756049483,
-      "marginal_service_value": 1971.452763594687,
+      "marginal_service_value": 1971.4527635951526,
       "recovery_ratio": 0.9,
       "restoration_cost_so_far": 360000000.0,
       "step": 1800,
@@ -2530,7 +2541,7 @@
         0.8896925301017777
       ],
       "agent_service_values": [
-        1805802.891223243,
+        1805802.8912232427,
         81035.87015239881,
         902.006436205844,
         21873.60485131802,
@@ -2544,7 +2555,7 @@
       "cumulative_service_value": 3429224.530750703,
       "depletion_ratio": 0.0,
       "ecosystem_health": 0.9999424798209806,
-      "marginal_service_value": 1518.503986841999,
+      "marginal_service_value": 1518.5039868424647,
       "recovery_ratio": 1.0,
       "restoration_cost_so_far": 400000000.0,
       "step": 2000,

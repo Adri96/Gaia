@@ -662,7 +662,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
 
         Phase 3 — Annual cost computation (€/yr flows):
             cost[i]          = effective_damage[i] * weight[i]
-                               * annual_value_per_ha[i] * area_ha
+                               * annual_value_per_ha[i] * site_share[i] * area_ha
             annual_externality = sum(cost[i])
             marginal         = annual_externality - previous annual_externality
             ecosystem_health = 1.0 - sum(weight[i] * effective_damage[i])

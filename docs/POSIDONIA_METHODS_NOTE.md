@@ -85,7 +85,7 @@ Single-pass cascades cut chains longer than one hop. Under regime B, the cascade
 
 ## 5. Parameters and sources
 
-A Posidonia extraction run records 60 parameters (70 with restoration): 26 sourced (22 by DOI or arXiv id, 4 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
+A Posidonia extraction run records 61 parameters (71 with restoration): 27 sourced (22 by DOI or arXiv id, 5 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
 **Service values: the service ledger (Step 8c.2).** Every agent carries euros, and each final service is counted once, owned by one agent. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009). € /ha/yr at full damage:
 
@@ -97,13 +97,23 @@ A Posidonia extraction run records 60 parameters (70 with restoration): 26 sourc
 | Marine Invertebrates | fisheries, sea urchin and cuttlefish (2/16 of 35) | 4.38 | Campagne et al. 2015 (moved from fish; share by species count) |
 | Human Communities | bioindicator use (3/3.5 of 1.5) and knowledge (0.33) | 1.62 | Campagne et al. 2015; PREI weights, Gobert et al. 2009 |
 | Epiphytes & Algae | bioindicator use, epiphyte metric (0.5/3.5 of 1.5) | 0.21 | Gobert et al. 2009 (moved from Human Communities) |
-| Posidonia Meadow | recreational diving: the meadow's amenity | 454.52 | Zunino et al. 2020, −€34.71 per dive for total loss × ~60,000 Medes dives/yr ÷ 4,582 ha (transfer from Italian divers) |
+| Posidonia Meadow | recreational diving: the meadow's amenity, **only near dive sites** | 454.52 at the regional share | Zunino et al. 2020, −€34.71 per dive for total loss × ~60,000 Medes dives/yr ÷ 142.35 ha of meadow within reach of dive sites (EEA Natura 2000 forms) = €14,630/ha/yr near dive sites, × the share of the affected meadow near dive sites (default 0.0311, the regional share; `--dive-site-share`) |
 | Coralligenous & Red Coral | recreational diving: coralligenous | 18.95 | Rodrigues et al. 2016, −€60 per dive for gorgonian extinction (Medes) × 60,000 ÷ 190,000 ha of mapped seabed |
 | Marine Megafauna | non-use: protecting marine mammals | 30.18 | Börger et al. 2014 (UK choice experiment, £30.32/household/yr for 5 years), annualised, × Catalan households ÷ 190,000 ha, half of a bundled attribute |
 | Seabirds | non-use: protecting seabirds | 30.18 | the other half |
 | **Total** | | **818.66** | |
 
-Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption that the owner accepted as **provisional** (Step 8d.3; labelled so in the provenance). The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2). **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
+Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption that the owner accepted as **provisional** (Step 8d.3; labelled so in the provenance). The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2).
+
+**The diving value applies only near dive sites (Step 8d.4).** The meadow within reach of dive sites is estimated at 142.35 ha, the *P. oceanica* cover of the Costa Brava's five coastal Natura 2000 sites (Cap de Creus, Montgrí–Medes–Baix Ter, Litoral del Baix Empordà, Cadiretes, L'Albera; EEA Standard Data Forms), a flagged proxy. The Medes dives are divided over it (€14,630/ha/yr), and the user states the share of the affected meadow near dive sites (`--dive-site-share`). The default, the regional share 0.0311, reproduces the former regional average, so the default results do not change. For the default 50 ha:
+
+| `--dive-site-share` | Annual externality | PV of externality (P5 / P50 / P95) |
+|---|---|---|
+| 0.0311 (default, location unknown) | €40,933 | €10.35 M (8.73 / 12.31 / 15.98) |
+| 1 (a project at a dive site) | €749,714 | €76.68 M (58.41 / 100.64 / 173.46) |
+| 0 (far from any dive site) | €18,207 | €8.22 M (6.26 / 9.09 / 12.88) |
+
+At a dive site the meadow's diving value dominates everything else; far from one, carbon does. **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 
@@ -217,7 +227,7 @@ The fisheries, coralligenous and invertebrate values each swing it by less than 
 2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 55–125 times the default private gain (ETS carbon price: 55×; P5: 69×; P95: 127×). To break even, a project would need a private gain of about €140,000 (ETS carbon price) to €320,000 per hectare: the PV of the externality per hectare, which is €175,000 at P5 and €320,000 at P95.
 3. That conclusion rests on two uncertain terms:
    - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve (`--matte-fate`): excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
-   - the meadow's diving value, a benefit transfer that a Catalan valuation should replace.
+   - the meadow's diving value, a benefit transfer that a Catalan valuation should replace, and which since Step 8d.4 applies only near dive sites: the user's `--dive-site-share` decides whether it is €0 or the largest term.
 
 **Restoration** of the same 50 ha (`--mode restore --units 50 --time-horizon 200`, €200,000/ha including maintenance):
 - net restoration value −€7.51 M (PV);

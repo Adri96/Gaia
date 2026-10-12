@@ -217,6 +217,29 @@ def add_fate_argument(parser: argparse.ArgumentParser, case) -> None:
     )
 
 
+def add_site_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<input>`` (e.g. ``--dive-site-share``) for a case with
+    site-restricted agent values (Step 8d.4)."""
+    agents = getattr(case, "site_restricted_agents", [])
+    if not agents:
+        return
+    share = case.default_site_share
+    parser.add_argument(
+        f"--{case.site_input}",
+        dest="site_share",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            f"Project input: the share (0-1) of the affected resource within reach "
+            f"of {case.sites}. The value of {', '.join(agents)} applies only there: "
+            f"1 if the project affects only resource at or next to {case.sites}, 0 if it is "
+            f"far from any (default {share:.4g}, the regional share, i.e. the expected "
+            f"value for a site of unknown location)"
+        ).replace("%", "%%"),
+    )
+
+
 def add_uncertainty_arguments(parser: argparse.ArgumentParser) -> None:
     """Add --uncertainty [N] and --seed (Step 8.4, gaia.uncertainty)."""
     from gaia.uncertainty import DEFAULT_DRAWS, DEFAULT_SEED
@@ -266,6 +289,7 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
         "carbon_release_fraction": getattr(args, "carbon_release_fraction", None),
         "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
         "carbon_fate": getattr(args, "carbon_fate", None),
+        "site_share": getattr(args, "site_share", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -601,6 +625,7 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
                             default=None, metavar="EUROS", help=argparse.SUPPRESS)
     add_common_arguments(parser)
     add_fate_argument(parser, case)
+    add_site_argument(parser, case)
     add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
@@ -651,6 +676,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             carbon_release_fraction=getattr(args, "carbon_release_fraction", None),
             carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
             carbon_fate=getattr(args, "carbon_fate", None),
+            site_share=getattr(args, "site_share", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any

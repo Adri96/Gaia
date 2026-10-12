@@ -627,7 +627,7 @@ class Agent:
 
     Annual service value lost at depletion level d (a yearly FLOW, €/yr):
         annual_cost = damage_function(d) * dependency_weight
-                      * annual_value_per_ha * resource.area_ha
+                      * annual_value_per_ha * site_share * resource.area_ha
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
@@ -639,6 +639,14 @@ class Agent:
             one-off total) and D2 (scaled by Resource.area_ha, so results do
             not depend on how finely the resource is divided into units).
         description: Short description of what damage means for this agent.
+        site_share: Share of the resource where the value applies (Step
+            8d.4), in [0, 1]; 1.0 (default) = everywhere. For a value
+            enjoyed only near some sites (Posidonia: the meadow's diving
+            amenity near dive sites) annual_value_per_ha is the value per
+            hectare NEAR them and site_share the share of the resource near
+            them.
+        sites: What the sites are (e.g. "dive sites"); "" when the value
+            applies everywhere.
     """
 
     name: str
@@ -652,9 +660,16 @@ class Agent:
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
     keystone_threshold: float = DEFAULT_KEYSTONE_THRESHOLD  # health below this triggers keystone cascade
 
+    # Step 8d.4: a value that applies only near some sites
+    site_share: float = 1.0
+    sites: str = ""
+
     def annual_value(self, area_ha: float) -> float:
-        """€/yr of service lost at full damage over ``area_ha`` hectares."""
-        return self.annual_value_per_ha * area_ha
+        """€/yr of service lost at full damage over ``area_ha`` hectares
+        (× site_share: the value applies only on that share)."""
+        if self.site_share == 1.0:
+            return self.annual_value_per_ha * area_ha
+        return self.annual_value_per_ha * self.site_share * area_ha
 
     @property
     def monetary_rate(self) -> float:

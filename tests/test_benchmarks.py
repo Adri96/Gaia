@@ -22,7 +22,7 @@ def test_posidonia_comparison_figures():
     result = case.run_extraction(50)
     block = case.benchmark_block(result)
     eco = result.ecosystem
-    full = sum(a.dependency_weight * a.annual_value_per_ha for a in eco.agents)
+    full = sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
     assert block["full_damage_eur_per_ha_yr"] == round(full, 2) == 818.66  # the ledger
     burial = eco.resource.carbon_profile.annual_absorption_tonnes * result.discount.carbon_price_at_year(0)
     assert block["carbon_burial_eur_per_ha_yr"] == round(burial, 2)

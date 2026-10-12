@@ -30,7 +30,8 @@ A document (every key below is optional unless marked *required*):
     agents              *required*, a non-empty list: name*, description,
                         dependency_weight*, annual_value_per_ha, damage (a
                         curve name or an inline curve), trophic_level,
-                        is_keystone, keystone_threshold
+                        is_keystone, keystone_threshold, sites and
+                        site_share (see "Site-restricted values" below)
     interactions        list: source*, target*, strength*, type, description
     carbon              gaia.models.CarbonProfile fields (the four tonnage
                         and fraction fields required; release_half_life_years
@@ -75,13 +76,30 @@ Service ledger (Step 8c.2): a list of final services, each counted once
 and owned by one agent: {service*, agent*, value* (€/ha/yr at full
 damage), section* ("provisioning" | "regulation and maintenance" |
 "cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
-split_of, share, share_source}. A service that is a share of another
+split_of, share, share_source, site_restricted}. An entry of a
+site-restricted agent says "site_restricted": true and books the value per
+hectare near the sites, like the agent's annual_value_per_ha (a run
+multiplies both by the agent's site_share). A service that is a share of another
 (split_of, with its share and the share's source) is the part of a final
 service moved to the agent that is its best owner. Parsing rejects a
 service listed twice, an unknown agent and a value <= 0; ``Case.
 ledger_check()`` lists the agents whose weight × annual_value_per_ha
 differs from the sum of their ledger values (the shipped files have none;
 it is not enforced on parse, so the Monte Carlo can perturb agent values).
+
+Site-restricted values (Step 8d.4): an agent whose service is enjoyed only
+near some sites (for Posidonia, the meadow's diving amenity near dive sites)
+names them, "sites": "dive sites", and gives "site_share": the share of the
+reference resource near them (a parameter with provenance, in (0, 1]; for
+a regional stock, the actual regional share). Its annual_value_per_ha is
+then the value per hectare NEAR the sites, and a run uses
+annual_value_per_ha × site_share (gaia.models.Agent.site_share). A project
+states its own share (``build_ecosystem(site_share=F)``; ``gaia run ...
+--<site>-share F``, e.g. --dive-site-share, recorded as user-supplied);
+explicit pricing anchors scale by F / the document's share. Its
+service-ledger entries carry "site_restricted": true and book the value
+per hectare near the sites. Every site-restricted agent of a case names
+the same sites.
 
 Release fates (Step 8d.2): carbon.release_fates names what a project can do
 to the soil (for Posidonia, the matte) and the release fraction and
@@ -417,6 +435,10 @@ class _AgentSpec:
     trophic_level: int
     is_keystone: bool
     keystone_threshold: float
+    # Step 8d.4: the share of the resource near the sites where the value
+    # applies (None: everywhere), and what the sites are
+    site_share: Optional[float] = None
+    sites: str = ""
 
 
 @dataclass(frozen=True)
@@ -538,6 +560,7 @@ class Case:
         carbon_release_fraction: Optional[float] = None,
         carbon_release_half_life: Optional[float] = None,
         carbon_fate: Optional[str] = None,
+        site_share: Optional[float] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
 
@@ -569,6 +592,10 @@ class Case:
                 by an explicit carbon_release_fraction /
                 carbon_release_half_life; recorded as user-supplied, with
                 the fate's basis, when it differs from the case default.
+            site_share: The share (0-1) of the affected resource near the
+                sites of the case's site-restricted agents (Step 8d.4, e.g.
+                the meadow near dive sites); default the documented
+                regional share. Recorded as user-supplied.
 
         Raises:
             ValueError: With unit "ha", if area_ha is not a whole number of
@@ -606,6 +633,7 @@ class Case:
                 lab["release_half_life_years"] = label
         carbon, carbon_params = self._carbon(carbon_release_fraction, carbon_release_half_life, lab)
 
+        shares = self._site_shares(site_share)
         agents = [
             Agent(
                 name=a.name,
@@ -616,6 +644,8 @@ class Case:
                 trophic_level=a.trophic_level,
                 is_keystone=a.is_keystone,
                 keystone_threshold=a.keystone_threshold,
+                site_share=shares.get(a.name, 1.0),
+                sites=a.sites,
             )
             for a in self.agents
         ]
@@ -637,14 +667,21 @@ class Case:
         if with_pricing:
             if self.pricing is None:
                 raise ValueError(f"{self.name}: the document has no pricing block")
-            pricing = self._pricing(agents, area)
+            pricing = self._pricing(agents, area, shares)
 
         provenance = [p for p in (total_param, a_param, value_param, threshold_param) if p is not None]
         for bucket in _BUCKETS:
             if bucket == "carbon":
                 provenance.extend(carbon_params)
                 continue
-            provenance.extend(self.buckets.get(bucket, ()))
+            params = list(self.buckets.get(bucket, ()))
+            if bucket == "agent_values" and site_share is not None:
+                params = [
+                    user_or_default(p, float(site_share), f"--{self.site_input}")
+                    if p.name.endswith("].site_share") else p
+                    for p in params
+                ]
+            provenance.extend(params)
         if pricing is not None:
             provenance.extend(anchor_params(pricing, [a.name for a in agents]))
         return Ecosystem(
@@ -718,6 +755,39 @@ class Case:
                 ))
         return carbon, params
 
+    @property
+    def site_restricted_agents(self) -> List[str]:
+        """The agents whose value applies only near some sites (Step 8d.4)."""
+        return [a.name for a in self.agents if a.site_share is not None]
+
+    @property
+    def sites(self) -> str:
+        """The sites of the site-restricted agents (e.g. "dive sites"), or ""."""
+        return next((a.sites for a in self.agents if a.site_share is not None), "")
+
+    @property
+    def site_input(self) -> str:
+        """The flag name of the site share, from the sites ("dive sites" ->
+        "dive-site-share"), or ""."""
+        return site_flag(self.sites) if self.sites else ""
+
+    @property
+    def default_site_share(self) -> Optional[float]:
+        """The documented regional share of the site-restricted agents, or None."""
+        return next((a.site_share for a in self.agents if a.site_share is not None), None)
+
+    def _site_shares(self, given: Optional[float]) -> Dict[str, float]:
+        """{site-restricted agent: the share used} (Step 8d.4)."""
+        if given is not None:
+            if not self.site_restricted_agents:
+                raise ValueError(f"{self.name}: the case has no site-restricted agent, so a site share cannot be set")
+            if not (isinstance(given, (int, float)) and math.isfinite(given) and 0.0 <= given <= 1.0):
+                raise ValueError(f"{self.name}: the site share must be in [0, 1], got {given!r}")
+        return {
+            a.name: float(given) if given is not None else a.site_share
+            for a in self.agents if a.site_share is not None
+        }
+
     def release_fate(self, name: str) -> Dict[str, Any]:
         """The fate ``name`` of carbon.release_fates (Step 8d.2).
 
@@ -746,12 +816,19 @@ class Case:
             if fate[key] != self.carbon.get(key, 0.0)
         ]
 
-    def _pricing(self, agents: list, area: float) -> PricingConfig:
+    def _pricing(self, agents: list, area: float, shares: Optional[Dict[str, float]] = None) -> PricingConfig:
         assert self.pricing is not None
         spec = self.pricing
+        # The anchor of a site-restricted agent is stated at its regional
+        # share; it scales with the share used (Step 8d.4).
+        defaults = {a.name: a.site_share for a in self.agents if a.site_share is not None}
+        factor = {name: (shares or {}).get(name, share) / share for name, share in defaults.items()}
         config = dataclasses.replace(
             spec.config,
-            anchors=[dataclasses.replace(a) for a in spec.config.anchors],
+            anchors=[
+                dataclasses.replace(a, anchor_value=a.anchor_value * factor.get(a.agent_name, 1.0))
+                for a in spec.config.anchors
+            ],
             scarcity_functions={k: dataclasses.replace(v) for k, v in spec.config.scarcity_functions.items()},
             default_scarcity=dataclasses.replace(spec.config.default_scarcity),
         )
@@ -809,11 +886,17 @@ class Case:
 
     # ── Service ledger ────────────────────────────────────────────────────────
 
-    def ledger_by_agent(self) -> Dict[str, float]:
-        """{agent: sum of its service_ledger values (€/ha/yr)}."""
+    def ledger_by_agent(self, regional: bool = False) -> Dict[str, float]:
+        """{agent: sum of its service_ledger values (€/ha/yr; a
+        site-restricted entry per hectare near its sites, or, with
+        ``regional``, × the agent's documented site_share)}."""
+        shares = {a.name: a.site_share for a in self.agents if a.site_share is not None}
         out: Dict[str, float] = {}
         for entry in self.service_ledger:
-            out[entry["agent"]] = out.get(entry["agent"], 0.0) + entry["value"]
+            value = entry["value"]
+            if regional and entry["site_restricted"]:
+                value *= shares[entry["agent"]]
+            out[entry["agent"]] = out.get(entry["agent"], 0.0) + value
         return out
 
     def ledger_check(self, rel_tol: float = 1e-9) -> List[str]:
@@ -1018,6 +1101,15 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
                 f"service is counted once)"
             )
         seen[entry["service"]] = i
+    restricted = {a.name for a in agents if a.site_share is not None}
+    for i, entry in enumerate(ledger):
+        if entry["site_restricted"] != (entry["agent"] in restricted):
+            raise ValueError(
+                f"$.service_ledger[{i}].site_restricted: must be "
+                f"{str(entry['agent'] in restricted).lower()}, as agent {entry['agent']!r} "
+                f"{'has' if entry['agent'] in restricted else 'has no'} sites "
+                f"(a site-restricted value is booked per hectare near the sites)"
+            )
     shares: Dict[str, float] = {}
     for i, entry in enumerate(ledger):
         parent = entry["split_of"]
@@ -1091,6 +1183,14 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     return case
 
 
+def site_flag(sites: str) -> str:
+    """The CLI flag name of a site share: "dive sites" -> "dive-site-share"."""
+    words = sites.split()
+    if words and words[-1].endswith("s"):
+        words[-1] = words[-1][:-1]
+    return "-".join(words + ["share"])
+
+
 def _parse_release_fates(raw: Any, path: str) -> Dict[str, Any]:
     """carbon.release_fates (Step 8d.2): what a project can do to the soil
     and the release fraction and half-life each fate implies. The default
@@ -1142,7 +1242,7 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
     """One service_ledger entry: a final service, its owner and its value."""
     obj = _object(
         raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
-        ("transfer", "note", "split_of", "share", "share_source"),
+        ("transfer", "note", "split_of", "share", "share_source", "site_restricted"),
     )
     agent = _str(obj["agent"], _key(path, "agent"))
     if agent not in agents:
@@ -1169,6 +1269,7 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
         "split_of": None,
         "share": None,
         "share_source": "",
+        "site_restricted": _bool(obj.get("site_restricted", False), _key(path, "site_restricted")),
     }
     if ("split_of" in obj) != ("share" in obj):
         raise ValueError(f"{path}: give both split_of and share, or neither")
@@ -1325,7 +1426,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         path = f"$.agents[{i}]"
         obj = _object(
             raw, path, ("name", "dependency_weight"),
-            ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone", "keystone_threshold"),
+            ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone",
+             "keystone_threshold", "sites", "site_share"),
         )
         name = _str(obj["name"], _key(path, "name"))
         if name in seen:
@@ -1345,6 +1447,22 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             values[name] = default_value
         else:
             raise ValueError(f"{_key(path, 'annual_value_per_ha')}: required (no agent_defaults value)")
+    sites: Dict[str, Tuple[float, str]] = {}
+    for path, name, obj in objs:
+        if ("sites" in obj) != ("site_share" in obj):
+            raise ValueError(f"{path}: give both sites and site_share, or neither")
+        if "sites" not in obj:
+            continue
+        label = _str(obj["sites"], _key(path, "sites"))
+        if not re.fullmatch(r"[a-z][a-z ]*", label):
+            raise ValueError(f"{_key(path, 'sites')}: lower-case words, e.g. 'dive sites', got {label!r}")
+        share = reader.number(obj["site_share"], _key(path, "site_share"), f"agent[{name}].site_share",
+                              buckets["agent_values"])
+        if not 0.0 < share <= 1.0:
+            raise ValueError(f"{_key(path, 'site_share')}: must be in (0, 1], got {share}")
+        sites[name] = (share, label)
+    if len({label for _, label in sites.values()}) > 1:
+        raise ValueError("$.agents: every agent with sites must name the same sites")
     weights = {
         name: reader.number(obj["dependency_weight"], _key(path, "dependency_weight"),
                             f"agent[{name}].dependency_weight", buckets["agent_weights"])
@@ -1382,6 +1500,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             trophic_level=_plain_int(obj.get("trophic_level", -1), _key(path, "trophic_level")),
             is_keystone=_bool(obj.get("is_keystone", False), _key(path, "is_keystone")),
             keystone_threshold=keystone[name],
+            site_share=sites[name][0] if name in sites else None,
+            sites=sites[name][1] if name in sites else "",
         )
         for path, name, obj in objs
     ]
@@ -1864,6 +1984,9 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
         kname = f"agent[{a.name}].keystone_threshold"
         if kname in pattern_fields["agent[*].keystone_threshold"]:
             item["keystone_threshold"] = listed(a.keystone_threshold, kname)
+        if a.sites:
+            item["sites"] = a.sites
+            item["site_share"] = num(a.site_share, f"agent[{a.name}].site_share")
         out_agents.append(item)
     doc["agents"] = out_agents
     if ecosystem.interactions:

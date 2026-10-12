@@ -226,9 +226,16 @@ figure and the owner's weights keep their role in the health index
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
-- Posidonia Meadow: the meadow's diving amenity, €34.71 per dive for a
-  total loss of cover (Zunino et al. 2020) × ~60,000 Medes Islands dives
-  a year ÷ 4,582 ha = 454.52.
+- Posidonia Meadow: the meadow's diving amenity, only near dive sites
+  (Step 8d.4): €34.71 per dive for a total loss of cover (Zunino et al.
+  2020) × ~60,000 Medes Islands dives a year ÷ 142.35 ha of meadow within
+  reach of dive sites (the P. oceanica cover of the five coastal Natura
+  2000 sites of the Costa Brava, EEA Standard Data Forms; a flagged
+  proxy; the Medes meadow alone is 8.8 ha, Romero et al. 2001) =
+  €14,630/ha/yr near dive sites, × the share of the affected meadow near
+  dive sites (`site_share`; `--dive-site-share F`, a project input). The
+  default share is the regional one, 142.35 / 4,582 = 0.0311, which gives
+  back the former regional average, 454.52.
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
   for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
   Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the

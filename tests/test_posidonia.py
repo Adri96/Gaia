@@ -41,7 +41,8 @@ def test_posidonia_values_are_the_sourced_final_services():
     service ledger: every agent carries euros, the total is unchanged where
     services were split (fisheries, bioindicator use)."""
     eco = build_posidonia_ecosystem()
-    per_ha = {a.name: a.dependency_weight * a.annual_value_per_ha for a in eco.agents}
+    # the value per hectare of the reference resource (× site_share, Step 8d.4)
+    per_ha = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
     assert per_ha["Coastal Protection"] == pytest.approx(188.0, rel=1e-12)
     assert per_ha["Water Quality"] == pytest.approx(60.0, rel=1e-12)
     # Campagne et al.'s fisheries (35) split 14/16 fish, 2/16 invertebrates
@@ -419,7 +420,7 @@ def test_reference_resource_cli(capsys):
 # ── Step 8c.3: small losses priced linearly ──────────────────────────────────
 
 def _average_value_per_ha(eco):
-    return sum(a.dependency_weight * a.annual_value_per_ha for a in eco.agents)
+    return sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
 
 
 @pytest.mark.parametrize("reference_ha", [4582, 300])
@@ -499,12 +500,25 @@ def test_service_ledger_counts_each_service_once_and_prices_every_agent():
     for parent in parents:
         assert sum(e["share"] for e in ledger if e["split_of"] == parent) == pytest.approx(1.0)
     by_agent = case.ledger_by_agent()
+    regional = case.ledger_by_agent(regional=True)
     eco = case.build_ecosystem()
     assert set(by_agent) == {a.name for a in eco.agents}
     for a in eco.agents:
-        assert a.annual_value_per_ha > 0.0
+        assert a.annual_value_per_ha > 0.0 and a.annual_value(1.0) > 0.0
+        # per hectare near the sites for a site-restricted agent (Step 8d.4)
         assert a.dependency_weight * a.annual_value_per_ha == pytest.approx(by_agent[a.name], rel=1e-12)
+        # per hectare of the reference resource, as the run uses it
+        assert a.dependency_weight * a.annual_value(1.0) == pytest.approx(regional[a.name], rel=1e-12)
+    assert sum(regional.values()) == pytest.approx(818.6635785921815, rel=1e-12)
     assert case.ledger_check() == []
+    # every agent stays > 0 at any project share above 0, and only the
+    # site-restricted agent depends on it
+    for share in (1.0, 0.5, 1e-3):
+        eco_s = case.build_ecosystem(site_share=share)
+        for a, b in zip(eco.agents, eco_s.agents):
+            assert b.annual_value(1.0) > 0.0
+            if a.name not in case.site_restricted_agents:
+                assert b.annual_value(1.0) == a.annual_value(1.0)
     for e in ledger:
         assert e["source"] and e["method"]
         assert "doi:" in e["source"] or "Idescat" in e["source"]
@@ -545,3 +559,106 @@ def test_ledger_check_finds_an_unbooked_value():
     doc["agents"][0]["annual_value_per_ha"]["value"] *= 2
     problems = case_from_dict(doc).ledger_check()
     assert len(problems) == 1 and problems[0].startswith("Posidonia Meadow")
+
+
+# ── Step 8d.4: the meadow's diving value only near dive sites ────────────────
+
+def test_diving_value_applies_only_near_dive_sites():
+    """Dives divided over the meadow within reach of dive sites (142.35 ha),
+    times the share of the affected meadow near dive sites: the regional
+    default gives back the former regional average."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    assert case.site_restricted_agents == ["Posidonia Meadow"]
+    assert case.sites == "dive sites" and case.site_input == "dive-site-share"
+    near = 34.71 * 60_000 / 142.35
+    assert case.default_site_share == pytest.approx(142.35 / 4582, rel=1e-12)
+    entry = next(e for e in case.service_ledger if e["agent"] == "Posidonia Meadow")
+    assert entry["site_restricted"] and entry["value"] == pytest.approx(near, rel=1e-12)
+    assert not any(e["site_restricted"] for e in case.service_ledger if e is not entry)
+
+    def meadow(eco):
+        a = next(a for a in eco.agents if a.name == "Posidonia Meadow")
+        return a.dependency_weight * a.annual_value(1.0)
+
+    assert meadow(case.build_ecosystem()) == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
+    assert meadow(case.build_ecosystem(site_share=1.0)) == pytest.approx(near, rel=1e-12)
+    assert meadow(case.build_ecosystem(site_share=0.0)) == 0.0
+    # a project at a dive site: 50 ha below the threshold cost 50 × the
+    # ledger total with the meadow's near-site value
+    others = sum(case.ledger_by_agent().values()) - near
+    result = run_extraction(case.build_ecosystem(site_share=1.0), 50)
+    assert result.annual_externality == pytest.approx(50 * (others + near), rel=1e-12)
+    result = run_extraction(case.build_ecosystem(site_share=0.0), 50)
+    assert result.annual_externality == pytest.approx(50 * others, rel=1e-12)
+
+
+def test_site_share_is_a_recorded_project_input():
+    from gaia.cases import load_case
+    from gaia.provenance import Confidence
+    from gaia.uncertainty import run_uncertainty
+
+    case = load_case("posidonia")
+    default = {p.name: p for p in case.build_ecosystem().provenance}
+    share = default["agent[Posidonia Meadow].site_share"]
+    assert share.confidence is Confidence.LOW and "Natura 2000" in share.source
+    assert share.distribution == "fixed"
+    given = {p.name: p for p in case.build_ecosystem(site_share=1.0).provenance}
+    assert given["agent[Posidonia Meadow].site_share"].confidence is Confidence.USER
+    assert "--dive-site-share" in given["agent[Posidonia Meadow].site_share"].source
+    res = run_uncertainty(case, 50, build_kwargs={"site_share": 1.0}, draws=4,
+                          tornado=False, normative=False)
+    names = {s.name for s in res.sampled}
+    assert "agent[Posidonia Meadow].site_share" not in names
+    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    with pytest.raises(ValueError, match="site share must be in"):
+        case.build_ecosystem(site_share=1.5)
+    with pytest.raises(ValueError, match="no site-restricted agent"):
+        load_case("forest").build_ecosystem(site_share=0.5)
+
+
+def test_site_share_scales_the_meadow_anchor():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+
+    def anchor(eco):
+        return next(a.anchor_value for a in eco.pricing.anchors if a.agent_name == "Posidonia Meadow")
+
+    base = anchor(case.build_ecosystem(with_pricing=True))
+    near = anchor(case.build_ecosystem(with_pricing=True, site_share=1.0))
+    assert near == pytest.approx(base * 4582 / 142.35, rel=1e-12)
+
+
+def test_dive_site_share_cli(capsys):
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--dive-site-share", "1", "--format", "json",
+                 "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
+    assert meadow["site_share"] == 1.0 and meadow["sites"] == "dive sites"
+    assert main(["run", "posidonia", "--help"]) == 0
+    text = " ".join(capsys.readouterr().out.split())
+    assert "--dive-site-share F" in text and "within reach of dive sites" in text
+    assert main(["run", "forest", "--dive-site-share", "1"]) == 2
+
+
+def test_ledger_rejects_a_site_mismatch():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    entry = next(e for e in doc["service_ledger"] if e["agent"] == "Posidonia Meadow")
+    entry["site_restricted"] = False
+    with pytest.raises(ValueError, match="site_restricted: must be true"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")["sites"]
+    with pytest.raises(ValueError, match="give both sites and site_share"):
+        case_from_dict(doc)

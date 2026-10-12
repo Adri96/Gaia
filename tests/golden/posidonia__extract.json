@@ -94,9 +94,9 @@
       "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
       "ecosystem_provenance_recorded": true,
       "n_high": 0,
-      "n_low": 20,
+      "n_low": 21,
       "n_medium": 10,
-      "n_params": 60,
+      "n_params": 61,
       "n_placeholder": 29,
       "n_user_supplied": 1,
       "parameters": [
@@ -172,14 +172,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, 454.52 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 4,582 ha. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper-bias) and leaves out every other Catalan dive site (a lower-bias). Range 214-1,294 EUR/ha/yr: EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap). Weight x value = the service.",
+          "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES: 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
           "range": [
-            1943.2928852029681,
-            11775.185508511566
+            62551.232876712325,
+            379022.8310502283
           ],
-          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015)",
+          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
           "unit": "\u20ac/ha/yr",
-          "value": 4136.110868616325
+          "value": 133134.24657534246
         },
         {
           "confidence": "low",
@@ -288,6 +288,15 @@
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr; the epiphyte share of the bioindicator (0.5/3.5 of the PREI, Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012) moved to Epiphytes & Algae",
           "unit": "\u20ac/ha/yr",
           "value": 18.378750000000004
+        },
+        {
+          "confidence": "low",
+          "distribution": "fixed",
+          "name": "agent[Posidonia Meadow].site_share",
+          "note": "The share of the affected meadow within reach of dive sites, where the meadow's diving value applies (Step 8d.4). A PROJECT INPUT: the user states it with --dive-site-share (1 for a project at a dive site, 0 far from any; recorded as user-supplied). The default is the regional share: 142.35 ha near dive sites / 4,582 ha, the expected share for a meadow of unknown location. The 142.35 ha are a proxy, flagged: the P. oceanica cover inside the coastal Natura 2000 sites of the Costa Brava, which hold its best-known dive sites (Medes Islands, Cap de Creus; dive sites elsewhere in these sites assumed, not verified); a site boundary is not the reach of a dive site, and the 2014 forms and the 2025 regional map differ in date and method. Held fixed in the Monte Carlo (\"distribution\": \"fixed\").",
+          "source": "European Environment Agency, Natura 2000 Standard Data Forms, habitat 1120* (Posidonia beds) cover in ha, forms last updated December 2014, via the EEA Natura 2000 service (https://bio.discomap.eea.europa.eu/arcgis/rest/services/Bio/Natura2000_Dyna_WM/MapServer/13, queried 12 October 2026; site pages https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5120007 etc.): Cap de Creus (ES5120007) 64.14 ha, El Montgr\u00ed-Les Medes-El Baix Ter (ES5120016) 10.75 ha, Litoral del Baix Empord\u00e0 (ES5120015) 24.10 ha, Mass\u00eds de les Cadiretes (ES5120013) 42.36 ha, L'Albera (ES5120014) 1.00 ha: 142.35 ha in the coastal Natura 2000 sites of the Costa Brava (Girona coast); cross-check: the Medes Islands meadow covers 8.8 ha (Romero, P\u00e9rez & Renom 2001, Seguimiento de la pradera de Posidonia oceanica de las islas Medes, Ejercicio 2001, Universitat de Barcelona, http://hdl.handle.net/2445/25506); regional stock 4,582 ha (resource.area_ha)",
+          "unit": "fraction",
+          "value": 0.03106721955477957
         },
         {
           "confidence": "low",
@@ -722,19 +731,21 @@
           "value": 200.0
         }
       ],
-      "statement": "ILLUSTRATIVE: 49 of 60 recorded parameters are placeholders (29) or low-confidence (20); 1 user-supplied, not assessed. Results are not real-world estimates.",
+      "statement": "ILLUSTRATIVE: 50 of 61 recorded parameters are placeholders (29) or low-confidence (21); 1 user-supplied, not assessed. Results are not real-world estimates.",
       "status": "illustrative"
     },
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 4136.110868616325,
-          "annual_value_eur_yr": 20680554.343081627,
+          "annual_value_eur_per_ha_yr": 133134.24657534246,
+          "annual_value_eur_yr": 20680554.343081623,
           "dependency_weight": 0.10989010989010989,
-          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020)",
+          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
+          "site_share": 0.03106721955477957,
+          "sites": "dive sites",
           "trophic_amplification": 1.0,
           "trophic_level": 0
         },
@@ -1076,7 +1087,7 @@
     "Human Communities": 7187.903085597239,
     "Marine Invertebrates": 21875.0,
     "Marine Megafauna": 150921.33075300753,
-    "Posidonia Meadow": 1805918.0694730433,
+    "Posidonia Meadow": 1805918.0694730429,
     "Seabirds": 150921.3307530075,
     "Water Quality": 259792.52557007154
   },
@@ -1094,7 +1105,7 @@
       768.2460166983874
     ],
     "agent_direct_annual_costs": [
-      1805918.0694730433,
+      1805918.0694730429,
       75282.86943843408,
       851.4134043632428,
       21875.0,
@@ -1178,7 +1189,7 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      1385776063.321715,
+      1385776063.3217149,
       62869368.066675894,
       698203.0015322072,
       16745823.88595211,
@@ -1225,7 +1236,7 @@
       609.778730638634,
       609.778730638634
     ],
-    "annual_externality": 2699709618.888819,
+    "annual_externality": 2699709618.8888187,
     "depletion_ratio": 400.2,
     "ecosystem_health": 1272.9854959325012,
     "effective_k": 9998000.0,
@@ -1240,7 +1251,7 @@
   "steps": [
     {
       "agent_annual_costs": [
-        454.5176778699259,
+        454.51767786992576,
         18.947368421052627,
         0.2142857142857143,
         4.375,
@@ -1288,14 +1299,14 @@
         0.0002
       ],
       "agent_prices": [],
-      "annual_externality": 818.6635785921815,
+      "annual_externality": 818.6635785921814,
       "depletion_ratio": 0.0002,
       "ecosystem_health": 0.9998,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999998,
       "keystone_triggered": [],
-      "marginal_annual_externality": 818.6635785921815,
+      "marginal_annual_externality": 818.6635785921814,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1306,7 +1317,7 @@
     },
     {
       "agent_annual_costs": [
-        91358.05325185509,
+        91358.05325185508,
         3808.421052631578,
         43.07142857142857,
         879.375,
@@ -1354,7 +1365,7 @@
         0.0402
       ],
       "agent_prices": [],
-      "annual_externality": 164551.37929702847,
+      "annual_externality": 164551.37929702844,
       "depletion_ratio": 0.0402,
       "ecosystem_health": 0.9598,
       "effective_k": 4999,
@@ -1372,7 +1383,7 @@
     },
     {
       "agent_annual_costs": [
-        182261.58882584024,
+        182261.5888258402,
         7597.894736842103,
         85.92857142857142,
         1754.3749999999998,
@@ -1420,7 +1431,7 @@
         0.0802
       ],
       "agent_prices": [],
-      "annual_externality": 328284.09501546476,
+      "annual_externality": 328284.0950154647,
       "depletion_ratio": 0.0802,
       "ecosystem_health": 0.9198,
       "effective_k": 4999,
@@ -1438,7 +1449,7 @@
     },
     {
       "agent_annual_costs": [
-        273165.12439982546,
+        273165.1243998254,
         11387.36842105263,
         128.78571428571428,
         2629.375,
@@ -1486,7 +1497,7 @@
         0.1202
       ],
       "agent_prices": [],
-      "annual_externality": 492016.8107339011,
+      "annual_externality": 492016.81073390105,
       "depletion_ratio": 0.1202,
       "ecosystem_health": 0.8798,
       "effective_k": 4999,
@@ -1504,7 +1515,7 @@
     },
     {
       "agent_annual_costs": [
-        364068.65997381066,
+        364068.65997381054,
         15176.842105263157,
         171.64285714285714,
         3504.375,
@@ -1552,7 +1563,7 @@
         0.1602
       ],
       "agent_prices": [],
-      "annual_externality": 655749.5264523374,
+      "annual_externality": 655749.5264523373,
       "depletion_ratio": 0.1602,
       "ecosystem_health": 0.8398,
       "effective_k": 4999,
@@ -1570,7 +1581,7 @@
     },
     {
       "agent_annual_costs": [
-        455808.6840887467,
+        455808.6840887466,
         19016.870786190902,
         215.03233421865625,
         4395.933502961149,
@@ -1618,7 +1629,7 @@
         0.2005680774507478
       ],
       "agent_prices": [],
-      "annual_externality": 821692.9255235028,
+      "annual_externality": 821692.9255235026,
       "depletion_ratio": 0.2002,
       "ecosystem_health": 0.7990538419015809,
       "effective_k": 4999,
@@ -1636,7 +1647,7 @@
     },
     {
       "agent_annual_costs": [
-        727789.1522706852,
+        727789.1522706851,
         33398.99667885018,
         370.0367081338263,
         8726.580705114413,
@@ -1684,14 +1695,14 @@
         0.32024679686010554
       ],
       "agent_prices": [],
-      "annual_externality": 1449933.8409356407,
+      "annual_externality": 1449933.8409356405,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917622486862,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3246.558032121975,
+      "marginal_annual_externality": 3246.558032121742,
       "model_confidence": 0.585,
       "price_result": null,
       "resilience_zone": "red",
@@ -1702,7 +1713,7 @@
     },
     {
       "agent_annual_costs": [
-        1022440.2948245282,
+        1022440.294824528,
         48156.1822291934,
         530.7153860996159,
         13135.332837197873,
@@ -1750,14 +1761,14 @@
         0.4499012225954084
       ],
       "agent_prices": [],
-      "annual_externality": 2098131.168336722,
+      "annual_externality": 2098131.1683367216,
       "depletion_ratio": 0.28,
       "ecosystem_health": 0.410180583244278,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.999984734338123,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3180.134065244114,
+      "marginal_annual_externality": 3180.134065243881,
       "model_confidence": 0.57,
       "price_result": null,
       "resilience_zone": "red",
@@ -1768,7 +1779,7 @@
     },
     {
       "agent_annual_costs": [
-        1317047.4792175803,
+        1317047.47921758,
         61744.90472469732,
         681.111311401678,
         17110.66834974033,
@@ -1834,7 +1845,7 @@
     },
     {
       "agent_annual_costs": [
-        1585165.897437104,
+        1585165.8974371038,
         72881.0433999897,
         807.158399542727,
         20245.655927735148,
@@ -1882,7 +1893,7 @@
         0.6975156191353894
       ],
       "agent_prices": [],
-      "annual_externality": 3091497.242170173,
+      "annual_externality": 3091497.2421701727,
       "depletion_ratio": 0.36,
       "ecosystem_health": 0.1608237711540168,
       "effective_k": 4999,
@@ -1900,7 +1911,7 @@
     },
     {
       "agent_annual_costs": [
-        1805918.0694730433,
+        1805918.0694730429,
         81041.03880604345,
         902.0639682449918,
         21875.0,
@@ -1955,7 +1966,7 @@
       "irreversibility_warning": false,
       "k_fraction": 0.9999362217745381,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1438.3383127613924,
+      "marginal_annual_externality": 1438.338312761858,
       "model_confidence": 0.5249999999999999,
       "price_result": null,
       "resilience_zone": "red",

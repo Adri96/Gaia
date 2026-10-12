@@ -1,7 +1,7 @@
 {
   "gaia_schema": 1,
   "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
-  "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the reference resource is the regional stock (4,582 ha) unless the user enters the meadow a project affects. Every agent carries euros: the service ledger books each final ecosystem service once, to one agent (coastal protection, water purification, fisheries split between fish and invertebrates, bioindicator use split with the epiphytes, knowledge, recreational diving on the meadow and on the coralligenous, non-use values of megafauna and seabirds). Small losses are priced linearly (damage model area_loss). Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the reference resource is the regional stock (4,582 ha) unless the user enters the meadow a project affects. Every agent carries euros: the service ledger books each final ecosystem service once, to one agent (coastal protection, water purification, fisheries split between fish and invertebrates, bioindicator use split with the epiphytes, knowledge, recreational diving on the meadow (only near dive sites: --dive-site-share) and on the coralligenous, non-use values of megafauna and seabirds). Small losses are priced linearly (damage model area_loss). Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
   "damage_model": "area_loss",
   "resource": {
@@ -72,17 +72,17 @@
   "agents": [
     {
       "name": "Posidonia Meadow",
-      "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020)",
+      "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020), only where the meadow is within reach of dive sites",
       "dependency_weight": 0.10989010989010989,
       "annual_value_per_ha": {
-        "value": 4136.110868616325,
+        "value": 133134.24657534246,
         "unit": "€/ha/yr",
-        "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015)",
+        "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
         "confidence": "low",
-        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): recreational diving amenity of the meadow, 454.52 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 4,582 ha. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper-bias) and leaves out every other Catalan dive site (a lower-bias). Range 214-1,294 EUR/ha/yr: EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap). Weight x value = the service.",
+        "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; docs/POSIDONIA_LITERATURE_REVIEW.md §2): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES: 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
         "range": [
-          1943.2928852029681,
-          11775.185508511566
+          62551.232876712325,
+          379022.8310502283
         ]
       },
       "trophic_level": 0,
@@ -97,6 +97,15 @@
           0.45
         ],
         "distribution": "uniform"
+      },
+      "sites": "dive sites",
+      "site_share": {
+        "value": 0.03106721955477957,
+        "unit": "fraction",
+        "source": "European Environment Agency, Natura 2000 Standard Data Forms, habitat 1120* (Posidonia beds) cover in ha, forms last updated December 2014, via the EEA Natura 2000 service (https://bio.discomap.eea.europa.eu/arcgis/rest/services/Bio/Natura2000_Dyna_WM/MapServer/13, queried 12 October 2026; site pages https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=ES5120007 etc.): Cap de Creus (ES5120007) 64.14 ha, El Montgrí-Les Medes-El Baix Ter (ES5120016) 10.75 ha, Litoral del Baix Empordà (ES5120015) 24.10 ha, Massís de les Cadiretes (ES5120013) 42.36 ha, L'Albera (ES5120014) 1.00 ha: 142.35 ha in the coastal Natura 2000 sites of the Costa Brava (Girona coast); cross-check: the Medes Islands meadow covers 8.8 ha (Romero, Pérez & Renom 2001, Seguimiento de la pradera de Posidonia oceanica de las islas Medes, Ejercicio 2001, Universitat de Barcelona, http://hdl.handle.net/2445/25506); regional stock 4,582 ha (resource.area_ha)",
+        "confidence": "low",
+        "note": "The share of the affected meadow within reach of dive sites, where the meadow's diving value applies (Step 8d.4). A PROJECT INPUT: the user states it with --dive-site-share (1 for a project at a dive site, 0 far from any; recorded as user-supplied). The default is the regional share: 142.35 ha near dive sites / 4,582 ha, the expected share for a meadow of unknown location. The 142.35 ha are a proxy, flagged: the P. oceanica cover inside the coastal Natura 2000 sites of the Costa Brava, which hold its best-known dive sites (Medes Islands, Cap de Creus; dive sites elsewhere in these sites assumed, not verified); a site boundary is not the reach of a dive site, and the 2014 forms and the 2025 regional map differ in date and method. Held fixed in the Monte Carlo (\"distribution\": \"fixed\").",
+        "distribution": "fixed"
       }
     },
     {
@@ -540,7 +549,7 @@
       {
         "agent_name": "Posidonia Meadow",
         "anchor_value": 18951660.000000004,
-        "source": "Service ledger (Step 8c.2): the meadow's recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr, per hectare / dependency weight x 4,582 ha",
+        "source": "Service ledger (Step 8c.2, 8d.4): the meadow's recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; scaled with --dive-site-share",
         "confidence": "low",
         "description": "Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A stated-preference value, not a market price: no market price exists for the meadow itself"
       },
@@ -789,15 +798,16 @@
       "transfer": "EU average to Catalonia, unit value, EUR 2014"
     },
     {
-      "service": "Recreational diving: meadow amenity",
+      "service": "Recreational diving: meadow amenity near dive sites",
       "agent": "Posidonia Meadow",
-      "value": 454.5176778699258,
+      "value": 14630.13698630137,
       "section": "cultural",
       "kind": "use",
-      "method": "choice experiment (WTP per dive) x annual dives / meadow area",
-      "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015)",
+      "method": "choice experiment (WTP per dive) x annual dives / meadow area within reach of dive sites",
+      "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: Ràdio Capital de l'Empordà (26 May 2026, reporting the Parc Natural del Montgrí, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
       "transfer": "Italian divers' per-dive WTP to Medes Islands dives, unit value, no income adjustment, EUR 2016-17",
-      "note": "Assumes every Medes dive includes meadow; other Catalan dive sites left out."
+      "note": "Per hectare of meadow within reach of dive sites (Step 8d.4); the agent's value in a run is this x the share of the affected meadow near dive sites (default 142.35 / 4,582: the regional average, 454.52 EUR/ha/yr). Assumes every Medes dive includes meadow; dives at the other Costa Brava sites are not counted (not found).",
+      "site_restricted": true
     },
     {
       "service": "Recreational diving: coralligenous seascape",

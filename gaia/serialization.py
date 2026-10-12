@@ -85,6 +85,11 @@ def _agent_metadata(
             "is_keystone": a.is_keystone,
             "keystone_threshold": a.keystone_threshold if a.is_keystone else None,
         }
+        if a.sites:
+            # Step 8d.4: annual_value_eur_per_ha_yr is per hectare near the
+            # sites; the value applies on site_share of the resource
+            d["sites"] = a.sites
+            d["site_share"] = a.site_share
         if trophic_amplification:
             d["trophic_amplification"] = round(trophic_amplification[i], 6)
         out.append(d)

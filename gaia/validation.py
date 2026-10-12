@@ -165,6 +165,17 @@ def validate_ecosystem(
                 f"Agent '{agent.name}' annual_value_per_ha must be finite and "
                 f">= 0.0 (€/ha/yr at full damage), got {agent.annual_value_per_ha}"
             )
+        site_share = getattr(agent, "site_share", 1.0)
+        if not (isinstance(site_share, (int, float)) and math.isfinite(site_share)
+                and 0.0 <= site_share <= 1.0):
+            raise ValueError(
+                f"Agent '{agent.name}' site_share must be in [0.0, 1.0], got {site_share!r}"
+            )
+        if site_share != 1.0 and not getattr(agent, "sites", ""):
+            raise ValueError(
+                f"Agent '{agent.name}' has site_share {site_share:g} but no sites: "
+                f"name the sites where its value applies"
+            )
         weight_sum += agent.dependency_weight
 
     if abs(weight_sum - 1.0) > _WEIGHT_SUM_TOLERANCE:
