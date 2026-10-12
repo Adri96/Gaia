@@ -69,11 +69,43 @@ Machine: Python 3.10.4, arm64 macOS (Apple silicon), Cython 3 extension built in
      8000    0.072    0.000    0.077    0.000 gaia/pricing.py:645(_matrix_subtract)
 ```
 
+## Follow-up: the pricing solver (same numbers, fewer solves)
+
+Done after the measurements above, on the same machine (Python loop; Cython never runs pricing):
+
+- **One elimination for n + 1 right-hand sides.** `solve_prices` solved `(I − S·W) x = b` once for the prices and once per column of the inverse (for the demand multipliers), repeating the same Gaussian elimination n + 1 times. `gaia.pricing.solve_linear_systems` eliminates once with every right-hand side appended to the augmented matrix: the pivots depend on the matrix only and each column goes through exactly the operations a separate solve applies, so the results are **bit-for-bit identical** (checked against the previous code on 6,000 random health states of the four cases — prices, multipliers, certificates and error messages — and 2,000 random systems; the golden pricing snapshots pass unchanged on both engines).
+  The inverse's columns are still computed: its row sums could come from a single solve against a vector of ones, but in floating point that is not the same number as summing the columns, so it would change the reported demand multipliers.
+- **S·W by row scaling.** S is diagonal, so `S·W` is row *i* of W times `S[i][i]`: the same numbers as the dense O(n³) product, whose other terms are `0.0 × w`.
+- **Not done**, because they would change reported numbers: a warm start of the convergence certificate (it would change `iterations` and `spectral_radius_bound`), and skipping zero entries during elimination (it can flip the sign of exact zeros, so bit-identity is not guaranteed).
+
+| Case | Units (of total) | Before (s) | After (s) | Speed-up | After, ms per unit |
+|---|---|---|---|---|---|
+| forest | 5,000 of 10,000 | 0.342 | 0.239 | 1.4× | 0.05 |
+| costa_brava | 3,000 of 10,000 | 2.209 | 0.662 | 3.3× | 0.22 |
+| posidonia | 1,500 of 5,000 | 0.904 | 0.335 | 2.7× | 0.22 |
+| amazon_forest | 8,000 of 40,000 | 6.041 | 1.881 | 3.2× | 0.24 |
+
+### cProfile: pricing amazon_forest, after the follow-up
+
+```text
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     8000    1.212    0.000    1.273    0.000 gaia/pricing.py:393(solve_linear_systems)
+    31667    0.235    0.000    0.235    0.000 gaia/pricing.py:344(matrix_vector_multiply)
+     8000    0.198    0.000    2.371    0.000 gaia/pricing.py:701(solve_prices)
+     8000    0.109    0.000    0.131    0.000 gaia/pricing.py:519(spectral_radius_bound)
+     8000    0.072    0.000    0.077    0.000 gaia/pricing.py:685(_matrix_subtract)
+     8001    0.065    0.000    0.065    0.000 gaia/propagation.py:93(propagate_interactions)
+     8000    0.060    0.000    0.083    0.000 gaia/pricing.py:222(build_value_matrix)
+    88000    0.060    0.000    0.060    0.000 gaia/pricing.py:782(<listcomp>)
+```
+
+The solve now takes about half of a pricing run, against four fifths before.
+
 ## Reading
 
 1. **The compiled loop buys 1.2–3.3× on a whole run, never more.** The Python loop already costs only ~20 µs per unit for the largest case (Amazon: 11 agents, 34 edges), about 40% of it in `propagate_interactions`. With Cython the loop itself is cheap, and the rest of the run — turning each step into a `SimulationStep`, replaying the substrate, the NPVs, and for restoration the restoration steps and maturation timeline, all Python — dominates: Cython makes extraction 1.7–3.3× faster, restoration only 1.2–1.9×.
 2. **Absolute times are small.** Every default run takes at most 2.4 s in pure Python (Amazon restoration, 80,000 units) and at most 0.12 s for the three other cases; a full-depletion sweep of 100,000 units takes ~2 s. Nothing in the current CLI or tests is slow enough to need compilation (the whole suite with the Python loop forced takes about a minute on this machine, against half a minute with Cython).
-3. **Pricing is the slow path, and Cython never runs it.** The `.pyx` has no price solver, so `--with-pricing` always uses the Python loop: 0.07 ms per unit for the 4-agent forest, 0.6–0.75 ms for the 10–11-agent cases, 6 s for 8,000 Amazon units. Three quarters of that time is `solve_linear_system`, called 12 times per step for 11 agents: once for the prices and once per column of `(I − S·W)⁻¹`, only to take that inverse's row sums (the demand multipliers). Those row sums are one more solve, `(I − S·W)⁻¹ · 1`, so a single LU factorisation reused for two right-hand sides would cut the solver time by roughly 10× and a whole pricing run by about 3×. Warm-starting the convergence certificate from the previous step and skipping zero entries of the sparse `W` would add to that.
+3. **Pricing was the slow path, and Cython never runs it** (before the follow-up above). The `.pyx` has no price solver, so `--with-pricing` always uses the Python loop: 0.07 ms per unit for the 4-agent forest, 0.6–0.75 ms for the 10–11-agent cases, 6 s for 8,000 Amazon units. Three quarters of that time is `solve_linear_system`, called 12 times per step for 11 agents: once for the prices and once per column of `(I − S·W)⁻¹`, only to take that inverse's row sums (the demand multipliers). Those row sums are one more solve, `(I − S·W)⁻¹ · 1`, so a single LU factorisation reused for two right-hand sides would cut the solver time by roughly 10× and a whole pricing run by about 3×. Warm-starting the convergence certificate from the previous step and skipping zero entries of the sparse `W` would add to that.
 4. **Maintenance cost.** The extension doubles the engine (the `.pyx` mirrors the Python phases), needs the parity test, a stale-build guard, and a CI matrix twice as large.
 
 ## Recommendation
@@ -81,4 +113,4 @@ Machine: Python 3.10.4, arm64 macOS (Apple silicon), Cython 3 extension built in
 - **Keep the Cython loop for now**: it is parity-tested, it costs nothing at run time when absent, and removing it changes no output.
 - **Do not extend it.** Any engine change (decision D5, `version_specs/V09_SPEC.md`) should be written in Python only.
 - **Drop it with either D5 option.** Option A (path dependence) steps by year, so the loop shrinks from up to 80,000 iterations to at most a few hundred; option B (drop the claim) evaluates the static function directly. Either way the loop the extension compiles disappears.
-- **If pricing is ever un-quarantined, optimise its solver first** (one factorisation per step, row sums by one solve, warm start, sparse `W`), not the `.pyx`: that is where the time goes (≈ 3× on the slowest path), while the `.pyx` gives ≤ 3.3× on paths that already take under 2.5 s.
+- **Pricing: optimise its solver, not the `.pyx`.** The redundant solves are gone (1.4–3.3× on the pricing runs, identical numbers, see the follow-up); a warm start and sparse elimination are the next steps if pricing is ever un-quarantined, at the cost of re-checking the golden pricing snapshots.

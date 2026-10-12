@@ -387,18 +387,53 @@ def solve_linear_system(
     n: int = len(a_matrix)
     if n == 0:
         return []
-    if len(b_vector) != n:
-        raise ValueError(
-            f"Dimension mismatch: matrix is {n}x{n}, vector has {len(b_vector)} elements"
-        )
+    return solve_linear_systems(a_matrix, [b_vector])[0]
 
-    # Create augmented matrix [A | b] — deep copy to avoid mutation
+
+def solve_linear_systems(
+    a_matrix: List[List[float]],
+    b_vectors: List[List[float]],
+) -> List[List[float]]:
+    """Solve Ax = b for several right-hand sides with one elimination.
+
+    The same Gaussian elimination with partial pivoting as
+    solve_linear_system, run once on A with every b appended as an extra
+    column of the augmented matrix. The pivots depend on A only and each
+    right-hand-side column goes through exactly the operations a separate
+    solve would apply, so every solution is bit-for-bit the one
+    solve_linear_system(a_matrix, b) gives, at the cost of a single
+    factorisation (decision D7 profiling: the price solve used to repeat
+    it n + 1 times per step).
+
+    Args:
+        a_matrix: N x N coefficient matrix. NOT modified in place.
+        b_vectors: Right-hand sides, each N-length. NOT modified in place.
+
+    Returns:
+        One N-length solution per right-hand side, in order.
+
+    Raises:
+        ValueError: If the matrix is singular or dimensions are incompatible.
+    """
+    n: int = len(a_matrix)
+    m: int = len(b_vectors)
+    if n == 0:
+        return [[] for _ in range(m)]
+    for b_vector in b_vectors:
+        if len(b_vector) != n:
+            raise ValueError(
+                f"Dimension mismatch: matrix is {n}x{n}, vector has {len(b_vector)} elements"
+            )
+    width: int = n + m
+
+    # Augmented matrix [A | b_1 ... b_m] — deep copy to avoid mutation
     aug: List[List[float]] = []
     for i in range(n):
         row: List[float] = []
         for j in range(n):
             row.append(a_matrix[i][j])
-        row.append(b_vector[i])
+        for k in range(m):
+            row.append(b_vectors[k][i])
         aug.append(row)
 
     # Forward elimination with partial pivoting
@@ -424,20 +459,25 @@ def solve_linear_system(
 
         # Eliminate below
         pivot: float = aug[col][col]
+        pivot_row: List[float] = aug[col]
         for r in range(col + 1, n):
-            factor: float = aug[r][col] / pivot
-            for j in range(col, n + 1):
-                aug[r][j] -= factor * aug[col][j]
+            target: List[float] = aug[r]
+            factor: float = target[col] / pivot
+            for j in range(col, width):
+                target[j] -= factor * pivot_row[j]
 
-    # Back substitution
-    x: List[float] = [0.0] * n
-    for i in range(n - 1, -1, -1):
-        total: float = aug[i][n]
-        for j in range(i + 1, n):
-            total -= aug[i][j] * x[j]
-        x[i] = total / aug[i][i]
-
-    return x
+    # Back substitution, one right-hand side at a time
+    solutions: List[List[float]] = []
+    for k in range(m):
+        rhs: int = n + k
+        x: List[float] = [0.0] * n
+        for i in range(n - 1, -1, -1):
+            total: float = aug[i][rhs]
+            for j in range(i + 1, n):
+                total -= aug[i][j] * x[j]
+            x[i] = total / aug[i][i]
+        solutions.append(x)
+    return solutions
 
 
 # ── Convergence certificates ────────────────────────────────────────────────
@@ -735,8 +775,12 @@ def solve_prices(
             f"anchor for: {unanchored}"
         )
 
-    # Step 2: Compute SW = S @ W
-    sw_matrix: List[List[float]] = matrix_multiply(s_matrix, w_matrix)
+    # Step 2: Compute SW = S @ W. S is diagonal, so SW scales row i of W
+    # by S[i][i]: the same numbers as matrix_multiply (whose other terms are
+    # 0.0 × w), without its O(n³) loop.
+    sw_matrix: List[List[float]] = [
+        [s_matrix[i][i] * w_matrix[i][j] for j in range(n)] for i in range(n)
+    ]
     for i in range(n):
         for j in range(n):
             if sw_matrix[i][j] < 0.0:
@@ -757,12 +801,20 @@ def solve_prices(
     identity: List[List[float]] = _identity_matrix(n)
     i_minus_sw: List[List[float]] = _matrix_subtract(identity, sw_matrix)
 
+    # One elimination for the prices and the columns of (I - SW)^(-1)
+    # (the demand multipliers below), instead of n + 1.
+    unit_columns: List[List[float]] = [
+        [1.0 if row == col else 0.0 for row in range(n)] for col in range(n)
+    ]
     try:
-        v_vector: List[float] = solve_linear_system(i_minus_sw, effective_anchor)
+        solutions: List[List[float]] = solve_linear_systems(
+            i_minus_sw, [effective_anchor] + unit_columns
+        )
     except ValueError as exc:
         raise PricingConvergenceError(
             f"the price system is singular although ρ(S·W) <= {bound:.4f} ({exc}).",
         ) from exc
+    v_vector: List[float] = solutions[0]
 
     # Step 5: Check the solve. V = Σ (SW)^k S·A >= S·A > 0, so a
     # non-positive price, or a large residual, means the solve is invalid.
@@ -792,12 +844,10 @@ def solve_prices(
     demand_multipliers: Dict[str, float] = {}
     anchor_contributions: Dict[str, float] = {}
 
-    # (I - SW)^(-1) row sums for demand multipliers, one column at a time
+    # (I - SW)^(-1) row sums for demand multipliers, from its columns
     inverse_rows: List[List[float]] = [[0.0] * n for _ in range(n)]
     for col in range(n):
-        e_col: List[float] = [0.0] * n
-        e_col[col] = 1.0
-        inv_col: List[float] = solve_linear_system(i_minus_sw, e_col)
+        inv_col: List[float] = solutions[1 + col]
         for row in range(n):
             inverse_rows[row][col] = inv_col[row]
 

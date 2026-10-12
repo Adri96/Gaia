@@ -18,6 +18,7 @@ Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number chang
 - `python -m gaia ... --help` printed `usage: __main__.py`; the program name is now `gaia run <case>` (or `gaia <case>` for the legacy form).
 - The `run_*` library wrappers took literal defaults (e.g. `tree_value=100.0`) that could drift from the case's `Param` values; every default now comes from the data file.
 - `gaia --help` lists the cases and the deprecated forms; an unknown command or case exits with status 2.
+- EXPERIMENTAL pricing is 1.4–3.3× faster with bit-identical results: `solve_prices` runs one Gaussian elimination for the prices and the columns of `(I − S·W)⁻¹` (`gaia.pricing.solve_linear_systems`) instead of n + 1, and computes `S·W` by row scaling.
 
 ### Deprecated (removed in 0.11)
 

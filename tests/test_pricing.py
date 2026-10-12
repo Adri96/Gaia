@@ -779,10 +779,30 @@ class TestExplicitFailure:
 
         agents = ["A", "B"]
         pricing = _simple_pricing_config(agent_names=agents)
+        # the first solution is the price vector; the others, columns of the inverse
         monkeypatch.setattr(
-            pricing_module, "solve_linear_system", lambda a, b: [-1.0, 5.0])
+            pricing_module, "solve_linear_systems",
+            lambda a, bs: [[-1.0, 5.0]] + [list(b) for b in bs[1:]])
         with pytest.raises(PricingConvergenceError, match="non-positive"):
             solve_prices(agents, {"A": 0.5, "B": 0.5}, [], pricing)
+
+    def test_multi_rhs_solve_is_bit_identical_to_single_solves(self):
+        """One elimination for n + 1 right-hand sides (D7 profiling) gives
+        exactly the numbers of separate solves."""
+        import random
+
+        from gaia.pricing import solve_linear_system, solve_linear_systems
+
+        rng = random.Random(3)
+        for _ in range(200):
+            n = rng.randint(1, 12)
+            a = [[rng.uniform(-1.0, 1.0) for _ in range(n)] for _ in range(n)]
+            bs = [[rng.uniform(-5.0, 5.0) for _ in range(n)] for _ in range(n + 1)]
+            assert solve_linear_systems(a, bs) == [solve_linear_system(a, b) for b in bs]
+        with pytest.raises(ValueError, match="singular"):
+            solve_linear_systems([[1.0, 2.0], [2.0, 4.0]], [[1.0, 1.0]])
+        with pytest.raises(ValueError, match="Dimension mismatch"):
+            solve_linear_systems([[1.0]], [[1.0, 2.0]])
 
     def test_unanchored_agent_rejected_by_solver(self):
         pricing = PricingConfig(
