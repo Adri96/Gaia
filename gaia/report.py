@@ -418,25 +418,6 @@ def format_report(result: SimulationResult) -> str:
             f"{npv_c.carbon_foregone:>14,.2f}\u20ac (PV)"
         )
 
-    # v0.4: Heuristic band on the annual externality (not a statistical
-    # interval; see SimulationResult.annual_externality_band)
-    if result.annual_externality_band is not None:
-        lower, upper = result.annual_externality_band
-        lines.append("")
-        lines.append(
-            "  \u2500\u2500 Externality Band (heuristic) \u2500" + "\u2500" * 31
-        )
-        lines.append(
-            f"  {'Annual Externality:':<40} {result.annual_externality:>14,.2f}\u20ac/yr"
-        )
-        lines.append(
-            f"  Band at {result.final_model_confidence:.0%} confidence:"
-            f"      {lower:>12,.2f}\u20ac/yr \u2014 {upper:>12,.2f}\u20ac/yr"
-        )
-        lines.append(
-            "    (heuristic: \u00b1(1 \u2212 confidence); not a statistical interval)"
-        )
-
     # v0.5: Substrate Impact Assessment
     if resource.substrate is not None and result.steps:
         final_step = result.steps[-1]

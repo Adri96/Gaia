@@ -44,7 +44,10 @@ A document (every key below is optional unless marked *required*):
                         {type: logistic, steepness} | {type: linear, slope}
     succession          gaia.models.SuccessionCurve fields (all required)
     run                 run defaults: units (the default --units), report_note
-                        (appended to the text report), json_notes (list)
+                        (appended to the text report), json_notes (list),
+                        benchmarks (list of published per-hectare values:
+                        name, low, high, optional central, unit, source,
+                        note, includes_carbon; gaia.benchmarks)
 
 Curves: {"type": "logistic", "steepness": 12}, {"type": "exponential",
 "base": 2} or {"type": "piecewise", "pre_slope_ratio": 0.1}, each with an
@@ -60,7 +63,10 @@ always equals total_units. "unit" is otherwise the plural unit name, as in
 Provenance (Step 5): every numeric parameter is either a bare number or an
 object {"value", "unit", "source", "confidence", "note"} (value, unit and
 confidence required), which becomes a gaia.provenance.Param, reported in
-every output's calibration block. A bare number is reported only when a
+every output's calibration block. Optional uncertainty keys (Step 8.4,
+gaia.uncertainty): "range": [low, high] in the parameter's unit, or
+"relative_range": [f_low, f_high] (factors of the value, containing 1), and
+"distribution": "triangular" (default) | "uniform" | "fixed". A bare number is reported only when a
 ``provenance_defaults`` entry matches its name: keys are parameter names with
 "[*]" for any agent or edge, e.g. "agent[*].dependency_weight" or
 "edge[*].strength", values are the same objects without "value". An inline
@@ -89,6 +95,7 @@ schema 2; schema-1 documents stay valid.
 No third-party dependencies.
 """
 
+import copy
 import dataclasses
 import json
 import math
@@ -277,6 +284,9 @@ class _Reader:
     def __init__(self, defaults: Dict[str, Dict[str, Any]]) -> None:
         self.defaults = defaults
         self.used: set = set()
+        # parameter name -> JSON path of its number (gaia.uncertainty
+        # perturbs the document there)
+        self.paths: Dict[str, str] = {}
 
     def quantity(self, raw: Any, path: str, name: str, integer: bool = False) -> Quantity:
         param: Optional[Param]
@@ -285,7 +295,7 @@ class _Reader:
         if key is not None:
             self.used.add(key)
         if isinstance(raw, dict):
-            obj = _object(raw, path, ("value", "unit", "confidence"), ("source", "note"))
+            obj = _object(raw, path, ("value", "unit", "confidence"), ("source", "note", "range", "relative_range", "distribution"))
             value = _plain_number(obj["value"], _key(path, "value"))
             param = _make_param(value, obj, path, name)
         else:
@@ -294,6 +304,8 @@ class _Reader:
             if key is not None:
                 template_path = f"$.provenance_defaults[{json.dumps(key, ensure_ascii=False)}]"
                 param = _make_param(value, self.defaults[key], template_path, name)
+        if param is not None:
+            self.paths[name] = path
         if integer:
             if value != int(value):
                 raise ValueError(f"{path}: expected an integer, got {value}")
@@ -308,6 +320,22 @@ class _Reader:
         return q.value
 
 
+def _spread(obj: dict, path: str) -> Optional[Tuple[str, float, float]]:
+    """The optional "range" / "relative_range" of a parameter object."""
+    kinds = [k for k in ("range", "relative_range") if k in obj]
+    if not kinds:
+        return None
+    if len(kinds) == 2:
+        raise ValueError(f"{path}: give either range or relative_range, not both")
+    kind = kinds[0]
+    pair = _list(obj[kind], _key(path, kind))
+    if len(pair) != 2:
+        raise ValueError(f"{_key(path, kind)}: expected [low, high], got {len(pair)} numbers")
+    low = _plain_number(pair[0], _key(path, kind) + "[0]")
+    high = _plain_number(pair[1], _key(path, kind) + "[1]")
+    return (kind, float(low), float(high))
+
+
 def _make_param(value: float, obj: dict, path: str, name: str) -> Param:
     unit = _str(obj["unit"], _key(path, "unit"))
     source = _string(obj.get("source"), _key(path, "source"), nullable=True)
@@ -318,8 +346,10 @@ def _make_param(value: float, obj: dict, path: str, name: str) -> Param:
         raise ValueError(
             f"{_key(path, 'confidence')}: {confidence!r} is not one of {', '.join(valid)}"
         )
+    distribution = _str(obj.get("distribution", ""), _key(path, "distribution"))
     try:
-        return Param(value, unit, source, Confidence(confidence), note or "", name=name)
+        return Param(value, unit, source, Confidence(confidence), note or "", name=name,
+                     spread=_spread(obj, path), distribution=distribution)
     except ValueError as exc:
         raise ValueError(f"{path}: {exc}") from None
 
@@ -404,6 +434,11 @@ class Case:
     units: Optional[int]
     report_note: str = ""
     json_notes: Tuple[str, ...] = field(default_factory=tuple)
+    benchmarks: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
+    # The parsed document and the JSON path of every recorded parameter, for
+    # gaia.uncertainty (which re-parses perturbed copies of the document)
+    document: Optional[Dict[str, Any]] = field(default=None, compare=False, repr=False)
+    param_paths: Dict[str, str] = field(default_factory=dict, compare=False, repr=False)
 
     # ── Defaults ──────────────────────────────────────────────────────────────
 
@@ -647,14 +682,25 @@ class Case:
             units_lost=units_lost,
         )
 
-    def report(self, result: Any) -> str:
-        """The text report of a result of this case (with run.report_note)."""
-        from gaia.report import format_report, format_restoration_report
+    def report(self, result: Any, appendix: str = "") -> str:
+        """The text report of a result of this case: the report, the
+        benchmarks (extraction), ``appendix`` (e.g. the uncertainty section)
+        and run.report_note."""
+        from gaia.benchmarks import format_benchmarks
         from gaia.models import RestorationResult
+        from gaia.report import format_report, format_restoration_report
 
         if isinstance(result, RestorationResult):
-            return format_restoration_report(result) + self.report_note
-        return format_report(result) + self.report_note
+            return format_restoration_report(result) + appendix + self.report_note
+        return (format_report(result) + format_benchmarks(self.benchmark_block(result))
+                + appendix + self.report_note)
+
+    def benchmark_block(self, result: Any) -> Optional[Dict[str, Any]]:
+        """run.benchmarks compared with an extraction result (gaia.benchmarks),
+        or None."""
+        from gaia.benchmarks import benchmark_comparison
+
+        return benchmark_comparison(result, self.benchmarks)
 
 
 def _discount_config(fields: Dict[str, Any]) -> DiscountConfig:
@@ -760,8 +806,12 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
             for k in _SUCCESSION_FIELDS
         }
 
-    run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes"))
+    run = _object(doc.get("run", {}), "$.run", (), ("units", "report_note", "json_notes", "benchmarks"))
     units = _plain_int(run["units"], "$.run.units") if "units" in run else None
+    benchmarks = tuple(
+        _parse_benchmark(b, f"$.run.benchmarks[{i}]")
+        for i, b in enumerate(_list(run.get("benchmarks", []), "$.run.benchmarks"))
+    )
     report_note = _str(run.get("report_note", ""), "$.run.report_note")
     notes = tuple(_str(n, f"$.run.json_notes[{i}]") for i, n in enumerate(_list(run.get("json_notes", []), "$.run.json_notes")))
 
@@ -799,6 +849,9 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         units=units,
         report_note=report_note,
         json_notes=notes,
+        benchmarks=benchmarks,
+        document=copy.deepcopy(doc),
+        param_paths=dict(reader.paths),
     )
     # A trial build checks what only building can: curve parameters at the
     # document's threshold, the area, the pricing block.
@@ -806,13 +859,40 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     return case
 
 
+def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
+    """One run.benchmarks entry: a published per-hectare value to compare with."""
+    obj = _object(raw, path, ("name", "low", "high", "unit", "source"), ("central", "note", "includes_carbon"))
+    low = _plain_number(obj["low"], _key(path, "low"))
+    high = _plain_number(obj["high"], _key(path, "high"))
+    if low > high:
+        raise ValueError(f"{path}: low ({low}) is above high ({high})")
+    out: Dict[str, Any] = {
+        "name": _str(obj["name"], _key(path, "name")),
+        "low": float(low),
+        "high": float(high),
+        "unit": _str(obj["unit"], _key(path, "unit")),
+        "source": _str(obj["source"], _key(path, "source")),
+        "note": _str(obj.get("note", ""), _key(path, "note")),
+        "includes_carbon": _bool(obj.get("includes_carbon", False), _key(path, "includes_carbon")),
+        "central": None,
+    }
+    if "central" in obj:
+        central = _plain_number(obj["central"], _key(path, "central"))
+        if not low <= central <= high:
+            raise ValueError(f"{path}: central ({central}) is outside [low, high]")
+        out["central"] = float(central)
+    return out
+
+
 def _parse_provenance_defaults(raw: Any) -> Dict[str, Dict[str, Any]]:
     obj = _object(raw, "$.provenance_defaults", (), tuple(raw) if isinstance(raw, dict) else ())
     out: Dict[str, Dict[str, Any]] = {}
     for key, template in obj.items():
         path = f"$.provenance_defaults[{json.dumps(key, ensure_ascii=False)}]"
-        tmpl = _object(template, path, ("unit", "confidence"), ("source", "note"))
-        _make_param(0.0, tmpl, path, key)  # validates the template
+        tmpl = _object(template, path, ("unit", "confidence"), ("source", "note", "range", "relative_range", "distribution"))
+        spread = _spread(tmpl, path)
+        probe = 1.0 if spread is None or spread[0] == "relative_range" else spread[1]
+        _make_param(probe, tmpl, path, key)  # validates the template
         out[key] = tmpl
     return out
 
@@ -1238,21 +1318,33 @@ def _param_obj(p: Param, integer: bool = False) -> Dict[str, Any]:
     out["confidence"] = p.confidence.value
     if p.note:
         out["note"] = p.note
+    _write_spread(out, p.spread, p.distribution)
     return out
 
 
-def _metadata(p: Param) -> Tuple[str, Optional[str], str, str]:
-    return (p.unit, p.source, p.confidence.value, p.note)
+def _write_spread(out: Dict[str, Any], spread: Optional[Tuple[str, float, float]], distribution: str) -> None:
+    if spread is not None:
+        out[spread[0]] = [spread[1], spread[2]]
+    if distribution:
+        out["distribution"] = distribution
 
 
-def _template(meta: Tuple[str, Optional[str], str, str]) -> Dict[str, Any]:
-    unit, source, confidence, note = meta
+_Meta = Tuple[str, Optional[str], str, str, Optional[Tuple[str, float, float]], str]
+
+
+def _metadata(p: Param) -> _Meta:
+    return (p.unit, p.source, p.confidence.value, p.note, p.spread, p.distribution)
+
+
+def _template(meta: _Meta) -> Dict[str, Any]:
+    unit, source, confidence, note, spread, distribution = meta
     out: Dict[str, Any] = {"unit": unit}
     if source is not None:
         out["source"] = source
     out["confidence"] = confidence
     if note:
         out["note"] = note
+    _write_spread(out, spread, distribution)
     return out
 
 
@@ -1353,7 +1445,7 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
         pattern_fields["agent[*].annual_value_per_ha"] = [
             f"agent[{a.name}].annual_value_per_ha" for a in agents if a.annual_value_per_ha != shared_raw
         ]
-    templates: Dict[str, Tuple[str, Optional[str], str, str]] = {}
+    templates: Dict[str, _Meta] = {}
     for pattern, names in pattern_fields.items():
         if not names or any(n not in params for n in names):
             continue

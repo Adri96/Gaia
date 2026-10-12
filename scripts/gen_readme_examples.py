@@ -48,7 +48,7 @@ _ATTR = re.compile(r'(\w+)="([^"]*)"')
 TABLE_CASES = [
     ("forest", "Oak Valley Forest (temperate)"),
     ("costa_brava", "Costa Brava Holm Oak Forest (Mediterranean)"),
-    ("posidonia", "Costa Brava Posidonia Meadow (marine)"),
+    ("posidonia", "Posidonia oceanica, Catalan coast (marine; the v1.0 case)"),
     ("amazon_forest", "Central Amazon (tropical)"),
 ]
 

@@ -27,7 +27,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
@@ -199,11 +199,19 @@ class DiscountConfig:
         """
         if isinstance(self.rate_schedule, (int, float)):
             return 1.0 / (1.0 + float(self.rate_schedule)) ** year
-        # For declining schedules, compound year by year
-        factor: float = 1.0
-        for t in range(1, year + 1):
-            factor /= (1.0 + self.rate_at_year(t))
-        return factor
+        # For declining schedules, compound year by year. The cumulative
+        # factors are cached (keyed on the schedule's content), extended
+        # with exactly the divisions the loop would do, so the values are
+        # bit-identical and a horizon costs O(H) instead of O(H²).
+        key = tuple(tuple(step) for step in self.rate_schedule)
+        cache = self.__dict__.get("_discount_factors")
+        if cache is None or cache[0] != key:
+            cache = (key, [1.0])
+            object.__setattr__(self, "_discount_factors", cache)
+        factors: list = cache[1]
+        while len(factors) <= year:
+            factors.append(factors[-1] / (1.0 + self.rate_at_year(len(factors))))
+        return factors[year] if year >= 0 else 1.0
 
     def carbon_price_at_year(self, year: int) -> float:
         """Carbon price in year t, growing at carbon_price_growth rate."""
@@ -828,11 +836,6 @@ class SimulationResult:
             cascades (€/yr); direct + cascade = agent_annual_costs.
         agent_trophic_amplification: Per agent, the trophic amplification
             factor applied to its direct damage (1.0 below level 1).
-        annual_externality_band: HEURISTIC band (low, high) in €/yr,
-            annual_externality × (1 ± (1 − final model confidence)) — not
-            a statistical interval (gaia.resilience.compute_confidence_band;
-            Monte Carlo pending). None without a ResilienceConfig or at
-            full confidence.
         final_model_confidence: Model confidence at the final step (1.0
             without steps or resilience config).
         substrate_recovery_years: Years for the substrate the extraction
@@ -858,7 +861,6 @@ class SimulationResult:
     agent_direct_annual_costs: list = field(default_factory=list)   # List[float], €/yr
     agent_cascade_annual_costs: list = field(default_factory=list)  # List[float], €/yr
     agent_trophic_amplification: list = field(default_factory=list)  # List[float]
-    annual_externality_band: Optional[Tuple[float, float]] = None
     final_model_confidence: float = 1.0
     substrate_recovery_years: Optional[float] = None
     calibration: Optional[Any] = None  # gaia.provenance.CalibrationStatus

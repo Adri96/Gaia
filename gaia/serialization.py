@@ -96,28 +96,6 @@ def _by_agent(agents: list, values: list, digits: int = 2) -> Dict[str, float]:
     return {a.name: round(v, digits) for a, v in zip(agents, values)}
 
 
-CONFIDENCE_BAND_METHOD: str = (
-    "HEURISTIC, not a statistical interval: annual externality x "
-    "(1 +/- (1 - model confidence)), the confidence set by the resilience "
-    "zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval "
-    "is pending (Step 8)."
-)
-
-
-def _confidence_band(result: SimulationResult) -> Optional[Dict[str, Any]]:
-    """The heuristic band on the annual externality (None when not defined)."""
-    if result.annual_externality_band is None:
-        return None
-    low, high = result.annual_externality_band
-    return {
-        "low_eur_yr": round(low, 2),
-        "high_eur_yr": round(high, 2),
-        "model_confidence": round(result.final_model_confidence, 4),
-        "heuristic": True,
-        "method": CONFIDENCE_BAND_METHOD,
-    }
-
-
 def _discount_to_dict(discount, is_default: bool) -> Dict[str, Any]:
     """The DiscountConfig the present values used, as configured."""
     schedule = discount.rate_schedule
@@ -182,6 +160,23 @@ def _resource_metadata(resource) -> Dict[str, Any]:
     return d
 
 
+def _param_to_dict(p) -> Dict[str, Any]:
+    """One recorded parameter; its range (Step 8.4) only when it has one."""
+    d: Dict[str, Any] = {
+        "name": p.name,
+        "value": p.value,
+        "unit": p.unit,
+        "source": p.source,
+        "confidence": p.confidence.value,
+        "note": p.note,
+    }
+    if p.bounds is not None:
+        d["range"] = list(p.bounds)
+    if p.distribution:
+        d["distribution"] = p.distribution
+    return d
+
+
 def _calibration_to_dict(calibration) -> Dict[str, Any]:
     """The "calibration" block (Step 5): what a reader must know first."""
     if calibration is None:
@@ -204,17 +199,7 @@ def _calibration_to_dict(calibration) -> Dict[str, Any]:
         "n_medium": calibration.count(Confidence.MEDIUM),
         "n_high": calibration.count(Confidence.HIGH),
         "n_user_supplied": calibration.count(Confidence.USER),
-        "parameters": [
-            {
-                "name": p.name,
-                "value": p.value,
-                "unit": p.unit,
-                "source": p.source,
-                "confidence": p.confidence.value,
-                "note": p.note,
-            }
-            for p in calibration.params
-        ],
+        "parameters": [_param_to_dict(p) for p in calibration.params],
     }
 
 
@@ -529,7 +514,6 @@ def simulation_result_to_dict(
             "discount_is_default": result.discount_is_default,
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
-            "annual_externality_band": _confidence_band(result),
         },
     }
     if result.steps:
@@ -698,6 +682,7 @@ def to_json(
     indent: int = 2,
     notes: Optional[List[str]] = None,
     steps_every: int = 1,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Convert a SimulationResult or RestorationResult to a JSON string.
 
@@ -707,6 +692,8 @@ def to_json(
         indent: JSON indentation level (default 2).
         notes: Optional annotation strings for the output.
         steps_every: Include every Nth step and the last (default 1: all).
+        extra: Optional top-level blocks to add (e.g. "benchmarks",
+            "uncertainty"); None values are left out.
 
     Returns:
         JSON string: strict JSON, non-finite numbers as null plus a
@@ -731,4 +718,7 @@ def to_json(
             f"Expected SimulationResult or RestorationResult, "
             f"got {type(result).__name__}"
         )
+    for key, block in (extra or {}).items():
+        if block is not None:
+            d[key] = block
     return json.dumps(_strict(d), indent=indent, ensure_ascii=False, allow_nan=False)

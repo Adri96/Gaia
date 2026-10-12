@@ -1,50 +1,52 @@
 {
   "gaia_schema": 1,
-  "name": "Costa Brava Posidonia Meadow",
-  "description": "Posidonia oceanica meadow on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare. Agent values restate the owner-specified maximum annual impact for 5,000 ha per hectare, x 0.91 since the carbon-only Blue Carbon agent was removed (weights / 0.91), which keeps each agent's weight x value. Illustrative. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
+  "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the resource is the regional stock (4,582 ha). Monetary values sit on the four final services that a primary Posidonia valuation measured (coastal protection, water purification, fisheries, knowledge use), per hectare; the six ecological agents carry health weight and cascade damage but no euro value of their own. Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
   "resource": {
-    "name": "Costa Brava Posidonia Meadow",
+    "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
     "unit": "ha",
-    "total_units": 5000,
+    "total_units": 4582,
     "area_ha": {
-      "value": 5000.0,
+      "value": 4582.0,
       "unit": "ha",
-      "source": "owner specification (case docstring), no external source",
-      "confidence": "low",
-      "note": "Plausible extent for a major Costa Brava stretch; needs GIS verification (EMODnet Posidonia maps)."
+      "source": "Generalitat de Catalunya, Mapa d'hàbitats marins de Catalunya (presented 29 May 2025; Hipermapa): P. oceanica meadows 4,582 ha, 2.4% of ~190,000 ha mapped to 50 m depth, as reported by Ara (29 May 2025, https://en.ara.cat/society/from-portbou-to-alcanar-this-is-the-catalan-seabed_1_5395705.html)",
+      "confidence": "medium",
+      "note": "The whole Catalan stock (Portbou to Alcanar), the reference resource for a regional authority; the Costa Brava holds much of it (Cap de Creus) but the map's breakdown by coast was not available to this review, nor the dataset itself (the Govern's press-release PDF returned HTTP 403). The former 5,000 ha exceeded the whole Catalan stock."
     },
     "unit_value": {
       "value": 2500.0,
       "unit": "€/ha",
-      "source": "owner specification (case docstring), no external source",
-      "confidence": "low",
-      "note": "Private gain per hectare destroyed (coastal development, marinas, trawling permits), one-off; not the value of Posidonia."
+      "confidence": "placeholder",
+      "note": "Project-specific input: the private gain per hectare of meadow destroyed (one-off), which the user sets with --unit-value for the project assessed. 2,500 is the former owner specification, kept as an illustration; no source can make it general."
     },
     "safe_threshold_ratio": {
       "value": 0.2,
       "unit": "ratio",
-      "source": "owner specification (case docstring), no external source",
-      "confidence": "low",
-      "note": "Safe destruction threshold, lower than forest for slow recovery (stated rationale, no cited source); also the inflection of every damage curve."
+      "confidence": "placeholder",
+      "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification, kept because it shapes every damage curve (inflection at 32%). At small losses the curves give each hectare about a quarter of its average per-hectare value (initial slope 0.25); see the methods note. Monte Carlo range 0.1-0.3, uniform (judgement).",
+      "range": [
+        0.1,
+        0.3
+      ],
+      "distribution": "uniform"
     }
   },
   "provenance_defaults": {
-    "agent[*].annual_value_per_ha": {
-      "unit": "€/ha/yr",
-      "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
-      "confidence": "low",
-      "note": "Global meta-analyses value seagrass and coastal systems ~25× higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8)."
-    },
     "agent[*].dependency_weight": {
       "unit": "share",
-      "source": "owner specification (case docstring), no external source",
       "confidence": "low",
-      "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed."
+      "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its € at full damage (weight × value = the sourced €/ha/yr service value).",
+      "distribution": "fixed"
     },
     "edge[*].strength": {
       "unit": "fraction of source damage",
-      "confidence": "placeholder"
+      "confidence": "placeholder",
+      "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: ×0.5 to ×1.5 (judgement; wider ranges breach the in-degree cap).",
+      "relative_range": [
+        0.5,
+        1.5
+      ]
     }
   },
   "agent_defaults": {
@@ -57,85 +59,172 @@
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+        "note": "The same placeholder curve for every agent, inflection at 32% loss (just past the 20% threshold); no Posidonia study relates the fraction of a meadow lost to the fraction of each service lost, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
+        "range": [
+          6.0,
+          18.0
+        ],
+        "distribution": "uniform"
       }
     }
   },
   "agents": [
     {
       "name": "Posidonia Meadow",
-      "description": "Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
+      "description": "Meadow integrity, the foundation (keystone) species: shoot density and matte — no euro value of its own (an intermediate service)",
       "dependency_weight": 0.10989010989010989,
-      "annual_value_per_ha": 1456.0,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Supporting/intermediate: the meadow's value reaches people through the final services (coastal protection, water quality, fisheries, cultural), so a euro value here would count it twice. The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 0,
       "is_keystone": true,
       "keystone_threshold": {
         "value": 0.3,
         "unit": "health",
-        "confidence": "placeholder"
+        "confidence": "placeholder",
+        "note": "Health below which the meadow's outgoing edges double; hand-set, no source. Monte Carlo range 0.15-0.45, uniform (judgement).",
+        "range": [
+          0.15,
+          0.45
+        ],
+        "distribution": "uniform"
       }
     },
     {
       "name": "Coralligenous & Red Coral",
-      "description": "Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
+      "description": "Coralligenous reefs next to the meadow, smothered when it is lost (sedimentation) — not valued",
       "dependency_weight": 0.10989010989010989,
-      "annual_value_per_ha": 1092.0,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Neighbouring habitat linked by sedimentation; its own value (diving, red coral) is not part of a Posidonia valuation and is not counted. The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 0
     },
     {
       "name": "Epiphytes & Algae",
-      "description": "Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
+      "description": "Epiphytic algae and plant community: primary production, food web base — not valued separately",
       "dependency_weight": 0.07692307692307693,
-      "annual_value_per_ha": 649.922,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Supporting/intermediate (primary production, food web): valued through the final services. The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 0
     },
     {
       "name": "Marine Invertebrates",
-      "description": "Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
+      "description": "Sponges, urchins, octopus, lobsters, shellfish: grazers and filter feeders — not valued separately",
       "dependency_weight": 0.0989010989010989,
-      "annual_value_per_ha": 707.798,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Supporting/intermediate (food web, filtration): valued through fisheries and water quality. The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 1
     },
     {
       "name": "Fish Populations",
-      "description": "Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
+      "description": "Fish nursery and feeding habitat: contribution to commercial fisheries (Campagne et al. 2015)",
       "dependency_weight": 0.15384615384615385,
-      "annual_value_per_ha": 910.0,
+      "annual_value_per_ha": {
+        "value": 227.5,
+        "unit": "€/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end of the range used",
+        "confidence": "medium",
+        "note": "35 EUR/ha/yr of service at full damage = weight × value (35 / 0.153846). Range 27-74 EUR/ha/yr. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica, since other seagrasses also contribute).",
+        "range": [
+          175.5,
+          481.0
+        ]
+      },
       "trophic_level": 2
     },
     {
       "name": "Marine Megafauna",
-      "description": "Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
+      "description": "Dolphins, sea turtles: apex indicators — non-use values not valued",
       "dependency_weight": 0.04395604395604395,
-      "annual_value_per_ha": 910.0,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Non-use and wildlife-watching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 3
     },
     {
       "name": "Seabirds",
-      "description": "Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
+      "description": "Seabirds that feed on meadow fish (Audouin's gull) — non-use values not valued",
       "dependency_weight": 0.054945054945054944,
-      "annual_value_per_ha": 655.2,
+      "annual_value_per_ha": {
+        "value": 0.0,
+        "unit": "€/ha/yr",
+        "source": "Final-services accounting (Boyd & Banzhaf 2007, Ecological Economics 63:616-626, doi:10.1016/j.ecolecon.2007.01.002; Fisher, Turner & Morling 2009, Ecological Economics 68:643-653, doi:10.1016/j.ecolecon.2008.09.014)",
+        "confidence": "low",
+        "note": "Not valued in euros. Non-use and birdwatching values are not valued (no per-hectare estimate tied to Posidonia was found). The agent keeps its health weight and passes damage on through its edges."
+      },
       "trophic_level": 2
     },
     {
       "name": "Coastal Protection",
-      "description": "Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
+      "description": "Wave attenuation, beach-cast banquettes and matte stabilisation against coastal erosion (Campagne et al. 2015)",
       "dependency_weight": 0.14285714285714285,
-      "annual_value_per_ha": 1259.9859999999999,
+      "annual_value_per_ha": {
+        "value": 1316.0,
+        "unit": "€/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): protection from coastal erosion 188 EUR/ha/yr (damage cost avoided, Mediterranean scale, 2001 data inflated to 2014)",
+        "confidence": "medium",
+        "note": "188 EUR/ha/yr of service at full damage = weight × value (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (×/÷2) is a judgement.",
+        "relative_range": [
+          0.5,
+          2.0
+        ]
+      },
       "trophic_level": -1
     },
     {
       "name": "Water Quality",
-      "description": "Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
+      "description": "Nutrient and contaminant retention: the wastewater-treatment service (Campagne et al. 2015)",
       "dependency_weight": 0.12087912087912088,
-      "annual_value_per_ha": 1075.438,
+      "annual_value_per_ha": {
+        "value": 496.3636363636364,
+        "unit": "€/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): wastewater treatment 60 EUR/ha/yr (benefit transfer of the French water-protection tax, one third attributed to coastal systems after Costanza et al. 1997)",
+        "confidence": "medium",
+        "note": "60 EUR/ha/yr of service at full damage = weight × value (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (×/÷2) is a judgement.",
+        "relative_range": [
+          0.5,
+          2.0
+        ]
+      },
       "trophic_level": -1
     },
     {
       "name": "Human Communities",
-      "description": "Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
+      "description": "Cultural services: bioindicator use and knowledge (Campagne et al. 2015); tourism, recreation and non-use NOT valued",
       "dependency_weight": 0.0879120879120879,
-      "annual_value_per_ha": 1592.5,
+      "annual_value_per_ha": {
+        "value": 20.816250000000004,
+        "unit": "€/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr",
+        "confidence": "medium",
+        "note": "1.83 EUR/ha/yr of service at full damage = weight × value (1.83 / 0.087912). Only the cultural services Campagne et al. could value. Tourism, recreation and non-use values are NOT valued (no Posidonia-specific per-hectare welfare estimate was found): the main reason the total is a lower bound. Recreational fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not a welfare value, and is not used.",
+        "relative_range": [
+          0.5,
+          2.0
+        ]
+      },
       "trophic_level": -1
     }
   ],
@@ -248,29 +337,44 @@
   ],
   "carbon": {
     "stored_carbon_tonnes": {
-      "value": 130.0,
+      "value": 0.0,
       "unit": "tCO2/ha",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Label Bas-Carbone, 'Méthode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf), §7: the carbon in the living leaves is 'négligeable comparé au carbone stocké et séquestré dans la matte'",
+      "confidence": "low",
+      "note": "Living biomass is not counted separately: the leaves are negligible next to the matte, and the living rhizomes and roots lie inside the top-metre matte stock counted in soil_carbon_tonnes (counting them here too would double count). No Posidonia leaf-biomass carbon figure was verified for this review."
     },
     "annual_absorption_tonnes": {
-      "value": 1.5766666666666664,
+      "value": 0.9533333333333335,
       "unit": "tCO2/ha/yr",
-      "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) × 44/12",
+      "source": "Mazarrasa et al. (2017), Limnology and Oceanography 62:1436-1450, doi:10.1002/lno.10510: organic carbon burial 26 ± 6 g C/m2/yr in Balearic P. oceanica meadows since 1900 (210Pb-dated cores) = 0.26 t C/ha/yr × 44/12",
       "confidence": "medium",
-      "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified."
+      "note": "S5 resolved: one long-term burial (sequestration) rate, from the nearest region with direct measurements. Range 0.28-3.09 tCO2/ha/yr: 7.7-84.4 g C/m2/yr, the depth range of mean sequestration in a large Corsican meadow (Pergent-Martini et al. 2021, Marine Environmental Research 165:105236, doi:10.1016/j.marenvres.2020.105236). The former value, 1.58 tCO2/ha/yr, was the IPCC (2013) Wetlands Supplement Table 4.12 seagrass factor (0.434 t C/ha/yr, 95% CI 0.2-0.7, from Mateo & Romero 1997 and Serrano et al. 2012), which applies to revegetated meadows; it lies inside the range.",
+      "range": [
+        0.2823333333333333,
+        3.0946666666666665
+      ]
     },
     "soil_carbon_tonnes": {
-      "value": 2600.0,
+      "value": 1199.0,
       "unit": "tCO2/ha",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Monnier et al. (2022), Science of the Total Environment 838:155864, doi:10.1016/j.scitotenv.2022.155864 (39 matte cores, eastern Corsica: 327 ± 150 t Corg/ha), adopted as the Tier 1 default for 1 m of matte by Label Bas-Carbone, 'Méthode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf); × 44/12",
+      "confidence": "medium",
+      "note": "Organic carbon in the top metre of matte (the depth IPCC and the Label Bas-Carbone method treat as exposed), not the whole matte, which can be several metres thick. Range 741-1,844 tCO2/ha: 20.2-50.3 kg Corg/m2 in the first metre of matte in Calvi Bay (Leduc et al. 2023, Marine Environmental Research 183:105847, doi:10.1016/j.marenvres.2022.105847). Corsican, not Catalan, measurements; for scale, the IPCC (2013) global Tier 1 seagrass soil stock is 108 t C/ha to 1 m (Table 4.11) and Balearic P. oceanica holds 6.1 ± 1.4 kg C/m2 in the top 30 cm alone (Mazarrasa et al. 2017).",
+      "range": [
+        740.6666666666666,
+        1844.3333333333333
+      ]
     },
     "soil_release_fraction": {
-      "value": 0.05,
+      "value": 0.63,
       "unit": "fraction",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
+      "confidence": "low",
+      "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality.",
+      "range": [
+        0.25,
+        1.0
+      ]
     }
   },
   "resilience": {
@@ -288,47 +392,49 @@
       "value": 0.85,
       "unit": "0-1 scale",
       "confidence": "placeholder",
-      "note": "Pending calibration against EMODnet and IFREMER data."
+      "note": "No source: matte erosion after meadow loss depends on wave exposure (Salinas et al. 2020, Global Change Biology 26:4772-4784, doi:10.1111/gcb.15204, found soil carbon eroded in shallow exposed areas only). Affects only the restoration ceiling and substrate recovery time, not the extraction PV."
     },
     "erosion_rate_unprotected": {
       "value": 5.0,
       "unit": "arbitrary units/yr",
       "confidence": "placeholder",
-      "note": "Pending calibration against EMODnet and IFREMER data."
+      "note": "No source: matte erosion after meadow loss depends on wave exposure (Salinas et al. 2020, Global Change Biology 26:4772-4784, doi:10.1111/gcb.15204, found soil carbon eroded in shallow exposed areas only). Affects only the restoration ceiling and substrate recovery time, not the extraction PV."
     },
     "erosion_rate_protected": {
       "value": 0.0,
       "unit": "arbitrary units/yr",
       "confidence": "placeholder",
-      "note": "Pending calibration against EMODnet and IFREMER data."
+      "note": "No source: matte erosion after meadow loss depends on wave exposure (Salinas et al. 2020, Global Change Biology 26:4772-4784, doi:10.1111/gcb.15204, found soil carbon eroded in shallow exposed areas only). Affects only the restoration ceiling and substrate recovery time, not the extraction PV."
     },
     "formation_rate": {
       "value": 1.0,
       "unit": "mm/yr",
-      "confidence": "placeholder",
-      "note": "Pending calibration against EMODnet and IFREMER data."
+      "source": "Serrano et al. (2016), Biogeosciences 13:4581-4594, doi:10.5194/bg-13-4581-2016: soil accumulation 1.2-2.0 mm/yr in meadows of the congener P. sinuosa (Australia)",
+      "confidence": "low",
+      "note": "A congener's soil accretion, rounded down; no P. oceanica matte accretion rate was verified for this review."
     },
     "erosion_alpha": {
       "value": 3.0,
       "unit": "exponent",
       "confidence": "placeholder",
-      "note": "Pending calibration against EMODnet and IFREMER data."
+      "note": "No source: matte erosion after meadow loss depends on wave exposure (Salinas et al. 2020, Global Change Biology 26:4772-4784, doi:10.1111/gcb.15204, found soil carbon eroded in shallow exposed areas only). Affects only the restoration ceiling and substrate recovery time, not the extraction PV."
     },
     "critical_minimum": 0.0,
     "residual_fraction": 0.05
   },
   "discount": {
     "delta": 0.005,
-    "eta": 1.35,
-    "g": 0.013,
+    "eta": 1.0,
+    "g": 0.016,
     "rate_schedule": [
       {
         "from_year": 0,
         "rate": {
           "value": 0.023,
           "unit": "1/yr",
-          "source": "Ramsey r = δ + ηg with δ 0.5%, η 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
-          "confidence": "medium"
+          "source": "Drupp, Freeman, Groom & Nesje (2018), American Economic Journal: Economic Policy 10(4):109-134, doi:10.1257/pol.20160240: mean recommended social discount rate 2.27% (median 2.0%) from ~200 experts (Table 1 of the working-paper version, Grantham WP 172, 2015)",
+          "confidence": "medium",
+          "note": "The rate is the experts' mean recommendation, not a Ramsey sum: the survey's Ramsey components (median δ 0.5%, mean η 1.35, mean growth 1.70%) do not add up to it, and the former g = 1.3% had no source. A normative choice: the uncertainty analysis treats it as a sensitivity, not as a random parameter."
         }
       },
       {
@@ -337,7 +443,7 @@
           "value": 0.018,
           "unit": "1/yr",
           "confidence": "placeholder",
-          "note": "Step of the declining schedule; no cited source for the value or the year."
+          "note": "Step of the declining schedule (normative); no cited source for the value or the year."
         }
       },
       {
@@ -346,7 +452,7 @@
           "value": 0.014,
           "unit": "1/yr",
           "confidence": "placeholder",
-          "note": "Step of the declining schedule; no cited source for the value or the year."
+          "note": "Step of the declining schedule (normative); no cited source for the value or the year."
         }
       }
     ],
@@ -355,7 +461,7 @@
       "unit": "1/yr",
       "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, §1: Dutch government default relative price change for ecosystem services",
       "confidence": "medium",
-      "note": "Chosen below the paper's aggregate estimate (1.66%/yr), which exceeds the schedule's long-term 1.4% and would make the PV diverge."
+      "note": "The Netherlands' default relative price change for all ecosystem services, as reported by Drupp et al. (2024, arXiv:2308.04400v3, §1; checked). Their own estimate is higher, 1.66%/yr for aggregate services (95% CI 1.40-1.92; regulating 1.71, cultural 1.91), but above the schedule's long-term 1.4% it would make the 200-year PV diverge, so 1% is kept. Normative: a sensitivity, not a random parameter."
     },
     "horizon_years": {
       "value": 200,
@@ -381,6 +487,48 @@
         "source": "Artisanal catch value: ~15 boats × €5,000/yr/boat",
         "confidence": "low",
         "description": "Fishing: 15 artisanal boats × €5,000/yr"
+      },
+      {
+        "agent_name": "Posidonia Meadow",
+        "anchor_value": 800000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+      },
+      {
+        "agent_name": "Coralligenous & Red Coral",
+        "anchor_value": 600000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+      },
+      {
+        "agent_name": "Epiphytes & Algae",
+        "anchor_value": 250000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+      },
+      {
+        "agent_name": "Marine Invertebrates",
+        "anchor_value": 350000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+      },
+      {
+        "agent_name": "Marine Megafauna",
+        "anchor_value": 200000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
+      },
+      {
+        "agent_name": "Seabirds",
+        "anchor_value": 180000.0,
+        "source": "PLACEHOLDER: the agent's former owner-specified maximum annual impact for 5,000 ha (before Step 8.2 the agent carried this value; it now has no euro value of its own)",
+        "confidence": "low",
+        "description": "EXPERIMENTAL pricing needs a positive anchor for every agent; this one is not an estimate"
       }
     ],
     "scarcity_functions": {
@@ -460,20 +608,21 @@
     "planting_cost_per_unit": {
       "value": 50000.0,
       "unit": "€/ha",
-      "confidence": "placeholder",
-      "note": "No cost survey behind it."
+      "confidence": "low",
+      "note": "An order of magnitude consistent with the all-habitat median, not a Posidonia cost survey. A Spanish planting guide (Red Eléctrica de España) cites US$383,672/ha for seagrass from the same paper; that figure was not checked against the paper. Transplant survival is low: 38% median for seagrass (Bayraktarov et al. 2016), 0-31% on disturbed substrate (Castejón-Silvo & Terrados 2021, doi:10.1016/j.marenvres.2021.105406).",
+      "source": "Bayraktarov et al. (2016), Ecological Applications 26:1055-1074, doi:10.1890/15-1077: median reported cost of marine coastal restoration ~US$80,000/ha (2010), real costs likely 2-4× higher, seagrass among the most expensive"
     },
     "annual_maintenance_per_unit": {
       "value": 5000.0,
       "unit": "€/ha/yr",
       "confidence": "placeholder",
-      "note": "No cost survey behind it."
+      "note": "No cost survey behind it (placeholder)."
     },
     "maintenance_years": {
       "value": 30,
       "unit": "years",
       "confidence": "placeholder",
-      "note": "No cost survey behind it."
+      "note": "No cost survey behind it (placeholder)."
     }
   },
   "recovery": {
@@ -487,47 +636,99 @@
   },
   "succession": {
     "pioneer_end_year": {
-      "value": 20.0,
+      "value": 100.0,
       "unit": "years",
-      "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "source": "Kendrick, Marbà & Duarte (2005), Estuarine, Coastal and Shelf Science 65:717-725, doi:10.1016/j.ecss.2005.07.007 (agent-based model of P. oceanica colonisation): 'limited cover after a century of growth'",
+      "confidence": "low",
+      "note": "Natural recolonisation from scattered patches; transplanting may be faster but its survival is low and long-term results are lacking (Pansini et al. 2022, doi:10.1016/j.scitotenv.2022.158320)."
     },
     "intermediate_end_year": {
-      "value": 50.0,
+      "value": 400.0,
       "unit": "years",
-      "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "source": "Kendrick, Marbà & Duarte (2005), Estuarine, Coastal and Shelf Science 65:717-725, doi:10.1016/j.ecss.2005.07.007 (agent-based model of P. oceanica colonisation): growth accelerates after 100 years and plateaus after 400",
+      "confidence": "low",
+      "note": "Model result, not a field time series."
     },
     "climax_approach_year": {
-      "value": 120.0,
+      "value": 600.0,
       "unit": "years",
-      "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "source": "Kendrick, Marbà & Duarte (2005), Estuarine, Coastal and Shelf Science 65:717-725, doi:10.1016/j.ecss.2005.07.007 (agent-based model of P. oceanica colonisation): simulated over 600 years",
+      "confidence": "low",
+      "note": "Beyond the 200-year discount horizon: restoration recovers little within it."
     },
     "pioneer_service": {
-      "value": 0.02,
+      "value": 0.1,
       "unit": "fraction",
       "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "note": "'Limited cover' after 100 years (Kendrick et al. 2005) read as 10% of the mature service: an interpretation, not a number from the paper."
     },
     "intermediate_service": {
-      "value": 0.25,
+      "value": 0.67,
       "unit": "fraction",
-      "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "source": "Kendrick, Marbà & Duarte (2005), Estuarine, Coastal and Shelf Science 65:717-725, doi:10.1016/j.ecss.2005.07.007 (agent-based model of P. oceanica colonisation): two-thirds of the landscape occupied after 600 years",
+      "confidence": "low",
+      "note": "Cover read as service fraction."
     },
     "maturation_delay": {
       "value": 5.0,
       "unit": "years",
       "confidence": "placeholder",
-      "note": "Pending calibration against Mediterranean seagrass studies."
+      "note": "Years before a replanted meadow delivers any service; no source (placeholder)."
     }
   },
   "run": {
-    "units": 2000,
-    "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the damage persists. Posidonia recovers at 1-6 cm/year;\n     damage is effectively permanent on human timescales. The net social\n     cost compares the one-off revenue with the PV of these annual losses.",
+    "units": 50,
+    "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the meadow is gone. P. oceanica grows centimetres a year;\n     natural recolonisation leaves limited cover after a century (Kendrick et\n     al. 2005). The values are a LOWER BOUND: tourism, recreation and non-use\n     values are not valued. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md.",
     "json_notes": [
-      "Marine externality costs are ANNUAL (€/yr) — they recur every year the damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively permanent on human timescales. The net social cost compares the one-off revenue with the present value of these annual losses."
+      "Marine externality costs are ANNUAL (€/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. The per-hectare values are a lower bound: tourism, recreation and non-use values are not valued."
+    ],
+    "benchmarks": [
+      {
+        "name": "Campagne et al. 2015, P. oceanica, carbon excluded",
+        "low": 276.83,
+        "high": 284.83,
+        "unit": "€2014/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2",
+        "note": "The primary valuation the case's values come from (sum of the non-carbon goods and benefits): agreement here is by construction."
+      },
+      {
+        "name": "Campagne et al. 2015, P. oceanica, carbon included",
+        "low": 284.0,
+        "high": 514.0,
+        "unit": "€2014/ha/yr",
+        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061",
+        "note": "Carbon sequestration 7.7-230 €/ha/yr at 35 €/t CO2; 11 of 25 services unvalued (mainly tourism and cultural).",
+        "includes_carbon": true
+      },
+      {
+        "name": "Stamatiadou et al. 2025, Mediterranean seagrass meta-regression (country range)",
+        "low": 1588.0,
+        "high": 95767.0,
+        "unit": "Int$2020/ha/yr",
+        "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704",
+        "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita.",
+        "includes_carbon": true,
+        "central": 8712.0
+      },
+      {
+        "name": "de Groot et al. 2012 (ESVD/TEEB), coastal systems",
+        "low": 26167.0,
+        "high": 42063.0,
+        "unit": "Int$2007/ha/yr",
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, as tabulated by Costanza et al. (2014) Table 4",
+        "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone.",
+        "includes_carbon": true,
+        "central": 28917.0
+      },
+      {
+        "name": "Costanza et al. 2014, seagrass/algae beds",
+        "low": 28916.0,
+        "high": 28916.0,
+        "unit": "$2007/ha/yr",
+        "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3",
+        "note": "Global unit value; 26,223 of it is nutrient cycling.",
+        "includes_carbon": true
+      }
     ]
   }
 }

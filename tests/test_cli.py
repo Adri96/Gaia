@@ -121,9 +121,9 @@ class TestForestParseArgs:
 class TestPosidoniaParsArgs:
     def test_defaults(self):
         args = posidonia_parse([])
-        assert args.total_units == 5_000
+        assert args.total_units == 4_582  # the Catalan stock (Step 8.2)
         assert args.threshold == 0.20
-        assert args.units == 2_000
+        assert args.units == 50
         assert args.unit_value == 2_500.0
 
     def test_deprecated_destroy_flag(self):
@@ -504,7 +504,7 @@ class TestLegacyWrappers:
         assert costa_brava.build_costa_brava_ecosystem().resource.unit_value == case.unit_value.value
         assert forest.FOREST_TOTAL_TREES == load_case("forest").total_units.value
         assert amazon_forest.AMAZON_TREES_PER_HA == 400.0
-        assert posidonia.POSIDONIA_AREA_HA == 5000.0
+        assert posidonia.POSIDONIA_AREA_HA == 4582.0
         report = posidonia.run_posidonia(total_hectares=1000, hectares_destroyed=100)
         assert "MARINE EXTERNALITY NOTE" in report
 

@@ -8,7 +8,7 @@ warning, and confidence band calculation.
 import pytest
 
 from gaia.models import ResilienceConfig
-from gaia.resilience import compute_confidence_band, compute_resilience_zone
+from gaia.resilience import compute_resilience_zone
 
 
 # ── Test fixtures ──────────────────────────────────────────────────────────────
@@ -121,28 +121,3 @@ class TestWiderWarningZone:
         assert zone_f == "green"
 
 
-# ── Tests: confidence band ────────────────────────────────────────────────────
-
-
-class TestConfidenceBand:
-    """Tests for compute_confidence_band."""
-
-    def test_band_at_full_confidence(self):
-        """At 100% confidence, band should be [cost, cost]."""
-        lower, upper = compute_confidence_band(1000.0, 1.0)
-        assert lower == pytest.approx(1000.0)
-        assert upper == pytest.approx(1000.0)
-
-    def test_band_widens_with_lower_confidence(self):
-        """Lower confidence → wider band."""
-        lower_90, upper_90 = compute_confidence_band(1000.0, 0.90)
-        lower_60, upper_60 = compute_confidence_band(1000.0, 0.60)
-        width_90 = upper_90 - lower_90
-        width_60 = upper_60 - lower_60
-        assert width_60 > width_90
-
-    def test_band_symmetric(self):
-        """Band should be symmetric around the cost."""
-        lower, upper = compute_confidence_band(1000.0, 0.80)
-        mid = (lower + upper) / 2.0
-        assert mid == pytest.approx(1000.0)

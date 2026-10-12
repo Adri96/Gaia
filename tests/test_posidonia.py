@@ -1,5 +1,5 @@
 """
-Gaia v0.1 — End-to-end Costa Brava Posidonia Meadow case tests.
+Gaia v0.1 — End-to-end Posidonia case tests (the Catalan meadows, Costa Brava).
 
 These tests run the preconfigured Posidonia marine ecosystem case and check for
 ecological plausibility. They verify:
@@ -36,13 +36,20 @@ def test_posidonia_ecosystem_has_ten_agents():
     assert "Blue Carbon" not in {a.name for a in eco.agents}
 
 
-def test_posidonia_removing_blue_carbon_kept_other_impacts():
-    """Renormalised weights keep each agent's weight × value (max impact)."""
+def test_posidonia_values_are_the_sourced_final_services():
+    """Step 8.2: weight × value per hectare is the sourced service value of
+    the four final services (Campagne et al. 2015); the six ecological
+    agents carry no euro value of their own (final-services accounting)."""
     eco = build_posidonia_ecosystem()
-    impact = {a.name: a.dependency_weight * a.annual_value(5_000.0) for a in eco.agents}
-    assert impact["Posidonia Meadow"] == pytest.approx(800_000.0, rel=1e-12)
-    assert impact["Coastal Protection"] == pytest.approx(900_000.0, rel=1e-4)
-    assert sum(impact.values()) == pytest.approx(5_330_000.0, rel=1e-4)
+    per_ha = {a.name: a.dependency_weight * a.annual_value_per_ha for a in eco.agents}
+    assert per_ha["Coastal Protection"] == pytest.approx(188.0, rel=1e-12)
+    assert per_ha["Water Quality"] == pytest.approx(60.0, rel=1e-12)
+    assert per_ha["Fish Populations"] == pytest.approx(35.0, rel=1e-12)
+    assert per_ha["Human Communities"] == pytest.approx(1.83, rel=1e-12)
+    for name in ("Posidonia Meadow", "Coralligenous & Red Coral", "Epiphytes & Algae",
+                 "Marine Invertebrates", "Marine Megafauna", "Seabirds"):
+        assert per_ha[name] == 0.0
+    assert sum(per_ha.values()) == pytest.approx(284.83, rel=1e-12)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -58,8 +65,9 @@ def test_posidonia_fish_highest_living_weight():
     """
     Fish Populations has the highest dependency weight among living biological agents.
 
-    The Medes Islands MPA demonstrated that fish populations respond most directly
-    to habitat protection — 80× higher fish biomass inside vs. outside. Fish also
+    In the Medes Islands no-take reserve, exploited fish took 25-35 years to
+    reach carrying-capacity biomass (García-Rubies et al. 2013, PLoS ONE
+    8:e73922), so fish respond strongly to habitat protection. Fish also
     drive the artisanal fishing economy and act as the trophic link between the
     meadow ecosystem and apex megafauna.
     """
@@ -212,15 +220,22 @@ def test_posidonia_marginal_cost_curve_shape():
 def test_posidonia_carbon_valued_by_carbon_profile_only():
     """
     Blue carbon is valued by gaia.carbon (release + foregone absorption), not
-    by an agent: the absorption is the single S5 value, IPCC 2013 Tier 1
-    seagrass 0.43 t C/ha/yr = 1.58 t CO₂/ha/yr.
+    by an agent. S5: one sourced absorption value, the Balearic burial rate
+    of Mazarrasa et al. (2017), 26 g C/m²/yr = 0.26 t C/ha/yr; the release is
+    the top-metre matte stock (327 t C/ha) × the Pendleton et al. (2012)
+    central loss fraction 0.63, with no separate biomass term.
     """
     eco = build_posidonia_ecosystem()
-    assert eco.resource.carbon_profile.annual_absorption_tonnes == pytest.approx(
-        0.43 * 44 / 12)
+    profile = eco.resource.carbon_profile
+    assert profile.annual_absorption_tonnes == pytest.approx(0.26 * 44 / 12)
+    assert profile.soil_carbon_tonnes == pytest.approx(327 * 44 / 12)
+    assert profile.soil_release_fraction == 0.63
+    assert profile.stored_carbon_tonnes == 0.0
     result = run_extraction(eco, 1_000)
     assert result.extraction_npv.carbon_absorption_lost_t_yr == pytest.approx(
-        1_000 * 0.43 * 44 / 12)
+        1_000 * 0.26 * 44 / 12)
+    assert result.extraction_npv.carbon_released_t == pytest.approx(
+        1_000 * 327 * 44 / 12 * 0.63)
 
 
 # ── Report tests ───────────────────────────────────────────────────────────────
@@ -236,7 +251,7 @@ def test_posidonia_report_generates():
 
     assert isinstance(report, str)
     assert len(report) > 100
-    assert "Costa Brava Posidonia Meadow" in report
+    assert "Posidonia oceanica meadows of Catalonia" in report
     assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 

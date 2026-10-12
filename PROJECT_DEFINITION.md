@@ -467,7 +467,7 @@ The version entries below record what each version delivered at the time. The 20
 - [x] Implement succession-based maturation curves (pioneer → intermediate → climax): three-phase model with configurable phase durations and service fractions — `SuccessionCurve` dataclass, `succession.py` module with `succession_service()`, `get_succession_phase()`, `compute_maturation_timeline()`, `compute_maturation_gap()`, `find_years_to_threshold()`
 - [x] Maturation delay: configurable dead period at restoration start where replanted units provide zero ecosystem services (per-ecosystem: 2yr forest, 3yr Mediterranean, 5yr Posidonia)
 - [x] Implement double carbon externality: `carbon.py` module with `compute_carbon_release()` (biomass + soil fraction), `compute_absorption_foregone()`, `compute_carbon_cost()`, `compute_annual_absorption()`, `compute_carbon_payback_period()` — monetized at configurable carbon price per tonne
-- [x] Implement resilience zones: `resilience.py` module with `compute_resilience_zone()` (green/yellow/red classification), confidence interpolation, `compute_confidence_band()`, irreversibility warnings — flags when model confidence degrades past configured thresholds
+- [x] Implement resilience zones: `resilience.py` module with `compute_resilience_zone()` (green/yellow/red classification), confidence interpolation, a heuristic confidence band (retired in Step 8.4 for the Monte Carlo, `gaia/uncertainty.py`), irreversibility warnings — flags when model confidence degrades past configured thresholds
 - [x] Extended `models.py` with 5 new dataclasses: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`
 - [x] Extended `Resource` (carbon_profile, resilience), `Agent` (succession_curve), `SimulationStep` (resilience_zone, model_confidence, irreversibility_warning), `RestorationResult` (maturation_timeline, years_to_pioneer/50pct/90pct, total_maturation_gap)
 - [x] Extended `simulation.py`: Phase 4 resilience zone tagging in `run_extraction`, optional maturation pass in `run_restoration`
@@ -562,7 +562,7 @@ Full specification: `version_specs/V07_SPEC.md`
 
 - [x] ~~Cython-optimized extraction loop~~ — removed (decision D7, 2026-10-12): with option B of D5 the engine evaluates its static function directly, so the per-unit loop the extension compiled is gone. History in `docs/ENGINE_PROFILE.md`.
 - [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
-- [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates (now part of the proposed v1.0)
+- [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates (now part of v1.0, Step 8.4)
 - [x] Pluggable case template system — ecosystems as JSON files, `gaia run <case | file.json>` (Step 7: data-driven ecosystem format)
 
 ### ✅ v0.8.1 — I/O Flexibility (complete)
@@ -591,18 +591,27 @@ Full specification: `version_specs/V081_SPEC.md`
 - [x] Honest outputs: parameter provenance and calibration status in every output; README and this document rewritten around what the model does
 - [x] Engineering: `pyproject.toml`, `gaia` command, CI, strict JSON, damage shape properties checked on every run, text report formats result fields only, dead code removed, ruff and mypy clean
 
-### 🔲 v1.0 — Proposed redefinition: one credible case (proposed — pending owner decision D6: first user / case choice)
+### 🔲 v1.0 — One credible case: Posidonia oceanica on the Catalan coast (decision D6)
 
-*Proposed in `TOP_PRIORITIES_REPORT.md` (§8 D6, §9 Step 8); not yet decided. The user and the case are deliberately not chosen here.*
+**Decided (owner, 2026-10-12):** the first v1.0 case is **Posidonia** (`gaia/cases/data/posidonia.json`). v1.0 = one credible case: every parameter sourced (or explicitly flagged), results with uncertainty bounds, and a methods note ready for external review (`docs/POSIDONIA_METHODS_NOTE.md`).
 
-v1.0 = **one case that could be put in front of an ecologist and an environmental economist without embarrassment**:
+**First user and question — PROPOSAL, for the owner to confirm (Step 8.6).** The owner chose the case, not the user. Proposed:
 
-- [ ] Pick one concrete first user and the question they need answered (decision D6), and one case. The report names Amazon (literature review exists, hardest) and Posidonia (smaller scope, good Mediterranean literature) as candidates.
-- [ ] Every parameter of that case DOI-backed, or explicitly flagged in the provenance; primary sources instead of web pages and authorless citations
-- [ ] Cross-check per-hectare values against independent benchmarks (e.g. ESVD, TEEB) and report where the case falls
-- [ ] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95 instead of a single number, and a tornado chart of the dominant parameters (replaces the heuristic band)
-- [ ] A 4–6 page methods note, reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues
-- [ ] All property tests pass with no `xfail`
+- **User:** a Catalan coastal authority (the Generalitat's marine-environment and coastal services) or a Costa Brava marine NGO, reviewing the environmental impact assessment of a **proposed port or marina expansion** that would destroy part of a *Posidonia oceanica* meadow (dredging, breakwaters, fill). *P. oceanica* beds are a priority habitat under the EU Habitats Directive (1120\*), so such a project needs a documented, reviewable estimate of what is lost.
+- **Question:** *If the project destroys N ha of the Catalan Posidonia stock, what is the present value of the ecosystem services and carbon lost, compared with the project's private gain — with P5/P50/P95 bounds — which parameters drive the answer, and how much of the loss could restoration recover, at what cost?*
+- **How Gaia answers it:** `gaia run posidonia --units N --unit-value <private gain per ha> --uncertainty` (extraction: annual loss, PV, net social cost, with Monte Carlo bounds and a sensitivity ranking), and `--mode restore` for the restoration side. The case's reference resource is the regional stock (4,582 ha mapped in Catalonia, 2025) and the default N is an illustrative 50 ha; the user sets N and the project's gain.
+- **Why this user:** the question is local, recurring (port, marina and anchoring projects), decision-relevant, and small in scale, which keeps the model in the range where its per-hectare valuation is best supported (a few percent of the stock lost). Alternatives the owner may prefer: a mooring/anchoring management plan (gradual degradation rather than destruction), or a restoration-funding question (cost per tonne of CO₂ or per € of service recovered).
+
+**Done when:**
+
+- [x] Pick the case (D6: Posidonia)
+- [ ] Owner confirms the user and the question above (proposal in place)
+- [x] Every parameter of the case DOI-backed or explicitly flagged in the provenance (`docs/POSIDONIA_LITERATURE_REVIEW.md`)
+- [x] Per-hectare values cross-checked against independent benchmarks (Campagne et al. 2015, de Groot et al. 2012 / ESVD, Costanza et al. 2014, Stamatiadou et al. 2025)
+- [x] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95, a sensitivity (tornado) ranking; the heuristic band is retired
+- [x] A 4–6 page methods note (`docs/POSIDONIA_METHODS_NOTE.md`)
+- [ ] Reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues
+- [x] All property tests pass with no `xfail`
 
 Prerequisites from Step 7, all done: the data-driven ecosystem format; decision D5 (option B now: the static engine, §13; option A committed for after v1.0) and D7 (Cython dropped).
 

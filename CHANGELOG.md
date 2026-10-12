@@ -1,5 +1,67 @@
 # Changelog
 
+## Unreleased — Posidonia v1.0 case (Step 8b; decision D6)
+
+The Posidonia meadow is the v1.0 case (D6): one case with every parameter sourced or flagged, results with uncertainty bounds, and a methods note ready for external review. **Posidonia numbers change. For the other three cases, no number changes**; their golden files lose only the retired heuristic band.
+
+### Added
+
+- **Proposed first user and question** (`PROJECT_DEFINITION.md`, v1.0; for the owner to confirm): a Catalan coastal authority or marine NGO assessing a port or marina expansion that destroys *N* ha of meadow.
+- **`docs/POSIDONIA_LITERATURE_REVIEW.md`**: every parameter of the case with value, range, source and mapping.
+  - Every DOI was checked through Crossref and every number read from the source: abstract, full text or official PDF.
+  - 25 of 69 parameters are sourced (21 by DOI or arXiv id, 4 by an official URL); 44 are flagged (34 placeholders, the 10 owner-specified weights).
+  - Also covers what was searched for and not found.
+- **`docs/POSIDONIA_METHODS_NOTE.md`**: a 5–6 page methods note for an ecologist and an environmental economist. It covers structure, unit semantics, calibration regime, sources, the uncertainty method, results, limitations (including the static engine and the committed option A), and questions for the reviewers.
+- **Uncertainty** (`gaia/uncertainty.py`; `gaia run <case> --uncertainty [N] [--seed S]`, extraction), replacing the heuristic band (S7). It works on any case file, and gives:
+  - a seeded Monte Carlo over each parameter's documented range, or a range set by its confidence;
+  - P5/P50/P95 of the annual externality, the PV parts, the PV and the net social cost;
+  - a tornado ranking;
+  - normative sensitivities (carbon price views, discount rate, scarcity, horizon), which are not sampled.
+
+  The case format gains `"range"`, `"relative_range"` and `"distribution"` on any parameter or provenance template. The JSON calibration block shows them.
+- **Benchmarks** (`gaia/benchmarks.py`, `run.benchmarks` in the case format). Each extraction report and its JSON `"benchmarks"` block show where Gaia's per-hectare values fall among published ones. For Posidonia these are Campagne et al. 2015, Stamatiadou et al. 2025, de Groot et al. 2012 / ESVD and Costanza et al. 2014.
+
+### Changed (Posidonia)
+
+- **Carbon (S5 resolved).** One sourced value with a range for each term:
+  - burial 0.953 tCO₂/ha/yr (Mazarrasa et al. 2017), was 1.577;
+  - top-metre matte stock 1,199 tCO₂/ha (Monnier et al. 2022), was 2,600 (placeholder);
+  - loss on conversion 0.63 (Pendleton et al. 2012), was 0.05 (placeholder);
+  - no separate biomass term, was 130.
+
+  Release per hectare destroyed: 755 tCO₂, was 260.
+- **Agent values: final services only.** From Campagne et al. 2015:
+  - coastal protection 188, water purification 60, fisheries 35 (27–74), knowledge/bioindicator 1.83 €/ha/yr;
+  - the six ecological agents carry no euro value (intermediate services or unvalued non-use);
+  - total €284.83/ha/yr at full damage, was €1,066 (owner specification). A lower bound: tourism, recreation and non-use are not valued.
+- **Resource.** The Catalan stock, 4,582 ha (Generalitat marine habitat map, 2025), was 5,000 ha, more than the whole Catalan stock. The default run destroys 50 ha, was 2,000. The case is renamed *Posidonia oceanica meadows of Catalonia (Costa Brava)*.
+- **Succession.** From Kendrick et al. 2005: 100 / 400 / 600 years, was 20 / 50 / 120.
+- **Provenance** of the discount rate (Drupp et al. 2018 mean recommended SDR 2.27%; the Ramsey reference fields are now the survey medians), the scarcity rate, planting cost and matte formation. Placeholders are flagged with reasons. The unsourced "80× fish biomass in the Medes Islands" claim is removed.
+- **Results.**
+
+  | Run | Quantity | Before | After |
+  |---|---|---|---|
+  | Default run | Annual externality | 4.70 M€/yr (0.9 default, 2,000 of 5,000 ha) | €6,325/yr (50 of 4,582 ha) |
+  | Default run | PV | 589.7 M€ | 7.83 M€ |
+  | Default run | Net social cost | — | 7.70 M€ |
+  | Golden scenario (2,000 of 5,000 ha) | Annual externality | 4.70 M€ | 1.27 M€ |
+  | Golden scenario (2,000 of 5,000 ha) | PV | 589.7 M€ | 408.6 M€ |
+
+  Default run Monte Carlo (1,000 draws), P5 / P50 / P95:
+  - PV: 5.62 M€ / 8.78 M€ / 12.78 M€;
+  - net social cost: 5.49 M€ / 8.66 M€ / 12.65 M€;
+  - led by the carbon release fraction and the matte carbon stock.
+- **CalibrationWarning** (health 0.67 at the 20% threshold) remains. No source supports moving the curves; the review explains why.
+
+### Changed (all cases)
+
+- `DiscountConfig.discount_factor` caches the cumulative factors of a declining schedule. The values are bit-identical, and a present value costs O(H) instead of O(H²).
+- EXPERIMENTAL pricing (Posidonia): the six agents without a euro value get their former owner-specified impacts as PLACEHOLDER anchors.
+
+### Removed
+
+- **The heuristic band** (S7): `SimulationResult.annual_externality_band`, `gaia.resilience.compute_confidence_band`, the text section and the JSON `summary.annual_externality_band`. The Monte Carlo replaces it. Resilience zones and model confidence remain.
+
 ## Unreleased — static engine, evaluated directly (Step 8a; decisions D5, D7)
 
 The owner's decisions of 2026-10-12: **D5 option B now** (Gaia evaluates a static damage function of depletion and says so), **option A — a path-dependent engine — a firm commitment after v1.0**, and **D7: drop Cython**. **No output number changes**: the golden files are byte-identical, and the new engine reproduces the former pure-Python loop bit for bit on every step and field of the 14 golden scenarios, 25 synthetic configurations and the CLI text/JSON outputs of the four cases.

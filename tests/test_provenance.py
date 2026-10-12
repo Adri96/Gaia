@@ -173,7 +173,9 @@ def test_known_flags_are_honest():
     assert scarcity.value == 0.02 and scarcity.confidence is Confidence.LOW
     assert "Drupp" in scarcity.note
     absorption = param("posidonia", "carbon.annual_absorption_tonnes")
-    assert "not verified" in absorption.note and "Krause-Jensen" in absorption.note
+    assert "doi:10.1002/lno.10510" in absorption.source and "S5" in absorption.note
+    release = param("posidonia", "carbon.soil_release_fraction")
+    assert release.confidence is Confidence.LOW and "global assumption" in release.note
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
     for case in BUILDERS:
@@ -291,7 +293,11 @@ def test_json_calibration_block(case, mode_args, summary_only):
     assert cal["n_params"] == len(cal["parameters"])
     counts = {c.value: 0 for c in Confidence}
     for p in cal["parameters"]:
-        assert set(p) == {"name", "value", "unit", "source", "confidence", "note"}
+        assert {"name", "value", "unit", "source", "confidence", "note"} <= set(p)
+        assert set(p) <= {"name", "value", "unit", "source", "confidence", "note",
+                          "range", "distribution"}  # range: Step 8.4, when documented
+        if "range" in p:
+            assert p["range"][0] <= p["value"] <= p["range"][1]
         counts[p["confidence"]] += 1
     assert counts["placeholder"] == cal["n_placeholder"] > 0
     assert counts["low"] == cal["n_low"]
