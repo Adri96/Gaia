@@ -241,6 +241,10 @@ figure and the owner's weights keep their role in the health index
   times Catalonia's 2,989,357 households, spread over 190,000 ha (the
   provisional seascape rule) and split equally: 30.18 each.
 
+Every value is a unit-value benefit transfer at face value: no income
+adjustment to Catalonia and no price-year adjustment (the owner's
+decision, Step 8d.5; a known limitation in the methods note §8).
+
 Total €818.66/ha/yr (€284.83 before). Splits move value between agents
 and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism

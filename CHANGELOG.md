@@ -5,6 +5,7 @@
 ### Changed
 
 - **Seascape attribution labelled provisional** (Posidonia; Step 8d.3). The owner accepted spreading the coralligenous diving value and the megafauna and seabird non-use values evenly over the 190,000 ha of mapped seabed as a provisional assumption. The three agents' provenance notes and ledger entries say PROVISIONAL; the docs no longer list it as an open question. No number changes.
+- **Benefit transfers: no income or price-year adjustment** (Posidonia; Step 8d.5), the owner's decision for now. Documented as a known limitation in the methods note (§8) and the literature review (§2); no longer an open question. No number changes.
 
 ### Added
 
