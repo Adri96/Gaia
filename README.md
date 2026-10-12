@@ -584,8 +584,10 @@ Gaia/
 │   └── golden/                # snapshot of every case × mode (scripts/regen_golden.py)
 ├── scripts/
 │   ├── regen_golden.py        # regenerate / --check the golden snapshots
-│   └── gen_readme_examples.py # regenerate / --check the README examples
+│   ├── gen_readme_examples.py # regenerate / --check the README examples
+│   └── profile_engine.py      # time the engine, Python vs Cython (docs/ENGINE_PROFILE.md)
 ├── version_specs/             # V01–V081 specs (historical; see the notes at their top); V09_SPEC.md (proposal, D5)
+├── docs/                      # ENGINE_PROFILE.md (Python vs Cython timings, decision D7)
 ├── .github/workflows/ci.yml   # pytest on 3.9–3.12 with and without Cython, golden, README, ruff, mypy
 ├── PROJECT_DEFINITION.md      # vision, foundations, roadmap
 ├── TOP_PRIORITIES_REPORT.md   # the 2026-10 audit and its fix plan
