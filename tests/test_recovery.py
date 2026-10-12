@@ -10,7 +10,6 @@ These tests mirror test_damage.py but for recovery functions. They verify:
 Parametrized over all recovery function factories and multiple threshold values.
 """
 
-import math
 import pytest
 from gaia.recovery import logistic_recovery, linear_recovery
 from gaia.damage import logistic_damage

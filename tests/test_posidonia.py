@@ -13,11 +13,9 @@ ecological plausibility. They verify:
 
 import pytest
 from gaia.cases.posidonia import (
-    _ANNUAL_NOTE,
     build_posidonia_ecosystem,
     run_posidonia,
 )
-from gaia.report import format_report
 from gaia.simulation import run_extraction
 
 
@@ -31,10 +29,20 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 
 # ── Structure invariants ───────────────────────────────────────────────────────
 
-def test_posidonia_ecosystem_has_eleven_agents():
-    """The Posidonia ecosystem always has exactly 11 agents."""
+def test_posidonia_ecosystem_has_ten_agents():
+    """The Posidonia ecosystem has 10 agents (Blue Carbon removed, decision D3)."""
     eco = build_posidonia_ecosystem()
-    assert len(eco.agents) == 11
+    assert len(eco.agents) == 10
+    assert "Blue Carbon" not in {a.name for a in eco.agents}
+
+
+def test_posidonia_removing_blue_carbon_kept_other_impacts():
+    """Renormalised weights keep each agent's weight × value (max impact)."""
+    eco = build_posidonia_ecosystem()
+    impact = {a.name: a.dependency_weight * a.annual_value(5_000.0) for a in eco.agents}
+    assert impact["Posidonia Meadow"] == pytest.approx(800_000.0, rel=1e-12)
+    assert impact["Coastal Protection"] == pytest.approx(900_000.0, rel=1e-4)
+    assert sum(impact.values()) == pytest.approx(5_330_000.0, rel=1e-4)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -58,12 +66,11 @@ def test_posidonia_fish_highest_living_weight():
     eco = build_posidonia_ecosystem()
     fish_agent = next(a for a in eco.agents if "Fish" in a.name)
 
-    # Living agents: all except Coastal Protection, Water Quality, Blue Carbon,
+    # Living agents: all except Coastal Protection, Water Quality,
     # Posidonia Meadow (physical/ecosystem agents)
     living_agents = [
         a for a in eco.agents
-        if a.name not in ("Coastal Protection", "Water Quality", "Blue Carbon",
-                          "Posidonia Meadow")
+        if a.name not in ("Coastal Protection", "Water Quality", "Posidonia Meadow")
     ]
     max_living_weight = max(a.dependency_weight for a in living_agents)
 
@@ -87,11 +94,11 @@ def test_posidonia_coastal_protection_highest_physical_cost():
     # Map agent names to their final costs
     final_step = result.steps[-1]
     agent_costs = {
-        eco.agents[i].name: final_step.agent_costs[i]
+        eco.agents[i].name: final_step.agent_annual_costs[i]
         for i in range(len(eco.agents))
     }
 
-    physical_agents = ["Coastal Protection", "Water Quality", "Blue Carbon"]
+    physical_agents = ["Coastal Protection", "Water Quality"]
     coastal_cost = agent_costs["Coastal Protection"]
 
     for name in physical_agents:
@@ -106,11 +113,11 @@ def test_posidonia_coastal_protection_highest_physical_cost():
 
 def test_posidonia_at_threshold():
     """
-    Destroying exactly 1,000 ha (20%): externality < one-time revenue.
+    Destroying exactly 1,000 ha (20%): one-off revenue is weighed against the
+    present value of the recurring annual loss.
 
-    At the safe threshold, the single-year externality is still below the
-    one-time private gain. The annual note flags that this changes within ~2
-    years as recurring losses accumulate.
+    Replaces a test asserting that the single-year externality is below the
+    one-off revenue, which compared a yearly flow with a one-off amount.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -120,28 +127,20 @@ def test_posidonia_at_threshold():
     result = run_extraction(eco, THRESHOLD_UNITS)
 
     # Revenue = 1000 ha * 2500 = 2,500,000
-    assert result.total_private_revenue == 2_500_000.0
-    assert result.net_social_cost > 0, (
-        f"At safe threshold (20%), single-year net_social_cost should be positive, "
-        f"got {result.net_social_cost:.2f}. Note: annual recurring losses change "
-        f"this picture within ~2 years."
-    )
+    assert result.revenue == 2_500_000.0
+    assert result.net_social_cost == pytest.approx(
+        result.pv_externality - result.revenue, rel=1e-12)
+    # The annual loss recurs every year of the 200-year horizon
+    assert result.extraction_npv.horizon == 200
+    assert result.extraction_npv.direct > 10 * result.annual_externality
 
 
 def test_posidonia_past_threshold():
     """
     Destroying 2,500 ha (50%): externality is much larger than at threshold.
 
-    The Posidonia case uses an inverted economic model: one-time private revenue
-    vs annual recurring externality costs. The single-year externality snapshot does
-    NOT cross the one-time revenue figure (revenue per ha is high relative to
-    annual service loss per ha at any single moment). The real crossover requires
-    multi-year NPV — a v0.6 feature.
-
-    The correct invariant here: externality at 50% must be substantially larger
-    than at 20% (the safe threshold), confirming the S-curve acceleration. The
-    externality at 50% should also be at least 50% of one-time revenue, confirming
-    that within 2 years of annual losses the private gain is fully offset.
+    The invariant: externality at 50% must be substantially larger than at 20%
+    (the safe threshold), confirming the S-curve acceleration.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -152,20 +151,13 @@ def test_posidonia_past_threshold():
     result_threshold = run_extraction(eco, THRESHOLD_UNITS)  # 20%
 
     # Revenue = 2500 * 2500 = 6,250,000
-    assert result_past.total_private_revenue == 6_250_000.0
+    assert result_past.revenue == 6_250_000.0
 
-    # Externality at 50% must be substantially larger than at threshold (S-curve accel)
-    assert result_past.total_externality_cost > 3 * result_threshold.total_externality_cost, (
-        f"Externality at 50% ({result_past.total_externality_cost:.2f}) should be "
-        f">>3× the threshold externality ({result_threshold.total_externality_cost:.2f})"
-    )
-
-    # Annual externality at 50% should be >= 50% of the one-time revenue,
-    # meaning within ~2 years of annual losses the private gain is fully offset
-    assert result_past.total_externality_cost >= 0.5 * result_past.total_private_revenue, (
-        f"Annual externality at 50% ({result_past.total_externality_cost:.2f}) should be "
-        f">= 50% of one-time revenue ({result_past.total_private_revenue:.2f}), "
-        f"meaning payback < 2 years"
+    # Externality at 50% must be substantially larger than at threshold (S-curve
+    # accel). ~3.0× before the exponential Blue Carbon agent left (Step 3.4).
+    assert result_past.annual_externality > 2.5 * result_threshold.annual_externality, (
+        f"Externality at 50% ({result_past.annual_externality:.2f}) should be "
+        f">2.5× the threshold externality ({result_threshold.annual_externality:.2f})"
     )
 
 
@@ -173,8 +165,8 @@ def test_posidonia_heavy_extraction():
     """
     Destroying 4,000 ha (80%): substantial externality, critically low health.
 
-    At 80% destruction the ecosystem is near collapse. Externality should be
-    at least 50% of revenue and ecosystem health critically low.
+    At 80% destruction the ecosystem is near collapse: ecosystem health is
+    critically low.
     """
     eco = build_posidonia_ecosystem(
         total_hectares=TOTAL_HECTARES,
@@ -183,10 +175,6 @@ def test_posidonia_heavy_extraction():
     )
     result = run_extraction(eco, 4_000)
 
-    assert result.total_externality_cost >= 0.5 * result.total_private_revenue, (
-        f"At 80% destruction, externality ({result.total_externality_cost:.2f}) "
-        f"should be >= 50% of revenue ({result.total_private_revenue:.2f})"
-    )
     assert result.final_ecosystem_health < 0.10, (
         f"At 80% destruction, ecosystem health should be < 10%, "
         f"got {result.final_ecosystem_health:.1%}"
@@ -210,7 +198,7 @@ def test_posidonia_marginal_cost_curve_shape():
     cost_at = {}
     for step in result.steps:
         if step.units_extracted in (500, 1_000, 2_000):
-            cost_at[step.units_extracted] = step.cumulative_cost
+            cost_at[step.units_extracted] = step.annual_externality
 
     inc_pre_threshold = cost_at[1_000] - cost_at[500]     # 10% → 20%
     inc_post_threshold = cost_at[2_000] - cost_at[1_000]  # 20% → 40%
@@ -221,38 +209,24 @@ def test_posidonia_marginal_cost_curve_shape():
     )
 
 
-def test_posidonia_blue_carbon_uses_exponential():
+def test_posidonia_carbon_valued_by_carbon_profile_only():
     """
-    Blue Carbon uses an exponential damage function, not logistic.
-
-    CO₂ release from Posidonia matte is continuous and non-saturating — unlike
-    biological populations that plateau, atmospheric carbon accumulates. The
-    exponential function encodes this. We verify the Blue Carbon agent produces
-    different damage values than the logistic agents at the same depletion level.
+    Blue carbon is valued by gaia.carbon (release + foregone absorption), not
+    by an agent: the absorption is the single S5 value, IPCC 2013 Tier 1
+    seagrass 0.43 t C/ha/yr = 1.58 t CO₂/ha/yr.
     """
     eco = build_posidonia_ecosystem()
-    carbon_agent = next(a for a in eco.agents if "Carbon" in a.name)
-    other_agent = next(a for a in eco.agents if "Carbon" not in a.name)
-
-    depletion = 0.70
-    carbon_damage = carbon_agent.damage_function(depletion)
-    other_damage = other_agent.damage_function(depletion)
-
-    assert abs(carbon_damage - other_damage) > 1e-6, (
-        f"Blue Carbon (exponential) and a logistic agent should produce different "
-        f"damage values at {depletion:.0%} depletion. "
-        f"Got carbon={carbon_damage:.6f}, other={other_damage:.6f}"
-    )
+    assert eco.resource.carbon_profile.annual_absorption_tonnes == pytest.approx(
+        0.43 * 44 / 12)
+    result = run_extraction(eco, 1_000)
+    assert result.extraction_npv.carbon_absorption_lost_t_yr == pytest.approx(
+        1_000 * 0.43 * 44 / 12)
 
 
 # ── Report tests ───────────────────────────────────────────────────────────────
 
 def test_posidonia_report_generates():
     """The report produces a non-empty string with key fields and the annual note."""
-    eco = build_posidonia_ecosystem(
-        total_hectares=TOTAL_HECTARES, safe_threshold_ratio=THRESHOLD
-    )
-    result = run_extraction(eco, 2_000)
     # run_posidonia appends the annual note; format_report alone does not
     report = run_posidonia(
         total_hectares=TOTAL_HECTARES,
@@ -263,7 +237,7 @@ def test_posidonia_report_generates():
     assert isinstance(report, str)
     assert len(report) > 100
     assert "Costa Brava Posidonia Meadow" in report
-    assert "TOTAL EXTERNALITY" in report
+    assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 
 
@@ -288,7 +262,7 @@ def test_posidonia_annual_note_in_report():
 
 
 def test_posidonia_report_contains_all_agents():
-    """The report mentions all 11 agent names."""
+    """The report mentions all 10 agent names."""
     report = run_posidonia(
         total_hectares=TOTAL_HECTARES,
         safe_threshold_ratio=THRESHOLD,
@@ -304,7 +278,6 @@ def test_posidonia_report_contains_all_agents():
         "Seabirds",
         "Coastal Protection",
         "Water Quality",
-        "Blue Carbon",
         "Human Communities",
     ]
     for agent_name in expected_agents:
@@ -316,10 +289,10 @@ def test_posidonia_report_contains_all_agents():
 # ── v0.3: Cascade-specific tests ─────────────────────────────────────────────
 
 def test_posidonia_has_interactions():
-    """Posidonia ecosystem has 16 interaction edges."""
+    """Posidonia ecosystem has 15 interaction edges (Blue Carbon's edge removed)."""
     eco = build_posidonia_ecosystem()
-    assert len(eco.interactions) == 16, (
-        f"Expected 16 interaction edges, got {len(eco.interactions)}"
+    assert len(eco.interactions) == 15, (
+        f"Expected 15 interaction edges, got {len(eco.interactions)}"
     )
 
 

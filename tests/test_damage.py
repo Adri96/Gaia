@@ -9,7 +9,6 @@ All invariant tests are parametrized across all three function types and across
 a range of threshold values.
 """
 
-import math
 import pytest
 from gaia.damage import logistic_damage, exponential_damage, piecewise_damage
 

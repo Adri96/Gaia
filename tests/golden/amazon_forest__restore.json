@@ -1,0 +1,2665 @@
+{
+  "agents": [
+    "Canopy Trees",
+    "Understory",
+    "Mycorrhizal Fungi",
+    "Soil Decomposers",
+    "Pollinators",
+    "Seed Dispersers",
+    "Herbivores",
+    "Mesopredators",
+    "Apex Predators",
+    "Aquatic System",
+    "Epiphytes & Bromeliads"
+  ],
+  "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 20,
+      "n_medium": 5,
+      "n_params": 81,
+      "n_placeholder": 56,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.1\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "low",
+          "name": "resource.area_ha",
+          "note": "Units / reference density of 400 trees/ha. Terra firme, DBH >= 10 cm: ~400-600 stems/ha, stated without a citation; sets the per-tree carbon.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a72",
+          "unit": "ha",
+          "value": 10.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Selective-logging revenue per tree (one-off); no market source.",
+          "source": "case author's choice ('Calibrated' in the docstring)",
+          "unit": "\u20ac/tree",
+          "value": 1.5
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "A basin-scale tipping point applied to a 1,000 ha patch, a scale mismatch (audit S4); also the inflection of every damage curve.",
+          "source": "Lovejoy & Nobre (2018): Amazon tipping point at 20-25% deforestation (via AMAZON_FOREST.md \u00a76)",
+          "unit": "ratio",
+          "value": 0.2
+        },
+        {
+          "confidence": "low",
+          "name": "agents.annual_value_per_ha",
+          "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044.",
+          "source": "sum of the non-carbon anchors of AMAZON_FOREST.md \u00a78 for 1,000 ha: water cycling \u20ac150k, fisheries \u20ac20k, biodiversity/habitat \u20ac410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+          "unit": "\u20ac/ha/yr",
+          "value": 580.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Canopy Trees].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.15
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Understory].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mycorrhizal Fungi].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.15
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Soil Decomposers].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Pollinators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.09
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seed Dispersers].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Herbivores].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.07
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mesopredators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.05
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Apex Predators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.03
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Aquatic System].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Bromeliads].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Mycorrhizal Fungi].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Pollinators].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.19
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.172
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.206
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Herbivores].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Soil Decomposers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Pollinators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Seed Dispersers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Herbivores].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Pollinators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory \u2192 Soil Decomposers].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.071
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.068
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Decomposers \u2192 Mycorrhizal Fungi].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.142
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.103
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators \u2192 Epiphytes & Bromeliads].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.095
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.068
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Seed Dispersers \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Apex Predators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Herbivores \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mesopredators \u2192 Apex Predators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mesopredators \u2192 Aquatic System].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Aquatic System \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.071
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Aquatic System \u2192 Mesopredators].strength",
+          "note": "",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Bromeliads \u2192 Canopy Trees].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.095
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Bromeliads \u2192 Understory].strength",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
+          "unit": "fraction of source damage",
+          "value": 0.103
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Matches the literature per the audit (S4); full citation pending (Step 8). Per tree at the 400 trees/ha reference density.",
+          "source": "173 \u00b1 12 Mg C/ha total biomass (AMAZON_FOREST.md \u00a72, citing 'Phil Trans R Soc B, 227 plots', author not given) \u00d7 3.67 / 400 trees/ha",
+          "unit": "tCO2/tree",
+          "value": 1.587
+        },
+        {
+          "confidence": "low",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "The literature review calls 0.62 a historic peak and recommends ~0.30-0.40 t C/ha/yr; not yet applied (audit S4).",
+          "source": "0.62 t C/ha/yr old-growth net accumulation (AMAZON_FOREST.md \u00a72, citing Wikipedia, 1975-1996 data) \u00d7 3.67 / 400",
+          "unit": "tCO2/tree/yr",
+          "value": 0.006
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "~40 t C/ha 'in roots' \u00d7 3.67 / 400, no cited source; the name is misleading (root, not soil carbon; audit S4).",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.367
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Pending calibration against eddy covariance data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.soil_depth_cm",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "cm",
+          "value": 20.0
+        },
+        {
+          "confidence": "low",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "A web source and an analog site; to be replaced by a primary source.",
+          "source": "cultivated tropical slope, Ivory Coast analog (worldrainforests.com, via AMAZON_FOREST.md \u00a74)",
+          "unit": "t/ha/yr",
+          "value": 90.0
+        },
+        {
+          "confidence": "low",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Matches the literature per the audit (S4); full citation pending.",
+          "source": "RUSLE analysis cited as 'ScienceDirect 2023' (no author) in AMAZON_FOREST.md \u00a74",
+          "unit": "t/ha/yr",
+          "value": 0.015
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "exponent",
+          "value": 2.5
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.critical_minimum",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "cm",
+          "value": 5.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.residual_fraction",
+          "note": "Pending calibration against RUSLE data for Central Amazon.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.02
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+          "unit": "1/yr",
+          "value": 0.0128
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 100.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.planting_cost_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree",
+          "value": 5.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.annual_maintenance_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree/yr",
+          "value": 1.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.maintenance_years",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "years",
+          "value": 20.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "recovery.logistic_steepness",
+          "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 7.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.pioneer_end_year",
+          "note": "Pending calibration against Poorter 2016 and Nature Comms 2021.",
+          "source": null,
+          "unit": "years",
+          "value": 5.0
+        },
+        {
+          "confidence": "low",
+          "name": "succession.intermediate_end_year",
+          "note": "Read as 20 years to 80% biomass; the literature review says ~70% (audit S4).",
+          "source": "Poorter et al. (2016), Biomass resilience of Neotropical secondary forests, via AMAZON_FOREST.md \u00a77",
+          "unit": "years",
+          "value": 20.0
+        },
+        {
+          "confidence": "low",
+          "name": "succession.climax_approach_year",
+          "note": "Median 66 years to 90% biomass recovery; citation not checked.",
+          "source": "Poorter et al. (2016), Biomass resilience of Neotropical secondary forests, via AMAZON_FOREST.md \u00a77",
+          "unit": "years",
+          "value": 66.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.pioneer_service",
+          "note": "Pending calibration against Poorter 2016 and Nature Comms 2021.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.intermediate_service",
+          "note": "Pending calibration against Poorter 2016 and Nature Comms 2021.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "succession.maturation_delay",
+          "note": "Pending calibration against Poorter 2016 and Nature Comms 2021.",
+          "source": null,
+          "unit": "years",
+          "value": 2.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 76 of 81 recorded parameters are placeholders (56) or low-confidence (20). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
+    "carbon_breakeven": {
+      "breakeven_price_eur_per_t": 172.08,
+      "current_price_eur_per_t": 166.35,
+      "gap_to_current_eur_per_t": 5.73,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 3
+    },
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered_eur_pv": 244172.86,
+      "foregone_revenue_eur": 1200.0,
+      "horizon_years": 100,
+      "maturation_gap_eur_pv": 40644.83,
+      "penalty_ratio": 251.2955,
+      "recovery_shortfall_eur_pv": 0.0,
+      "restoration_cost_eur_pv": 16710.21,
+      "substrate_loss_eur_pv": 26.72,
+      "total_eur_pv": 301554.63
+    },
+    "ecosystem": {
+      "agents": [
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.15,
+          "description": "Emergent + canopy layer (400+ species/ha) \u2014 primary biomass, rainfall recycling",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Canopy Trees",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.08,
+          "description": "Sub-canopy trees, palms, ferns, epiphytes \u2014 shade-tolerant reproduction, microclimate regulation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Understory",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.15,
+          "description": "Arbuscular + ectomycorrhizae \u2014 KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
+          "is_keystone": true,
+          "keystone_threshold": 0.25,
+          "name": "Mycorrhizal Fungi",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.1,
+          "description": "Termites, fungi, bacteria, dung beetles \u2014 organic matter breakdown, nutrient return",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Soil Decomposers",
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.09,
+          "description": "Bees, butterflies, hummingbirds, bats \u2014 reproduction for 90%+ of canopy species",
+          "is_keystone": true,
+          "keystone_threshold": 0.35,
+          "name": "Pollinators",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.08,
+          "description": "Monkeys, toucans, agoutis, tapirs \u2014 forest regeneration, genetic connectivity",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Seed Dispersers",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.07,
+          "description": "Capybaras, sloths, leafcutter ants, insects \u2014 energy transfer, population dynamics",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Herbivores",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.05,
+          "description": "Snakes (boa, anaconda), caimans, ocelots, anteaters \u2014 mid-trophic regulation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Mesopredators",
+          "trophic_level": 2
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.03,
+          "description": "Jaguars, harpy eagles \u2014 top-down population control, KEYSTONE trophic role",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Apex Predators",
+          "trophic_level": 3
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.1,
+          "description": "River fish (3,000+ species), river dolphins, aquatic plants \u2014 nutrient transport, fisheries",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Aquatic System",
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 580.0,
+          "annual_value_eur_yr": 5800.0,
+          "dependency_weight": 0.1,
+          "description": "Orchids, bromeliads, lichens (~25,000 species) \u2014 water retention, microhabitat creation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Epiphytes & Bromeliads",
+          "trophic_level": 0
+        }
+      ],
+      "calibration_regime": "B",
+      "interactions": [
+        {
+          "description": "Mycorrhizal collapse cuts phosphorus supply to canopy on P-depleted Oxisol",
+          "interaction_type": "keystone",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.19,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Understory loses mycorrhizal nutrient access",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.172,
+          "target": "Understory"
+        },
+        {
+          "description": "Canopy loss removes shade \u2192 understory heat/drought stress",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.206,
+          "target": "Understory"
+        },
+        {
+          "description": "Epiphytes lose structural substrate when canopy trees fall",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.35,
+          "target": "Epiphytes & Bromeliads"
+        },
+        {
+          "description": "Canopy loss reduces food and habitat for herbivores",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.25,
+          "target": "Herbivores"
+        },
+        {
+          "description": "Less litter input reduces decomposer substrate",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.2,
+          "target": "Soil Decomposers"
+        },
+        {
+          "description": "Trees provide carbon to mycorrhizal partners",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.15,
+          "target": "Mycorrhizal Fungi"
+        },
+        {
+          "description": "Canopy flowering loss reduces pollinator food sources",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.3,
+          "target": "Pollinators"
+        },
+        {
+          "description": "Fewer fruiting trees reduce disperser food",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.2,
+          "target": "Seed Dispersers"
+        },
+        {
+          "description": "Canopy loss reduces riparian shade and leaf litter input to streams",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.15,
+          "target": "Aquatic System"
+        },
+        {
+          "description": "Canopy loss reduces habitat for arboreal mesopredators",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.1,
+          "target": "Mesopredators"
+        },
+        {
+          "description": "Understory vegetation is primary herbivore food source",
+          "interaction_type": "dependency",
+          "source": "Understory",
+          "strength": 0.15,
+          "target": "Herbivores"
+        },
+        {
+          "description": "Understory structural support for lower-level epiphytes",
+          "interaction_type": "dependency",
+          "source": "Understory",
+          "strength": 0.2,
+          "target": "Epiphytes & Bromeliads"
+        },
+        {
+          "description": "Understory flowering provides pollinator resources",
+          "interaction_type": "dependency",
+          "source": "Understory",
+          "strength": 0.15,
+          "target": "Pollinators"
+        },
+        {
+          "description": "Understory plants contribute to mycorrhizal network",
+          "interaction_type": "dependency",
+          "source": "Understory",
+          "strength": 0.1,
+          "target": "Mycorrhizal Fungi"
+        },
+        {
+          "description": "Understory litter feeds decomposer community",
+          "interaction_type": "dependency",
+          "source": "Understory",
+          "strength": 0.15,
+          "target": "Soil Decomposers"
+        },
+        {
+          "description": "Decomposer decline reduces nutrient availability for trees",
+          "interaction_type": "dependency",
+          "source": "Soil Decomposers",
+          "strength": 0.071,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Reduced decomposition limits understory nutrient access",
+          "interaction_type": "dependency",
+          "source": "Soil Decomposers",
+          "strength": 0.068,
+          "target": "Understory"
+        },
+        {
+          "description": "Decomposers feed mycorrhizal nutrient pool",
+          "interaction_type": "dependency",
+          "source": "Soil Decomposers",
+          "strength": 0.2,
+          "target": "Mycorrhizal Fungi"
+        },
+        {
+          "description": "Pollinator loss blocks reproduction for 90%+ of canopy species",
+          "interaction_type": "keystone",
+          "source": "Pollinators",
+          "strength": 0.142,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Pollinator loss collapses understory plant reproduction",
+          "interaction_type": "keystone",
+          "source": "Pollinators",
+          "strength": 0.103,
+          "target": "Understory"
+        },
+        {
+          "description": "Some epiphyte reproduction depends on specialist pollinators",
+          "interaction_type": "dependency",
+          "source": "Pollinators",
+          "strength": 0.1,
+          "target": "Epiphytes & Bromeliads"
+        },
+        {
+          "description": "Loss of dispersers reduces tree recruitment and genetic connectivity",
+          "interaction_type": "dependency",
+          "source": "Seed Dispersers",
+          "strength": 0.095,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Understory seed dispersal decline",
+          "interaction_type": "dependency",
+          "source": "Seed Dispersers",
+          "strength": 0.068,
+          "target": "Understory"
+        },
+        {
+          "description": "Seed dispersers are prey for some mesopredators",
+          "interaction_type": "trophic",
+          "source": "Seed Dispersers",
+          "strength": 0.1,
+          "target": "Mesopredators"
+        },
+        {
+          "description": "Herbivore decline starves mid-level predators",
+          "interaction_type": "trophic",
+          "source": "Herbivores",
+          "strength": 0.3,
+          "target": "Mesopredators"
+        },
+        {
+          "description": "Large herbivore decline starves apex predators (jaguar prey)",
+          "interaction_type": "trophic",
+          "source": "Herbivores",
+          "strength": 0.35,
+          "target": "Apex Predators"
+        },
+        {
+          "description": "Riparian herbivore activity affects aquatic nutrient input",
+          "interaction_type": "dependency",
+          "source": "Herbivores",
+          "strength": 0.1,
+          "target": "Aquatic System"
+        },
+        {
+          "description": "Mesopredator decline reduces prey for harpy eagles and jaguars",
+          "interaction_type": "trophic",
+          "source": "Mesopredators",
+          "strength": 0.3,
+          "target": "Apex Predators"
+        },
+        {
+          "description": "Caiman and aquatic mesopredator population dynamics",
+          "interaction_type": "dependency",
+          "source": "Mesopredators",
+          "strength": 0.1,
+          "target": "Aquatic System"
+        },
+        {
+          "description": "Riparian nutrient transport supports floodplain forest",
+          "interaction_type": "dependency",
+          "source": "Aquatic System",
+          "strength": 0.071,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Aquatic system decline reduces food for aquatic mesopredators",
+          "interaction_type": "dependency",
+          "source": "Aquatic System",
+          "strength": 0.1,
+          "target": "Mesopredators"
+        },
+        {
+          "description": "Epiphytes contribute to canopy water retention and microhabitat",
+          "interaction_type": "dependency",
+          "source": "Epiphytes & Bromeliads",
+          "strength": 0.095,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Bromeliad water reservoirs support understory moisture",
+          "interaction_type": "dependency",
+          "source": "Epiphytes & Bromeliads",
+          "strength": 0.103,
+          "target": "Understory"
+        }
+      ],
+      "name": "Central Amazon Old-Growth Lowland Forest",
+      "resource": {
+        "area_ha": 10.0,
+        "carbon_absorption_per_unit_yr": 0.006,
+        "carbon_price_basis": "social cost of carbon, US EPA 2023",
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "carbon_stored_per_unit": 1.587,
+        "discount_horizon_years": 100,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Central Amazon Old-Growth Lowland Forest",
+        "safe_threshold_ratio": 0.2,
+        "safe_threshold_units": 800,
+        "substrate_type": "terrestrial_soil",
+        "total_units": 4000,
+        "unit_value_eur": 1.5,
+        "units_per_ha": 400.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "maturation": {
+      "maturation_gap_eur_pv": 40644.83,
+      "timeline": [
+        {
+          "annual_carbon_absorbed": 0.0,
+          "annual_service_value_eur_yr": 0.0,
+          "cumulative_carbon_absorbed": 0.0,
+          "cumulative_service_value_eur": 0.0,
+          "service_fraction": 0.0,
+          "succession_phase": "delay",
+          "year": 1
+        },
+        {
+          "annual_carbon_absorbed": 0.0,
+          "annual_service_value_eur_yr": 0.0,
+          "cumulative_carbon_absorbed": 0.0,
+          "cumulative_service_value_eur": 0.0,
+          "service_fraction": 0.0,
+          "succession_phase": "pioneer",
+          "year": 2
+        },
+        {
+          "annual_carbon_absorbed": 0.048,
+          "annual_service_value_eur_yr": 17.78,
+          "cumulative_carbon_absorbed": 0.048,
+          "cumulative_service_value_eur": 17.78,
+          "service_fraction": 0.01,
+          "succession_phase": "pioneer",
+          "year": 3
+        },
+        {
+          "annual_carbon_absorbed": 0.096,
+          "annual_service_value_eur_yr": 35.55,
+          "cumulative_carbon_absorbed": 0.144,
+          "cumulative_service_value_eur": 53.33,
+          "service_fraction": 0.02,
+          "succession_phase": "pioneer",
+          "year": 4
+        },
+        {
+          "annual_carbon_absorbed": 0.144,
+          "annual_service_value_eur_yr": 53.33,
+          "cumulative_carbon_absorbed": 0.288,
+          "cumulative_service_value_eur": 106.65,
+          "service_fraction": 0.03,
+          "succession_phase": "pioneer",
+          "year": 5
+        },
+        {
+          "annual_carbon_absorbed": 0.192,
+          "annual_service_value_eur_yr": 71.1,
+          "cumulative_carbon_absorbed": 0.48,
+          "cumulative_service_value_eur": 177.76,
+          "service_fraction": 0.04,
+          "succession_phase": "pioneer",
+          "year": 6
+        },
+        {
+          "annual_carbon_absorbed": 0.24,
+          "annual_service_value_eur_yr": 88.88,
+          "cumulative_carbon_absorbed": 0.72,
+          "cumulative_service_value_eur": 266.64,
+          "service_fraction": 0.05,
+          "succession_phase": "pioneer",
+          "year": 7
+        },
+        {
+          "annual_carbon_absorbed": 0.2614,
+          "annual_service_value_eur_yr": 96.81,
+          "cumulative_carbon_absorbed": 0.9814,
+          "cumulative_service_value_eur": 363.44,
+          "service_fraction": 0.054459,
+          "succession_phase": "intermediate",
+          "year": 8
+        },
+        {
+          "annual_carbon_absorbed": 0.3216,
+          "annual_service_value_eur_yr": 119.11,
+          "cumulative_carbon_absorbed": 1.303,
+          "cumulative_service_value_eur": 482.55,
+          "service_fraction": 0.067007,
+          "succession_phase": "intermediate",
+          "year": 9
+        },
+        {
+          "annual_carbon_absorbed": 0.4147,
+          "annual_service_value_eur_yr": 153.58,
+          "cumulative_carbon_absorbed": 1.7178,
+          "cumulative_service_value_eur": 636.13,
+          "service_fraction": 0.0864,
+          "succession_phase": "intermediate",
+          "year": 10
+        },
+        {
+          "annual_carbon_absorbed": 0.5347,
+          "annual_service_value_eur_yr": 198.01,
+          "cumulative_carbon_absorbed": 2.2524,
+          "cumulative_service_value_eur": 834.14,
+          "service_fraction": 0.111393,
+          "succession_phase": "intermediate",
+          "year": 11
+        },
+        {
+          "annual_carbon_absorbed": 0.6756,
+          "annual_service_value_eur_yr": 250.18,
+          "cumulative_carbon_absorbed": 2.928,
+          "cumulative_service_value_eur": 1084.32,
+          "service_fraction": 0.140741,
+          "succession_phase": "intermediate",
+          "year": 12
+        },
+        {
+          "annual_carbon_absorbed": 0.8314,
+          "annual_service_value_eur_yr": 307.88,
+          "cumulative_carbon_absorbed": 3.7594,
+          "cumulative_service_value_eur": 1392.19,
+          "service_fraction": 0.1732,
+          "succession_phase": "intermediate",
+          "year": 13
+        },
+        {
+          "annual_carbon_absorbed": 0.9961,
+          "annual_service_value_eur_yr": 368.89,
+          "cumulative_carbon_absorbed": 4.7555,
+          "cumulative_service_value_eur": 1761.09,
+          "service_fraction": 0.207526,
+          "succession_phase": "intermediate",
+          "year": 14
+        },
+        {
+          "annual_carbon_absorbed": 1.1639,
+          "annual_service_value_eur_yr": 431.02,
+          "cumulative_carbon_absorbed": 5.9194,
+          "cumulative_service_value_eur": 2192.1,
+          "service_fraction": 0.242474,
+          "succession_phase": "intermediate",
+          "year": 15
+        },
+        {
+          "annual_carbon_absorbed": 1.3286,
+          "annual_service_value_eur_yr": 492.03,
+          "cumulative_carbon_absorbed": 7.248,
+          "cumulative_service_value_eur": 2684.13,
+          "service_fraction": 0.2768,
+          "succession_phase": "intermediate",
+          "year": 16
+        },
+        {
+          "annual_carbon_absorbed": 1.4844,
+          "annual_service_value_eur_yr": 549.73,
+          "cumulative_carbon_absorbed": 8.7324,
+          "cumulative_service_value_eur": 3233.86,
+          "service_fraction": 0.309259,
+          "succession_phase": "intermediate",
+          "year": 17
+        },
+        {
+          "annual_carbon_absorbed": 1.6253,
+          "annual_service_value_eur_yr": 601.9,
+          "cumulative_carbon_absorbed": 10.3578,
+          "cumulative_service_value_eur": 3835.76,
+          "service_fraction": 0.338607,
+          "succession_phase": "intermediate",
+          "year": 18
+        },
+        {
+          "annual_carbon_absorbed": 1.7453,
+          "annual_service_value_eur_yr": 646.32,
+          "cumulative_carbon_absorbed": 12.103,
+          "cumulative_service_value_eur": 4482.09,
+          "service_fraction": 0.3636,
+          "succession_phase": "intermediate",
+          "year": 19
+        },
+        {
+          "annual_carbon_absorbed": 1.8384,
+          "annual_service_value_eur_yr": 680.8,
+          "cumulative_carbon_absorbed": 13.9414,
+          "cumulative_service_value_eur": 5162.88,
+          "service_fraction": 0.382993,
+          "succession_phase": "intermediate",
+          "year": 20
+        },
+        {
+          "annual_carbon_absorbed": 1.8986,
+          "annual_service_value_eur_yr": 703.1,
+          "cumulative_carbon_absorbed": 15.84,
+          "cumulative_service_value_eur": 5865.99,
+          "service_fraction": 0.395541,
+          "succession_phase": "intermediate",
+          "year": 21
+        },
+        {
+          "annual_carbon_absorbed": 1.92,
+          "annual_service_value_eur_yr": 711.03,
+          "cumulative_carbon_absorbed": 17.76,
+          "cumulative_service_value_eur": 6577.01,
+          "service_fraction": 0.4,
+          "succession_phase": "intermediate",
+          "year": 22
+        },
+        {
+          "annual_carbon_absorbed": 2.0439,
+          "annual_service_value_eur_yr": 756.9,
+          "cumulative_carbon_absorbed": 19.8039,
+          "cumulative_service_value_eur": 7333.91,
+          "service_fraction": 0.425803,
+          "succession_phase": "climax",
+          "year": 23
+        },
+        {
+          "annual_carbon_absorbed": 2.165,
+          "annual_service_value_eur_yr": 801.76,
+          "cumulative_carbon_absorbed": 21.9688,
+          "cumulative_service_value_eur": 8135.67,
+          "service_fraction": 0.45104,
+          "succession_phase": "climax",
+          "year": 24
+        },
+        {
+          "annual_carbon_absorbed": 2.2834,
+          "annual_service_value_eur_yr": 845.61,
+          "cumulative_carbon_absorbed": 24.2522,
+          "cumulative_service_value_eur": 8981.27,
+          "service_fraction": 0.475709,
+          "succession_phase": "climax",
+          "year": 25
+        },
+        {
+          "annual_carbon_absorbed": 2.3991,
+          "annual_service_value_eur_yr": 888.45,
+          "cumulative_carbon_absorbed": 26.6513,
+          "cumulative_service_value_eur": 9869.72,
+          "service_fraction": 0.499811,
+          "succession_phase": "climax",
+          "year": 26
+        },
+        {
+          "annual_carbon_absorbed": 2.5121,
+          "annual_service_value_eur_yr": 930.28,
+          "cumulative_carbon_absorbed": 29.1634,
+          "cumulative_service_value_eur": 10800.01,
+          "service_fraction": 0.523346,
+          "succession_phase": "climax",
+          "year": 27
+        },
+        {
+          "annual_carbon_absorbed": 2.6223,
+          "annual_service_value_eur_yr": 971.11,
+          "cumulative_carbon_absorbed": 31.7857,
+          "cumulative_service_value_eur": 11771.12,
+          "service_fraction": 0.546314,
+          "succession_phase": "climax",
+          "year": 28
+        },
+        {
+          "annual_carbon_absorbed": 2.7298,
+          "annual_service_value_eur_yr": 1010.93,
+          "cumulative_carbon_absorbed": 34.5155,
+          "cumulative_service_value_eur": 12782.05,
+          "service_fraction": 0.568715,
+          "succession_phase": "climax",
+          "year": 29
+        },
+        {
+          "annual_carbon_absorbed": 2.8346,
+          "annual_service_value_eur_yr": 1049.74,
+          "cumulative_carbon_absorbed": 37.3502,
+          "cumulative_service_value_eur": 13831.79,
+          "service_fraction": 0.590548,
+          "succession_phase": "climax",
+          "year": 30
+        },
+        {
+          "annual_carbon_absorbed": 2.9367,
+          "annual_service_value_eur_yr": 1087.54,
+          "cumulative_carbon_absorbed": 40.2869,
+          "cumulative_service_value_eur": 14919.34,
+          "service_fraction": 0.611815,
+          "succession_phase": "climax",
+          "year": 31
+        },
+        {
+          "annual_carbon_absorbed": 3.0361,
+          "annual_service_value_eur_yr": 1124.34,
+          "cumulative_carbon_absorbed": 43.3229,
+          "cumulative_service_value_eur": 16043.67,
+          "service_fraction": 0.632514,
+          "succession_phase": "climax",
+          "year": 32
+        },
+        {
+          "annual_carbon_absorbed": 3.1327,
+          "annual_service_value_eur_yr": 1160.13,
+          "cumulative_carbon_absorbed": 46.4557,
+          "cumulative_service_value_eur": 17203.8,
+          "service_fraction": 0.652647,
+          "succession_phase": "climax",
+          "year": 33
+        },
+        {
+          "annual_carbon_absorbed": 3.2266,
+          "annual_service_value_eur_yr": 1194.9,
+          "cumulative_carbon_absorbed": 49.6823,
+          "cumulative_service_value_eur": 18398.71,
+          "service_fraction": 0.672212,
+          "succession_phase": "climax",
+          "year": 34
+        },
+        {
+          "annual_carbon_absorbed": 3.3178,
+          "annual_service_value_eur_yr": 1228.67,
+          "cumulative_carbon_absorbed": 53.0001,
+          "cumulative_service_value_eur": 19627.38,
+          "service_fraction": 0.69121,
+          "succession_phase": "climax",
+          "year": 35
+        },
+        {
+          "annual_carbon_absorbed": 3.4063,
+          "annual_service_value_eur_yr": 1261.44,
+          "cumulative_carbon_absorbed": 56.4064,
+          "cumulative_service_value_eur": 20888.82,
+          "service_fraction": 0.709641,
+          "succession_phase": "climax",
+          "year": 36
+        },
+        {
+          "annual_carbon_absorbed": 3.492,
+          "annual_service_value_eur_yr": 1293.19,
+          "cumulative_carbon_absorbed": 59.8984,
+          "cumulative_service_value_eur": 22182.01,
+          "service_fraction": 0.727505,
+          "succession_phase": "climax",
+          "year": 37
+        },
+        {
+          "annual_carbon_absorbed": 3.575,
+          "annual_service_value_eur_yr": 1323.94,
+          "cumulative_carbon_absorbed": 63.4734,
+          "cumulative_service_value_eur": 23505.95,
+          "service_fraction": 0.744802,
+          "succession_phase": "climax",
+          "year": 38
+        },
+        {
+          "annual_carbon_absorbed": 3.6553,
+          "annual_service_value_eur_yr": 1353.68,
+          "cumulative_carbon_absorbed": 67.1288,
+          "cumulative_service_value_eur": 24859.62,
+          "service_fraction": 0.761531,
+          "succession_phase": "climax",
+          "year": 39
+        },
+        {
+          "annual_carbon_absorbed": 3.7329,
+          "annual_service_value_eur_yr": 1382.41,
+          "cumulative_carbon_absorbed": 70.8617,
+          "cumulative_service_value_eur": 26242.03,
+          "service_fraction": 0.777694,
+          "succession_phase": "climax",
+          "year": 40
+        },
+        {
+          "annual_carbon_absorbed": 3.8078,
+          "annual_service_value_eur_yr": 1410.13,
+          "cumulative_carbon_absorbed": 74.6695,
+          "cumulative_service_value_eur": 27652.16,
+          "service_fraction": 0.793289,
+          "succession_phase": "climax",
+          "year": 41
+        },
+        {
+          "annual_carbon_absorbed": 3.8799,
+          "annual_service_value_eur_yr": 1436.84,
+          "cumulative_carbon_absorbed": 78.5494,
+          "cumulative_service_value_eur": 29089.0,
+          "service_fraction": 0.808318,
+          "succession_phase": "climax",
+          "year": 42
+        },
+        {
+          "annual_carbon_absorbed": 3.9493,
+          "annual_service_value_eur_yr": 1462.55,
+          "cumulative_carbon_absorbed": 82.4988,
+          "cumulative_service_value_eur": 30551.55,
+          "service_fraction": 0.822779,
+          "succession_phase": "climax",
+          "year": 43
+        },
+        {
+          "annual_carbon_absorbed": 4.016,
+          "annual_service_value_eur_yr": 1487.25,
+          "cumulative_carbon_absorbed": 86.5148,
+          "cumulative_service_value_eur": 32038.79,
+          "service_fraction": 0.836673,
+          "succession_phase": "climax",
+          "year": 44
+        },
+        {
+          "annual_carbon_absorbed": 4.08,
+          "annual_service_value_eur_yr": 1510.94,
+          "cumulative_carbon_absorbed": 90.5948,
+          "cumulative_service_value_eur": 33549.73,
+          "service_fraction": 0.85,
+          "succession_phase": "climax",
+          "year": 45
+        },
+        {
+          "annual_carbon_absorbed": 4.1412,
+          "annual_service_value_eur_yr": 1533.62,
+          "cumulative_carbon_absorbed": 94.736,
+          "cumulative_service_value_eur": 35083.35,
+          "service_fraction": 0.86276,
+          "succession_phase": "climax",
+          "year": 46
+        },
+        {
+          "annual_carbon_absorbed": 4.1998,
+          "annual_service_value_eur_yr": 1555.29,
+          "cumulative_carbon_absorbed": 98.9358,
+          "cumulative_service_value_eur": 36638.64,
+          "service_fraction": 0.874953,
+          "succession_phase": "climax",
+          "year": 47
+        },
+        {
+          "annual_carbon_absorbed": 4.2556,
+          "annual_service_value_eur_yr": 1575.96,
+          "cumulative_carbon_absorbed": 103.1914,
+          "cumulative_service_value_eur": 38214.59,
+          "service_fraction": 0.886578,
+          "succession_phase": "climax",
+          "year": 48
+        },
+        {
+          "annual_carbon_absorbed": 4.3087,
+          "annual_service_value_eur_yr": 1595.61,
+          "cumulative_carbon_absorbed": 107.5,
+          "cumulative_service_value_eur": 39810.21,
+          "service_fraction": 0.897637,
+          "succession_phase": "climax",
+          "year": 49
+        },
+        {
+          "annual_carbon_absorbed": 4.359,
+          "annual_service_value_eur_yr": 1614.26,
+          "cumulative_carbon_absorbed": 111.8591,
+          "cumulative_service_value_eur": 41424.47,
+          "service_fraction": 0.908129,
+          "succession_phase": "climax",
+          "year": 50
+        },
+        {
+          "annual_carbon_absorbed": 4.4067,
+          "annual_service_value_eur_yr": 1631.9,
+          "cumulative_carbon_absorbed": 116.2657,
+          "cumulative_service_value_eur": 43056.38,
+          "service_fraction": 0.918053,
+          "succession_phase": "climax",
+          "year": 51
+        },
+        {
+          "annual_carbon_absorbed": 4.4516,
+          "annual_service_value_eur_yr": 1648.54,
+          "cumulative_carbon_absorbed": 120.7173,
+          "cumulative_service_value_eur": 44704.91,
+          "service_fraction": 0.92741,
+          "succession_phase": "climax",
+          "year": 52
+        },
+        {
+          "annual_carbon_absorbed": 4.4938,
+          "annual_service_value_eur_yr": 1664.16,
+          "cumulative_carbon_absorbed": 125.211,
+          "cumulative_service_value_eur": 46369.08,
+          "service_fraction": 0.9362,
+          "succession_phase": "climax",
+          "year": 53
+        },
+        {
+          "annual_carbon_absorbed": 4.5332,
+          "annual_service_value_eur_yr": 1678.78,
+          "cumulative_carbon_absorbed": 129.7443,
+          "cumulative_service_value_eur": 48047.86,
+          "service_fraction": 0.944423,
+          "succession_phase": "climax",
+          "year": 54
+        },
+        {
+          "annual_carbon_absorbed": 4.57,
+          "annual_service_value_eur_yr": 1692.39,
+          "cumulative_carbon_absorbed": 134.3143,
+          "cumulative_service_value_eur": 49740.25,
+          "service_fraction": 0.952079,
+          "succession_phase": "climax",
+          "year": 55
+        },
+        {
+          "annual_carbon_absorbed": 4.604,
+          "annual_service_value_eur_yr": 1704.99,
+          "cumulative_carbon_absorbed": 138.9183,
+          "cumulative_service_value_eur": 51445.24,
+          "service_fraction": 0.959168,
+          "succession_phase": "climax",
+          "year": 56
+        },
+        {
+          "annual_carbon_absorbed": 4.6353,
+          "annual_service_value_eur_yr": 1716.58,
+          "cumulative_carbon_absorbed": 143.5536,
+          "cumulative_service_value_eur": 53161.82,
+          "service_fraction": 0.96569,
+          "succession_phase": "climax",
+          "year": 57
+        },
+        {
+          "annual_carbon_absorbed": 4.6639,
+          "annual_service_value_eur_yr": 1727.17,
+          "cumulative_carbon_absorbed": 148.2175,
+          "cumulative_service_value_eur": 54888.99,
+          "service_fraction": 0.971645,
+          "succession_phase": "climax",
+          "year": 58
+        },
+        {
+          "annual_carbon_absorbed": 4.6898,
+          "annual_service_value_eur_yr": 1736.74,
+          "cumulative_carbon_absorbed": 152.9072,
+          "cumulative_service_value_eur": 56625.73,
+          "service_fraction": 0.977032,
+          "succession_phase": "climax",
+          "year": 59
+        },
+        {
+          "annual_carbon_absorbed": 4.7129,
+          "annual_service_value_eur_yr": 1745.31,
+          "cumulative_carbon_absorbed": 157.6201,
+          "cumulative_service_value_eur": 58371.05,
+          "service_fraction": 0.981853,
+          "succession_phase": "climax",
+          "year": 60
+        },
+        {
+          "annual_carbon_absorbed": 4.7333,
+          "annual_service_value_eur_yr": 1752.87,
+          "cumulative_carbon_absorbed": 162.3534,
+          "cumulative_service_value_eur": 60123.92,
+          "service_fraction": 0.986106,
+          "succession_phase": "climax",
+          "year": 61
+        },
+        {
+          "annual_carbon_absorbed": 4.751,
+          "annual_service_value_eur_yr": 1759.43,
+          "cumulative_carbon_absorbed": 167.1044,
+          "cumulative_service_value_eur": 61883.35,
+          "service_fraction": 0.989792,
+          "succession_phase": "climax",
+          "year": 62
+        },
+        {
+          "annual_carbon_absorbed": 4.766,
+          "annual_service_value_eur_yr": 1764.97,
+          "cumulative_carbon_absorbed": 171.8704,
+          "cumulative_service_value_eur": 63648.32,
+          "service_fraction": 0.992911,
+          "succession_phase": "climax",
+          "year": 63
+        },
+        {
+          "annual_carbon_absorbed": 4.7782,
+          "annual_service_value_eur_yr": 1769.51,
+          "cumulative_carbon_absorbed": 176.6486,
+          "cumulative_service_value_eur": 65417.82,
+          "service_fraction": 0.995463,
+          "succession_phase": "climax",
+          "year": 64
+        },
+        {
+          "annual_carbon_absorbed": 4.7878,
+          "annual_service_value_eur_yr": 1773.04,
+          "cumulative_carbon_absorbed": 181.4364,
+          "cumulative_service_value_eur": 67190.86,
+          "service_fraction": 0.997448,
+          "succession_phase": "climax",
+          "year": 65
+        },
+        {
+          "annual_carbon_absorbed": 4.7946,
+          "annual_service_value_eur_yr": 1775.56,
+          "cumulative_carbon_absorbed": 186.2309,
+          "cumulative_service_value_eur": 68966.41,
+          "service_fraction": 0.998866,
+          "succession_phase": "climax",
+          "year": 66
+        },
+        {
+          "annual_carbon_absorbed": 4.7986,
+          "annual_service_value_eur_yr": 1777.07,
+          "cumulative_carbon_absorbed": 191.0296,
+          "cumulative_service_value_eur": 70743.48,
+          "service_fraction": 0.999716,
+          "succession_phase": "climax",
+          "year": 67
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 195.8284,
+          "cumulative_service_value_eur": 72520.63,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 68
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 200.6273,
+          "cumulative_service_value_eur": 74297.77,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 69
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 205.4261,
+          "cumulative_service_value_eur": 76074.92,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 70
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 210.225,
+          "cumulative_service_value_eur": 77852.07,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 71
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 215.0238,
+          "cumulative_service_value_eur": 79629.21,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 72
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 219.8227,
+          "cumulative_service_value_eur": 81406.36,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 73
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 224.6215,
+          "cumulative_service_value_eur": 83183.51,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 74
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 229.4204,
+          "cumulative_service_value_eur": 84960.65,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 75
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 234.2192,
+          "cumulative_service_value_eur": 86737.8,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 76
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 239.0181,
+          "cumulative_service_value_eur": 88514.94,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 77
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 243.8169,
+          "cumulative_service_value_eur": 90292.09,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 78
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 248.6158,
+          "cumulative_service_value_eur": 92069.24,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 79
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 253.4146,
+          "cumulative_service_value_eur": 93846.38,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 80
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 258.2135,
+          "cumulative_service_value_eur": 95623.53,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 81
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 263.0123,
+          "cumulative_service_value_eur": 97400.68,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 82
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 267.8112,
+          "cumulative_service_value_eur": 99177.82,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 83
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 272.61,
+          "cumulative_service_value_eur": 100954.97,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 84
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 277.4089,
+          "cumulative_service_value_eur": 102732.12,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 85
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 282.2078,
+          "cumulative_service_value_eur": 104509.26,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 86
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 287.0066,
+          "cumulative_service_value_eur": 106286.41,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 87
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 291.8055,
+          "cumulative_service_value_eur": 108063.55,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 88
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 296.6043,
+          "cumulative_service_value_eur": 109840.7,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 89
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 301.4032,
+          "cumulative_service_value_eur": 111617.85,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 90
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 306.202,
+          "cumulative_service_value_eur": 113394.99,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 91
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 311.0009,
+          "cumulative_service_value_eur": 115172.14,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 92
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 315.7997,
+          "cumulative_service_value_eur": 116949.29,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 93
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 320.5986,
+          "cumulative_service_value_eur": 118726.43,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 94
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 325.3974,
+          "cumulative_service_value_eur": 120503.58,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 95
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 330.1963,
+          "cumulative_service_value_eur": 122280.72,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 96
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 334.9951,
+          "cumulative_service_value_eur": 124057.87,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 97
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 339.794,
+          "cumulative_service_value_eur": 125835.02,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 98
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 344.5928,
+          "cumulative_service_value_eur": 127612.16,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 99
+        },
+        {
+          "annual_carbon_absorbed": 4.7989,
+          "annual_service_value_eur_yr": 1777.15,
+          "cumulative_carbon_absorbed": 349.3917,
+          "cumulative_service_value_eur": 129389.31,
+          "service_fraction": 1.0,
+          "succession_phase": "climax",
+          "year": 100
+        }
+      ],
+      "years_to_50pct": 26.1000000000001,
+      "years_to_90pct": 49.30000000000043,
+      "years_to_pioneer": 2.1000000000000005
+    },
+    "mode": "restoration",
+    "npv_analysis": {
+      "carbon_benefits_eur_pv": 32269.11,
+      "carbon_payback_years": null,
+      "cost_eur_pv": 16710.21,
+      "horizon_years": 100,
+      "net_present_value_eur_pv": 86592.5,
+      "roi": 6.182,
+      "service_benefits_eur_pv": 71033.6,
+      "total_benefits_eur_pv": 103302.72
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit_eur_yr": 1.0,
+      "maintenance_years": 20,
+      "planting_cost_per_unit_eur": 5.0,
+      "total_cost_per_unit_eur": 25.0
+    },
+    "substrate": {
+      "substrate_ceiling": 0.999761,
+      "substrate_recovery_years": 1.19
+    },
+    "summary": {
+      "agent_service_value_eur_yr": {
+        "Apex Predators": 136.97,
+        "Aquatic System": 148.48,
+        "Canopy Trees": 252.62,
+        "Epiphytes & Bromeliads": 160.31,
+        "Herbivores": 134.0,
+        "Mesopredators": 153.84,
+        "Mycorrhizal Fungi": 207.85,
+        "Pollinators": 175.56,
+        "Seed Dispersers": 141.5,
+        "Soil Decomposers": 130.22,
+        "Understory": 135.8
+      },
+      "annual_damage_reversal_eur_yr": 1777.57,
+      "annual_recovered_value_eur_yr": 1777.15,
+      "depletion_after": 0.0,
+      "depletion_before": 0.2,
+      "final_ecosystem_health": 0.999927,
+      "initial_ecosystem_health": 0.693522,
+      "net_restoration_value_eur_pv": 86592.5,
+      "net_restoration_value_h100_eur_pv": 86592.5,
+      "net_restoration_value_h200_eur_pv": 146532.95,
+      "net_restoration_value_h50_eur_pv": 26002.59,
+      "num_steps": 800,
+      "restoration_cost_ratio": 17.6667,
+      "total_restoration_cost_eur": 20000.0,
+      "total_units_restored": 800,
+      "units_lost": 800
+    }
+  },
+  "maturation": {
+    "samples": [
+      {
+        "annual_carbon_absorbed": 0.0,
+        "annual_service_value": 0.0,
+        "cumulative_carbon_absorbed": 0.0,
+        "cumulative_service_value": 0.0,
+        "service_fraction": 0.0,
+        "succession_phase": "delay",
+        "year": 1
+      },
+      {
+        "annual_carbon_absorbed": 0.5346844444444444,
+        "annual_service_value": 198.00829696777475,
+        "cumulative_carbon_absorbed": 2.2524444444444445,
+        "cumulative_service_value": 834.1418814276188,
+        "service_fraction": 0.1113925925925926,
+        "succession_phase": "intermediate",
+        "year": 11
+      },
+      {
+        "annual_carbon_absorbed": 1.8985955555555556,
+        "annual_service_value": 703.1019445062666,
+        "cumulative_carbon_absorbed": 15.840000000000002,
+        "cumulative_service_value": 5865.985922273151,
+        "service_fraction": 0.39554074074074075,
+        "succession_phase": "intermediate",
+        "year": 21
+      },
+      {
+        "annual_carbon_absorbed": 2.936710775047259,
+        "annual_service_value": 1087.544448498428,
+        "cumulative_carbon_absorbed": 40.2868809073724,
+        "cumulative_service_value": 14919.3356221554,
+        "service_fraction": 0.6118147448015123,
+        "succession_phase": "climax",
+        "year": 31
+      },
+      {
+        "annual_carbon_absorbed": 3.8077882797731566,
+        "annual_service_value": 1410.1283108678056,
+        "cumulative_carbon_absorbed": 74.66948960302457,
+        "cumulative_service_value": 27652.15750218836,
+        "service_fraction": 0.793289224952741,
+        "succession_phase": "climax",
+        "year": 41
+      },
+      {
+        "annual_carbon_absorbed": 4.406654064272211,
+        "annual_service_value": 1631.9047162467525,
+        "cumulative_carbon_absorbed": 116.2657088846881,
+        "cumulative_service_value": 43056.37699246774,
+        "service_fraction": 0.9180529300567107,
+        "succession_phase": "climax",
+        "year": 51
+      },
+      {
+        "annual_carbon_absorbed": 4.71289224952741,
+        "annual_service_value": 1745.313105360987,
+        "cumulative_carbon_absorbed": 157.6201134215501,
+        "cumulative_service_value": 58371.04585845395,
+        "service_fraction": 0.9818525519848772,
+        "succession_phase": "climax",
+        "year": 60
+      },
+      {
+        "annual_carbon_absorbed": 4.798851931993798,
+        "annual_service_value": 1777.1463305649581,
+        "cumulative_carbon_absorbed": 205.4261210133727,
+        "cumulative_service_value": 76074.92007144098,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 70
+      },
+      {
+        "annual_carbon_absorbed": 4.798851931993798,
+        "annual_service_value": 1777.1463305649581,
+        "cumulative_carbon_absorbed": 253.41464033331064,
+        "cumulative_service_value": 93846.3833770905,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 80
+      },
+      {
+        "annual_carbon_absorbed": 4.798851931993798,
+        "annual_service_value": 1777.1463305649581,
+        "cumulative_carbon_absorbed": 301.4031596532486,
+        "cumulative_service_value": 111617.84668274003,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 90
+      },
+      {
+        "annual_carbon_absorbed": 4.798851931993798,
+        "annual_service_value": 1777.1463305649581,
+        "cumulative_carbon_absorbed": 349.3916789731866,
+        "cumulative_service_value": 129389.30998838955,
+        "service_fraction": 1.0,
+        "succession_phase": "climax",
+        "year": 100
+      }
+    ],
+    "sums": {
+      "annual_carbon_absorbed": 349.3916789731866,
+      "annual_service_value": 129389.30998838955,
+      "cumulative_carbon_absorbed": 13416.61108824465,
+      "cumulative_service_value": 4968538.621733395,
+      "service_fraction": 72.79782608695652,
+      "year": 5050.0
+    }
+  },
+  "per_agent": {
+    "Apex Predators": 136.9716646818097,
+    "Aquatic System": 148.48124890173312,
+    "Canopy Trees": 252.62156581995671,
+    "Epiphytes & Bromeliads": 160.3107200896016,
+    "Herbivores": 133.9986827006344,
+    "Mesopredators": 153.84005556529198,
+    "Mycorrhizal Fungi": 207.8453152478749,
+    "Pollinators": 175.55741802532734,
+    "Seed Dispersers": 141.50260531039763,
+    "Soil Decomposers": 130.22124549627856,
+    "Understory": 135.7958087260522
+  },
+  "result": {
+    "annual_damage_reversal": 1777.5714915979247,
+    "annual_recovered_value": 1777.1463305649581,
+    "carbon_breakeven": {
+      "breakeven_price": 172.07890415650274,
+      "current_price": 166.3456487480301,
+      "gap_to_current": 5.733255408472644,
+      "npv_absorption_per_euro": 97.1078523722183,
+      "npv_cost": 16710.21282120277,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 3
+    },
+    "depletion_after": 0.0,
+    "depletion_before": 0.2,
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered": 244172.8617421079,
+      "foregone_revenue": 1200.0,
+      "horizon": 100,
+      "maturation_gap": 40644.83314403201,
+      "ratio": 251.2955211996098,
+      "recovery_shortfall": 0.0,
+      "restoration_cost": 16710.21282120277,
+      "substrate_loss": 26.717732189061532,
+      "total": 301554.62543953175
+    },
+    "final_ecosystem_health": 0.9999266963736264,
+    "initial_ecosystem_health": 0.6935221566210474,
+    "maturation_gap_pv": 40644.83314403201,
+    "net_restoration_pv": 86592.50227039513,
+    "net_restoration_pv_by_horizon": {
+      "100": 86592.50227039513,
+      "200": 146532.95394349334,
+      "50": 26002.594123890103
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 1.0,
+      "maintenance_years": 20,
+      "planting_cost_per_unit": 5.0
+    },
+    "restoration_cost_ratio": 17.666666666666668,
+    "restoration_npv": {
+      "carbon_benefits": 32269.111033857997,
+      "carbon_payback_years": null,
+      "cost": 16710.21282120277,
+      "horizon": 100,
+      "net_present_value": 86592.50227039513,
+      "roi": 6.182010737799948,
+      "service_benefits": 71033.6040577399,
+      "total_benefits": 103302.7150915979
+    },
+    "substrate_ceiling": 0.9997608191653746,
+    "substrate_recovery_years": 1.1898026212230128,
+    "total_restoration_cost": 20000.0,
+    "total_units_restored": 800,
+    "units_lost": 800,
+    "years_to_50pct": 26.1000000000001,
+    "years_to_90pct": 49.30000000000043,
+    "years_to_pioneer": 2.1000000000000005
+  },
+  "scenario": {
+    "argv": [
+      "--mode",
+      "restore",
+      "--trees",
+      "4000",
+      "--units",
+      "800",
+      "--time-horizon",
+      "100"
+    ],
+    "case": "amazon_forest",
+    "name": "amazon_forest__restore"
+  },
+  "step_sums": {
+    "agent_recoveries": [
+      84.9272423372136,
+      85.58888093371124,
+      70.08155247458485,
+      65.93268447084911,
+      98.57124266366336,
+      89.70452766041778,
+      96.79789966301419,
+      154.47918945468822,
+      226.99512009855542,
+      75.01391650740148,
+      80.89705739962349
+    ],
+    "agent_service_values": [
+      73886.70083337583,
+      39713.24075324208,
+      60970.9506528888,
+      38240.95699309251,
+      51454.188670432304,
+      41622.90083443386,
+      39299.9472631838,
+      44798.96494185962,
+      39497.15089714863,
+      43508.07157429286,
+      46920.29329178165
+    ],
+    "cumulative_service_value": 519913.366705732,
+    "depletion_ratio": 79.89999999999999,
+    "ecosystem_health": 644.4579609357571,
+    "marginal_service_value": 1777.1463305649581,
+    "recovery_ratio": 400.4999999999999,
+    "restoration_cost_so_far": 8010000.0,
+    "step": 320400.0,
+    "units_restored": 320400.0
+  },
+  "steps": [
+    {
+      "agent_recoveries": [
+        9.978226029098408e-08,
+        1.004618599864332e-07,
+        8.453356355108298e-08,
+        8.027206876113401e-08,
+        1.179853250778966e-07,
+        1.1078185582924683e-07,
+        1.165446312281697e-07,
+        1.7434435923656436e-07,
+        2.3238963819799645e-07,
+        8.95998234583793e-08,
+        9.564267038389222e-08
+      ],
+      "agent_service_values": [
+        8.681056645315614e-05,
+        4.6614303033705006e-05,
+        7.354420028944219e-05,
+        4.6557799881457736e-05,
+        6.158833969066203e-05,
+        5.1402781104770525e-05,
+        4.7317120278636905e-05,
+        5.0559864178603665e-05,
+        4.0435797046451384e-05,
+        5.196789760586e-05,
+        5.547274882265749e-05
+      ],
+      "cumulative_service_value": 0.000612271418385403,
+      "depletion_ratio": 0.19975,
+      "ecosystem_health": 0.6935222621850852,
+      "marginal_service_value": 0.000612271418385403,
+      "recovery_ratio": 0.00125,
+      "restoration_cost_so_far": 25.0,
+      "step": 1,
+      "units_restored": 1
+    },
+    {
+      "agent_recoveries": [
+        0.0008822563761286411,
+        0.0008884734632047359,
+        0.0007427588512423595,
+        0.0007037740130195207,
+        0.0010385782962112513,
+        0.0009680422408693854,
+        0.0010244710851428779,
+        0.001556757800163735,
+        0.0021278073481179947,
+        0.0007891058099073177,
+        0.0008443867433375756
+      ],
+      "agent_service_values": [
+        0.7675630472319178,
+        0.41225168692699754,
+        0.6462002005808528,
+        0.408188927551322,
+        0.5421378706222731,
+        0.4491715997633948,
+        0.4159352605680085,
+        0.45145976204748317,
+        0.3702384785725311,
+        0.4576813697462443,
+        0.4897443111357938
+      ],
+      "cumulative_service_value": 5.4105725147468196,
+      "depletion_ratio": 0.17975,
+      "ecosystem_health": 0.6944550139511763,
+      "marginal_service_value": 0.15311422950568243,
+      "recovery_ratio": 0.10125,
+      "restoration_cost_so_far": 2025.0,
+      "step": 81,
+      "units_restored": 81
+    },
+    {
+      "agent_recoveries": [
+        0.004788632586480371,
+        0.004823304019851141,
+        0.004010683189876462,
+        0.003793272655912635,
+        0.005616506540047134,
+        0.0052031859590100865,
+        0.005533842423839724,
+        0.00851746770120713,
+        0.01187439494381805,
+        0.0042691507760018975,
+        0.004577441326969228
+      ],
+      "agent_service_values": [
+        4.166110350237923,
+        2.2380130652109296,
+        3.489294375192522,
+        2.2000981404293283,
+        2.931816413904604,
+        2.4142782849806803,
+        2.246740024078928,
+        2.4700656333500675,
+        2.0661447202243406,
+        2.4761074500811007,
+        2.6549159696421523
+      ],
+      "cumulative_service_value": 29.353584427332578,
+      "depletion_ratio": 0.15975,
+      "ecosystem_health": 0.6985831194533462,
+      "marginal_service_value": 0.4802684161977204,
+      "recovery_ratio": 0.20125,
+      "restoration_cost_so_far": 4025.0,
+      "step": 161,
+      "units_restored": 161
+    },
+    {
+      "agent_recoveries": [
+        0.014817930897631863,
+        0.014927551228599276,
+        0.012358295917454904,
+        0.011670911163728245,
+        0.01732785680721799,
+        0.015972176517976035,
+        0.0170567207493696,
+        0.02652718524901774,
+        0.03756286765205894,
+        0.013175490350474954,
+        0.014150209562968094
+      ],
+      "agent_service_values": [
+        12.89159988093972,
+        6.926383770070064,
+        10.751717448185765,
+        6.7691284749623835,
+        9.04514125336779,
+        7.411089904340881,
+        6.9250286242440575,
+        7.692883722215145,
+        6.535938971458256,
+        7.641784403275475,
+        8.207121546521496
+      ],
+      "cumulative_service_value": 90.79781799958103,
+      "depletion_ratio": 0.13975,
+      "ecosystem_health": 0.7091769528278717,
+      "marginal_service_value": 1.1092949939142187,
+      "recovery_ratio": 0.30125,
+      "restoration_cost_so_far": 6025.0,
+      "step": 241,
+      "units_restored": 241
+    },
+    {
+      "agent_recoveries": [
+        0.03563453047176403,
+        0.03590268169251582,
+        0.02961781699610097,
+        0.027936349158781893,
+        0.04156972388409707,
+        0.03816051080912476,
+        0.04088788126910261,
+        0.06412503509719568,
+        0.09192307257880251,
+        0.03161682286364431,
+        0.03400116292550716
+      ],
+      "agent_service_values": [
+        31.002041510434704,
+        16.658844305327342,
+        25.767500786607844,
+        16.2030825120935,
+        21.69939586749867,
+        17.70647701543389,
+        16.600479795255662,
+        18.59626017818675,
+        15.994614628711636,
+        18.3377572609137,
+        19.720674496794153
+      ],
+      "cumulative_service_value": 218.28712835725784,
+      "depletion_ratio": 0.11975,
+      "ecosystem_health": 0.7311578684067815,
+      "marginal_service_value": 2.1279709467620194,
+      "recovery_ratio": 0.40125,
+      "restoration_cost_so_far": 8025.0,
+      "step": 321,
+      "units_restored": 321
+    },
+    {
+      "agent_recoveries": [
+        0.07160593270494833,
+        0.07215209077902715,
+        0.05935136740802612,
+        0.05592663104814313,
+        0.08336975561320399,
+        0.07627843354329046,
+        0.0819514911992213,
+        0.1293920598078237,
+        0.18728418938730287,
+        0.0634228506242085,
+        0.06827916480575524
+      ],
+      "agent_service_values": [
+        62.29716145330505,
+        33.47857012146859,
+        51.635689644982726,
+        32.43744600792302,
+        43.51901243009248,
+        35.393193164086775,
+        33.27230542688385,
+        37.523697344268875,
+        32.5874489533907,
+        36.785253362040926,
+        39.60191558733804
+      ],
+      "cumulative_service_value": 438.5316934957811,
+      "depletion_ratio": 0.09975,
+      "ecosystem_health": 0.7691310692927338,
+      "marginal_service_value": 3.359739385691398,
+      "recovery_ratio": 0.50125,
+      "restoration_cost_so_far": 10025.0,
+      "step": 401,
+      "units_restored": 401
+    },
+    {
+      "agent_recoveries": [
+        0.12128759600118046,
+        0.12222249987768447,
+        0.100310444614583,
+        0.09444804057659613,
+        0.1409954091421922,
+        0.12866147393740113,
+        0.13852862210123398,
+        0.21988490376143613,
+        0.3206684812544796,
+        0.10727993865410629,
+        0.11559289266747888
+      ],
+      "agent_service_values": [
+        105.520208521027,
+        56.711239943245594,
+        87.2700868146872,
+        54.779863534425765,
+        73.59960357222432,
+        59.69892390695413,
+        56.24262057310101,
+        63.76662209081648,
+        55.79631573827945,
+        62.222364419381655,
+        67.04387774713776
+      ],
+      "cumulative_service_value": 742.6517268612804,
+      "depletion_ratio": 0.08,
+      "ecosystem_health": 0.8215655578040268,
+      "marginal_service_value": 4.210190022074585,
+      "recovery_ratio": 0.6,
+      "restoration_cost_so_far": 12000.0,
+      "step": 480,
+      "units_restored": 480
+    },
+    {
+      "agent_recoveries": [
+        0.1771087763865566,
+        0.17848554155913093,
+        0.1462172460648684,
+        0.1375841085735137,
+        0.20562949464147387,
+        0.18723822517942082,
+        0.20195124074906323,
+        0.3219320504269039,
+        0.4723171382357818,
+        0.15648071475424988,
+        0.16872259956664495
+      ],
+      "agent_service_values": [
+        154.08463545630423,
+        82.81729128343676,
+        127.2090040764355,
+        79.79878297263794,
+        107.33859620284936,
+        86.87853648325127,
+        81.99220374411968,
+        93.36029462380215,
+        82.18318205302603,
+        90.75881455746493,
+        97.85910774865407
+      ],
+      "cumulative_service_value": 1084.2804492019818,
+      "depletion_ratio": 0.06,
+      "ecosystem_health": 0.880467061655872,
+      "marginal_service_value": 4.16911938881799,
+      "recovery_ratio": 0.7,
+      "restoration_cost_so_far": 14000.0,
+      "step": 560,
+      "units_restored": 560
+    },
+    {
+      "agent_recoveries": [
+        0.22688437218367774,
+        0.22865986806122296,
+        0.18704621689778875,
+        0.17591280044339072,
+        0.2631585581034027,
+        0.23921067249531963,
+        0.25836898098178607,
+        0.4132729674598255,
+        0.6091996983143679,
+        0.20028213156959693,
+        0.21606943971100556
+      ],
+      "agent_service_values": [
+        197.38940379979962,
+        106.09817878040745,
+        162.7302087010762,
+        102.02942425716661,
+        137.3687673299762,
+        110.9937520378283,
+        104.89780627860515,
+        119.8491605633494,
+        106.00074750670001,
+        116.16363631036623,
+        125.32027503238324
+      ],
+      "cumulative_service_value": 1388.8413605976582,
+      "depletion_ratio": 0.04,
+      "ecosystem_health": 0.9329775636206438,
+      "marginal_service_value": 3.376225011547831,
+      "recovery_ratio": 0.8,
+      "restoration_cost_so_far": 16000.0,
+      "step": 640,
+      "units_restored": 640
+    },
+    {
+      "agent_recoveries": [
+        0.2645053142135645,
+        0.26658612524027436,
+        0.21781657004296656,
+        0.20476864578909842,
+        0.30655188091664554,
+        0.27827438407127675,
+        0.3008963815475717,
+        0.4825985347891764,
+        0.7140432548829132,
+        0.23332853914748994,
+        0.2518306406044244
+      ],
+      "agent_service_values": [
+        230.11962336580112,
+        123.6959621114873,
+        189.50041593738092,
+        118.7658145576771,
+        160.02008183848898,
+        129.1193142090724,
+        122.16393090831411,
+        139.9535750888612,
+        124.24352634962689,
+        135.33055270554416,
+        146.06177155056616
+      ],
+      "cumulative_service_value": 1618.9745686228205,
+      "depletion_ratio": 0.02,
+      "ecosystem_health": 0.9726557029353268,
+      "marginal_service_value": 2.400249268471498,
+      "recovery_ratio": 0.9,
+      "restoration_cost_so_far": 18000.0,
+      "step": 720,
+      "units_restored": 720
+    },
+    {
+      "agent_recoveries": [
+        0.2903696158850077,
+        0.2926633808751125,
+        0.23890266120445391,
+        0.22451938878668717,
+        0.3363168927688263,
+        0.30496251144482245,
+        0.33004601650402554,
+        0.5304829502251447,
+        0.7871934751828144,
+        0.25600215327885023,
+        0.2763977932579338
+      ],
+      "agent_service_values": [
+        252.62156581995671,
+        135.7958087260522,
+        207.8453152478749,
+        130.22124549627856,
+        175.55741802532734,
+        141.50260531039763,
+        133.9986827006344,
+        153.84005556529198,
+        136.9716646818097,
+        148.48124890173312,
+        160.3107200896016
+      ],
+      "cumulative_service_value": 1777.1463305649581,
+      "depletion_ratio": 0.0,
+      "ecosystem_health": 0.9999266963736264,
+      "marginal_service_value": 1.6066689708748072,
+      "recovery_ratio": 1.0,
+      "restoration_cost_so_far": 20000.0,
+      "step": 800,
+      "units_restored": 800
+    }
+  ]
+}

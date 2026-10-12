@@ -1,0 +1,1752 @@
+{
+  "agents": [
+    "Posidonia Meadow",
+    "Coralligenous & Red Coral",
+    "Epiphytes & Algae",
+    "Marine Invertebrates",
+    "Fish Populations",
+    "Marine Megafauna",
+    "Seabirds",
+    "Coastal Protection",
+    "Water Quality",
+    "Human Communities"
+  ],
+  "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 23,
+      "n_medium": 5,
+      "n_params": 59,
+      "n_placeholder": 31,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.1\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "low",
+          "name": "resource.area_ha",
+          "note": "Plausible extent for a major Costa Brava stretch; needs GIS verification (EMODnet Posidonia maps).",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "ha",
+          "value": 5000.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Private gain per hectare destroyed (coastal development, marinas, trawling permits), one-off; not the value of Posidonia.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "\u20ac/ha",
+          "value": 2500.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "Safe destruction threshold, lower than forest for slow recovery (stated rationale, no cited source); also the inflection of every damage curve.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "ratio",
+          "value": 0.2
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Posidonia Meadow].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1456.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coralligenous & Red Coral].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1092.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Algae].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 649.922
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Invertebrates].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 707.798
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fish Populations].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 910.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Megafauna].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 910.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seabirds].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 655.2
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coastal Protection].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1259.9859999999999
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Water Quality].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1075.438
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].annual_value_per_ha",
+          "note": "Global meta-analyses value seagrass and coastal systems ~25\u00d7 higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8).",
+          "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+          "unit": "\u20ac/ha/yr",
+          "value": 1592.5
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Posidonia Meadow].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.10989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coralligenous & Red Coral].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.10989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Epiphytes & Algae].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.07692307692307693
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Invertebrates].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.0989010989010989
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fish Populations].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.15384615384615385
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Marine Megafauna].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.04395604395604395
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Seabirds].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.054945054945054944
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Coastal Protection].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.14285714285714285
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Water Quality].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12087912087912088
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].dependency_weight",
+          "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.0879120879120879
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Posidonia Meadow].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Coralligenous & Red Coral].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Epiphytes & Algae].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Coastal Protection].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Posidonia Meadow \u2192 Water Quality].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coralligenous & Red Coral \u2192 Marine Invertebrates].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coralligenous & Red Coral \u2192 Fish Populations].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Epiphytes & Algae \u2192 Marine Invertebrates].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Marine Invertebrates \u2192 Fish Populations].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Marine Megafauna].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Seabirds].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Marine Invertebrates \u2192 Water Quality].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Water Quality \u2192 Coralligenous & Red Coral].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Coastal Protection \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fish Populations \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Water Quality \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "tCO2/ha",
+          "value": 130.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified.",
+          "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) \u00d7 44/12",
+          "unit": "tCO2/ha/yr",
+          "value": 1.5766666666666664
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "tCO2/ha",
+          "value": 2600.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.sediment_stability",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "0-1 scale",
+          "value": 0.85
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "arbitrary units/yr",
+          "value": 5.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "arbitrary units/yr",
+          "value": 0.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "mm/yr",
+          "value": 1.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against EMODnet and IFREMER data.",
+          "source": null,
+          "unit": "exponent",
+          "value": 3.0
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule[year 0]",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.rate_schedule[year 31]",
+          "note": "Step of the declining schedule; no cited source for the value or the year.",
+          "source": null,
+          "unit": "1/yr",
+          "value": 0.018
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.rate_schedule[year 101]",
+          "note": "Step of the declining schedule; no cited source for the value or the year.",
+          "source": null,
+          "unit": "1/yr",
+          "value": 0.014
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "Chosen below the paper's aggregate estimate (1.66%/yr), which exceeds the schedule's long-term 1.4% and would make the PV diverge.",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, \u00a71: Dutch government default relative price change for ecosystem services",
+          "unit": "1/yr",
+          "value": 0.01
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 200.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 54 of 59 recorded parameters are placeholders (31) or low-confidence (23). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
+    "ecosystem": {
+      "agents": [
+        {
+          "annual_value_eur_per_ha_yr": 1456.0,
+          "annual_value_eur_yr": 7280000.0,
+          "dependency_weight": 0.10989010989010989,
+          "description": "Posidonia meadow integrity \u2014 self-reinforcing fragmentation and turbidity feedback loop",
+          "is_keystone": true,
+          "keystone_threshold": 0.3,
+          "name": "Posidonia Meadow",
+          "trophic_amplification": 1.0,
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1092.0,
+          "annual_value_eur_yr": 5460000.0,
+          "dependency_weight": 0.10989010989010989,
+          "description": "Coralligenous reefs and red coral \u2014 centuries-old biogenic habitat, irreplaceable on human timescales",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Coralligenous & Red Coral",
+          "trophic_amplification": 1.0,
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 649.922,
+          "annual_value_eur_yr": 3249610.0,
+          "dependency_weight": 0.07692307692307693,
+          "description": "Epiphytic algae and plant community \u2014 primary productivity, oxygen production, food web base",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Epiphytes & Algae",
+          "trophic_amplification": 1.0,
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 707.798,
+          "annual_value_eur_yr": 3538990.0,
+          "dependency_weight": 0.0989010989010989,
+          "description": "Sponges, urchins, octopus, lobsters, shellfish \u2014 filter feeders, grazers, urchin barren risk",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Marine Invertebrates",
+          "trophic_amplification": 1.606857,
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 910.0,
+          "annual_value_eur_yr": 4550000.0,
+          "dependency_weight": 0.15384615384615385,
+          "description": "Fish nursery and feeding habitat \u2014 artisanal fisheries, grouper apex predator, Medes Islands model",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Fish Populations",
+          "trophic_amplification": 2.581989,
+          "trophic_level": 2
+        },
+        {
+          "annual_value_eur_per_ha_yr": 910.0,
+          "annual_value_eur_yr": 4550000.0,
+          "dependency_weight": 0.04395604395604395,
+          "description": "Dolphins, sea turtles, cetaceans \u2014 apex indicators, ecotourism, extreme K-strategy vulnerability",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Marine Megafauna",
+          "trophic_amplification": 4.148887,
+          "trophic_level": 3
+        },
+        {
+          "annual_value_eur_per_ha_yr": 655.2,
+          "annual_value_eur_yr": 3276000.0,
+          "dependency_weight": 0.054945054945054944,
+          "description": "Seabirds and coastal birds \u2014 fish-dependent breeders, Audouin's gull, migratory corridor",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Seabirds",
+          "trophic_amplification": 2.581989,
+          "trophic_level": 2
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1259.9859999999999,
+          "annual_value_eur_yr": 6299929.999999999,
+          "dependency_weight": 0.14285714285714285,
+          "description": "Wave attenuation, beach erosion prevention, sediment stabilization \u2014 Costa Brava beach economy",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Coastal Protection",
+          "trophic_amplification": 1.0,
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1075.438,
+          "annual_value_eur_yr": 5377190.000000001,
+          "dependency_weight": 0.12087912087912088,
+          "description": "Nutrient filtration, pathogen reduction, bathing water standards \u2014 direct tourism dependency",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Water Quality",
+          "trophic_amplification": 1.0,
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1592.5,
+          "annual_value_eur_yr": 7962500.0,
+          "dependency_weight": 0.0879120879120879,
+          "description": "Dive/beach tourism economy, artisanal fishing, coastal property \u2014 perception threshold sensitive",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Human Communities",
+          "trophic_amplification": 1.0,
+          "trophic_level": -1
+        }
+      ],
+      "calibration_regime": "B",
+      "has_pricing": false,
+      "interactions": [
+        {
+          "description": "Posidonia loss \u2192 sedimentation \u2192 coralligenous suffocation",
+          "interaction_type": "keystone",
+          "source": "Posidonia Meadow",
+          "strength": 0.3,
+          "target": "Coralligenous & Red Coral"
+        },
+        {
+          "description": "Substrate loss collapses epiphytic community",
+          "interaction_type": "keystone",
+          "source": "Posidonia Meadow",
+          "strength": 0.35,
+          "target": "Epiphytes & Algae"
+        },
+        {
+          "description": "Meadow loss directly removes wave attenuation and beach protection",
+          "interaction_type": "keystone",
+          "source": "Posidonia Meadow",
+          "strength": 0.4,
+          "target": "Coastal Protection"
+        },
+        {
+          "description": "Lost filtration capacity \u2192 turbidity and eutrophication",
+          "interaction_type": "dependency",
+          "source": "Posidonia Meadow",
+          "strength": 0.3,
+          "target": "Water Quality"
+        },
+        {
+          "description": "Reef habitat loss displaces invertebrate communities",
+          "interaction_type": "dependency",
+          "source": "Coralligenous & Red Coral",
+          "strength": 0.25,
+          "target": "Marine Invertebrates"
+        },
+        {
+          "description": "Reef nursery loss reduces fish recruitment",
+          "interaction_type": "dependency",
+          "source": "Coralligenous & Red Coral",
+          "strength": 0.2,
+          "target": "Fish Populations"
+        },
+        {
+          "description": "Primary productivity loss reduces grazer food supply",
+          "interaction_type": "trophic",
+          "source": "Epiphytes & Algae",
+          "strength": 0.2,
+          "target": "Marine Invertebrates"
+        },
+        {
+          "description": "Invertebrate decline reduces fish food supply",
+          "interaction_type": "trophic",
+          "source": "Marine Invertebrates",
+          "strength": 0.25,
+          "target": "Fish Populations"
+        },
+        {
+          "description": "Fish decline starves apex marine predators",
+          "interaction_type": "trophic",
+          "source": "Fish Populations",
+          "strength": 0.35,
+          "target": "Marine Megafauna"
+        },
+        {
+          "description": "Fish decline causes breeding failure in seabird colonies",
+          "interaction_type": "trophic",
+          "source": "Fish Populations",
+          "strength": 0.3,
+          "target": "Seabirds"
+        },
+        {
+          "description": "Filter feeder loss reduces water purification capacity",
+          "interaction_type": "dependency",
+          "source": "Marine Invertebrates",
+          "strength": 0.15,
+          "target": "Water Quality"
+        },
+        {
+          "description": "Degraded water quality stresses sensitive coral formations",
+          "interaction_type": "dependency",
+          "source": "Water Quality",
+          "strength": 0.15,
+          "target": "Coralligenous & Red Coral"
+        },
+        {
+          "description": "Beach erosion destroys tourism infrastructure and economy",
+          "interaction_type": "dependency",
+          "source": "Coastal Protection",
+          "strength": 0.25,
+          "target": "Human Communities"
+        },
+        {
+          "description": "Fish decline collapses artisanal fishing economy",
+          "interaction_type": "dependency",
+          "source": "Fish Populations",
+          "strength": 0.2,
+          "target": "Human Communities"
+        },
+        {
+          "description": "Degraded water quality triggers beach closures and tourism loss",
+          "interaction_type": "dependency",
+          "source": "Water Quality",
+          "strength": 0.15,
+          "target": "Human Communities"
+        }
+      ],
+      "name": "Costa Brava Posidonia Meadow",
+      "resource": {
+        "area_ha": 5000.0,
+        "carbon_absorption_per_unit_yr": 1.5766666666666664,
+        "carbon_price_basis": "social cost of carbon, US EPA 2023",
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "carbon_stored_per_unit": 130.0,
+        "discount_horizon_years": 200,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Costa Brava Posidonia Meadow",
+        "safe_threshold_ratio": 0.2,
+        "safe_threshold_units": 1000,
+        "substrate_type": "marine_matte",
+        "total_units": 5000,
+        "unit_value_eur": 2500.0,
+        "units_per_ha": 1.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "mode": "extraction",
+    "notes": [
+      "Marine externality costs are ANNUAL (\u20ac/yr) \u2014 they recur every year the damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively permanent on human timescales. The net social cost compares the one-off revenue with the present value of these annual losses."
+    ],
+    "npv_analysis": {
+      "carbon_absorption_lost_tco2_yr": 3153.3333,
+      "carbon_foregone_eur_pv": 62979050.0,
+      "carbon_price_eur_per_t": 166.35,
+      "carbon_release_eur_pv": 86499737.35,
+      "carbon_released_tco2": 520000.0,
+      "discount": {
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "delta": 0.005,
+        "eta": 1.35,
+        "g": 0.013,
+        "horizon_years": 200,
+        "is_default": false,
+        "rate_schedule": [
+          [
+            0,
+            0.023
+          ],
+          [
+            31,
+            0.018
+          ],
+          [
+            101,
+            0.014
+          ]
+        ],
+        "scarcity_rate": 0.01
+      },
+      "horizon_years": 200,
+      "services_eur_pv": 440211098.03,
+      "substrate_unrecoverable_eur_pv": 28075.88,
+      "total_eur_pv": 589689885.38
+    },
+    "substrate": {
+      "capacity_lost_units": 1,
+      "effective_k": 4999,
+      "k_fraction": 0.999936,
+      "substrate_recovery_years": 0.08
+    },
+    "summary": {
+      "agent_cascade_externality_eur_yr": {
+        "Coastal Protection": 145975.42,
+        "Coralligenous & Red Coral": 91235.65,
+        "Epiphytes & Algae": 35476.27,
+        "Fish Populations": 0.0,
+        "Human Communities": 96335.63,
+        "Marine Invertebrates": 0.0,
+        "Marine Megafauna": 0.0,
+        "Posidonia Meadow": 0.0,
+        "Seabirds": 0.0,
+        "Water Quality": 106624.69
+      },
+      "agent_direct_externality_eur_yr": {
+        "Coastal Protection": 645634.93,
+        "Coralligenous & Red Coral": 430428.07,
+        "Epiphytes & Algae": 179323.51,
+        "Fish Populations": 700000.0,
+        "Human Communities": 502166.08,
+        "Marine Invertebrates": 350010.0,
+        "Marine Megafauna": 200000.0,
+        "Posidonia Meadow": 573904.09,
+        "Seabirds": 180000.0,
+        "Water Quality": 466289.9
+      },
+      "agent_externality_eur_yr": {
+        "Coastal Protection": 791610.35,
+        "Coralligenous & Red Coral": 521663.72,
+        "Epiphytes & Algae": 214799.78,
+        "Fish Populations": 700000.0,
+        "Human Communities": 598501.71,
+        "Marine Invertebrates": 350010.0,
+        "Marine Megafauna": 200000.0,
+        "Posidonia Meadow": 573904.09,
+        "Seabirds": 180000.0,
+        "Water Quality": 572914.59
+      },
+      "annual_externality_band": {
+        "heuristic": true,
+        "high_eur_yr": 6937521.26,
+        "low_eur_yr": 2469287.23,
+        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
+        "model_confidence": 0.525
+      },
+      "annual_externality_eur_yr": 4703404.24,
+      "discount_is_default": false,
+      "final_ecosystem_health": 0.100511,
+      "net_social_cost_eur_pv": 584689885.38,
+      "num_steps": 2000,
+      "pv_externality_eur_pv": 589689885.38,
+      "pv_externality_h100_eur_pv": 411267934.5,
+      "pv_externality_h200_eur_pv": 589689885.38,
+      "pv_externality_h50_eur_pv": 282983382.61,
+      "revenue_eur": 5000000.0,
+      "total_units_extracted": 2000
+    }
+  },
+  "per_agent": {
+    "Coastal Protection": 791610.3456302732,
+    "Coralligenous & Red Coral": 521663.71770347713,
+    "Epiphytes & Algae": 214799.77974180967,
+    "Fish Populations": 700000.0,
+    "Human Communities": 598501.7125663259,
+    "Marine Invertebrates": 350010.0,
+    "Marine Megafauna": 199999.99999999997,
+    "Posidonia Meadow": 573904.0923606964,
+    "Seabirds": 180000.0,
+    "Water Quality": 572914.5948888732
+  },
+  "result": {
+    "agent_cascade_annual_costs": [
+      0.0,
+      91235.64843295477,
+      35476.272282555554,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      145975.41552564432,
+      106624.69364696169,
+      96335.63175071665
+    ],
+    "agent_direct_annual_costs": [
+      573904.0923606964,
+      430428.0692705223,
+      179323.50745925412,
+      350010.0,
+      700000.0,
+      199999.99999999997,
+      180000.0,
+      645634.9301046289,
+      466289.90124191146,
+      502166.08081560937
+    ],
+    "agent_trophic_amplification": [
+      1.0,
+      1.0,
+      1.0,
+      1.6068568378893036,
+      2.581988897471611,
+      4.148886515256522,
+      2.581988897471611,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "annual_externality": 4703404.242891455,
+    "annual_externality_band": [
+      2469287.2275180137,
+      6937521.258264896
+    ],
+    "discount": {
+      "carbon_price_current": 166.3456487480301,
+      "carbon_price_growth": 0.013,
+      "delta": 0.005,
+      "eta": 1.35,
+      "g": 0.013,
+      "horizon_years": 200,
+      "rate_schedule": [
+        [
+          0,
+          0.023
+        ],
+        [
+          31,
+          0.018
+        ],
+        [
+          101,
+          0.014
+        ]
+      ],
+      "scarcity_rate": 0.01
+    },
+    "discount_is_default": false,
+    "extraction_npv": {
+      "carbon_absorption_lost_t_yr": 3153.333333333333,
+      "carbon_foregone": 62979049.99815554,
+      "carbon_price": 166.3456487480301,
+      "carbon_release": 86499737.34897566,
+      "carbon_released_t": 520000.0,
+      "direct": 440211098.02917224,
+      "horizon": 200,
+      "substrate_unrecoverable": 28075.882660928823,
+      "total": 589689885.3763034
+    },
+    "final_ecosystem_health": 0.1005114582347244,
+    "final_model_confidence": 0.5249999999999999,
+    "net_social_cost": 584689885.3763034,
+    "pv_externality": 589689885.3763034,
+    "pv_externality_by_horizon": {
+      "100": 411267934.50043195,
+      "200": 589689885.3763034,
+      "50": 282983382.6123693
+    },
+    "revenue": 5000000.0,
+    "substrate_recovery_years": 0.0800800200002949,
+    "total_units_extracted": 2000
+  },
+  "scenario": {
+    "argv": [
+      "--hectares",
+      "5000",
+      "--units",
+      "2000"
+    ],
+    "case": "posidonia",
+    "name": "posidonia__extract"
+  },
+  "step_sums": {
+    "agent_annual_costs": [
+      396031495.95821816,
+      372034078.12430584,
+      148261613.61981133,
+      296804104.04348814,
+      751245971.0522679,
+      252460244.64278293,
+      195507196.31406796,
+      546409856.2731552,
+      418755451.59576124,
+      508086272.486384
+    ],
+    "agent_cascade_damages": [
+      0.0,
+      125.01742692607033,
+      98.07825864690402,
+      66.54763574090805,
+      45.04634308032675,
+      35.56912105152714,
+      57.98890363936982,
+      112.08943845360453,
+      149.2096978775188,
+      230.7981621756321
+    ],
+    "agent_damages": [
+      495.03936994777206,
+      620.0567968738416,
+      593.1176285946764,
+      847.9874976243196,
+      1073.2085300746671,
+      1262.3012232139147,
+      1086.1510906337107,
+      607.1288084013775,
+      644.2490678252905,
+      725.8375321234056
+    ],
+    "agent_direct_damages": [
+      495.03936994777206,
+      495.03936994777206,
+      495.03936994777206,
+      781.4398618834132,
+      1028.162186994341,
+      1226.7321021623875,
+      1028.162186994341,
+      495.03936994777206,
+      495.03936994777206,
+      495.03936994777206
+    ],
+    "annual_externality": 3885596284.1102386,
+    "depletion_ratio": 400.2,
+    "ecosystem_health": 1239.2783865236179,
+    "effective_k": 9998000.0,
+    "k_fraction": 1999.9745031208731,
+    "marginal_annual_externality": 4703404.242891455,
+    "model_confidence": 1349.812500000001,
+    "revenue": 5002500000.0,
+    "step": 2001000.0,
+    "substrate_erosion": 0.08008001999999999,
+    "units_extracted": 2001000.0
+  },
+  "steps": [
+    {
+      "agent_annual_costs": [
+        40.457669942452824,
+        43.997025527690205,
+        17.065807579883227,
+        36.40723325731398,
+        112.70177690223588,
+        51.10201228337018,
+        30.553996260158197,
+        63.719201447399676,
+        50.65479034308166,
+        67.83972463184175
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        2.2756288451417635e-05,
+        1.7699335462213713e-05,
+        2.2755590025215922e-05,
+        3.0425970170535374e-05,
+        4.5692209838173864e-05,
+        3.916785540631539e-05,
+        2.022781195681568e-05,
+        2.735955820199236e-05,
+        4.634180490313648e-05
+      ],
+      "agent_damages": [
+        5.057208742806603e-05,
+        7.332837587948367e-05,
+        6.827142289027974e-05,
+        0.0001040176945153395,
+        0.00016100253843176552,
+        0.0002555100614168509,
+        0.00016974442366754554,
+        7.079989938488171e-05,
+        7.793164563005839e-05,
+        9.691389233120251e-05
+      ],
+      "agent_direct_damages": [
+        5.057208742806603e-05,
+        5.057208742806603e-05,
+        5.057208742806603e-05,
+        8.126210449012358e-05,
+        0.00013057656826123015,
+        0.00020981785157867704,
+        0.00013057656826123015,
+        5.057208742806603e-05,
+        5.057208742806603e-05,
+        5.057208742806603e-05
+      ],
+      "agent_prices": [],
+      "annual_externality": 514.4992381754275,
+      "depletion_ratio": 0.0002,
+      "ecosystem_health": 0.9998974635200156,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999999999999998,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 514.4992381754275,
+      "model_confidence": 0.9,
+      "price_result": null,
+      "resilience_zone": "green",
+      "revenue": 2500.0,
+      "step": 1,
+      "substrate_erosion": 1.9999999999993392e-14,
+      "units_extracted": 1
+    },
+    {
+      "agent_annual_costs": [
+        10304.423823304327,
+        11161.26573504787,
+        4332.141926888237,
+        9230.967746880006,
+        28525.01730013605,
+        12891.579312968986,
+        7722.501165623736,
+        16169.56096085881,
+        12843.47924400072,
+        17172.526630844615
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.005721579779282705,
+        0.004450117606108771,
+        0.005676272684423646,
+        0.0074926398312128925,
+        0.011018040254850717,
+        0.009645399370198024,
+        0.005085848692695738,
+        0.006878973050144996,
+        0.011651651122076188
+      ],
+      "agent_damages": [
+        0.012880529779130408,
+        0.018602109558413113,
+        0.01733064738523918,
+        0.026373440035656143,
+        0.04075002471448007,
+        0.06445789656484494,
+        0.0429027842534652,
+        0.017966378471826146,
+        0.019759502829275404,
+        0.024532180901206596
+      ],
+      "agent_direct_damages": [
+        0.012880529779130408,
+        0.012880529779130408,
+        0.012880529779130408,
+        0.020697167351232497,
+        0.033257384883267176,
+        0.05343985630999422,
+        0.033257384883267176,
+        0.012880529779130408,
+        0.012880529779130408,
+        0.012880529779130408
+      ],
+      "agent_prices": [],
+      "annual_externality": 130353.46384655335,
+      "depletion_ratio": 0.0402,
+      "ecosystem_health": 0.9740272237649685,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999999934657844,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 801.8053341881023,
+      "model_confidence": 0.9,
+      "price_result": null,
+      "resilience_zone": "green",
+      "revenue": 502500.0,
+      "step": 201,
+      "substrate_erosion": 1.6241202000000016e-07,
+      "units_extracted": 201
+    },
+    {
+      "agent_annual_costs": [
+        26346.45551274881,
+        28358.931864047114,
+        11018.687150587728,
+        23434.695441972497,
+        72214.85588482977,
+        32466.11533863986,
+        19507.228427908838,
+        41104.75936653317,
+        32606.10280070703,
+        43483.263515804414
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.014331817049142513,
+        0.011146968815999733,
+        0.014035631966135553,
+        0.018131260308412167,
+        0.025695009191137597,
+        0.023340671739101274,
+        0.01273939293257112,
+        0.017230937441026058,
+        0.029185878488784588
+      ],
+      "agent_damages": [
+        0.03293306939093601,
+        0.04726488644007852,
+        0.04408003820693574,
+        0.066954359709644,
+        0.1031640798354711,
+        0.1623305766931993,
+        0.10837349126616021,
+        0.04567246232350713,
+        0.050164006831962066,
+        0.062118947879720596
+      ],
+      "agent_direct_damages": [
+        0.03293306939093601,
+        0.03293306939093601,
+        0.03293306939093601,
+        0.05291872774350845,
+        0.08503281952705893,
+        0.1366355675020617,
+        0.08503281952705893,
+        0.03293306939093601,
+        0.03293306939093601,
+        0.03293306939093601
+      ],
+      "agent_prices": [],
+      "annual_externality": 330541.09530377924,
+      "depletion_ratio": 0.0802,
+      "ecosystem_health": 0.9341635866775755,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999998969987456,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 1223.145021267992,
+      "model_confidence": 0.8395999999999998,
+      "price_result": null,
+      "resilience_zone": "yellow",
+      "revenue": 1002500.0,
+      "step": 401,
+      "substrate_erosion": 1.2896240200000021e-06,
+      "units_extracted": 401
+    },
+    {
+      "agent_annual_costs": [
+        50937.99688466486,
+        54300.441186779324,
+        21132.189927056315,
+        44813.070096539646,
+        137490.96231025943,
+        61302.01062356988,
+        37010.48542285215,
+        78766.96266142375,
+        62352.04709756954,
+        82814.60768506675
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.0268282392054678,
+        0.0208664082709194,
+        0.0257210992745492,
+        0.032013982423667514,
+        0.042340092631643456,
+        0.04121212988517392,
+        0.023847323738193607,
+        0.032255206008923815,
+        0.054634086301407134
+      ],
+      "agent_damages": [
+        0.06367249610583108,
+        0.09050073531129887,
+        0.08453890437675048,
+        0.12803368502768392,
+        0.19641566044322775,
+        0.3065100531178494,
+        0.20561380790473416,
+        0.08751981984402468,
+        0.09592770211475489,
+        0.11830658240723821
+      ],
+      "agent_direct_damages": [
+        0.06367249610583108,
+        0.06367249610583108,
+        0.06367249610583108,
+        0.10231258575313472,
+        0.16440167801956024,
+        0.26416996048620595,
+        0.16440167801956024,
+        0.06367249610583108,
+        0.06367249610583108,
+        0.06367249610583108
+      ],
+      "agent_prices": [],
+      "annual_externality": 630920.7738957817,
+      "depletion_ratio": 0.1202,
+      "ecosystem_health": 0.8744049302335111,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999994811320924,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 1805.3608109381748,
+      "model_confidence": 0.7595999999999999,
+      "price_result": null,
+      "resilience_zone": "yellow",
+      "revenue": 1502500.0,
+      "step": 601,
+      "substrate_erosion": 4.3416360199999965e-06,
+      "units_extracted": 601
+    },
+    {
+      "agent_annual_costs": [
+        87537.39282145075,
+        91964.17299280614,
+        35877.88396045358,
+        75744.70777948361,
+        230835.2685024231,
+        101594.23766017906,
+        61800.69632337757,
+        133559.5874145181,
+        105392.12558283171,
+        139106.41032725145
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.043851880627863465,
+        0.034107018266116035,
+        0.04058219495104451,
+        0.04723894881592966,
+        0.05399280247885779,
+        0.060811481323295835,
+        0.03897944944698975,
+        0.052722485165638294,
+        0.08930170229783152
+      ],
+      "agent_damages": [
+        0.10942174102681343,
+        0.1532736216546769,
+        0.14352875929292946,
+        0.2164072677337322,
+        0.32976466928917586,
+        0.5079711883008954,
+        0.34333720179654204,
+        0.14840119047380318,
+        0.16214422619245172,
+        0.19872344332464495
+      ],
+      "agent_direct_damages": [
+        0.10942174102681343,
+        0.10942174102681343,
+        0.10942174102681343,
+        0.1758250727826877,
+        0.2825257204732462,
+        0.4539783858220376,
+        0.2825257204732462,
+        0.10942174102681343,
+        0.10942174102681343,
+        0.10942174102681343
+      ],
+      "agent_prices": [],
+      "annual_externality": 1063412.483364775,
+      "depletion_ratio": 0.1602,
+      "ecosystem_health": 0.7884924615980514,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999983640720822,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 2535.7094656962436,
+      "model_confidence": 0.6795999999999999,
+      "price_result": null,
+      "resilience_zone": "yellow",
+      "revenue": 2002500.0,
+      "step": 801,
+      "substrate_erosion": 1.0278448020000002e-05,
+      "units_extracted": 801
+    },
+    {
+      "agent_annual_costs": [
+        139679.71140142917,
+        143670.72696180365,
+        56253.1865775958,
+        117982.4815453038,
+        355957.89140109747,
+        153576.1143652664,
+        94515.94098218728,
+        209018.6107527701,
+        164167.81287243316,
+        214666.1604308308
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.06485157235121963,
+        0.050440111828726375,
+        0.05652654924260164,
+        0.057696943379478005,
+        0.04348648296594182,
+        0.07427423096149038,
+        0.057645842089973004,
+        0.07797011239428983,
+        0.13206630422082896
+      ],
+      "agent_damages": [
+        0.17459963925178648,
+        0.23945121160300611,
+        0.22503975108051286,
+        0.3370831734673404,
+        0.5085112734301392,
+        0.7678805718263321,
+        0.5250885610121516,
+        0.23224548134175949,
+        0.2525697516460763,
+        0.30666594347261544
+      ],
+      "agent_direct_damages": [
+        0.17459963925178648,
+        0.17459963925178648,
+        0.17459963925178648,
+        0.28055662422473876,
+        0.45081433005066124,
+        0.7243940888603903,
+        0.45081433005066124,
+        0.17459963925178648,
+        0.17459963925178648,
+        0.17459963925178648
+      ],
+      "agent_prices": [],
+      "annual_externality": 1649488.637290718,
+      "depletion_ratio": 0.2002,
+      "ecosystem_health": 0.6723467657028983,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999960113238897,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 3314.77565716533,
+      "model_confidence": 0.599925,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 2502500.0,
+      "step": 1001,
+      "substrate_erosion": 2.0060060020000015e-05,
+      "units_extracted": 1001
+    },
+    {
+      "agent_annual_costs": [
+        209129.61223454773,
+        208977.66803536675,
+        82237.26435314986,
+        170900.83187106415,
+        508262.8136766731,
+        199999.99999999997,
+        133340.27652345566,
+        304774.70581989357,
+        237812.8269474606,
+        306842.35781625845
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.0868840980990932,
+        0.06757652074373915,
+        0.0682224560901814,
+        0.05112681267113672,
+        0.0,
+        0.06581639286651608,
+        0.07723030942141618,
+        0.10445950111085311,
+        0.1769342101586131
+      ],
+      "agent_damages": [
+        0.2614120152931847,
+        0.3482961133922779,
+        0.32898853603692385,
+        0.4882741403704584,
+        0.7260897338238187,
+        1.0,
+        0.740779314019198,
+        0.3386423247146009,
+        0.3658715164040378,
+        0.4383462254517978
+      ],
+      "agent_direct_damages": [
+        0.2614120152931847,
+        0.2614120152931847,
+        0.2614120152931847,
+        0.420051684280277,
+        0.674962921152682,
+        1.0,
+        0.674962921152682,
+        0.2614120152931847,
+        0.2614120152931847,
+        0.2614120152931847
+      ],
+      "agent_prices": [],
+      "annual_externality": 2362278.35727787,
+      "depletion_ratio": 0.24,
+      "ecosystem_health": 0.5318974961381837,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999917622486862,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 3622.295404874254,
+      "model_confidence": 0.585,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 3000000.0,
+      "step": 1200,
+      "substrate_erosion": 3.4559999999999994e-05,
+      "units_extracted": 1200
+    },
+    {
+      "agent_annual_costs": [
+        295265.7938657349,
+        284321.6913956524,
+        112632.3403937269,
+        231233.89165429634,
+        674388.1215291641,
+        199999.99999999997,
+        173954.29037982813,
+        415999.19049616705,
+        321788.2336272043,
+        407732.58735051256
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.10478724332725214,
+        0.08150118925452943,
+        0.06758706133770831,
+        0.010445350228934225,
+        0.0,
+        0.01344647237679264,
+        0.09314421629089076,
+        0.12598419503948988,
+        0.213392882454278
+      ],
+      "agent_damages": [
+        0.3690822423321686,
+        0.4738694856594207,
+        0.450583431586698,
+        0.6606493861726703,
+        0.9634116021845202,
+        1.0,
+        0.9664127243323786,
+        0.46222645862305933,
+        0.49506643737165845,
+        0.5824751247864466
+      ],
+      "agent_direct_damages": [
+        0.3690822423321686,
+        0.3690822423321686,
+        0.3690822423321686,
+        0.593062324834962,
+        0.9529662519555859,
+        1.0,
+        0.9529662519555859,
+        0.3690822423321686,
+        0.3690822423321686,
+        0.3690822423321686
+      ],
+      "agent_prices": [],
+      "annual_externality": 3117316.1406922867,
+      "depletion_ratio": 0.28,
+      "ecosystem_health": 0.38501376263404863,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.999984734338123,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 3848.1314253327437,
+      "model_confidence": 0.57,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 3500000.0,
+      "step": 1400,
+      "substrate_erosion": 5.488000000000001e-05,
+      "units_extracted": 1400
+    },
+    {
+      "agent_annual_costs": [
+        391516.8522976221,
+        361107.2794972262,
+        144196.87184161227,
+        291709.70764541585,
+        700000.0,
+        199999.99999999997,
+        180000.0,
+        530410.0856892909,
+        405978.78917484445,
+        484030.312448049
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.11244940045668256,
+        0.08746064479964194,
+        0.047043081122161934,
+        0.0,
+        0.0,
+        0.0,
+        0.0999550226281623,
+        0.1351962963179127,
+        0.20207580955375676
+      ],
+      "agent_damages": [
+        0.4893960653720277,
+        0.6018454658287102,
+        0.5768567101716696,
+        0.8334324952013252,
+        1.0,
+        1.0,
+        1.0,
+        0.58935108800019,
+        0.6245923616899404,
+        0.6914718749257844
+      ],
+      "agent_direct_damages": [
+        0.4893960653720277,
+        0.4893960653720277,
+        0.4893960653720277,
+        0.7863894140791633,
+        1.0,
+        1.0,
+        1.0,
+        0.4893960653720277,
+        0.4893960653720277,
+        0.4893960653720277
+      ],
+      "agent_prices": [],
+      "annual_externality": 3688949.8985940604,
+      "depletion_ratio": 0.32,
+      "ecosystem_health": 0.2800531883294606,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999739415723898,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 2612.768976567313,
+      "model_confidence": 0.5549999999999999,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 4000000.0,
+      "step": 1600,
+      "substrate_erosion": 8.191999999999996e-05,
+      "units_extracted": 1600
+    },
+    {
+      "agent_annual_costs": [
+        487767.91072950937,
+        430076.1429509879,
+        173228.50947070232,
+        344858.439117941,
+        700000.0,
+        199999.99999999997,
+        180000.0,
+        634398.7971553268,
+        479988.4044742953,
+        548067.3848183589
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.10708368317309314,
+        0.08328730913462801,
+        0.0055651718228914016,
+        0.0,
+        0.0,
+        0.0,
+        0.09518549615386052,
+        0.1287451716264142,
+        0.17324351847148323
+      ],
+      "agent_damages": [
+        0.6097098884118868,
+        0.7167935715849799,
+        0.6929971975465148,
+        0.9852816751462559,
+        1.0,
+        1.0,
+        1.0,
+        0.7048953845657473,
+        0.738455060038301,
+        0.78295340688337
+      ],
+      "agent_direct_damages": [
+        0.6097098884118868,
+        0.6097098884118868,
+        0.6097098884118868,
+        0.9797165033233645,
+        1.0,
+        1.0,
+        1.0,
+        0.6097098884118868,
+        0.6097098884118868,
+        0.6097098884118868
+      ],
+      "agent_prices": [],
+      "annual_externality": 4178385.588717121,
+      "depletion_ratio": 0.36,
+      "ecosystem_health": 0.19193601127523563,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999582173599941,
+      "keystone_triggered": [],
+      "marginal_annual_externality": 2245.214694812428,
+      "model_confidence": 0.5399999999999999,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 4500000.0,
+      "step": 1800,
+      "substrate_erosion": 0.00011664,
+      "units_extracted": 1800
+    },
+    {
+      "agent_annual_costs": [
+        573904.0923606964,
+        521663.71770347713,
+        214799.77974180967,
+        350010.0,
+        700000.0,
+        199999.99999999997,
+        180000.0,
+        791610.3456302732,
+        572914.5948888732,
+        598501.7125663259
+      ],
+      "agent_cascade_damages": [
+        0.0,
+        0.15205941405492462,
+        0.14192211978459635,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1621967083252529,
+        0.16404051392630914,
+        0.13762233107245236
+      ],
+      "agent_damages": [
+        0.7173801154508705,
+        0.8694395295057952,
+        0.8593022352354669,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.8795768237761235,
+        0.8814206293771797,
+        0.8550024465233229
+      ],
+      "agent_direct_damages": [
+        0.7173801154508705,
+        0.7173801154508705,
+        0.7173801154508705,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.7173801154508705,
+        0.7173801154508705,
+        0.7173801154508705
+      ],
+      "agent_prices": [],
+      "annual_externality": 4703404.242891455,
+      "depletion_ratio": 0.4,
+      "ecosystem_health": 0.1005114582347244,
+      "effective_k": 4999,
+      "irreversibility_warning": false,
+      "k_fraction": 0.9999362217745381,
+      "keystone_triggered": [
+        "Posidonia Meadow"
+      ],
+      "marginal_annual_externality": 1369.3293179757893,
+      "model_confidence": 0.5249999999999999,
+      "price_result": null,
+      "resilience_zone": "red",
+      "revenue": 5000000.0,
+      "step": 2000,
+      "substrate_erosion": 0.00016000000000000004,
+      "units_extracted": 2000
+    }
+  ]
+}

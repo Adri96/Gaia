@@ -7,7 +7,6 @@ These tests verify that the new v0.4 features work correctly when used
 through the simulation engine, not just as standalone modules.
 """
 
-import pytest
 
 from gaia.cases.forest import build_forest_ecosystem
 from gaia.models import RestorationCost, SuccessionCurve
@@ -59,7 +58,7 @@ class TestRestorationWithMaturation:
         assert len(result.maturation_timeline) == 60
         assert result.years_to_50pct > 0
         assert result.years_to_90pct > result.years_to_50pct
-        assert result.total_maturation_gap > 0
+        assert result.maturation_gap_pv > 0
 
     def test_no_maturation_without_succession(self):
         """Without succession_curve, maturation fields should be empty/zero."""
@@ -69,7 +68,7 @@ class TestRestorationWithMaturation:
         assert result.maturation_timeline == []
         assert result.years_to_pioneer == 0.0
         assert result.years_to_50pct == 0.0
-        assert result.total_maturation_gap == 0.0
+        assert result.maturation_gap_pv == 0.0
 
     def test_no_maturation_with_zero_horizon(self):
         """With time_horizon_years=0, maturation pass should be skipped."""
@@ -91,7 +90,7 @@ class TestRestorationWithMaturation:
             succession_curve=_FOREST_SUCCESSION,
             time_horizon_years=60,
         )
-        assert result.total_maturation_gap > 0
+        assert result.maturation_gap_pv > 0
 
     def test_cumulative_service_monotonic(self):
         """Cumulative service in the timeline must be monotonically non-decreasing."""
@@ -155,13 +154,14 @@ class TestExtractionWithResilience:
         from gaia.models import Agent, Ecosystem, Resource
         from gaia.damage import logistic_damage
         resource = Resource(
+            area_ha=1.0,
             name="Test", total_units=100,
             safe_threshold_ratio=0.3, unit_value=10.0,
         )
         agents = [Agent(
             name="A", dependency_weight=1.0,
             damage_function=logistic_damage(0.3, 12.0),
-            monetary_rate=1000.0, description="Test",
+            annual_value_per_ha=1000.0, description="Test",
         )]
         eco = Ecosystem(name="Test", resource=resource, agents=agents)
         result = run_extraction(eco, 50)

@@ -10,10 +10,23 @@ v0.4: Added validation for SuccessionCurve, CarbonProfile, ResilienceConfig.
 v0.5: Added validation for SubstrateProfile.
 v0.6: Added validation for DiscountConfig.
 v0.7: Added validation for ScarcityFunction, AnchorPoint, PricingConfig.
+Step 3.8: Incoming edge-strength cap, calibration regime, and a
+      CalibrationWarning when health at the safe threshold is low.
 """
 
+import dataclasses
+import math
+import warnings
+from typing import Optional
+
+from gaia.constants import (
+    MAX_EDGE_STRENGTH,
+    MAX_INCOMING_EDGE_STRENGTH,
+    THRESHOLD_HEALTH_WARNING_LEVEL,
+)
 from gaia.models import (
     AnchorPoint,
+    CalibrationRegime,
     CarbonProfile,
     DamageFunc,
     DiscountConfig,
@@ -22,10 +35,13 @@ from gaia.models import (
     PricingConfig,
     ResilienceConfig,
     Resource,
+    RestorationCost,
     ScarcityFunction,
     SubstrateProfile,
+    SubstrateType,
     SuccessionCurve,
 )
+from gaia.propagation import ecosystem_health_at, worst_case_incoming_strengths
 
 # Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
 _VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
@@ -39,6 +55,31 @@ _DAMAGE_BOUNDARY_TOLERANCE: float = 1e-4
 
 # Number of points used when checking damage function invariants
 _INVARIANT_CHECK_POINTS: int = 100
+# Invariant 6 (convexity just past the threshold), as in tests/test_damage.py
+_CONVEXITY_WINDOW: float = 0.10          # fraction of the post-threshold span
+_CONVEXITY_CHECK_POINTS: int = 50
+_CONVEXITY_TOLERANCE: float = 1e-6
+_CONVEXITY_MAX_VIOLATIONS: float = 0.20  # fraction of points allowed to fail
+
+
+class CalibrationWarning(UserWarning):
+    """A valid ecosystem whose parameters look miscalibrated (Step 3.8)."""
+
+
+def _require_finite(obj, name: str) -> None:
+    """ValueError if any numeric field of the dataclass ``obj`` is NaN or ±inf.
+
+    NaN slips through every ordered comparison (``nan < 0`` is False), and
+    an infinite rate or area yields infinite costs, so every validator calls
+    this before its range checks. Booleans, strings, None and nested
+    objects are skipped (nested dataclasses have their own validator).
+    """
+    for f in dataclasses.fields(obj):
+        value = getattr(obj, f.name)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        if not math.isfinite(value):
+            raise ValueError(f"{name}.{f.name} must be a finite number, got {value!r}")
 
 
 def validate_resource(resource: Resource) -> None:
@@ -48,6 +89,7 @@ def validate_resource(resource: Resource) -> None:
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(resource, "Resource")
     if resource.total_units <= 0:
         raise ValueError(
             f"Resource.total_units must be > 0, got {resource.total_units}"
@@ -60,6 +102,15 @@ def validate_resource(resource: Resource) -> None:
     if resource.unit_value < 0.0:
         raise ValueError(
             f"Resource.unit_value must be >= 0.0, got {resource.unit_value}"
+        )
+    if not (
+        isinstance(resource.area_ha, (int, float))
+        and math.isfinite(resource.area_ha)
+        and resource.area_ha > 0.0
+    ):
+        raise ValueError(
+            f"Resource.area_ha must be a finite number of hectares > 0, "
+            f"got {resource.area_ha!r}"
         )
 
     # v0.4: Validate optional carbon profile and resilience config
@@ -77,9 +128,18 @@ def validate_resource(resource: Resource) -> None:
         validate_discount_config(resource.discount)
 
 
-def validate_ecosystem(ecosystem: Ecosystem) -> None:
+def validate_ecosystem(
+    ecosystem: Ecosystem,
+    threshold_health_warning: Optional[float] = THRESHOLD_HEALTH_WARNING_LEVEL,
+) -> None:
     """
     Validate an Ecosystem and all its agents.
+
+    Args:
+        ecosystem: The ecosystem to validate.
+        threshold_health_warning: Warn (CalibrationWarning) when ecosystem
+            health at the safe-threshold depletion is below this level, in
+            (0, 1]; None disables the check. See check_threshold_health.
 
     Raises:
         ValueError: If any constraint is violated.
@@ -91,15 +151,19 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
 
     weight_sum: float = 0.0
     for agent in ecosystem.agents:
+        _require_finite(agent, f"Agent '{agent.name}'")
         if not (0.0 < agent.dependency_weight <= 1.0):
             raise ValueError(
                 f"Agent '{agent.name}' dependency_weight must be in (0.0, 1.0], "
                 f"got {agent.dependency_weight}"
             )
-        if agent.monetary_rate < 0.0:
+        if not (
+            math.isfinite(agent.annual_value_per_ha)
+            and agent.annual_value_per_ha >= 0.0
+        ):
             raise ValueError(
-                f"Agent '{agent.name}' monetary_rate must be >= 0.0, "
-                f"got {agent.monetary_rate}"
+                f"Agent '{agent.name}' annual_value_per_ha must be finite and "
+                f">= 0.0 (€/ha/yr at full damage), got {agent.annual_value_per_ha}"
             )
         weight_sum += agent.dependency_weight
 
@@ -123,22 +187,28 @@ def validate_ecosystem(ecosystem: Ecosystem) -> None:
                     f"got {agent.keystone_threshold}"
                 )
 
+    # Damage functions: the six invariants, at the resource's safe threshold
+    threshold: float = ecosystem.resource.safe_threshold_ratio
+    for agent in ecosystem.agents:
+        validate_damage_function(
+            agent.damage_function,
+            name=f"Agent '{agent.name}' damage_function",
+            threshold=threshold,
+        )
+
     # v0.3: Validate interaction edges
     agent_names = {a.name for a in ecosystem.agents}
     for edge in ecosystem.interactions:
         _validate_interaction_edge(edge, agent_names)
-
-    # v0.4: Validate agent-specific succession curves
-    for agent in ecosystem.agents:
-        if agent.succession_curve is not None:
-            validate_succession_curve(
-                agent.succession_curve,
-                name=f"Agent '{agent.name}' succession_curve",
-            )
+    _validate_incoming_edge_strengths(ecosystem)
+    _validate_calibration_regime(ecosystem)
 
     # v0.7: Validate optional pricing config
     if ecosystem.pricing is not None:
         validate_pricing_config(ecosystem.pricing, agent_names)
+
+    if threshold_health_warning is not None:
+        check_threshold_health(ecosystem, threshold_health_warning)
 
 
 def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
@@ -159,56 +229,101 @@ def validate_extraction(ecosystem: Ecosystem, units_to_extract: int) -> None:
         )
 
 
-def validate_damage_function(fn: DamageFunc, name: str = "damage_function") -> None:
+def validate_damage_function(
+    fn: DamageFunc,
+    name: str = "damage_function",
+    threshold: Optional[float] = None,
+) -> None:
     """
-    Validate that a damage function satisfies the six scientific invariants.
+    Validate that a damage function satisfies the six scientific invariants
+    listed in gaia.damage:
 
-    Checks:
-        1. f(0.0) ≈ 0.0  (boundary: no depletion → no damage)
-        2. f(1.0) ≈ 1.0  (boundary: full depletion → full damage)
-        3. Output in [0.0, 1.0] for all inputs
+        1. f(0.0) ≈ 0.0  (no depletion → no damage)
+        2. f(1.0) ≈ 1.0  (full depletion → full damage)
+        3. Finite output in [0.0, 1.0] (within tolerance)
         4. Monotonicity: f is non-decreasing
-        5. Non-linearity: slope after midpoint > slope before midpoint
-           (proxy check — full threshold-aware check requires knowing the threshold)
+        5. Non-linearity (Foundation F4): the slope over [t, t + h] exceeds
+           the slope over [t − h, t], h = min(0.1, 0.4 t, 0.4 (1 − t))
+        6. Convexity just past the threshold: second finite differences
+           >= -1e-6 over [t, t + 10% of (1 − t)], at most 20% of the points
+           excepted (floating-point noise near a logistic inflection)
+
+    1-4 are sampled at _INVARIANT_CHECK_POINTS + 1 evenly spaced points; 6
+    at 51. The threshold t is the function's own ``threshold`` attribute
+    (set by the gaia.damage factories), else ``threshold``, else 0.5.
+    About 150 evaluations per function: negligible next to a run.
+
+    validate_ecosystem calls this for every agent (with the resource's
+    safe_threshold_ratio as the fallback), so the invariants hold on every
+    run.
 
     Args:
         fn: The damage function to validate.
         name: Label for error messages.
+        threshold: Safe threshold for invariants 5 and 6 when ``fn`` does
+            not carry its own.
 
     Raises:
         ValueError: If any invariant is violated.
     """
     tol: float = _DAMAGE_BOUNDARY_TOLERANCE
+    own = getattr(fn, "threshold", None)
+    t: float = own if isinstance(own, float) else (0.5 if threshold is None else threshold)
 
-    at_zero: float = fn(0.0)
-    if abs(at_zero) > tol:
-        raise ValueError(
-            f"{name}: f(0.0) must be ≈ 0.0 (tolerance {tol}), got {at_zero}"
-        )
-
-    at_one: float = fn(1.0)
-    if abs(at_one - 1.0) > tol:
-        raise ValueError(
-            f"{name}: f(1.0) must be ≈ 1.0 (tolerance {tol}), got {at_one}"
-        )
+    def evaluate(x: float) -> float:
+        val = fn(x)
+        if not (isinstance(val, (int, float)) and math.isfinite(val)):
+            raise ValueError(f"{name}: output at x={x:.4f} is {val!r}, must be a finite number")
+        return float(val)
 
     n: int = _INVARIANT_CHECK_POINTS
-    prev: float = fn(0.0)
+    values: list = [evaluate(i / n) for i in range(n + 1)]
+
+    if abs(values[0]) > tol:
+        raise ValueError(
+            f"{name}: f(0.0) must be ≈ 0.0 (tolerance {tol}), got {values[0]}"
+        )
+    if abs(values[-1] - 1.0) > tol:
+        raise ValueError(
+            f"{name}: f(1.0) must be ≈ 1.0 (tolerance {tol}), got {values[-1]}"
+        )
     for i in range(1, n + 1):
         x: float = i / n
-        val: float = fn(x)
-
+        val: float = values[i]
         if val < 0.0 - tol or val > 1.0 + tol:
             raise ValueError(
                 f"{name}: output at x={x:.4f} is {val:.6f}, must be in [0.0, 1.0]"
             )
-
-        if val < prev - tol:
+        if val < values[i - 1] - tol:
             raise ValueError(
                 f"{name}: monotonicity violated at x={x:.4f}: "
-                f"f({x:.4f})={val:.6f} < f({(i-1)/n:.4f})={prev:.6f}"
+                f"f({x:.4f})={val:.6f} < f({(i-1)/n:.4f})={values[i - 1]:.6f}"
             )
-        prev = val
+
+    h: float = min(0.10, 0.4 * t, 0.4 * (1.0 - t))
+    at_t: float = evaluate(t)
+    slope_before: float = (at_t - evaluate(t - h)) / h
+    slope_after: float = (evaluate(t + h) - at_t) / h
+    if not slope_after > slope_before + 1e-9 * max(1.0, abs(slope_before)):
+        raise ValueError(
+            f"{name}: damage must accelerate at the threshold: slope "
+            f"{slope_after:.6f} over [{t:g}, {t + h:g}] must exceed slope "
+            f"{slope_before:.6f} over [{t - h:g}, {t:g}] (Foundation F4)"
+        )
+
+    window: float = (1.0 - t) * _CONVEXITY_WINDOW
+    m: int = _CONVEXITY_CHECK_POINTS
+    post: list = [evaluate(t + window * i / m) for i in range(m + 1)]
+    violations: int = sum(
+        1 for i in range(1, m)
+        if post[i + 1] - 2.0 * post[i] + post[i - 1] < -_CONVEXITY_TOLERANCE
+    )
+    if violations > max(1, int(_CONVEXITY_MAX_VIOLATIONS * m)):
+        raise ValueError(
+            f"{name}: damage must be convex (accelerating) just past the threshold: "
+            f"second differences are negative at {violations} of {m - 1} points "
+            f"in [{t:g}, {t + window:g}]"
+        )
 
 
 def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
@@ -218,6 +333,7 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(edge, f"InteractionEdge '{edge.source}' → '{edge.target}'")
     if edge.source not in agent_names:
         raise ValueError(
             f"InteractionEdge source '{edge.source}' is not an agent in the ecosystem. "
@@ -233,16 +349,155 @@ def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
             f"InteractionEdge cannot be a self-loop: "
             f"source and target are both '{edge.source}'"
         )
-    if not (0.0 < edge.strength <= 1.0):
+    if not (0.0 < edge.strength <= MAX_EDGE_STRENGTH):
         raise ValueError(
             f"InteractionEdge '{edge.source}' → '{edge.target}' strength "
-            f"must be in (0.0, 1.0], got {edge.strength}"
+            f"must be in (0.0, {MAX_EDGE_STRENGTH}], got {edge.strength}"
         )
     if edge.interaction_type not in _VALID_INTERACTION_TYPES:
         raise ValueError(
             f"InteractionEdge '{edge.source}' → '{edge.target}' interaction_type "
             f"must be one of {sorted(_VALID_INTERACTION_TYPES)}, "
             f"got '{edge.interaction_type}'"
+        )
+
+
+def _validate_incoming_edge_strengths(ecosystem: Ecosystem) -> None:
+    """
+    Reject an agent whose incoming edge strengths sum above
+    MAX_INCOMING_EDGE_STRENGTH (S2). Edges from keystone agents count at
+    their boosted strength (× KEYSTONE_EDGE_MULTIPLIER, capped at 1): the
+    boost fires exactly when the source collapses, which is when an
+    over-strong in-degree would saturate the target. Nothing is rescaled
+    silently: the case must bring its edges within the cap.
+
+    Raises:
+        ValueError: If any agent's worst-case incoming strength exceeds the cap.
+    """
+    totals: dict = worst_case_incoming_strengths(
+        ecosystem.agents, ecosystem.interactions
+    )
+    for target, total in totals.items():
+        if total > MAX_INCOMING_EDGE_STRENGTH + _WEIGHT_SUM_TOLERANCE:
+            keystones = {a.name for a in ecosystem.agents if a.is_keystone}
+            edges = ", ".join(
+                f"{e.source} {e.strength:g}" + (" (keystone ×)" if e.source in keystones else "")
+                for e in ecosystem.interactions if e.target == target
+            )
+            raise ValueError(
+                f"Incoming interaction strengths into '{target}' sum to "
+                f"{total:.3f} counting keystone boosts, above the cap of "
+                f"{MAX_INCOMING_EDGE_STRENGTH} (edges: {edges}). Scale them "
+                f"down: a larger in-degree saturates the target's damage."
+            )
+
+
+def _validate_calibration_regime(ecosystem: Ecosystem) -> None:
+    """
+    Check Ecosystem.calibration_regime (PROJECT_DEFINITION, Option A / B).
+
+    It must be a CalibrationRegime, and is required when there are
+    interaction edges. Under Option A (EMPIRICAL) the damage curves already
+    embed indirect effects, so only keystone edges from keystone agents
+    (regime shifts) are allowed.
+
+    Raises:
+        ValueError: If the regime is missing, of the wrong type, or the
+            edges contradict it.
+    """
+    regime = ecosystem.calibration_regime
+    if regime is not None and not isinstance(regime, CalibrationRegime):
+        raise ValueError(
+            f"Ecosystem '{ecosystem.name}' calibration_regime must be a "
+            f"CalibrationRegime (EMPIRICAL = 'A' or DIRECT_ONLY = 'B'), "
+            f"got {regime!r}"
+        )
+    if regime is None:
+        if ecosystem.interactions:
+            raise ValueError(
+                f"Ecosystem '{ecosystem.name}' has interaction edges but no "
+                f"calibration_regime: declare CalibrationRegime.EMPIRICAL ('A', "
+                f"curves fitted to total observed impact) or "
+                f"CalibrationRegime.DIRECT_ONLY ('B', curves are direct effects "
+                f"only), since it decides whether cascades double count."
+            )
+        return
+    if regime is CalibrationRegime.EMPIRICAL:
+        keystones = {a.name for a in ecosystem.agents if a.is_keystone}
+        for edge in ecosystem.interactions:
+            if edge.interaction_type != "keystone" or edge.source not in keystones:
+                raise ValueError(
+                    f"Ecosystem '{ecosystem.name}' is calibration regime A "
+                    f"(empirical curves already include indirect effects), so "
+                    f"only 'keystone' edges from keystone agents are allowed; "
+                    f"got '{edge.source}' → '{edge.target}' "
+                    f"({edge.interaction_type})"
+                )
+
+
+def check_threshold_health(
+    ecosystem: Ecosystem,
+    min_health: float = THRESHOLD_HEALTH_WARNING_LEVEL,
+) -> float:
+    """
+    Ecosystem health at the safe-threshold depletion, warning when it is low.
+
+    A single evaluation of the extraction step at
+    depletion = resource.safe_threshold_ratio (no simulation run). Health
+    below ``min_health`` there means the model puts heavy damage inside the
+    "safe" zone — over-strong interaction edges or over-steep damage curves —
+    so a CalibrationWarning is issued.
+
+    Args:
+        ecosystem: A validated ecosystem.
+        min_health: Warning level, in (0, 1].
+
+    Returns:
+        The health at the safe threshold.
+
+    Raises:
+        ValueError: If min_health is not in (0, 1].
+    """
+    if not (isinstance(min_health, (int, float)) and 0.0 < min_health <= 1.0):
+        raise ValueError(
+            f"threshold health warning level must be in (0.0, 1.0], got {min_health!r}"
+        )
+    threshold: float = ecosystem.resource.safe_threshold_ratio
+    health: float = ecosystem_health_at(ecosystem, threshold)
+    if health < min_health:
+        warnings.warn(
+            f"{ecosystem.name}: ecosystem health at the safe threshold "
+            f"({threshold:.0%} depletion) is {health:.2f}, below {min_health:.2f}. "
+            f"The damage curves or interaction edges put heavy damage inside "
+            f"the 'safe' zone (over-steep curves or over-strong edges).",
+            CalibrationWarning,
+            stacklevel=1,
+        )
+    return health
+
+
+def validate_restoration_cost(cost: RestorationCost, name: str = "RestorationCost") -> None:
+    """
+    Validate a RestorationCost: finite, non-negative costs and an integer
+    number of maintenance years >= 0.
+
+    Raises:
+        ValueError: If any constraint is violated.
+    """
+    _require_finite(cost, name)
+    if cost.planting_cost_per_unit < 0.0:
+        raise ValueError(
+            f"{name}: planting_cost_per_unit must be >= 0.0, got {cost.planting_cost_per_unit}"
+        )
+    if cost.annual_maintenance_per_unit < 0.0:
+        raise ValueError(
+            f"{name}: annual_maintenance_per_unit must be >= 0.0, "
+            f"got {cost.annual_maintenance_per_unit}"
+        )
+    if (isinstance(cost.maintenance_years, bool) or not isinstance(cost.maintenance_years, int)
+            or cost.maintenance_years < 0):
+        raise ValueError(
+            f"{name}: maintenance_years must be an integer >= 0, got {cost.maintenance_years!r}"
         )
 
 
@@ -265,6 +520,7 @@ def validate_succession_curve(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(curve, name)
     if curve.maturation_delay < 0.0:
         raise ValueError(
             f"{name}: maturation_delay must be >= 0.0, got {curve.maturation_delay}"
@@ -310,11 +566,11 @@ def validate_carbon_profile(
     Checks:
         - All tonnage values >= 0
         - soil_release_fraction in [0.0, 1.0]
-        - carbon_price_per_tonne >= 0
 
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(profile, name)
     if profile.stored_carbon_tonnes < 0.0:
         raise ValueError(
             f"{name}: stored_carbon_tonnes must be >= 0.0, "
@@ -335,11 +591,6 @@ def validate_carbon_profile(
             f"{name}: soil_release_fraction must be in [0.0, 1.0], "
             f"got {profile.soil_release_fraction}"
         )
-    if profile.carbon_price_per_tonne < 0.0:
-        raise ValueError(
-            f"{name}: carbon_price_per_tonne must be >= 0.0, "
-            f"got {profile.carbon_price_per_tonne}"
-        )
 
 
 def validate_resilience_config(
@@ -357,6 +608,7 @@ def validate_resilience_config(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if config.warning_zone_width <= 0.0:
         raise ValueError(
             f"{name}: warning_zone_width must be > 0.0, "
@@ -403,41 +655,54 @@ def validate_substrate_profile(
     Validate a SubstrateProfile dataclass.
 
     Checks:
-        - At least one constraint property is set
+        - substrate_type is a SubstrateType value
+        - The state variable selected by substrate_type is set
+          (terrestrial: soil_depth_cm; marine: sediment_stability), and
+          the other medium's properties are not
         - Erosion rates >= 0
         - Formation rate >= 0
-        - capacity_function is valid
+        - capacity_function is valid (threshold is terrestrial-only)
         - confidence is valid
         - For threshold function: critical_minimum >= 0
 
     Raises:
         ValueError: If any constraint is violated.
     """
-    # At least one constraint property must be set
-    has_constraint: bool = (
-        profile.soil_depth_cm is not None
-        or profile.water_clarity_kd is not None
-        or profile.sediment_stability is not None
-    )
-    if not has_constraint:
+    _require_finite(profile, name)
+    try:
+        substrate_type = SubstrateType(profile.substrate_type)
+    except ValueError:
         raise ValueError(
-            f"{name}: at least one constraint property must be set "
-            f"(soil_depth_cm, water_clarity_kd, or sediment_stability)"
-        )
+            f"{name}: substrate_type must be one of "
+            f"{[t.value for t in SubstrateType]}, got {profile.substrate_type!r}"
+        ) from None
+
+    if substrate_type.is_terrestrial:
+        if profile.soil_depth_cm is None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' requires soil_depth_cm"
+            )
+        if profile.sediment_stability is not None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' must not set "
+                f"marine properties (sediment_stability)"
+            )
+    else:
+        if profile.sediment_stability is None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' requires "
+                f"sediment_stability"
+            )
+        if profile.soil_depth_cm is not None:
+            raise ValueError(
+                f"{name}: substrate_type '{substrate_type.value}' must not set "
+                f"soil_depth_cm"
+            )
 
     # Validate constraint property values when set
     if profile.soil_depth_cm is not None and profile.soil_depth_cm < 0.0:
         raise ValueError(
             f"{name}: soil_depth_cm must be >= 0.0, got {profile.soil_depth_cm}"
-        )
-    if profile.water_availability_mm_yr is not None and profile.water_availability_mm_yr < 0.0:
-        raise ValueError(
-            f"{name}: water_availability_mm_yr must be >= 0.0, "
-            f"got {profile.water_availability_mm_yr}"
-        )
-    if profile.water_clarity_kd is not None and profile.water_clarity_kd < 0.0:
-        raise ValueError(
-            f"{name}: water_clarity_kd must be >= 0.0, got {profile.water_clarity_kd}"
         )
     if profile.sediment_stability is not None:
         if not (0.0 <= profile.sediment_stability <= 1.0):
@@ -471,6 +736,12 @@ def validate_substrate_profile(
 
     # Threshold-specific validation
     if profile.capacity_function == "threshold":
+        if not substrate_type.is_terrestrial:
+            raise ValueError(
+                f"{name}: capacity_function 'threshold' is defined on soil depth "
+                f"(critical_minimum in cm) and is not supported for "
+                f"substrate_type '{substrate_type.value}'"
+            )
         if profile.critical_minimum < 0.0:
             raise ValueError(
                 f"{name}: critical_minimum must be >= 0.0, "
@@ -514,10 +785,18 @@ def validate_discount_config(
         - horizon_years > 0
         - carbon_price_current >= 0
         - carbon_price_growth >= 0
+        - convergence (C3): scarcity_rate and carbon_price_growth are each
+          strictly below the discount rate in every year of the horizon
+          (1..horizon_years); for a declining schedule, below the rate of
+          every segment in force within the horizon (see
+          _rate_segments_in_horizon). Otherwise the present value of a
+          permanent flow grows without bound as the horizon grows, and the
+          arbitrary horizon decides the answer.
 
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if config.delta < 0.0:
         raise ValueError(f"{name}: delta must be >= 0.0, got {config.delta}")
     if config.eta < 0.0:
@@ -526,7 +805,7 @@ def validate_discount_config(
         raise ValueError(f"{name}: g must be >= 0.0, got {config.g}")
 
     if isinstance(config.rate_schedule, (int, float)):
-        if float(config.rate_schedule) < 0.0:
+        if not math.isfinite(config.rate_schedule) or float(config.rate_schedule) < 0.0:
             raise ValueError(
                 f"{name}: rate_schedule must be >= 0.0, got {config.rate_schedule}"
             )
@@ -540,6 +819,13 @@ def validate_discount_config(
                     f"{name}: rate_schedule entry {i} must be (year, rate) tuple"
                 )
             year_val, rate_val = entry
+            if not all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                for v in entry
+            ):
+                raise ValueError(
+                    f"{name}: rate_schedule entry {i} must be finite numbers, got {entry!r}"
+                )
             if year_val <= prev_year:
                 raise ValueError(
                     f"{name}: rate_schedule years must be ascending, "
@@ -575,6 +861,57 @@ def validate_discount_config(
             f"got {config.carbon_price_growth}"
         )
 
+    # C3: every growing value stream must be discounted faster than it grows
+    for start, end, rate in _rate_segments_in_horizon(config):
+        where: str = (
+            f"the discount rate ({rate:.2%}/yr)"
+            if isinstance(config.rate_schedule, (int, float))
+            else f"the discount rate of the schedule segment for years "
+                 f"{start}-{end} ({rate:.2%}/yr)"
+        )
+        if config.scarcity_rate >= rate:
+            raise ValueError(
+                f"{name}: scarcity_rate ({config.scarcity_rate:.2%}/yr) must be "
+                f"below {where}. Ecosystem services would gain value faster "
+                f"than they are discounted, so their present value would grow "
+                f"without bound with the horizon."
+            )
+        if config.carbon_price_growth >= rate:
+            raise ValueError(
+                f"{name}: carbon_price_growth ({config.carbon_price_growth:.2%}/yr) "
+                f"must be below {where}. Carbon would gain value faster than it "
+                f"is discounted, so its present value would grow without bound "
+                f"with the horizon."
+            )
+
+
+def _rate_segments_in_horizon(config: DiscountConfig) -> list:
+    """Discount-rate segments in force during the horizon, as (start, end, rate).
+
+    Flows fall in years 1..horizon_years (gaia.discount's convention), and the
+    discount factor of year t compounds the rates of years 1..t, so these are
+    the years whose rates matter. A constant rate is one segment. For a
+    declining schedule, every segment that applies to at least one of those
+    years is returned (the first segment also covers years before its
+    threshold, as DiscountConfig.rate_at_year does); segments starting after
+    the horizon are never used and are not returned. The last segment in force
+    is the one that would apply forever if the horizon were extended.
+    """
+    horizon: int = config.horizon_years
+    if isinstance(config.rate_schedule, (int, float)):
+        return [(1, horizon, float(config.rate_schedule))]
+    schedule: list = config.rate_schedule
+    segments: list = []
+    for i, (threshold, rate) in enumerate(schedule):
+        start: int = 1 if i == 0 else max(int(threshold), 1)
+        end: int = (
+            int(schedule[i + 1][0]) - 1 if i + 1 < len(schedule) else horizon
+        )
+        end = min(end, horizon)
+        if start <= end:
+            segments.append((start, end, float(rate)))
+    return segments
+
 
 # ── v0.7: Pricing validation ────────────────────────────────────────────────
 
@@ -591,6 +928,7 @@ def validate_scarcity_function(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(fn, name)
     if fn.function_type not in _VALID_SCARCITY_TYPES:
         raise ValueError(
             f"{name}: function_type must be one of "
@@ -623,6 +961,7 @@ def validate_anchor_point(
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(anchor, name)
     if anchor.agent_name not in agent_names:
         raise ValueError(
             f"{name}: agent_name '{anchor.agent_name}' is not an agent. "
@@ -646,14 +985,27 @@ def validate_pricing_config(
 ) -> None:
     """Validate a PricingConfig dataclass.
 
+    Every agent must be anchored (Step 4, C8): an unanchored agent used to
+    be priced at €0. gaia.pricing.anchor_every_agent gives the remaining
+    agents a PLACEHOLDER anchor at their own direct annual service value.
+
     Raises:
         ValueError: If any constraint is violated.
     """
+    _require_finite(config, name)
     if len(config.anchors) == 0:
         raise ValueError(f"{name}: at least one anchor is required")
 
     for i, anchor in enumerate(config.anchors):
         validate_anchor_point(anchor, agent_names, name=f"{name}.anchors[{i}]")
+
+    unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
+    if unanchored:
+        raise ValueError(
+            f"{name}: every agent must be anchored when pricing is on; no "
+            f"anchor for {unanchored}. Add an AnchorPoint for each (e.g. "
+            f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
+        )
 
     for agent_key, scarcity_fn in config.scarcity_functions.items():
         if agent_key not in agent_names:

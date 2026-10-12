@@ -1,9 +1,17 @@
 """
-Gaia v0.7 -- Endogenous pricing engine.
+Gaia v0.7 -- Endogenous pricing engine. EXPERIMENTAL (decision D4).
+
+Quarantined (Step 4, C8): opt-in with ``--with-pricing``, labelled
+experimental in every output, every agent must be anchored, convergence is
+certified with guaranteed bounds, and a state that cannot be certified
+raises PricingConvergenceError — no fallback price is ever substituted.
+Known open problems (the "proper fix", not done): V = S·W·V + S·A counts
+upstream value once per dependent agent, and the whole loss is priced at
+the end-state scarcity price instead of integrating the marginal price.
 
 Implements a Leontief-Hannon input-output pricing model for ecosystem services.
 Prices emerge endogenously from network structure, scarcity, and anchor values
-rather than being fixed exogenously as static monetary rates.
+rather than being fixed exogenously as static agent annual values.
 
 The theoretical foundation draws on three pillars:
 
@@ -37,8 +45,10 @@ the row for agent i in the equation V[i] = sum_j(S[i]*W[i][j]*V[j]) + S[i]*A[i]
 picks up value contributions from all agents that agent i depends on.
 
 Convergence requires spectral_radius(S*W) < 1.0, ensuring the geometric series
-I + SW + (SW)^2 + ... converges. When this condition fails, we either cap
-scarcity multipliers to enforce convergence or fall back to static pricing.
+I + SW + (SW)^2 + ... converges. It is proven per state, never estimated
+(certify_convergence): first with the row/column sum bound, then by direct
+iteration with Collatz–Wielandt bounds. When it cannot be proven, the state
+has no price and PricingConvergenceError is raised.
 
 All functions use primitive types (no numpy) for Cython compatibility.
 No third-party dependencies.
@@ -50,6 +60,7 @@ Scientific references:
     - de Groot R et al. (2012) Global estimates of the value of ecosystems.
 """
 
+import dataclasses
 from typing import Dict, List, Optional, Tuple
 
 from gaia.models import (
@@ -59,6 +70,64 @@ from gaia.models import (
     PricingConfig,
     ScarcityFunction,
 )
+
+
+# ── Anchor scaling ──────────────────────────────────────────────────────────
+
+
+def scale_anchors(pricing: PricingConfig, factor: float) -> PricingConfig:
+    """Return a copy of ``pricing`` with every anchor value multiplied by ``factor``.
+
+    Case files state anchors in €/yr for a reference area; the builder scales
+    them by ``area_ha / reference_area`` so anchors stay per-hectare
+    consistent with the agents' €/ha/yr values (decision D2).
+    """
+    return dataclasses.replace(
+        pricing,
+        anchors=[
+            dataclasses.replace(a, anchor_value=a.anchor_value * factor)
+            for a in pricing.anchors
+        ],
+    )
+
+
+def anchor_every_agent(
+    pricing: PricingConfig,
+    agents: list,
+    area_ha: float,
+) -> PricingConfig:
+    """Return a copy of ``pricing`` with an anchor for every agent.
+
+    Pricing requires every agent to be anchored (Step 4, C8). An agent with
+    no documented anchor gets a PLACEHOLDER one: its own direct annual
+    service value, annual_value_per_ha × area_ha (€/yr), the same €/yr scale
+    as the documented anchors and the static values. Documented anchors are
+    kept as they are.
+
+    Args:
+        pricing: PricingConfig whose anchors are already scaled to area_ha.
+        agents: The ecosystem's agents.
+        area_ha: Resource area (ha).
+    """
+    anchored = {a.agent_name for a in pricing.anchors}
+    derived = [
+        AnchorPoint(
+            agent_name=agent.name,
+            anchor_value=agent.annual_value(area_ha),
+            source=(
+                "PLACEHOLDER: no documented anchor; the agent's own direct "
+                "annual service value, annual_value_per_ha × area_ha"
+            ),
+            confidence="low",
+            description=(
+                f"Direct service value: €{agent.annual_value_per_ha:,.2f}/ha/yr "
+                f"× {area_ha:,.2f} ha [PLACEHOLDER]"
+            ),
+        )
+        for agent in agents
+        if agent.name not in anchored
+    ]
+    return dataclasses.replace(pricing, anchors=list(pricing.anchors) + derived)
 
 
 # ── Scarcity computation ────────────────────────────────────────────────────
@@ -202,8 +271,9 @@ def build_anchor_vector(
 
     Anchors ground the relative price system in absolute euro values.
     Each anchor provides an external market price for one agent. Agents
-    without anchors get 0.0 — their prices are determined entirely by
-    network effects from anchored agents.
+    without anchors get 0.0, which solve_prices rejects: every agent must
+    be anchored when pricing is on (an unanchored agent used to be priced
+    at €0, C8).
 
     If multiple anchors exist for the same agent, values are summed
     (weighted by confidence could be a future extension).
@@ -336,11 +406,11 @@ def solve_linear_system(
         # Find pivot row (largest absolute value in column)
         max_val: float = abs(aug[col][col])
         max_row: int = col
-        for row in range(col + 1, n):
-            val: float = abs(aug[row][col])
+        for r in range(col + 1, n):
+            val: float = abs(aug[r][col])
             if val > max_val:
                 max_val = val
-                max_row = row
+                max_row = r
 
         if max_val < 1e-15:
             raise ValueError(
@@ -354,10 +424,10 @@ def solve_linear_system(
 
         # Eliminate below
         pivot: float = aug[col][col]
-        for row in range(col + 1, n):
-            factor: float = aug[row][col] / pivot
+        for r in range(col + 1, n):
+            factor: float = aug[r][col] / pivot
             for j in range(col, n + 1):
-                aug[row][j] -= factor * aug[col][j]
+                aug[r][j] -= factor * aug[col][j]
 
     # Back substitution
     x: List[float] = [0.0] * n
@@ -370,89 +440,195 @@ def solve_linear_system(
     return x
 
 
-# ── Eigenvalue estimation ───────────────────────────────────────────────────
+# ── Convergence certificates ────────────────────────────────────────────────
+
+# A certified bound must clear 1 by this margin, so rounding in the bound
+# itself cannot turn a borderline system into an accepted one.
+_CERTIFICATE_MARGIN: float = 1e-9
 
 
-def compute_spectral_radius(
-    matrix: List[List[float]],
-    max_iterations: int = 20,
-) -> float:
-    """Estimate the spectral radius (largest absolute eigenvalue) via power iteration.
+class PricingConvergenceError(ValueError):
+    """The price system has no certified convergent solution at this state.
 
-    Uses the power method to find the dominant eigenvalue magnitude. For the
-    Leontief price system, spectral_radius(SW) < 1.0 is the convergence
-    condition (the Hawkins-Simon condition).
+    Raised instead of substituting any other price (C8): endogenous pricing
+    is experimental (decision D4), and a state at which the Neumann series
+    I + SW + (SW)² + ... cannot be shown to converge has no valid price, so
+    no euro figure is produced for it. A ValueError, so the case CLIs report
+    it as an error.
 
-    Power iteration converges linearly with ratio |lambda_2/lambda_1|. For
-    typical ecosystem matrices, 20 iterations provides excellent accuracy.
+    Attributes:
+        spectral_radius_bound: Best guaranteed upper bound on ρ(S·W) found
+            (>= 1, or None when the failure is not about convergence).
+        step: Extraction step at which pricing failed (set by run_extraction).
+        depletion_ratio: Depletion at that step (set by run_extraction).
+    """
 
-    The method handles both positive and negative dominant eigenvalues by
-    tracking the Rayleigh quotient (v^T * A * v) / (v^T * v).
+    def __init__(
+        self,
+        message: str,
+        spectral_radius_bound: Optional[float] = None,
+        step: Optional[int] = None,
+        depletion_ratio: Optional[float] = None,
+    ) -> None:
+        super().__init__(message)
+        self.spectral_radius_bound = spectral_radius_bound
+        self.step = step
+        self.depletion_ratio = depletion_ratio
 
-    Args:
-        matrix: N x N square matrix as list of lists.
-        max_iterations: Number of power iteration steps (default 20).
+
+def spectral_radius_bound(matrix: List[List[float]]) -> float:
+    """Guaranteed upper bound on the spectral radius of a square matrix.
+
+    ρ(M) <= min(max_i Σ_j |M[i][j]|, max_j Σ_i |M[i][j]|): the maximum
+    absolute row sum is the ∞-norm and the maximum absolute column sum the
+    1-norm, and every induced norm bounds the spectral radius. For the
+    non-negative S·W these are its row and column sums. A bound < 1
+    guarantees that the Neumann series converges. Unlike a power-iteration
+    estimate (which underestimated ρ for non-symmetric S·W, C8), it can
+    only overestimate.
 
     Returns:
-        Estimated spectral radius (non-negative). Returns 0.0 for zero or
-        empty matrices.
+        The bound (0.0 for an empty matrix).
     """
     n: int = len(matrix)
     if n == 0:
         return 0.0
-
-    # Check for zero matrix
-    all_zero: bool = True
+    max_row: float = 0.0
+    col_sums: List[float] = [0.0] * n
     for i in range(n):
+        row_sum: float = 0.0
         for j in range(n):
-            if abs(matrix[i][j]) > 1e-15:
-                all_zero = False
-                break
-        if not all_zero:
-            break
-    if all_zero:
-        return 0.0
+            entry: float = abs(matrix[i][j])
+            row_sum += entry
+            col_sums[j] += entry
+        if row_sum > max_row:
+            max_row = row_sum
+    return min(max_row, max(col_sums))
 
-    # Initialize with unit vector [1, 1, ..., 1] normalized
-    v: List[float] = [1.0] * n
-    norm: float = n ** 0.5
-    for i in range(n):
-        v[i] /= norm
 
-    eigenvalue: float = 0.0
+def collatz_wielandt_bounds(
+    matrix: List[List[float]],
+    x: List[float],
+) -> Tuple[float, float]:
+    """Lower and upper bounds on ρ(M) from a positive vector x.
 
-    for _ in range(max_iterations):
-        # w = matrix * v
-        w: List[float] = [0.0] * n
-        for i in range(n):
-            total: float = 0.0
-            for j in range(n):
-                total += matrix[i][j] * v[j]
-            w[i] = total
+    For a non-negative M and any x with every x_i > 0 (Collatz–Wielandt):
 
-        # Compute Rayleigh quotient: eigenvalue = (v^T * w) / (v^T * v)
-        numerator: float = 0.0
-        denominator: float = 0.0
-        for i in range(n):
-            numerator += v[i] * w[i]
-            denominator += v[i] * v[i]
-        if denominator > 1e-30:
-            eigenvalue = numerator / denominator
+        min_i (M·x)_i / x_i  <=  ρ(M)  <=  max_i (M·x)_i / x_i
 
-        # Normalize w to get next v
-        w_norm: float = 0.0
-        for i in range(n):
-            w_norm += w[i] * w[i]
-        w_norm = w_norm ** 0.5
+    The upper bound is the ∞-norm of diag(x)⁻¹·M·diag(x), which is similar
+    to M; the lower bound follows from M^k·x >= c^k·x. Both are guaranteed,
+    not estimates.
 
-        if w_norm < 1e-15:
-            # Matrix maps everything to near-zero
-            return abs(eigenvalue)
+    Args:
+        matrix: N x N non-negative matrix.
+        x: N-length vector with every entry > 0.
 
-        for i in range(n):
-            v[i] = w[i] / w_norm
+    Returns:
+        (lower, upper).
+    """
+    mx: List[float] = matrix_vector_multiply(matrix, x)
+    ratios: List[float] = [mx[i] / x[i] for i in range(len(x))]
+    return min(ratios), max(ratios)
 
-    return abs(eigenvalue)
+
+# Power-iterate entries below this (relative to its maximum) are treated as
+# outside its support by _support_lower_bound, and the iterate is floored at
+# _MIN_ITERATE so that it stays strictly positive.
+_SUPPORT_THRESHOLD: float = 1e-6
+_MIN_ITERATE: float = 1e-300
+
+
+def _support_lower_bound(matrix: List[List[float]], u: List[float]) -> float:
+    """Guaranteed lower bound on ρ(M) from the significant part of u.
+
+    x = u restricted to J = {i : u_i >= _SUPPORT_THRESHOLD · max(u)}, zero
+    elsewhere. If (M·x)_i >= c·x_i for every i in J, then M·x >= c·x
+    (x >= 0, x != 0), so M^k·x >= c^k·x and ρ(M) >= c. Restricting to the
+    support matters for reducible S·W: an agent that depends on nothing has
+    a zero row, and its ratio (0) would otherwise pin the plain
+    Collatz–Wielandt lower bound at 0.
+    """
+    n: int = len(u)
+    cutoff: float = _SUPPORT_THRESHOLD * max(u)
+    x: List[float] = [u[i] if u[i] >= cutoff else 0.0 for i in range(n)]
+    mx: List[float] = matrix_vector_multiply(matrix, x)
+    return min(mx[i] / x[i] for i in range(n) if x[i] > 0.0)
+
+
+def certify_convergence(
+    sw_matrix: List[List[float]],
+    b_vector: List[float],
+    max_iterations: int,
+) -> Tuple[str, float, int]:
+    """Prove that ρ(S·W) < 1, so that V = S·W·V + S·A has a convergent solution.
+
+    1. Norm bound: if min(max row sum, max column sum) of S·W is below 1,
+       convergence is guaranteed ("norm_bound").
+    2. Direct iteration otherwise ("direct_iteration"): V_0 = b,
+       V_{k+1} = S·W·V_k + b with b = S·A, alongside a power iterate
+       u_{k+1} = (S·W + I)·u_k (normalised; the shift keeps it positive and
+       aperiodic, and it tends to the Perron vector of S·W). Both stay
+       positive (b > 0: every agent is anchored), so each gives
+       Collatz–Wielandt bounds on ρ(S·W) at every iteration:
+         - an upper bound < 1 proves convergence. With x = V_k it also bounds
+           the residual: V_{k+1} − V_k shrinks geometrically, by at least
+           that factor per iteration in the V_k-weighted max norm.
+         - a lower bound >= 1 (from the support of u, _support_lower_bound)
+           proves divergence (the series grows without bound).
+       If neither settles it within ``max_iterations`` the state fails:
+       convergence is never assumed.
+
+    Args:
+        sw_matrix: N x N non-negative matrix S·W.
+        b_vector: N-length vector S·A, every entry > 0.
+        max_iterations: Cap on direct iterations.
+
+    Returns:
+        (method, bound, iterations): the method that certified convergence,
+        the guaranteed bound on ρ(S·W) (< 1) and the iterations used.
+
+    Raises:
+        PricingConvergenceError: If ρ(S·W) >= 1 is proven, or convergence
+            cannot be proven within max_iterations.
+    """
+    limit: float = 1.0 - _CERTIFICATE_MARGIN
+    norm_bound: float = spectral_radius_bound(sw_matrix)
+    if norm_bound < limit:
+        return "norm_bound", norm_bound, 0
+
+    n: int = len(sw_matrix)
+    best_upper: float = norm_bound
+    v: List[float] = list(b_vector)
+    u: List[float] = [1.0] * n
+    for iteration in range(1, max_iterations + 1):
+        swv: List[float] = matrix_vector_multiply(sw_matrix, v)
+        swu: List[float] = matrix_vector_multiply(sw_matrix, u)
+        upper: float = min(
+            max(swv[i] / v[i] for i in range(n)),
+            max(swu[i] / u[i] for i in range(n)),
+        )
+        lower: float = _support_lower_bound(sw_matrix, u)
+        best_upper = min(best_upper, upper)
+        if upper < limit:
+            return "direct_iteration", upper, iteration
+        if lower >= 1.0:
+            raise PricingConvergenceError(
+                f"ρ(S·W) >= {lower:.4f} (Collatz–Wielandt lower bound after "
+                f"{iteration} direct iterations), so the price series "
+                f"diverges.",
+                spectral_radius_bound=best_upper,
+            )
+        v = [swv[i] + b_vector[i] for i in range(n)]
+        u = [swu[i] + u[i] for i in range(n)]
+        u_max: float = max(u)
+        u = [max(x / u_max, _MIN_ITERATE) for x in u]
+    raise PricingConvergenceError(
+        f"convergence of the price series could not be proven: the best "
+        f"guaranteed bound on ρ(S·W) is {best_upper:.4f} >= 1 (row/column "
+        f"sum bound {norm_bound:.4f}; {max_iterations} direct iterations).",
+        spectral_radius_bound=best_upper,
+    )
 
 
 # ── Matrix helper functions ─────────────────────────────────────────────────
@@ -487,23 +663,27 @@ def solve_prices(
     agent_healths: Dict[str, float],
     interactions: List[InteractionEdge],
     pricing: PricingConfig,
-    monetary_rates: Dict[str, float],
 ) -> PriceResult:
     """Solve the Leontief-Hannon price system for the current ecosystem state.
 
-    Computes endogenous prices that reflect both intrinsic anchor values and
-    network-propagated scarcity. The algorithm:
+    EXPERIMENTAL (decision D4): the formulation still counts upstream value
+    once per dependent agent and prices the whole loss at the end-state
+    price (C8, to be revisited).
+
+    The algorithm:
 
     1. Build the scarcity matrix S (diagonal, health-dependent).
     2. Build the value-flow matrix W (from interaction edges, transposed).
-    3. Build the anchor vector A (from market price anchors).
-    4. Compute SW = S @ W (the technical coefficients matrix).
-    5. Compute spectral_radius(SW) to check convergence.
-    6. If spectral_radius >= 1.0:
-       a. If fallback_to_static: return static monetary_rates.
-       b. Else: scale down scarcity multipliers until spectral_radius < 0.95.
-    7. Solve V = (I - SW)^(-1) * S * A via Gaussian elimination.
-    8. Decompose prices into scarcity, demand, and anchor contributions.
+    3. Build the anchor vector A. Every agent must be anchored (A > 0).
+    4. Compute SW = S @ W and certify ρ(SW) < 1 (certify_convergence):
+       a guaranteed bound, never an estimate.
+    5. Solve V = (I - SW)^(-1) * S * A via Gaussian elimination.
+    6. Decompose prices into scarcity, demand, and anchor contributions.
+
+    There is no fallback: when convergence cannot be proven, or the solve
+    yields a non-positive price (impossible for a convergent series with
+    S·A > 0, so a sign of an invalid solve), PricingConvergenceError is
+    raised. No other price is substituted and no price is clamped.
 
     The decomposition of each agent's price:
         scarcity_multiplier = S[i][i] (the health-dependent premium)
@@ -515,10 +695,15 @@ def solve_prices(
         agent_healths: Health fraction per agent (0.0 to 1.0).
         interactions: List of InteractionEdge defining the value network.
         pricing: PricingConfig with anchors, scarcity functions, solver params.
-        monetary_rates: Fallback static prices per agent (from Agent.monetary_rate).
 
     Returns:
-        PriceResult with computed prices and full decomposition.
+        PriceResult with computed prices, full decomposition and the
+        convergence certificate.
+
+    Raises:
+        ValueError: If an agent has no anchor, or S·W has a negative entry.
+        PricingConvergenceError: If convergence cannot be proven or the
+            solve is invalid.
     """
     n: int = len(agent_names)
 
@@ -529,8 +714,8 @@ def solve_prices(
             scarcity_multipliers={},
             demand_multipliers={},
             anchor_contributions={},
-            spectral_radius=0.0,
-            converged=True,
+            spectral_radius_bound=0.0,
+            convergence_check="norm_bound",
             iterations=0,
         )
 
@@ -541,106 +726,80 @@ def solve_prices(
     w_matrix: List[List[float]] = build_value_matrix(agent_names, interactions)
     a_vector: List[float] = build_anchor_vector(agent_names, pricing.anchors)
 
+    unanchored: List[str] = [
+        agent_names[i] for i in range(n) if not a_vector[i] > 0.0
+    ]
+    if unanchored:
+        raise ValueError(
+            f"Every agent must be anchored when pricing is on; no positive "
+            f"anchor for: {unanchored}"
+        )
+
     # Step 2: Compute SW = S @ W
     sw_matrix: List[List[float]] = matrix_multiply(s_matrix, w_matrix)
+    for i in range(n):
+        for j in range(n):
+            if sw_matrix[i][j] < 0.0:
+                raise ValueError(
+                    f"S·W must be non-negative, got {sw_matrix[i][j]} at "
+                    f"({agent_names[i]!r}, {agent_names[j]!r})"
+                )
 
-    # Step 3: Check spectral radius for convergence
-    radius: float = compute_spectral_radius(sw_matrix)
-    iterations_used: int = 0
+    # Effective anchor b = S * A (every entry > 0)
+    effective_anchor: List[float] = [s_matrix[i][i] * a_vector[i] for i in range(n)]
 
-    # Step 4: Handle convergence failure
-    if radius >= 1.0:
-        if pricing.fallback_to_static:
-            # Return static prices with converged=False
-            scarcity_mults: Dict[str, float] = {}
-            for i in range(n):
-                scarcity_mults[agent_names[i]] = s_matrix[i][i]
-            return PriceResult(
-                prices=dict(monetary_rates),
-                scarcity_multipliers=scarcity_mults,
-                demand_multipliers={name: 1.0 for name in agent_names},
-                anchor_contributions={name: 0.0 for name in agent_names},
-                spectral_radius=radius,
-                converged=False,
-                iterations=0,
-            )
-        else:
-            # Scale down scarcity multipliers until spectral_radius < 0.95
-            target_radius: float = 0.95
-            # Binary search for the right scaling factor
-            scale_lo: float = 0.0
-            scale_hi: float = 1.0
-            scale: float = 1.0
+    # Step 3: Certify convergence (raises PricingConvergenceError)
+    method, bound, iterations_used = certify_convergence(
+        sw_matrix, effective_anchor, pricing.max_iterations
+    )
 
-            for iteration in range(pricing.max_iterations):
-                iterations_used = iteration + 1
-                scale = (scale_lo + scale_hi) / 2.0
-
-                # Build scaled scarcity matrix
-                scaled_s: List[List[float]] = [[0.0] * n for _ in range(n)]
-                for i in range(n):
-                    # Interpolate between 1.0 (no scarcity) and full scarcity
-                    scaled_s[i][i] = 1.0 + scale * (s_matrix[i][i] - 1.0)
-
-                scaled_sw: List[List[float]] = matrix_multiply(scaled_s, w_matrix)
-                scaled_radius: float = compute_spectral_radius(scaled_sw)
-
-                if abs(scaled_radius - target_radius) < pricing.convergence_tolerance:
-                    sw_matrix = scaled_sw
-                    s_matrix = scaled_s
-                    radius = scaled_radius
-                    break
-                elif scaled_radius > target_radius:
-                    scale_hi = scale
-                else:
-                    scale_lo = scale
-
-                sw_matrix = scaled_sw
-                s_matrix = scaled_s
-                radius = scaled_radius
-
-    # Step 5: Solve V = (I - SW)^(-1) * S * A
+    # Step 4: Solve V = (I - SW)^(-1) * S * A
     identity: List[List[float]] = _identity_matrix(n)
     i_minus_sw: List[List[float]] = _matrix_subtract(identity, sw_matrix)
 
-    # Apply scarcity to anchor vector: effective_anchor = S * A
-    effective_anchor: List[float] = [0.0] * n
-    for i in range(n):
-        effective_anchor[i] = s_matrix[i][i] * a_vector[i]
-
     try:
         v_vector: List[float] = solve_linear_system(i_minus_sw, effective_anchor)
-        converged: bool = True
-    except ValueError:
-        # Singular matrix — fall back to static prices
-        v_vector = [monetary_rates.get(agent_names[i], 0.0) for i in range(n)]
-        converged = False
+    except ValueError as exc:
+        raise PricingConvergenceError(
+            f"the price system is singular although ρ(S·W) <= {bound:.4f} ({exc}).",
+        ) from exc
 
-    # Step 6: Ensure non-negative prices (clamp to zero)
-    for i in range(n):
-        if v_vector[i] < 0.0:
-            v_vector[i] = 0.0
+    # Step 5: Check the solve. V = Σ (SW)^k S·A >= S·A > 0, so a
+    # non-positive price, or a large residual, means the solve is invalid.
+    non_positive: List[str] = [
+        agent_names[i] for i in range(n) if not v_vector[i] > 0.0
+    ]
+    if non_positive:
+        raise PricingConvergenceError(
+            f"the price solve gave non-positive prices for {non_positive}; "
+            f"prices are never clamped.",
+        )
+    residual_vector: List[float] = matrix_vector_multiply(i_minus_sw, v_vector)
+    scale: float = max(abs(x) for x in effective_anchor)
+    residual: float = max(
+        abs(residual_vector[i] - effective_anchor[i]) for i in range(n)
+    )
+    if residual > pricing.convergence_tolerance * scale:
+        raise PricingConvergenceError(
+            f"the price solve is inaccurate: residual {residual:.3e} exceeds "
+            f"convergence_tolerance × max(S·A) = "
+            f"{pricing.convergence_tolerance * scale:.3e}.",
+        )
 
-    # Step 7: Decompose prices
+    # Step 6: Decompose prices
     prices: Dict[str, float] = {}
     scarcity_multipliers: Dict[str, float] = {}
     demand_multipliers: Dict[str, float] = {}
     anchor_contributions: Dict[str, float] = {}
 
-    # Compute (I - SW)^(-1) row sums for demand multipliers
-    # We already have (I - SW); compute its inverse by solving N systems
+    # (I - SW)^(-1) row sums for demand multipliers, one column at a time
     inverse_rows: List[List[float]] = [[0.0] * n for _ in range(n)]
-    if converged:
-        for col in range(n):
-            e_col: List[float] = [0.0] * n
-            e_col[col] = 1.0
-            try:
-                inv_col: List[float] = solve_linear_system(i_minus_sw, e_col)
-                for row in range(n):
-                    inverse_rows[row][col] = inv_col[row]
-            except ValueError:
-                # If inversion fails for any column, set identity
-                inverse_rows[col][col] = 1.0
+    for col in range(n):
+        e_col: List[float] = [0.0] * n
+        e_col[col] = 1.0
+        inv_col: List[float] = solve_linear_system(i_minus_sw, e_col)
+        for row in range(n):
+            inverse_rows[row][col] = inv_col[row]
 
     for i in range(n):
         name: str = agent_names[i]
@@ -654,19 +813,14 @@ def solve_prices(
         demand_multipliers[name] = row_sum
 
         # Anchor contribution: fraction of price from direct anchor
-        if v_vector[i] > 1e-15 and a_vector[i] > 0.0:
-            anchor_contributions[name] = (
-                s_matrix[i][i] * a_vector[i]
-            ) / v_vector[i]
-        else:
-            anchor_contributions[name] = 0.0
+        anchor_contributions[name] = effective_anchor[i] / v_vector[i]
 
     return PriceResult(
         prices=prices,
         scarcity_multipliers=scarcity_multipliers,
         demand_multipliers=demand_multipliers,
         anchor_contributions=anchor_contributions,
-        spectral_radius=radius,
-        converged=converged,
+        spectral_radius_bound=bound,
+        convergence_check=method,
         iterations=iterations_used,
     )

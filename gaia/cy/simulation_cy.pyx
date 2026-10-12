@@ -17,21 +17,26 @@ Performance profile of the pure-Python version (Amazon, 80K steps):
     Total: 5.2M function calls in ~2.1s
 
 This module eliminates the function call overhead by:
-    1. Pre-computing all indices (int arrays, not string dicts)
-    2. Inlining trophic amplification (no function call per agent)
+    1. Pre-computing all indices (int lists, not string dicts)
+    2. Inlining trophic amplification (factors precomputed by the caller)
     3. Inlining interaction propagation (no per-step dict rebuild)
     4. Using C-level math (libc.math.exp instead of Python math.exp)
-    5. Using typed memoryviews / C arrays for hot-path data
+    5. Typing the scalar loop variables as C doubles / ints
+The per-agent and per-edge data are still Python lists (not typed
+memoryviews or C arrays), so element access goes through the Python object
+layer; the measured speed-up is ~2-3x on the shipped cases.
 
-Usage from simulation.py:
-    try:
-        from gaia.cy.simulation_cy import extraction_loop_cy
-        _HAS_CYTHON = True
-    except ImportError:
-        _HAS_CYTHON = False
+Usage from simulation.py: see simulation._load_cython_loop(), which only
+uses this module when PYX_SOURCE_SHA256 matches the current .pyx source.
+
+Build with ``python3 setup.py build_ext --inplace``: setup.py supplies the
+GAIA_PYX_SHA256 compile-time constant (SHA-256 of this file).
 """
 
 from libc.math cimport exp, pow
+
+# SHA-256 of the .pyx source this module was compiled from (stale-build guard)
+PYX_SOURCE_SHA256 = GAIA_PYX_SHA256
 
 
 def extraction_loop_cy(
@@ -44,27 +49,35 @@ def extraction_loop_cy(
     # Per-agent flat arrays (length n_agents):
     list damage_params,       # list of (kind, param1, param2, param3) tuples
     list dep_weights,         # dependency_weight per agent
-    list monetary_rates,      # monetary_rate per agent
+    list annual_values,       # €/yr lost at full damage per agent (€/ha/yr × area_ha)
     list trophic_levels,      # trophic_level per agent (int)
+    list trophic_amp_factors, # propagation.trophic_amplification_factor per agent
     list is_keystone,         # bool per agent
     list keystone_thresholds, # float per agent
     # Per-edge flat arrays (length n_edges):
     list edge_src_idx,        # int index of source agent
     list edge_tgt_idx,        # int index of target agent
     list edge_strengths,      # float strength [0, 1]
+    # Keystone boost (gaia.constants, passed so the values have one source):
+    double keystone_edge_multiplier,
+    double max_edge_strength,
     # Feature flags:
     bint has_trophic,
     bint has_interactions,
     bint has_resilience,
     bint has_substrate,
+    bint substrate_is_marine,
     # Resilience config (only used if has_resilience):
     double resilience_warning_width,
     double resilience_conf_green,
     double resilience_conf_yellow,
     double resilience_conf_red,
     double resilience_irreversibility_ratio,
-    # Substrate config (only used if has_substrate):
+    # Substrate config (only used if has_substrate). Terrestrial profiles
+    # track soil depth (cm, erosion in t/ha/yr); marine profiles track
+    # sediment stability (0-1, erosion in mm/yr):
     double substrate_soil_depth_cm,
+    double substrate_sediment_stability,
     double substrate_erosion_unprotected,
     double substrate_erosion_protected,
     double substrate_formation_rate,
@@ -85,8 +98,8 @@ def extraction_loop_cy(
     Returns:
         List of tuples, one per step:
         (step, units_extracted, depletion_ratio,
-         effective_damages, agent_costs, marginal_cost, cumulative_cost,
-         private_revenue, ecosystem_health,
+         effective_damages, agent_annual_costs, marginal_annual_externality,
+         annual_externality, revenue, ecosystem_health,
          direct_damages, cascade_damages, keystone_triggered,
          zone, confidence, irreversibility_warning,
          substrate_erosion, effective_k, k_fraction)
@@ -99,7 +112,7 @@ def extraction_loop_cy(
     cdef double step_total_cost, health_sum, marginal_cost, ecosystem_health
     cdef double private_revenue, cost, rate
     cdef double previous_total_cost = 0.0
-    cdef double agent_health, doubled, additional, source_damage
+    cdef double agent_health, doubled, additional, source_damage, headroom
     cdef double bare_fraction, exposure, effective_erosion, erosion_amount
     cdef double erosion_mm, erosion_cm
     cdef double remaining_frac, threshold_lower, threshold_upper
@@ -111,16 +124,22 @@ def extraction_loop_cy(
     cdef double confidence
     cdef bint irreversibility
 
-    # Substrate state (mutable, C-level)
-    cdef double current_soil_depth = substrate_soil_depth_cm
-    cdef double pristine_soil_depth = substrate_soil_depth_cm
+    # Substrate state (mutable, C-level). One variable is tracked, chosen by
+    # substrate_is_marine — the same rule as gaia.substrate.is_terrestrial().
+    cdef double current_level
+    cdef double pristine_level
+    if substrate_is_marine:
+        current_level = substrate_sediment_stability
+    else:
+        current_level = substrate_soil_depth_cm
+    pristine_level = current_level
     cdef double time_per_step = 0.0
     cdef double step_substrate_erosion, step_k_fraction
     cdef int step_effective_k
     cdef double vegetation_cover
 
     # Capacity variables
-    cdef double current_depth, pristine_depth, critical, residual, frac
+    cdef double critical, residual, frac
 
     if has_substrate and units_to_extract > 0:
         time_per_step = 1.0 / <double>units_to_extract
@@ -147,7 +166,7 @@ def extraction_loop_cy(
 
     # Pre-extract per-agent arrays to C-level
     cdef list c_dep_weights = [<double>dep_weights[i] for i in range(n_agents)]
-    cdef list c_mon_rates = [<double>monetary_rates[i] for i in range(n_agents)]
+    cdef list c_annual_values = [<double>annual_values[i] for i in range(n_agents)]
     cdef list c_trophic = [<int>trophic_levels[i] for i in range(n_agents)]
     cdef list c_is_keystone = [<bint>is_keystone[i] for i in range(n_agents)]
     cdef list c_ks_thresholds = [<double>keystone_thresholds[i] for i in range(n_agents)]
@@ -157,14 +176,9 @@ def extraction_loop_cy(
     cdef list c_edge_tgt = [<int>edge_tgt_idx[i] for i in range(n_edges)]
     cdef list c_edge_str = [<double>edge_strengths[i] for i in range(n_edges)]
 
-    # Transfer efficiency constant for trophic amplification
-    cdef double transfer_eff = 0.15
-
-    # Pre-compute trophic amplification factors per agent
-    cdef list trophic_amp = [1.0] * n_agents
-    for i in range(n_agents):
-        if c_trophic[i] >= 1:
-            trophic_amp[i] = pow(1.0 / transfer_eff, <double>c_trophic[i] * 0.25)
+    # Trophic amplification factors per agent, computed by the caller with
+    # gaia.propagation.trophic_amplification_factor (constants in gaia.constants)
+    cdef list trophic_amp = [<double>trophic_amp_factors[i] for i in range(n_agents)]
 
     # Output accumulator
     cdef list result_steps = []
@@ -176,6 +190,7 @@ def extraction_loop_cy(
     cdef list agent_costs
     cdef list keystone_triggered
     cdef list eff_strengths
+    cdef list pressure
 
     # Damage function variables
     cdef double inflection, raw_0, span, steepness
@@ -230,7 +245,7 @@ def extraction_loop_cy(
             cascade_damages = [0.0] * n_agents
             keystone_triggered = []
 
-            # Compute effective edge strengths with keystone doubling
+            # Compute effective edge strengths with keystone boost
             eff_strengths = list(c_edge_str)
             for i in range(n_agents):
                 if c_is_keystone[i]:
@@ -239,24 +254,31 @@ def extraction_loop_cy(
                         keystone_triggered.append(i)
                         for e in range(n_edges):
                             if c_edge_src[e] == i:
-                                doubled = c_edge_str[e] * 2.0
-                                if doubled > 1.0:
-                                    doubled = 1.0
+                                doubled = c_edge_str[e] * keystone_edge_multiplier
+                                if doubled > max_edge_strength:
+                                    doubled = max_edge_strength
                                 eff_strengths[e] = doubled
 
-            # Single-pass propagation
+            # Single-pass propagation: cascade pressure from frozen direct damages
+            pressure = [0.0] * n_agents
             for e in range(n_edges):
                 src_idx = c_edge_src[e]
                 tgt_idx = c_edge_tgt[e]
                 source_damage = direct_damages[src_idx]
+                # Separate statements: a fused multiply-add would round
+                # differently from the Python engine
                 additional = source_damage * <double>eff_strengths[e]
-                effective_damages[tgt_idx] = effective_damages[tgt_idx] + additional
-                if effective_damages[tgt_idx] > 1.0:
-                    effective_damages[tgt_idx] = 1.0
+                pressure[tgt_idx] = <double>pressure[tgt_idx] + additional
 
-            # Recompute cascade
+            # Pressure acts on the service still standing (see
+            # gaia.propagation.propagate_interactions); the clamp guards rounding
             for i in range(n_agents):
-                cascade_damages[i] = effective_damages[i] - direct_damages[i]
+                headroom = (1.0 - <double>direct_damages[i]) * <double>pressure[i]
+                additional = <double>direct_damages[i] + headroom
+                if additional > 1.0:
+                    additional = 1.0
+                effective_damages[i] = additional
+                cascade_damages[i] = additional - <double>direct_damages[i]
                 if cascade_damages[i] < 0.0:
                     cascade_damages[i] = 0.0
         else:
@@ -264,13 +286,13 @@ def extraction_loop_cy(
             cascade_damages = [0.0] * n_agents
             keystone_triggered = []
 
-        # ── Phase 3: Cost computation ──────────────────────────────────
+        # ── Phase 3: Annual cost computation (€/yr) ────────────────────
         agent_costs = [0.0] * n_agents
         step_total_cost = 0.0
         health_sum = 0.0
 
         for i in range(n_agents):
-            rate = c_mon_rates[i]
+            rate = c_annual_values[i]
             weight = c_dep_weights[i]
             cost = effective_damages[i] * weight * rate
             agent_costs[i] = cost
@@ -307,41 +329,50 @@ def extraction_loop_cy(
                 + (substrate_erosion_unprotected - substrate_erosion_protected) * exposure
             )
             erosion_amount = effective_erosion * time_per_step
-            erosion_mm = erosion_amount * substrate_t_ha_to_mm_factor
-            erosion_cm = erosion_mm / 10.0
-            current_soil_depth = current_soil_depth - erosion_cm
-            if current_soil_depth < 0.0:
-                current_soil_depth = 0.0
-            step_substrate_erosion = erosion_cm
+            if substrate_is_marine:
+                # Marine: erosion in mm/yr, 100 mm ≡ full stability
+                if pristine_level > 0.0:
+                    current_level = current_level - erosion_amount / 100.0
+                    if current_level < 0.0:
+                        current_level = 0.0
+                step_substrate_erosion = erosion_amount
+            else:
+                erosion_mm = erosion_amount * substrate_t_ha_to_mm_factor
+                erosion_cm = erosion_mm / 10.0
+                current_level = current_level - erosion_cm
+                if current_level < 0.0:
+                    current_level = 0.0
+                step_substrate_erosion = erosion_cm
 
-            # Inline capacity fraction computation
+            # Inline capacity fraction computation (threshold is terrestrial-only,
+            # enforced by validation)
             if substrate_capacity_function == "linear":
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    step_k_fraction = current_soil_depth / pristine_soil_depth
+                    step_k_fraction = current_level / pristine_level
             elif substrate_capacity_function == "threshold":
                 critical = substrate_critical_minimum
                 residual = substrate_residual_fraction
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
-                elif current_soil_depth <= 0.0:
+                elif current_level <= 0.0:
                     step_k_fraction = 0.0
-                elif current_soil_depth < critical:
+                elif current_level < critical:
                     if critical <= 0.0:
                         step_k_fraction = 0.0
                     else:
-                        step_k_fraction = (current_soil_depth / critical) * residual
+                        step_k_fraction = (current_level / critical) * residual
                 else:
-                    if pristine_soil_depth <= critical:
+                    if pristine_level <= critical:
                         step_k_fraction = 1.0
                     else:
-                        step_k_fraction = residual + (1.0 - residual) * (current_soil_depth - critical) / (pristine_soil_depth - critical)
+                        step_k_fraction = residual + (1.0 - residual) * (current_level - critical) / (pristine_level - critical)
             elif substrate_capacity_function == "logistic":
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    frac = current_soil_depth / pristine_soil_depth
+                    frac = current_level / pristine_level
                     steepness = 10.0
                     inflection = 0.5
                     raw_damage = 1.0 / (1.0 + exp(-steepness * (frac - inflection)))
@@ -353,10 +384,10 @@ def extraction_loop_cy(
                     else:
                         step_k_fraction = (raw_damage - raw_0) / span
             else:
-                if pristine_soil_depth <= 0.0:
+                if pristine_level <= 0.0:
                     step_k_fraction = 0.0
                 else:
-                    step_k_fraction = current_soil_depth / pristine_soil_depth
+                    step_k_fraction = current_level / pristine_level
 
             if step_k_fraction < 0.0:
                 step_k_fraction = 0.0

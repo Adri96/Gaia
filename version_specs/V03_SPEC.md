@@ -1,5 +1,14 @@
 # Gaia v0.3 — Specification: Trophic Cascades & Agent Interactions
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - Additive propagation, `effective = min(1, direct + Σ strength × source damage)`, is replaced by `effective = direct + (1 − direct) × pressure`. Incoming strengths are capped at 1.0 per agent, keystone boosts included, and `Ecosystem.calibration_regime` (A/B) is required when there are edges (`2beaaee`, `4c7816d`).
+> - Trophic and keystone constants live in `gaia/constants.py`, flagged PLACEHOLDER (`2beaaee`).
+> - The 0.5 recovery cascade factor and the trophic amplification of recovery are gone: restoration retraces the extraction's damage path from a starting state (`9037b8a`, `3867e7b`).
+> - `monetary_rate` is now `annual_value_per_ha` (€/ha/yr × area) (`6a3feea`, `c791b6c`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.3 is the version where agents stop being independent. In v0.1 and v0.2, each agent computes damage (or recovery) solely from the depletion ratio — they don't affect each other. In reality, ecosystem damage cascades: killing trees kills fungi, which kills soil, which kills more trees. A pollinator crash collapses plant reproduction. An apex predator loss triggers herbivore explosion that destroys vegetation.

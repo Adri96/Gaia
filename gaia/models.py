@@ -1,5 +1,5 @@
 """
-Gaia v0.7 — Core data models.
+Gaia — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
@@ -8,26 +8,59 @@ All models are Cython-compatible.
 v0.2 additions: RestorationCost, RestorationStep, RestorationResult
 v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
                 SimulationStep cascade fields
-v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep,
-                RestorationConfig; Resource + carbon/resilience; Agent + succession;
-                SimulationStep + resilience fields; RestorationResult + maturation
+v0.4 additions: SuccessionCurve, CarbonProfile, ResilienceConfig, MaturationStep;
+                Resource + carbon/resilience; SimulationStep + resilience fields;
+                RestorationResult + maturation
 v0.5 additions: SubstrateProfile, SubstrateState; Resource + substrate;
                 SimulationStep + substrate fields; RestorationResult + substrate ceiling
-v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven,
-                PreventionAdvantageV06; Resource + discount;
-                SimulationStep + discount fields; RestorationResult + NPV
+v0.6 additions: DiscountConfig, ExtractionNPV, RestorationNPV, CarbonBreakeven;
+                Resource + discount; RestorationResult + NPV
 v0.7 additions: ScarcityFunction, AnchorPoint, PricingConfig, PriceResult;
                 Ecosystem + pricing; SimulationStep + price fields
+Step 3.7: DestroyThenRestorePenalty; RestorationResult.restoration_cost_ratio
+                (the three "prevention advantage" variants are gone)
+Step 3.8: CalibrationRegime; Ecosystem.calibration_regime
+Step 6.4: dead fields removed (never set or never read): RestorationConfig,
+                Agent.succession_curve, SubstrateProfile.water_availability_mm_yr
+                and water_clarity_kd, the SimulationStep discount fields,
+                RestorationResult.substrate_recovery_cost and extraction_npv
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, Tuple, Union
+from enum import Enum
+from typing import Any, Callable, Optional, Tuple, Union
+
+from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
 # Type alias for damage functions: depletion_ratio -> damage_ratio
 DamageFunc = Callable[[float], float]
 
 
 # ── v0.5: Physical Substrate models ───────────────────────────────────────────
+
+
+class SubstrateType(str, Enum):
+    """Valid values of ``SubstrateProfile.substrate_type``.
+
+    The type alone decides which state variable a profile tracks, in both
+    simulation engines:
+        TERRESTRIAL_SOIL — soil_depth_cm (erosion in t/ha/yr)
+        MARINE_SEDIMENT, MARINE_MATTE — sediment_stability (erosion in mm/yr)
+
+    A ``str`` subclass, so the plain strings used by existing profiles
+    compare equal to the members.
+    """
+
+    TERRESTRIAL_SOIL = "terrestrial_soil"
+    MARINE_SEDIMENT = "marine_sediment"
+    MARINE_MATTE = "marine_matte"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def is_terrestrial(self) -> bool:
+        return self is SubstrateType.TERRESTRIAL_SOIL
 
 
 @dataclass
@@ -40,10 +73,9 @@ class SubstrateProfile:
 
     Attributes:
         substrate_type: Type of substrate — "terrestrial_soil", "marine_sediment",
-            or "marine_matte".
+            or "marine_matte" (see SubstrateType). Terrestrial profiles must set
+            soil_depth_cm; marine profiles must set sediment_stability.
         soil_depth_cm: Terrestrial: productive soil depth in cm.
-        water_availability_mm_yr: Terrestrial: effective annual precipitation in mm/yr.
-        water_clarity_kd: Marine: diffuse attenuation coefficient in m^-1.
         sediment_stability: Marine: 0.0 (mobile) to 1.0 (rock/consolidated matte).
         erosion_rate_unprotected: Erosion rate when vegetation removed (t/ha/yr or mm/yr).
         erosion_rate_protected: Erosion rate under intact vegetation (t/ha/yr or mm/yr).
@@ -62,8 +94,6 @@ class SubstrateProfile:
 
     substrate_type: str
     soil_depth_cm: Optional[float] = None
-    water_availability_mm_yr: Optional[float] = None
-    water_clarity_kd: Optional[float] = None
     sediment_stability: Optional[float] = None
     erosion_rate_unprotected: float = 0.0
     erosion_rate_protected: float = 0.0
@@ -88,24 +118,18 @@ class SubstrateState:
     Attributes:
         profile: The SubstrateProfile defining physical properties and rates.
         current_soil_depth_cm: Current soil depth (terrestrial).
-        current_water_clarity_kd: Current water clarity (marine).
         current_sediment_stability: Current sediment stability (marine).
         pristine_soil_depth_cm: Original soil depth before any degradation.
-        pristine_water_clarity_kd: Original water clarity.
         pristine_sediment_stability: Original sediment stability.
         capacity_fraction: Derived carrying capacity as fraction of pristine (0.0 to 1.0).
-        years_to_recover: Estimated years for substrate to return to pristine.
     """
 
     profile: SubstrateProfile
     current_soil_depth_cm: Optional[float] = None
-    current_water_clarity_kd: Optional[float] = None
     current_sediment_stability: Optional[float] = None
     pristine_soil_depth_cm: Optional[float] = None
-    pristine_water_clarity_kd: Optional[float] = None
     pristine_sediment_stability: Optional[float] = None
     capacity_fraction: float = 1.0
-    years_to_recover: float = 0.0
 
 
 # ── v0.6: Discount & NPV models ────────────────────────────────────────────────
@@ -128,8 +152,12 @@ class DiscountConfig:
             If None, computed from Ramsey formula on init.
         scarcity_rate: Annual relative price change for ecosystem services (2%/yr).
         horizon_years: NPV analysis horizon in years (default 100).
-        carbon_price_current: Current carbon price in euros/tonne CO2.
-        carbon_price_growth: Annual real growth rate of carbon price.
+        carbon_price_current: Carbon price at year 0, € per tonne CO2. The
+            only carbon price in Gaia (decision D3). Default (None): the
+            social cost of carbon, gaia.carbon.SOCIAL_COST_OF_CARBON_EUR.
+        carbon_price_growth: Annual real growth rate of the carbon price.
+            Default (None): gaia.carbon.SCC_GROWTH_RATE, the EPA SCC
+            trajectory.
     """
 
     delta: float = 0.005
@@ -138,12 +166,21 @@ class DiscountConfig:
     rate_schedule: Union[float, list] = None  # type: ignore[assignment]
     scarcity_rate: float = 0.02
     horizon_years: int = 100
-    carbon_price_current: float = 80.0
-    carbon_price_growth: float = 0.03
+    carbon_price_current: float = None  # type: ignore[assignment]
+    carbon_price_growth: float = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.rate_schedule is None:
             object.__setattr__(self, 'rate_schedule', self.delta + self.eta * self.g)
+        if self.carbon_price_current is None or self.carbon_price_growth is None:
+            # Imported here: gaia.carbon imports this module.
+            from gaia.carbon import SCC_GROWTH_RATE, SOCIAL_COST_OF_CARBON_EUR
+            if self.carbon_price_current is None:
+                object.__setattr__(
+                    self, 'carbon_price_current', SOCIAL_COST_OF_CARBON_EUR
+                )
+            if self.carbon_price_growth is None:
+                object.__setattr__(self, 'carbon_price_growth', SCC_GROWTH_RATE)
 
     def rate_at_year(self, year: int) -> float:
         """Return the discount rate applicable at a given year."""
@@ -182,21 +219,35 @@ class DiscountConfig:
 class ExtractionNPV:
     """NPV of extraction externalities.
 
+    Carbon values come from gaia.carbon only (decision D3) and are priced
+    with the DiscountConfig's carbon price (default: social cost of carbon).
+
     Attributes:
         direct: NPV of direct ecosystem service loss.
-        carbon_release: NPV of carbon released at extraction.
-        carbon_foregone: NPV of future absorption capacity foregone.
-        substrate_damage: NPV of permanent substrate capacity loss.
-        total: Sum of all components.
+        carbon_release: Value of the carbon released at extraction (€, a
+            one-off stock at the year-0 carbon price).
+        carbon_foregone: PV of the absorption flow the extracted units no
+            longer provide, over the horizon.
+        substrate_unrecoverable: Part of ``direct`` that restoration could
+            never recover (substrate ceiling < 1). Informational: inside
+            ``direct``, not added to ``total`` (substrate model: substrate
+            reduces the restoration ceiling, never also a separate flow).
+        total: direct + carbon_release + carbon_foregone.
         horizon: Analysis horizon in years.
+        carbon_released_t: CO₂ released (t, a stock).
+        carbon_absorption_lost_t_yr: Absorption lost (t CO₂/yr, a flow).
+        carbon_price: Carbon price at year 0 (€/t CO₂).
     """
 
     direct: float
     carbon_release: float
     carbon_foregone: float
-    substrate_damage: float
+    substrate_unrecoverable: float
     total: float
     horizon: int
+    carbon_released_t: float = 0.0
+    carbon_absorption_lost_t_yr: float = 0.0
+    carbon_price: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -232,7 +283,8 @@ class CarbonBreakeven:
 
     Attributes:
         breakeven_price: Euro/tonne CO2 where restoration NPV = 0.
-        current_price: Current EU ETS price.
+        current_price: Carbon price at year 0 of the DiscountConfig (the
+            social cost of carbon by default, or the market/ETS view).
         gap_to_current: breakeven_price - current_price.
         profitable_at_current: True if breakeven <= current price.
         projected_breakeven_year: Year when rising carbon prices reach breakeven.
@@ -250,24 +302,56 @@ class CarbonBreakeven:
 
 
 @dataclass(frozen=True)
-class PreventionAdvantageV06:
-    """Enhanced prevention advantage with full NPV accounting.
+class DestroyThenRestorePenalty:
+    """What destroying k units and then restoring them costs society, over
+    not destroying them (€ PV at year 0, gaia.discount's year convention).
+
+    Each component is a difference between the two worlds that the
+    restoration does not undo; each is counted once (substrate damage only
+    lowers the restoration ceiling, Step 3.4):
+
+        restoration_cost: planting (year 0) + maintenance (years 1..N),
+            discounted (= RestorationNPV.cost).
+        maturation_gap: Σ_{t=1}^{H} (capped mature flow − delivered(t)),
+            the services not yet delivered while the replanted units
+            mature; delivered(t) = biological recovery × min(s(t), ceiling)
+            (= RestorationResult.maturation_gap_pv). Temporary.
+        substrate_loss: Σ_{t=1}^{H} biological recovery × (1 − ceiling),
+            the recovery the substrate ceiling never lets mature. Permanent.
+        recovery_shortfall: Σ_{t=1}^{H} (damage reversal − biological
+            recovery), the damage the recovery functions never reverse
+            (recovery efficiency < 1, e.g. partial replanting). Permanent.
+        carbon_not_recovered: the release valued at year 0, plus the PV of
+            the absorption not delivered, 1 − min(s(t), ceiling), years
+            1..H (gaia.carbon). The released stock itself is not modelled as
+            re-absorbed by regrowth, so the release is never recovered.
+
+    Service flows are discounted with the scarcity uplift like every
+    service stream; "biological recovery" is the restored flow at maturity
+    before the substrate cap and "damage reversal" the annual externality
+    the cut caused (RestorationResult.annual_damage_reversal).
 
     Attributes:
-        pa_simple: v0.2-style undiscounted PA.
-        pa_with_carbon: Including carbon externality NPV.
-        pa_with_substrate: Including permanent substrate loss NPV.
-        pa_full: All-inclusive NPV-based PA.
-        npv_prevention_cost: Foregone extraction revenue.
-        npv_restoration_total: Full cost of restore-after-extract.
+        restoration_cost, maturation_gap, substrate_loss, recovery_shortfall,
+            carbon_not_recovered: the components above (€ PV).
+        total: their sum (€ PV).
+        foregone_revenue: The present value of not cutting: the private
+            revenue the k units would have earned, k × unit_value, a
+            one-off amount at year 0 (so its own PV).
+        ratio: total / foregone_revenue — € PV of social cost per € of
+            revenue given up by not cutting. None when the revenue is 0.
+        horizon: Analysis horizon in years.
     """
 
-    pa_simple: float
-    pa_with_carbon: float
-    pa_with_substrate: float
-    pa_full: float
-    npv_prevention_cost: float
-    npv_restoration_total: float
+    restoration_cost: float
+    maturation_gap: float
+    substrate_loss: float
+    recovery_shortfall: float
+    carbon_not_recovered: float
+    total: float
+    foregone_revenue: float
+    ratio: Optional[float]
+    horizon: int
 
 
 # ── v0.7: Endogenous Pricing models ───────────────────────────────────────────
@@ -302,7 +386,10 @@ class AnchorPoint:
 
     Attributes:
         agent_name: Name of the agent this anchors.
-        anchor_value: Euro-value at pristine health (annual flow value).
+        anchor_value: €/yr value of the agent's service at pristine health
+            for the whole resource (an annual flow). Case files state anchors
+            for a reference area and scale them with Resource.area_ha
+            (gaia.pricing.scale_anchors).
         source: Data source description.
         confidence: "high", "medium", or "low".
         description: Calculation explanation.
@@ -317,15 +404,20 @@ class AnchorPoint:
 
 @dataclass
 class PricingConfig:
-    """Top-level configuration for endogenous pricing.
+    """Top-level configuration for endogenous pricing (EXPERIMENTAL, D4).
+
+    There is no fallback: a state whose price system cannot be certified
+    convergent raises gaia.pricing.PricingConvergenceError (C8).
 
     Attributes:
-        anchors: At least one AnchorPoint required.
+        anchors: One AnchorPoint per agent at least: every agent must be
+            anchored (validated).
         scarcity_functions: Per-agent scarcity functions, keyed by agent name.
         default_scarcity: Fallback for agents without explicit scarcity function.
-        convergence_tolerance: For iterative solver (default 1e-6).
-        max_iterations: Cap on iterative solve (default 100).
-        fallback_to_static: If True, use monetary_rate when solve fails.
+        convergence_tolerance: Maximum residual of the price solve, relative
+            to max(S·A) (default 1e-6).
+        max_iterations: Cap on the direct iterations used to certify
+            convergence when the row/column sum bound is >= 1 (default 100).
     """
 
     anchors: list              # List[AnchorPoint]
@@ -335,29 +427,32 @@ class PricingConfig:
     )
     convergence_tolerance: float = 1e-6
     max_iterations: int = 100
-    fallback_to_static: bool = True
 
 
 @dataclass
 class PriceResult:
     """Output of the price solver at a given ecosystem state.
 
+    A PriceResult exists only for a certified convergent state: the solver
+    raises instead of returning an unconverged result.
+
     Attributes:
-        prices: Computed price per agent (Dict[str, float]).
+        prices: Computed price per agent, €/yr (Dict[str, float]).
         scarcity_multipliers: scarcity(health) per agent.
         demand_multipliers: Network centrality contribution per agent.
         anchor_contributions: How much of price comes from anchor vs network.
-        spectral_radius: Spectral radius of S*W — must be < 1.0 for convergence.
-        converged: Whether the solve converged.
-        iterations: Number of iterations (if iterative solver used).
+        spectral_radius_bound: Guaranteed upper bound on ρ(S·W), < 1.
+        convergence_check: How convergence was proven: "norm_bound"
+            (row/column sums) or "direct_iteration" (Collatz–Wielandt).
+        iterations: Direct iterations used (0 for "norm_bound").
     """
 
     prices: dict              # Dict[str, float]
     scarcity_multipliers: dict
     demand_multipliers: dict
     anchor_contributions: dict
-    spectral_radius: float
-    converged: bool
+    spectral_radius_bound: float
+    convergence_check: str
     iterations: int = 0
 
 
@@ -391,21 +486,23 @@ class SuccessionCurve:
 
 @dataclass
 class CarbonProfile:
-    """Carbon accounting parameters for a resource unit.
+    """Physical carbon parameters for a resource unit (tonnes only).
+
+    The carbon price is not part of the profile: it lives in DiscountConfig
+    (carbon_price_current, carbon_price_growth), so that gaia.carbon values
+    every tonne at one price (decision D3).
 
     Attributes:
         stored_carbon_tonnes: Tonnes CO₂ stored per unit (tree or hectare).
         annual_absorption_tonnes: Tonnes CO₂ absorbed per unit per year at climax.
         soil_carbon_tonnes: Tonnes CO₂ stored in soil beneath each unit.
         soil_release_fraction: Fraction of soil carbon released on extraction (0.0–1.0).
-        carbon_price_per_tonne: € per tonne CO₂ (default: EU ETS price).
     """
 
     stored_carbon_tonnes: float
     annual_absorption_tonnes: float
     soil_carbon_tonnes: float
     soil_release_fraction: float
-    carbon_price_per_tonne: float
 
 
 @dataclass
@@ -442,8 +539,9 @@ class MaturationStep:
         year: Year since restoration began.
         succession_phase: "delay", "pioneer", "intermediate", or "climax".
         service_fraction: 0.0 to 1.0 — fraction of max recovered services delivered.
-        annual_service_value: € — actual service value delivered this year.
-        cumulative_service_value: € — total services from year 0 to this year.
+        annual_service_value: €/yr — service value delivered this year (a flow).
+        cumulative_service_value: € — undiscounted sum of annual_service_value
+            from year 1 to this year.
         annual_carbon_absorbed: Tonnes CO₂ absorbed this year.
         cumulative_carbon_absorbed: Tonnes CO₂ total absorbed so far.
     """
@@ -455,25 +553,6 @@ class MaturationStep:
     cumulative_service_value: float
     annual_carbon_absorbed: float
     cumulative_carbon_absorbed: float
-
-
-@dataclass
-class RestorationConfig:
-    """Configuration for time-aware restoration simulation.
-
-    Attributes:
-        units_to_restore: Number of units to replant.
-        planting_schedule: "immediate" or "phased".
-        planting_years: If phased, how many years to spread planting over.
-        time_horizon_years: How many years to simulate post-restoration.
-        succession_curve: Ecosystem-level default succession curve.
-    """
-
-    units_to_restore: int
-    planting_schedule: str
-    planting_years: int
-    time_horizon_years: int
-    succession_curve: SuccessionCurve
 
 
 # ── Core models ────────────────────────────────────────────────────────────────
@@ -490,17 +569,21 @@ class Resource:
         safe_threshold_ratio: Fraction of total_units that can be safely extracted
                               before damage accelerates sharply. Must be in (0.0, 1.0).
         unit_value: Revenue per unit extracted, in euros. e.g. 100.0 €/tree.
+        area_ha: Area the resource covers, in hectares (finite, > 0). Agent
+            values are €/ha/yr and are scaled by this area (decision D2).
         carbon_profile: Optional carbon accounting parameters (v0.4).
         resilience: Optional resilience zone configuration (v0.4).
 
     Derived:
         safe_threshold_units: Absolute number of units at the safe threshold.
+        units_per_ha: total_units / area_ha.
     """
 
     name: str
     total_units: int
     safe_threshold_ratio: float
     unit_value: float
+    area_ha: float
 
     # v0.4: Carbon and resilience (None → no carbon/resilience accounting)
     carbon_profile: Optional[CarbonProfile] = None
@@ -517,37 +600,57 @@ class Resource:
         """Absolute number of units that can be extracted at the safe threshold."""
         return int(self.total_units * self.safe_threshold_ratio)
 
+    @property
+    def units_per_ha(self) -> float:
+        """Resource units per hectare (e.g. trees/ha)."""
+        return self.total_units / self.area_ha
+
 
 @dataclass
 class Agent:
     """
     An entity that depends on the resource and suffers when it is depleted.
 
-    Monetary cost at depletion level d:
-        cost = damage_function(d) * dependency_weight * monetary_rate
+    Annual service value lost at depletion level d (a yearly FLOW, €/yr):
+        annual_cost = damage_function(d) * dependency_weight
+                      * annual_value_per_ha * resource.area_ha
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
         dependency_weight: This agent's share of total ecosystem damage. Must be in (0, 1].
                            All agents in an ecosystem must sum to 1.0.
         damage_function: Callable (depletion_ratio: float) -> damage_ratio: float
-        monetary_rate: Total monetary cost (€) at maximum damage (damage_ratio = 1.0).
+        annual_value_per_ha: € per hectare per year of service lost at full
+            damage (damage_ratio = 1.0) — decisions D1 (a yearly flow, never a
+            one-off total) and D2 (scaled by Resource.area_ha, so results do
+            not depend on how finely the resource is divided into units).
         description: Short description of what damage means for this agent.
     """
 
     name: str
     dependency_weight: float
     damage_function: DamageFunc
-    monetary_rate: float
+    annual_value_per_ha: float
     description: str
 
     # v0.3: Trophic cascade fields (defaults preserve v0.1/v0.2 behavior)
     trophic_level: int = -1             # -1=abiotic, 0=producer, 1-3=consumers
     is_keystone: bool = False           # if True, collapse amplifies outgoing edges
-    keystone_threshold: float = 0.3     # health below this triggers keystone cascade
+    keystone_threshold: float = DEFAULT_KEYSTONE_THRESHOLD  # health below this triggers keystone cascade
 
-    # v0.4: Agent-specific succession curve (None → use ecosystem default)
-    succession_curve: Optional[SuccessionCurve] = None
+    def annual_value(self, area_ha: float) -> float:
+        """€/yr of service lost at full damage over ``area_ha`` hectares."""
+        return self.annual_value_per_ha * area_ha
+
+    @property
+    def monetary_rate(self) -> float:
+        """Removed: the field was a one-off total in some places and a yearly
+        flow in others, for the whole resource. Raises instead of guessing."""
+        raise AttributeError(
+            "Agent.monetary_rate was removed: use Agent.annual_value_per_ha "
+            "(€ per hectare per year of service lost at full damage), "
+            "scaled by Resource.area_ha."
+        )
 
 
 @dataclass
@@ -573,6 +676,31 @@ class InteractionEdge:
     description: str
 
 
+class CalibrationRegime(str, Enum):
+    """What an ecosystem's damage curves represent, and so what its
+    interaction edges may add (PROJECT_DEFINITION.md, "Critical Modelling
+    Assumption: Damage Function Calibration Regime").
+
+    EMPIRICAL ("A") — damage curves fitted to field observations of total
+        impact, which already embed every indirect pathway. Cascading on top
+        would double count, so validation allows only keystone (regime-shift)
+        edges from keystone agents.
+    DIRECT_ONLY ("B") — damage curves describe each agent's direct
+        dependency on the resource only (first-principles, lab-derived, or
+        assumed shapes not fitted to field data); interaction edges add the
+        indirect part. Single-pass propagation makes the result a structural
+        lower bound for chains longer than one hop.
+
+    A ``str`` subclass serialized as its value ("A" or "B").
+    """
+
+    EMPIRICAL = "A"
+    DIRECT_ONLY = "B"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass
 class Ecosystem:
     """
@@ -583,6 +711,14 @@ class Ecosystem:
         resource: The shared natural asset.
         agents: List of Agent instances dependent on the resource.
                 Typed as list (not List[Agent]) for Cython compatibility.
+        interactions: InteractionEdge list (v0.3).
+        pricing: Optional endogenous pricing config (v0.7).
+        calibration_regime: What the damage curves represent (Step 3.8).
+            Required when there are interaction edges, since it decides
+            whether cascades double count; None only without edges.
+        provenance: gaia.provenance.Param list, the source and confidence
+            of each parameter the case set (Step 5). Never read by the
+            engines; every result reports it in ``calibration``.
     """
 
     name: str
@@ -592,8 +728,14 @@ class Ecosystem:
     # v0.3: Agent interaction edges (empty list preserves v0.1/v0.2 behavior)
     interactions: list = field(default_factory=list)  # List[InteractionEdge]
 
-    # v0.7: Endogenous pricing (None → use static monetary_rate, backward compatible)
+    # v0.7: Endogenous pricing (None → use static Agent annual values)
     pricing: Optional[PricingConfig] = None
+
+    # Step 3.8: Option A / B of the calibration-regime rule
+    calibration_regime: Optional[CalibrationRegime] = None
+
+    # Step 5: parameter provenance (List[gaia.provenance.Param])
+    provenance: list = field(default_factory=list)
 
 
 @dataclass
@@ -601,15 +743,19 @@ class SimulationStep:
     """
     The state of the simulation at one point in time (after extracting N units total).
 
+    Monetary units: externality fields are yearly flows (€/yr) of service
+    lost at this depletion level; revenue is a one-off amount (€).
+
     Attributes:
         step: Which extraction step this is (1-indexed).
         units_extracted: Cumulative units extracted so far (equals step).
         depletion_ratio: units_extracted / total_units.
         agent_damages: Damage ratio per agent at this depletion level (0.0 to 1.0).
-        agent_costs: Total € cost per agent at this depletion level.
-        marginal_cost: Externality cost of THIS unit only (total cost minus previous total).
-        cumulative_cost: Total externality cost at this depletion level.
-        private_revenue: Cumulative revenue from extraction so far.
+        agent_annual_costs: €/yr of service lost per agent at this depletion level.
+        marginal_annual_externality: €/yr added by THIS unit only
+            (annual_externality minus the previous step's).
+        annual_externality: €/yr of service lost at this depletion level.
+        revenue: Cumulative one-off private revenue so far (€).
         ecosystem_health: Weighted average health index (0.0 = collapsed, 1.0 = pristine).
     """
 
@@ -617,10 +763,10 @@ class SimulationStep:
     units_extracted: int
     depletion_ratio: float
     agent_damages: list   # List[float] — effective (post-propagation) damage ratios
-    agent_costs: list     # List[float]
-    marginal_cost: float
-    cumulative_cost: float
-    private_revenue: float
+    agent_annual_costs: list     # List[float] — €/yr
+    marginal_annual_externality: float
+    annual_externality: float
+    revenue: float
     ecosystem_health: float
 
     # v0.3: Cascade breakdown fields (empty lists preserve v0.1/v0.2 behavior)
@@ -638,11 +784,6 @@ class SimulationStep:
     effective_k: int = 0                      # Current effective carrying capacity
     k_fraction: float = 1.0                   # effective_k / total_units
 
-    # v0.6: Discount fields (defaults preserve v0.5 behavior)
-    discount_factor_at_step: float = 1.0      # Discount factor at this step's time
-    npv_externality: float = 0.0              # Externality * discount_factor
-    carbon_price_used: float = 0.0            # Carbon price at this step's year
-
     # v0.7: Endogenous pricing fields (defaults preserve v0.6 behavior)
     agent_prices: list = field(default_factory=list)  # Per-agent dynamic price
     price_result: Optional[PriceResult] = None        # Full price decomposition
@@ -653,27 +794,74 @@ class SimulationResult:
     """
     The complete output of a simulation run.
 
+    Flows and stocks are kept apart (decision D1): the annual externality is
+    a yearly flow, revenue is one-off, and the two are only ever compared
+    through the present value of the flow.
+
     Attributes:
         ecosystem: The ecosystem that was simulated.
         steps: All SimulationStep records produced during the run.
         total_units_extracted: How many units were extracted.
-        total_private_revenue: Sum of all unit revenues.
-        total_externality_cost: Total externality cost at the final depletion level.
-        net_social_cost: total_private_revenue - total_externality_cost.
-                         Positive = society gained; negative = society lost.
+        revenue: One-off private revenue from all extracted units (€).
+        annual_externality: Ecosystem service value lost per year at the
+            final depletion level (€/yr, a flow). Excludes carbon, which is
+            valued separately in extraction_npv.
+        pv_externality: Present value of every externality stream at year 0
+            (€ PV, a stock) = extraction_npv.total: the annual service loss
+            (permanent over the horizon, so substrate damage adds nothing to
+            it), carbon released and absorption foregone.
+        net_social_cost: pv_externality - revenue (€ PV). Positive = society
+            loses more than the extractor gains.
         final_ecosystem_health: Ecosystem health at the end of the simulation.
+        extraction_npv: Breakdown of pv_externality. Uses the resource's
+            DiscountConfig, or gaia.discount.DEFAULT_DISCOUNT if it has none.
+        discount_is_default: True when DEFAULT_DISCOUNT was used.
+        pv_externality_by_horizon: pv_externality recomputed at each of
+            gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV}; None
+            for a horizon at which the DiscountConfig fails validation.
+        discount: The DiscountConfig every present value used (the
+            resource's, or DEFAULT_DISCOUNT).
+        agent_direct_annual_costs: Per agent, the part of the final annual
+            cost (€/yr) due to its direct (trophically amplified) damage,
+            at the rate actually used (static value or endogenous price).
+        agent_cascade_annual_costs: Per agent, the part due to interaction
+            cascades (€/yr); direct + cascade = agent_annual_costs.
+        agent_trophic_amplification: Per agent, the trophic amplification
+            factor applied to its direct damage (1.0 below level 1).
+        annual_externality_band: HEURISTIC band (low, high) in €/yr,
+            annual_externality × (1 ± (1 − final model confidence)) — not
+            a statistical interval (gaia.resilience.compute_confidence_band;
+            Monte Carlo pending). None without a ResilienceConfig or at
+            full confidence.
+        final_model_confidence: Model confidence at the final step (1.0
+            without steps or resilience config).
+        substrate_recovery_years: Years for the substrate the extraction
+            ended in to return to pristine (gaia.substrate, from the actual
+            soil depth / sediment state, whatever the capacity function);
+            inf when it never recovers; None without a substrate profile.
+        calibration: gaia.provenance.CalibrationStatus of the run — the
+            source and confidence of every recorded parameter (Step 5).
     """
 
     ecosystem: Ecosystem
     steps: list               # List[SimulationStep]
     total_units_extracted: int
-    total_private_revenue: float
-    total_externality_cost: float
+    revenue: float
+    annual_externality: float
+    pv_externality: float
     net_social_cost: float
     final_ecosystem_health: float
-
-    # v0.6: NPV of extraction externalities (None → no NPV, backward compatible)
     extraction_npv: Optional[ExtractionNPV] = None
+    discount_is_default: bool = False
+    pv_externality_by_horizon: dict = field(default_factory=dict)
+    discount: Optional[DiscountConfig] = None
+    agent_direct_annual_costs: list = field(default_factory=list)   # List[float], €/yr
+    agent_cascade_annual_costs: list = field(default_factory=list)  # List[float], €/yr
+    agent_trophic_amplification: list = field(default_factory=list)  # List[float]
+    annual_externality_band: Optional[Tuple[float, float]] = None
+    final_model_confidence: float = 1.0
+    substrate_recovery_years: Optional[float] = None
+    calibration: Optional[Any] = None  # gaia.provenance.CalibrationStatus
 
 
 # ── v0.2: Restoration models ───────────────────────────────────────────────────
@@ -724,24 +912,31 @@ class RestorationStep:
     The state of the restoration simulation at one point in time
     (after replanting N units total).
 
-    Mirrors SimulationStep but for the restoration direction.
+    Mirrors SimulationStep but for the restoration direction. Service
+    values are at maturity; gaia.succession spreads them over time.
 
     Attributes:
         step: Which restoration step this is (1-indexed).
         units_restored: Cumulative units replanted so far (equals step).
-        recovery_ratio: units_restored / total_units_destroyed.
-            Represents the fraction of the damage that has been addressed.
-        agent_recoveries: Recovered service ratio per agent (0.0 to 1.0).
-        agent_service_values: Recovered € service value per agent.
-        marginal_service_value: Value recovered by THIS unit only.
-        cumulative_service_value: Total recovered service value at this point.
-        restoration_cost_so_far: Total restoration cost incurred so far (€).
-        ecosystem_health: Weighted health recovery index (0.0 to 1.0).
+        recovery_ratio: units_restored / units missing at the start: the
+            fraction of the lost units replanted, which the recovery
+            functions map to a recovery efficiency.
+        depletion_ratio: Depletion once these units have matured,
+            (units missing − units_restored) / total_units.
+        agent_recoveries: Fraction of each agent's full service value
+            recovered (0.0 to 1.0): efficiency × damage reversal.
+        agent_service_values: Recovered service per agent (€/yr, a flow).
+        marginal_service_value: €/yr recovered by THIS unit only.
+        cumulative_service_value: Total recovered service at this point (€/yr).
+        restoration_cost_so_far: Total restoration cost incurred so far (€, one-off).
+        ecosystem_health: Ecosystem health at maturity (0.0 to 1.0), on the
+            same scale as the extraction's health.
     """
 
     step: int
     units_restored: int
     recovery_ratio: float
+    depletion_ratio: float
     agent_recoveries: list    # List[float]
     agent_service_values: list  # List[float]
     marginal_service_value: float
@@ -760,22 +955,44 @@ class RestorationResult:
         restoration_cost: The RestorationCost parameters used.
         steps: All RestorationStep records.
         total_units_restored: How many units were replanted.
-        total_restoration_cost: Total direct cost of restoration (€).
-        total_recovered_value: Total ecosystem service value recovered (€).
-        net_restoration_value: total_recovered_value - total_restoration_cost.
-            Positive = restoration generates net social value.
-        prevention_advantage: How many times cheaper prevention is vs.
-            destruction + restoration. Computed as:
-            (foregone_revenue + total_restoration_cost) / foregone_revenue
-            A ratio > 1.0 means restoration costs more than prevention.
-            [NOTE: this is a simplified ratio without time-discounting.
-             Full NPV analysis is a v0.6 feature.]
+        total_restoration_cost: Total direct cost of restoration (€, one-off,
+            undiscounted planting + maintenance).
+        annual_recovered_value: Ecosystem service value recovered per year
+            at full maturity (€/yr, a flow): the recovery efficiency times
+            annual_damage_reversal, so never more than it.
+        net_restoration_pv: restoration_npv.net_present_value (€ PV):
+            PV of recovered services and carbon minus PV of restoration costs.
+        net_restoration_pv_by_horizon: net_restoration_pv recomputed at each
+            of gaia.discount.SENSITIVITY_HORIZONS, {horizon_years: € PV};
+            None for a horizon at which the DiscountConfig fails validation.
+        restoration_cost_ratio: (foregone_revenue + total_restoration_cost)
+            / foregone_revenue = 1 + restoration cost per unit / unit_value:
+            a ratio of two input prices, with no ecology and no
+            externality in it. None when the foregone revenue is 0.
         final_ecosystem_health: Ecosystem health after all restoration.
         maturation_timeline: Year-by-year service recovery (v0.4, empty if no succession).
         years_to_pioneer: Years until services first become non-zero (v0.4).
         years_to_50pct: Years until 50% of recoverable services are delivered (v0.4).
         years_to_90pct: Years until 90% of recoverable services are delivered (v0.4).
-        total_maturation_gap: € accumulated externality during maturation (v0.4).
+        maturation_gap_pv: Present value (€ PV) of the services not yet
+            delivered while the restored units mature, over the
+            DiscountConfig horizon (0 without a succession curve).
+        restoration_npv / carbon_breakeven / destroy_then_restore_penalty:
+            use the resource's DiscountConfig, or
+            gaia.discount.DEFAULT_DISCOUNT.
+        destroy_then_restore_penalty: PV cost of destroying the restored
+            units and restoring them, over not destroying them, in € and
+            relative to the foregone revenue (DestroyThenRestorePenalty).
+        units_lost: Units missing at the start (extracted from the pristine
+            resource by the starting state).
+        depletion_before: units_lost / total_units.
+        depletion_after: (units_lost − total_units_restored) / total_units.
+        initial_ecosystem_health: Ecosystem health of the starting state.
+        annual_damage_reversal: Annual externality at depletion_before minus
+            annual externality at depletion_after, with the extraction's
+            damage and propagation model at static agent values (€/yr, a
+            flow): the most restoration could recover (Foundation #2).
+        calibration: gaia.provenance.CalibrationStatus of the run (Step 5).
     """
 
     ecosystem: Ecosystem
@@ -783,9 +1000,9 @@ class RestorationResult:
     steps: list                  # List[RestorationStep]
     total_units_restored: int
     total_restoration_cost: float
-    total_recovered_value: float
-    net_restoration_value: float
-    prevention_advantage: float
+    annual_recovered_value: float
+    net_restoration_pv: float
+    restoration_cost_ratio: Optional[float]
     final_ecosystem_health: float
 
     # v0.4: Maturation timeline fields (defaults preserve v0.3 behavior)
@@ -793,16 +1010,26 @@ class RestorationResult:
     years_to_pioneer: float = 0.0
     years_to_50pct: float = 0.0
     years_to_90pct: float = 0.0
-    total_maturation_gap: float = 0.0
+    maturation_gap_pv: float = 0.0
 
     # v0.5: Substrate-constrained restoration fields (defaults preserve v0.4 behavior)
     substrate_ceiling: float = 1.0              # Max recoverable fraction (K_current/K_pristine)
     substrate_recovery_years: float = 0.0       # Years for substrate to return to pristine
-    substrate_recovery_cost: float = 0.0        # Cost of substrate stabilization
-    prevention_advantage_with_substrate: float = 0.0  # PA including permanent capacity loss
 
     # v0.6: NPV and carbon breakeven (defaults preserve v0.5 behavior)
-    extraction_npv: Optional[ExtractionNPV] = None
     restoration_npv: Optional[RestorationNPV] = None
     carbon_breakeven: Optional[CarbonBreakeven] = None
-    prevention_advantage_v06: Optional[PreventionAdvantageV06] = None
+    destroy_then_restore_penalty: Optional[DestroyThenRestorePenalty] = None
+
+    # Step 3.3: the starting state the restoration begins from
+    units_lost: int = 0
+    depletion_before: float = 0.0
+    depletion_after: float = 0.0
+    initial_ecosystem_health: float = 1.0
+    annual_damage_reversal: float = 0.0
+
+    # Step 3.6: horizon sensitivity of the headline PV
+    net_restoration_pv_by_horizon: dict = field(default_factory=dict)
+
+    # Step 5: gaia.provenance.CalibrationStatus of the run
+    calibration: Optional[Any] = None

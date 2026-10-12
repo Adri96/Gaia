@@ -1,5 +1,13 @@
 # Gaia v0.5 — Specification: Physical Substrate & Derived Carrying Capacity
 
+> **Superseded in part by the 2026-10 audit fixes** (note added 2026-10-11; the specification below is kept as written). What no longer holds:
+>
+> - The t/ha → mm erosion conversion was 10× too small (`2a389c3`).
+> - Substrate damage now only reduces the restoration ceiling and is counted once. There is no separate permanent annuity in the extraction PV, and `prevention_advantage_with_substrate` is gone, replaced by the destroy-then-restore penalty (`c429a9c`, `f9f3c65`).
+> - The restoration substrate state is replayed from the starting extraction, not from one assumed year of bare ground (`9037b8a`). `water_availability_mm_yr` and `water_clarity_kd` were removed (never used) (`3867e7b`). Substrate types are validated, and marine matte runs in the Cython loop (`6d0baa1`).
+>
+> See `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`.
+
 ## Overview
 
 v0.5 is the version where **the ground becomes real**. In v0.1–v0.4, carrying capacity (K) is a fixed number: 10,000 trees, 1,000 hectares. It doesn't change, degrade, or constrain what the ecosystem can become. But in reality, carrying capacity is not a constant — it is an emergent property of the physical substrate. Soil depth determines how many trees a hillside can support. Water clarity determines how deep Posidonia can grow. Rainfall determines whether a Mediterranean forest can exist at all.

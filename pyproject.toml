@@ -1,0 +1,91 @@
+# Gaia — packaging, lint, type-check and test configuration.
+#
+# Cython is OPTIONAL. A plain build (`pip install .`) needs only setuptools
+# and installs the pure-Python engine. To build the compiled extraction loop,
+# install Cython first and build without isolation:
+#
+#     pip install "Cython>=3.0"
+#     pip install --no-build-isolation -e .        # or:
+#     python3 setup.py build_ext --inplace
+#
+# setup.py embeds the SHA-256 of gaia/cy/simulation_cy.pyx in the compiled
+# module; gaia.simulation falls back to the Python loop (with a warning) when
+# the build is stale.
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gaia"
+dynamic = ["version"]   # read from gaia/__init__.py by setup.py
+description = "Gaia — Externality Computation Framework"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Adrià Munuera", email = "adriamunuera@me.com" }]
+requires-python = ">=3.9"
+dependencies = []        # stdlib only at runtime
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+speedups = ["Cython>=3.0"]
+dev = ["pytest>=7", "ruff==0.17.0", "mypy==1.20.2"]  # mypy 2.x cannot target 3.9
+
+[project.scripts]
+gaia = "gaia.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["gaia*"]
+
+[tool.setuptools.package-data]
+gaia = ["cy/*.pyx", "cases/definitions/*.md"]
+
+# ── Ruff ──────────────────────────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+extend-exclude = ["build", "version_specs"]
+
+[tool.ruff.lint]
+# pycodestyle errors/warnings, pyflakes, bugbear
+select = ["E", "W", "F", "B"]
+ignore = [
+    "E501",   # long lines: report tables and parameter docs are kept readable
+    "B905",   # zip(strict=) needs Python 3.10
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]      # assert False in tests is intentional
+"scripts/*" = ["E402"]    # sys.path set up before imports
+
+# ── mypy ──────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.9"
+files = ["gaia"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["gaia.cy.simulation_cy"]
+ignore_missing_imports = true
+
+# ── pytest ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# --strict-markers: an unregistered (misspelt) marker is an error. The suite
+# uses only built-in markers (parametrize, skipif, xfail) so none is declared.
+addopts = "-ra --strict-markers --strict-config"
+# CalibrationWarning stays on for CLI users but is noise in the suite (every
+# shipped case triggers it, by design: Step 3.8). Tests that assert it use
+# pytest.warns / simplefilter, which override this filter.
+filterwarnings = [
+    "ignore::gaia.validation.CalibrationWarning",
+]

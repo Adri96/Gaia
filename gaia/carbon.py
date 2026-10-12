@@ -1,29 +1,110 @@
 """
-Gaia v0.4 — Carbon accounting module.
+Gaia — Carbon accounting: the single owner of carbon value (decision D3).
 
 Implements the double carbon externality (Foundation F9):
-    1. Release cost: CO₂ stored in biomass and soil is released on extraction
-    2. Absorption cost: future CO₂ absorption capacity is permanently lost
+    1. Release: CO₂ stored in biomass and soil is released on extraction —
+       a one-off stock, valued at the carbon price of the year of release.
+    2. Foregone absorption: the absorption capacity of the extracted units
+       is lost — an annual flow, valued year by year at the (growing)
+       carbon price and discounted to a present value.
 
-Also computes carbon absorption during the maturation timeline and
-the carbon payback period (years of restored absorption to recapture
-the released carbon).
+No agent rate and no pricing anchor may contain carbon: every euro of
+carbon value in Gaia's present values comes from this module.
 
-All functions use primitive types for Cython compatibility.
+Carbon price. The default is the social cost of carbon (SCC), not a market
+price: an externality tool values the damage a tonne of CO₂ does, not what
+an emission allowance trades at. The EU ETS price survives only as an
+optional, clearly labelled "market/ETS" view (``with_carbon_price_view``).
+
+Also computes carbon absorption during the maturation timeline and the
+carbon payback period (years of restored absorption to recapture the
+released carbon).
+
 No third-party dependencies.
 
 Scientific foundations used: F9 (Nutrient Cycles & Carbon Cycle).
 """
 
-from gaia.models import CarbonProfile, SuccessionCurve
+import dataclasses
+from typing import Optional
+
+from gaia.models import CarbonProfile, DiscountConfig, SuccessionCurve
 from gaia.succession import succession_service
+
+
+# ── Carbon price ─────────────────────────────────────────────────────────────
+
+SCC_USD_2020_PER_T: float = 190.0
+"""US EPA (2023) central social cost of CO₂ for emissions in 2020: $190/tCO₂
+in 2020 dollars, at the 2.0% near-term Ramsey discount rate. EPA, "Report on
+the Social Cost of Greenhouse Gases: Estimates Incorporating Recent
+Scientific Advances" (Nov 2023), Table ES.1; Rennert et al. (2022), Nature
+610:687-692. EPA's own trajectory puts emissions in 2026 at ~$215; the
+headline 2020 value is used as the year-0 price (a conservative anchor)."""
+
+USD_PER_EUR_2020: float = 1.1422
+"""ECB euro foreign exchange reference rate, US dollar, 2020 annual average
+(USD per EUR). Converts the 2020-dollar SCC into 2020 euros."""
+
+SOCIAL_COST_OF_CARBON_EUR: float = SCC_USD_2020_PER_T / USD_PER_EUR_2020
+"""Default carbon price, € (2020) per tonne CO₂: $190 / 1.1422 ≈ €166.35."""
+
+SCC_GROWTH_RATE: float = 0.013
+"""Real annual growth of the SCC, from the same EPA table (2.0% column):
+$190 for 2020 emissions → $410 for 2080 emissions, (410/190)^(1/60) − 1 =
+1.29%/yr. The trajectory decelerates (1.6%/yr over 2020-2050, 1.2%/yr over
+2030-2080); the 60-year average is used. It is below the discount rate of
+every built-in DiscountConfig (lowest: 1.4%), so carbon present values
+converge as the horizon grows."""
+
+ETS_CARBON_PRICE_EUR: float = 80.0
+"""Market/ETS view only: EU Emissions Trading System allowance price,
+~€80/tCO₂ (2023-2024 average order of magnitude). A private, market price —
+never the default for valuing an externality."""
+
+CARBON_PRICE_VIEWS: tuple = ("scc", "ets")
+"""Names accepted by with_carbon_price_view (and the --carbon-price flag)."""
+
+
+def with_carbon_price_view(discount: DiscountConfig, view: str) -> DiscountConfig:
+    """Return ``discount`` with the carbon price of the named view.
+
+    ``"scc"`` (default view): the social cost of carbon,
+    SOCIAL_COST_OF_CARBON_EUR. ``"ets"``: the market/ETS view,
+    ETS_CARBON_PRICE_EUR. Only the year-0 price changes; the growth rate of
+    ``discount`` is kept, so the two views differ only in level.
+
+    Raises:
+        ValueError: If ``view`` is not one of CARBON_PRICE_VIEWS.
+    """
+    if view == "scc":
+        price: float = SOCIAL_COST_OF_CARBON_EUR
+    elif view == "ets":
+        price = ETS_CARBON_PRICE_EUR
+    else:
+        raise ValueError(
+            f"carbon price view must be one of {CARBON_PRICE_VIEWS}, got {view!r}"
+        )
+    return dataclasses.replace(discount, carbon_price_current=price)
+
+
+def carbon_price_label(discount: DiscountConfig) -> str:
+    """Name of the carbon price a DiscountConfig uses, for reports."""
+    if discount.carbon_price_current == SOCIAL_COST_OF_CARBON_EUR:
+        return "social cost of carbon, US EPA 2023"
+    if discount.carbon_price_current == ETS_CARBON_PRICE_EUR:
+        return "market/ETS view, not a social cost"
+    return "user-supplied"
+
+
+# ── Physical quantities (tonnes CO₂) ─────────────────────────────────────────
 
 
 def compute_carbon_release(
     profile: CarbonProfile,
     units_extracted: int,
 ) -> float:
-    """Compute total CO₂ released from extracting resources.
+    """Compute total CO₂ released from extracting resources (a stock).
 
     release = units × (stored_carbon + soil_carbon × soil_release_fraction)
 
@@ -39,72 +120,6 @@ def compute_carbon_release(
         + profile.soil_carbon_tonnes * profile.soil_release_fraction
     )
     return per_unit * units_extracted
-
-
-def compute_absorption_foregone(
-    profile: CarbonProfile,
-    units_extracted: int,
-    remaining_years: float,
-) -> float:
-    """Compute total CO₂ absorption capacity lost.
-
-    foregone = units × annual_absorption × remaining_years
-
-    Args:
-        profile: CarbonProfile for the resource.
-        units_extracted: Number of units extracted.
-        remaining_years: Estimated productive years remaining for each unit.
-
-    Returns:
-        Total tonnes CO₂ absorption foregone.
-    """
-    return (
-        profile.annual_absorption_tonnes
-        * units_extracted
-        * remaining_years
-    )
-
-
-def compute_carbon_cost(
-    profile: CarbonProfile,
-    units_extracted: int,
-    remaining_years: float,
-) -> dict:
-    """Compute the monetized double carbon externality.
-
-    Returns a breakdown dict with:
-        - release_tonnes: CO₂ released (biomass + soil)
-        - foregone_tonnes_per_year: CO₂ absorption lost per year
-        - foregone_total_tonnes: total foregone over remaining_years
-        - release_cost: € cost of released CO₂
-        - foregone_cost_per_year: € annual cost of foregone absorption
-        - total_cost: € total carbon externality
-
-    Args:
-        profile: CarbonProfile for the resource.
-        units_extracted: Number of units extracted.
-        remaining_years: Estimated productive years remaining.
-
-    Returns:
-        Dict with carbon cost breakdown.
-    """
-    release: float = compute_carbon_release(profile, units_extracted)
-    foregone_per_year: float = profile.annual_absorption_tonnes * units_extracted
-    foregone_total: float = compute_absorption_foregone(
-        profile, units_extracted, remaining_years
-    )
-
-    release_cost: float = release * profile.carbon_price_per_tonne
-    foregone_cost_per_year: float = foregone_per_year * profile.carbon_price_per_tonne
-
-    return {
-        "release_tonnes": release,
-        "foregone_tonnes_per_year": foregone_per_year,
-        "foregone_total_tonnes": foregone_total,
-        "release_cost": release_cost,
-        "foregone_cost_per_year": foregone_cost_per_year,
-        "total_cost": release_cost + foregone_cost_per_year,
-    }
 
 
 def compute_annual_absorption(
@@ -132,6 +147,117 @@ def compute_annual_absorption(
         * units_restored
         * service_fraction
     )
+
+
+# ── Monetary values (€) ──────────────────────────────────────────────────────
+
+
+def pv_carbon_release(release_tonnes: float, discount: DiscountConfig) -> float:
+    """Value of a carbon release at year 0 (€, one-off; a stock).
+
+    The release happens at extraction, so it is valued at the carbon price
+    of year 0 and needs no discounting.
+    """
+    return release_tonnes * discount.carbon_price_at_year(0)
+
+
+def _absorption_fraction(
+    year: int,
+    succession_curve: Optional[SuccessionCurve],
+    substrate_ceiling: float,
+) -> float:
+    """Fraction of mature absorption delivered in ``year``: min(s(t), ceiling)."""
+    if succession_curve is not None:
+        sfrac: float = succession_service(succession_curve, float(year))
+    else:
+        sfrac = 1.0
+    return min(sfrac, substrate_ceiling)
+
+
+def pv_absorption(
+    annual_tonnes: float,
+    discount: DiscountConfig,
+    succession_curve: Optional[SuccessionCurve] = None,
+    substrate_ceiling: float = 1.0,
+    shortfall: bool = False,
+    priced: bool = True,
+) -> float:
+    """Present value of an annual CO₂ absorption flow (€ PV).
+
+        PV = Σ_{t=1}^{H} annual_tonnes × f(t) × price(t) × df(t)
+
+    with f(t) = min(s(t), substrate_ceiling), s(t) the succession service
+    fraction (1 without a curve), or f(t) = 1 − min(s(t), substrate_ceiling)
+    when ``shortfall`` is True (absorption not yet — or never — recovered).
+    The year convention (a flow valued at the end of each year t = 1..H) is
+    the one of every stream in gaia.discount, so carbon and services cover
+    the same years.
+
+    Extraction's foregone absorption is ``pv_absorption(units × absorption,
+    discount)``: f = 1 every year of the horizon, like the direct service
+    loss, which is also permanent in the extraction view.
+
+    Args:
+        annual_tonnes: Mature absorption of the units concerned (t CO₂/yr).
+        discount: DiscountConfig (horizon, discount factors, carbon price).
+        succession_curve: Optional ramp-up of absorption after restoration.
+        substrate_ceiling: Max recoverable fraction (substrate damage).
+        shortfall: Value 1 − f(t) instead of f(t).
+        priced: If False, price(t) = 1: discounted tonnes per €/t, as used
+            by the carbon breakeven.
+
+    Returns:
+        Present value in € (or discounted tonnes if ``priced`` is False).
+    """
+    pv: float = 0.0
+    if annual_tonnes == 0.0:
+        return pv
+    for year in range(1, discount.horizon_years + 1):
+        frac: float = _absorption_fraction(year, succession_curve, substrate_ceiling)
+        if shortfall:
+            frac = 1.0 - frac
+        price: float = discount.carbon_price_at_year(year) if priced else 1.0
+        pv += annual_tonnes * frac * price * discount.discount_factor(year)
+    return pv
+
+
+def compute_carbon_cost(
+    profile: CarbonProfile,
+    units_extracted: int,
+    discount: DiscountConfig,
+) -> dict:
+    """Monetize the double carbon externality of an extraction.
+
+    The release is a stock valued at year 0; the foregone absorption is an
+    annual flow, reported both in tonnes per year and as a present value.
+    Only the two stocks (release and the PV of the flow) are added.
+
+    Returns a breakdown dict with:
+        - release_tonnes: t CO₂ released (biomass + soil), a stock
+        - foregone_tonnes_per_year: t CO₂/yr of absorption lost, a flow
+        - release_cost_eur: € value of the release (one-off, year-0 price)
+        - foregone_cost_pv_eur: € PV of the foregone absorption flow
+        - total_cost_pv_eur: release_cost_eur + foregone_cost_pv_eur
+
+    Args:
+        profile: CarbonProfile for the resource.
+        units_extracted: Number of units extracted.
+        discount: DiscountConfig with the carbon price and horizon.
+
+    Returns:
+        Dict with carbon cost breakdown.
+    """
+    release: float = compute_carbon_release(profile, units_extracted)
+    foregone_per_year: float = profile.annual_absorption_tonnes * units_extracted
+    release_cost: float = pv_carbon_release(release, discount)
+    foregone_pv: float = pv_absorption(foregone_per_year, discount)
+    return {
+        "release_tonnes": release,
+        "foregone_tonnes_per_year": foregone_per_year,
+        "release_cost_eur": release_cost,
+        "foregone_cost_pv_eur": foregone_pv,
+        "total_cost_pv_eur": release_cost + foregone_pv,
+    }
 
 
 def compute_carbon_payback_period(

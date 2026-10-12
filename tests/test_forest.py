@@ -3,7 +3,7 @@ Gaia v0.1 — End-to-end forest case tests.
 
 These tests run the preconfigured Oak Valley Forest case and check for
 ecological plausibility. They are sanity checks verifying:
-    - The right economic story (below threshold: sustainable; above: costly)
+    - Revenue arithmetic and the PV-based net social cost
     - The correct curve shape (accelerating marginal cost)
     - Report generation and content
 """
@@ -25,15 +25,11 @@ THRESHOLD_UNITS = 3_000
 
 def test_forest_at_threshold():
     """
-    Cutting exactly 3,000 trees (30%): externality is in the same ballpark as revenue.
+    Cutting exactly 3,000 trees (30%) costs far less per year than cutting 80%.
 
-    v0.3: With trophic amplification (Animals at 1.6×) and cascade edges
-    (Vegetation→Animals, Animals→Humans), the externality at the safe threshold
-    marginally exceeds revenue. This is correct — cascades reveal that even
-    "safe" extraction has real social costs from ecosystem interactions.
-
-    The meaningful test: externality at threshold is dramatically less than
-    at heavy extraction (the non-linear acceleration still holds).
+    Replaces a test that the annual externality is within 0.5–1.5× the one-off
+    revenue at the threshold: that compared a yearly flow with a one-off amount
+    and encoded the back-solved calibration of the old rates.
     """
     eco = build_forest_ecosystem(
         total_trees=TOTAL_TREES, safe_threshold_ratio=THRESHOLD
@@ -41,30 +37,23 @@ def test_forest_at_threshold():
     result = run_extraction(eco, THRESHOLD_UNITS)
 
     # Revenue = 3000 * 100 = 300,000
-    assert result.total_private_revenue == 300_000.0
-
-    # Externality and revenue should be in the same order of magnitude at threshold
-    # (cascades push externality slightly above revenue — within 20%)
-    ratio = result.total_externality_cost / result.total_private_revenue
-    assert 0.5 < ratio < 1.5, (
-        f"At safe threshold, externality/revenue ratio should be near 1.0, "
-        f"got {ratio:.2f}"
-    )
+    assert result.revenue == 300_000.0
 
     # Externality at threshold should be MUCH less than at heavy extraction
     result_heavy = run_extraction(eco, 8_000)
-    assert result.total_externality_cost < 0.5 * result_heavy.total_externality_cost, (
-        f"Externality at threshold ({result.total_externality_cost:.0f}) should be "
-        f"<50% of heavy extraction ({result_heavy.total_externality_cost:.0f})"
+    assert result.annual_externality < 0.5 * result_heavy.annual_externality, (
+        f"Externality at threshold ({result.annual_externality:.0f}) should be "
+        f"<50% of heavy extraction ({result_heavy.annual_externality:.0f})"
     )
 
 
 def test_forest_past_threshold():
     """
-    Cutting 5,000 trees (50%): externality > revenue.
+    Cutting 5,000 trees (50%): the net social cost weighs the one-off revenue
+    against the present value of the yearly externality stream.
 
-    The social cost exceeds private gain — this is the Gaia thesis:
-    heavy deforestation produces a net social loss.
+    Replaces a test that the net social cost is negative at 50%, which held
+    only because the old rates were tuned to produce it.
     """
     eco = build_forest_ecosystem(
         total_trees=TOTAL_TREES, safe_threshold_ratio=THRESHOLD
@@ -72,25 +61,22 @@ def test_forest_past_threshold():
     result = run_extraction(eco, 5_000)
 
     # Revenue = 5000 * 100 = 500,000
-    assert result.total_private_revenue == 500_000.0
-    assert result.net_social_cost < 0, (
-        f"At 50% extraction, net_social_cost should be negative, "
-        f"got {result.net_social_cost:.2f}"
+    assert result.revenue == 500_000.0
+    npv = result.extraction_npv
+    assert result.pv_externality == pytest.approx(
+        npv.direct + npv.carbon_release + npv.carbon_foregone,
+        rel=1e-12,
     )
+    assert result.net_social_cost == pytest.approx(
+        result.pv_externality - result.revenue, rel=1e-12)
 
 
 def test_forest_heavy_extraction():
     """
-    Cutting 8,000 trees (80%): externality is substantial relative to revenue.
+    Cutting 8,000 trees (80%): the ecosystem is severely degraded.
 
-    At 80% depletion, the logistic damage function is in its high-damage saturation
-    region. The externality cost should be significant — at least 50% of total
-    timber revenue. The ecosystem health should be critically low.
-
-    Note: whether externality exceeds revenue at 80% depends on the monetary rate
-    calibration (a scientific validation question, not an engineering one). The
-    engineering test is that the externality is substantial and the ecosystem is
-    severely degraded.
+    At 80% depletion, the logistic damage function is in its high-damage
+    saturation region and ecosystem health is critically low.
     """
     eco = build_forest_ecosystem(
         total_trees=TOTAL_TREES, safe_threshold_ratio=THRESHOLD
@@ -98,13 +84,7 @@ def test_forest_heavy_extraction():
     result = run_extraction(eco, 8_000)
 
     # Revenue = 8000 * 100 = 800,000
-    assert result.total_private_revenue == 800_000.0
-
-    # Externality should be at least 50% of revenue (substantial social cost)
-    assert result.total_externality_cost >= 0.5 * result.total_private_revenue, (
-        f"At 80% extraction, externality ({result.total_externality_cost:.2f}) "
-        f"should be at least 50% of revenue ({result.total_private_revenue:.2f})"
-    )
+    assert result.revenue == 800_000.0
 
     # Ecosystem health should be critically low (less than 10%)
     assert result.final_ecosystem_health < 0.10, (
@@ -137,7 +117,7 @@ def test_forest_marginal_cost_curve_shape():
     cost_at = {}
     for step in result.steps:
         if step.units_extracted in (1_000, 3_000, 5_000, 7_000):
-            cost_at[step.units_extracted] = step.cumulative_cost
+            cost_at[step.units_extracted] = step.annual_externality
 
     # Incremental cost in the pre-threshold region (1k to 3k) should be less
     # than in the threshold-crossing region (3k to 5k)
@@ -171,7 +151,7 @@ def test_forest_report_generates():
 
     # Key fields must appear in the report
     assert "Oak Valley Forest" in report
-    assert "TOTAL EXTERNALITY" in report
+    assert "ANNUAL EXTERNALITY" in report
     assert "NET SOCIAL COST" in report
 
 
@@ -185,7 +165,7 @@ def test_forest_report_contains_all_agents():
     assert "Human Communities" in report
     assert "Animal Populations" in report
     assert "Vegetation & Flora" in report
-    assert "General Biosphere" in report
+    assert "Watershed & Local Climate" in report
 
 
 def test_forest_report_contains_revenue():
@@ -222,8 +202,8 @@ def test_forest_cli_default_scenario():
     result = run_extraction(eco, 5_000)
 
     assert result.total_units_extracted == 5_000
-    assert result.total_private_revenue == 500_000.0
-    assert result.total_externality_cost > 0
+    assert result.revenue == 500_000.0
+    assert result.annual_externality > 0
     assert len(result.steps) == 5_000
     assert result.steps[0].step == 1
     assert result.steps[-1].step == 5_000
@@ -242,13 +222,30 @@ def test_forest_agent_weights_sum_to_one():
     assert abs(total_weight - 1.0) < 1e-9
 
 
-def test_forest_biosphere_highest_monetary_rate():
-    """General Biosphere has the highest monetary_rate (most damage at full depletion)."""
+def test_forest_watershed_largest_share_of_value():
+    """Watershed & Local Climate carries the largest share of the annual value.
+
+    Every agent uses the same €/ha/yr biome value, so the split is decided
+    by the dependency weights (Watershed & Local Climate: 0.35).
+    """
     eco = build_forest_ecosystem()
-    biosphere = next(a for a in eco.agents if "Biosphere" in a.name)
-    for agent in eco.agents:
-        if agent is not biosphere:
-            assert biosphere.monetary_rate >= agent.monetary_rate, (
-                f"Biosphere rate ({biosphere.monetary_rate}) should be >= "
-                f"{agent.name} ({agent.monetary_rate})"
-            )
+    area = eco.resource.area_ha
+    share = {a.name: a.dependency_weight * a.annual_value(area) for a in eco.agents}
+    assert max(share, key=share.get) == "Watershed & Local Climate"
+
+
+def test_forest_value_is_per_hectare():
+    """Full-damage value = €2,848/ha/yr × area; the default area follows the trees.
+
+    €3,000/ha/yr (de Groot 2012, temperate forest) minus its €152 climate
+    regulation component, valued by gaia.carbon instead (decision D3).
+    """
+    from gaia.cases.forest import FOREST_AREA_HA, FOREST_TOTAL_TREES
+
+    eco = build_forest_ecosystem()
+    assert eco.resource.area_ha == FOREST_AREA_HA
+    total = sum(a.dependency_weight * a.annual_value(FOREST_AREA_HA) for a in eco.agents)
+    assert total == pytest.approx(2_848.0 * FOREST_AREA_HA, rel=1e-12)
+    assert build_forest_ecosystem(total_trees=2 * FOREST_TOTAL_TREES).resource.area_ha == (
+        2 * FOREST_AREA_HA)
+    assert build_forest_ecosystem(total_trees=500, area_ha=40.0).resource.area_ha == 40.0

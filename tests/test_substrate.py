@@ -11,7 +11,7 @@ Follows the 14 testing requirements from the v0.5 spec:
     4. Posidonia depth limit: Kd 0.06->0.12 reduces K by ~30-50%
     5. Erosion rates physically consistent
     6. Formation rates physically consistent
-    7. Prevention advantage increases with substrate modeling
+    7. Substrate damage adds a permanent loss to the destroy-then-restore penalty
     8. Restoration ceiling is binding
     9. No substrate = v0.4 behavior
    10. Pristine substrate = effective_K equals total_units
@@ -22,10 +22,9 @@ Follows the 14 testing requirements from the v0.5 spec:
    15-17. Capacity function tests (linear, threshold, logistic)
 """
 
-import math
 import pytest
 
-from gaia.models import SubstrateProfile, SubstrateState
+from gaia.models import SubstrateProfile, SubstrateType
 from gaia.substrate import (
     _BULK_DENSITY_KG_M3,
     _T_HA_TO_MM_FACTOR,
@@ -35,6 +34,7 @@ from gaia.substrate import (
     degrade_substrate,
     recover_substrate,
 )
+from gaia.validation import validate_substrate_profile
 
 
 # ── Test fixtures ──────────────────────────────────────────────────────────────
@@ -45,7 +45,6 @@ def _terrestrial_profile(**kwargs) -> SubstrateProfile:
     defaults = dict(
         substrate_type="terrestrial_soil",
         soil_depth_cm=30.0,
-        water_availability_mm_yr=550.0,
         erosion_rate_unprotected=25.0,
         erosion_rate_protected=1.0,
         formation_rate=0.4,
@@ -61,7 +60,6 @@ def _marine_profile(**kwargs) -> SubstrateProfile:
     """Create a marine substrate profile with sensible defaults."""
     defaults = dict(
         substrate_type="marine_matte",
-        water_clarity_kd=0.06,
         sediment_stability=0.85,
         erosion_rate_unprotected=5.0,
         erosion_rate_protected=0.0,
@@ -79,7 +77,6 @@ def _threshold_profile(**kwargs) -> SubstrateProfile:
     defaults = dict(
         substrate_type="terrestrial_soil",
         soil_depth_cm=30.0,
-        water_availability_mm_yr=550.0,
         erosion_rate_unprotected=25.0,
         erosion_rate_protected=1.0,
         formation_rate=0.4,
@@ -105,7 +102,6 @@ def test_create_state_terrestrial():
     assert state.current_soil_depth_cm == 30.0
     assert state.pristine_soil_depth_cm == 30.0
     assert state.capacity_fraction == 1.0
-    assert state.years_to_recover == 0.0
 
 
 def test_create_state_marine():
@@ -116,7 +112,6 @@ def test_create_state_marine():
     assert state.profile is profile
     assert state.current_sediment_stability == 0.85
     assert state.pristine_sediment_stability == 0.85
-    assert state.current_water_clarity_kd == 0.06
     assert state.capacity_fraction == 1.0
 
 
@@ -273,6 +268,29 @@ def test_logistic_monotonic():
         prev_frac = frac
 
 
+def test_logistic_applies_to_soil_depth():
+    """Terrestrial logistic uses the soil-depth ratio (same curve as marine)."""
+    soil = create_substrate_state(_terrestrial_profile(capacity_function="logistic"))
+    marine = create_substrate_state(_marine_profile(capacity_function="logistic"))
+    for ratio in (0.0, 0.2, 0.5, 0.8, 1.0):
+        soil.current_soil_depth_cm = soil.pristine_soil_depth_cm * ratio
+        marine.current_sediment_stability = marine.pristine_sediment_stability * ratio
+        assert compute_capacity_fraction(soil) == pytest.approx(
+            compute_capacity_fraction(marine), rel=1e-12, abs=1e-15
+        )
+    soil.current_soil_depth_cm = soil.pristine_soil_depth_cm * 0.2
+    assert compute_capacity_fraction(soil) < 0.1
+
+
+def test_substrate_type_selects_state_variable():
+    """Dispatch follows substrate_type, not which fields happen to be set."""
+    profile = _marine_profile(capacity_function="linear", soil_depth_cm=30.0)
+    state = create_substrate_state(profile)
+    degrade_substrate(state, vegetation_cover=0.0, years=1.0)
+    assert state.current_soil_depth_cm == 30.0
+    assert state.current_sediment_stability < 0.85
+
+
 # ── Degradation tests ────────────────────────────────────────────────────────
 
 
@@ -282,7 +300,7 @@ def test_full_cover_minimal_erosion():
     state = create_substrate_state(profile)
     erosion = degrade_substrate(state, vegetation_cover=1.0, years=1.0)
     # With full cover, erosion should use protected rate (1.0 t/ha/yr)
-    # 1.0 t/ha/yr * 0.00769 mm/t_ha / 10 = very small
+    # 1.0 t/ha/yr * 0.0769 mm/t_ha / 10 ≈ 0.0077 cm
     assert erosion > 0.0, "Even protected land has some erosion"
     assert erosion < 0.01, f"Full cover erosion should be tiny, got {erosion} cm"
 
@@ -432,7 +450,7 @@ def test_recovery_years_degraded():
 
     years = compute_substrate_recovery_years(state)
     assert years > 0.0
-    # 10cm deficit / (0.4 t/ha/yr * 0.00769/10 cm per t/ha) = ~32,500 years
+    # 10cm deficit / (0.4 t/ha/yr * 0.0769/10 cm per t/ha) = ~3,250 years
     assert years > 1000, f"Soil recovery should take thousands of years, got {years}"
 
 
@@ -453,22 +471,29 @@ def test_erosion_rate_physical_consistency():
     """Spec test #5: 25 t/ha/yr → ~1.9 mm/yr at bulk density 1,300 kg/m³."""
     rate_t_ha_yr = 25.0
     rate_mm_yr = rate_t_ha_yr * _T_HA_TO_MM_FACTOR
-    # Expected: 25 * 10/1300 ≈ 0.192 mm/yr
-    assert abs(rate_mm_yr - 0.192) < 0.01, f"Expected ~0.192 mm/yr, got {rate_mm_yr}"
+    # Expected: 25 * 100/1300 ≈ 1.92 mm/yr
+    assert abs(rate_mm_yr - 1.923) < 0.01, f"Expected ~1.92 mm/yr, got {rate_mm_yr}"
 
-    # 30cm eroded at 25 t/ha/yr: time = 300mm / 0.192 mm/yr ≈ 1,562 years
+    # 30cm eroded at 25 t/ha/yr: time = 300mm / 1.92 mm/yr ≈ 156 years
     time_years = 300.0 / rate_mm_yr  # 30cm = 300mm
-    assert 1500 < time_years < 1700, f"Expected ~1,562 years, got {time_years}"
+    assert 150 < time_years < 165, f"Expected ~156 years, got {time_years}"
+
+
+def test_t_ha_to_mm_conversion_13_t_ha_is_1_mm():
+    """1 t/ha = 0.1 kg/m²; 13 t/ha at 1,300 kg/m³ is 1.3 kg/m² ÷ 1,300 kg/m³ = 1 mm."""
+    assert _BULK_DENSITY_KG_M3 == 1300.0
+    assert 13.0 * _T_HA_TO_MM_FACTOR == pytest.approx(1.0, rel=1e-12)
 
 
 def test_formation_rate_physical_consistency():
     """Spec test #6: 0.4 t/ha/yr → 30cm recovery in ~10,000+ years."""
     rate_t_ha_yr = 0.4
     rate_mm_yr = rate_t_ha_yr * _T_HA_TO_MM_FACTOR
-    # Expected: 0.4 * 10/1300 ≈ 0.031 mm/yr
+    # Expected: 0.4 * 100/1300 ≈ 0.031 mm/yr
+    assert abs(rate_mm_yr - 0.0308) < 0.001, f"Expected ~0.031 mm/yr, got {rate_mm_yr}"
     time_years = 300.0 / rate_mm_yr  # 30cm = 300mm
     # Should be on the order of 10,000 years
-    assert time_years > 5000, f"Expected >5,000 years for 30cm formation, got {time_years}"
+    assert 9000 < time_years < 11000, f"Expected ~10,000 years for 30cm formation, got {time_years}"
 
 
 # ── Mixed depletion-recovery test ─────────────────────────────────────────────
@@ -537,3 +562,32 @@ def test_no_substrate_properties_returns_defaults():
     state = create_substrate_state(profile)
     frac = compute_capacity_fraction(state)
     assert frac == 1.0
+
+
+# ── substrate_type validation ─────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("profile", [
+    _terrestrial_profile(),
+    _threshold_profile(),
+    _terrestrial_profile(capacity_function="logistic"),
+    _marine_profile(),
+    _marine_profile(substrate_type="marine_sediment", capacity_function="linear"),
+    _terrestrial_profile(substrate_type=SubstrateType.TERRESTRIAL_SOIL),
+])
+def test_valid_substrate_profiles_accepted(profile):
+    validate_substrate_profile(profile)
+
+
+@pytest.mark.parametrize("profile, message", [
+    (_terrestrial_profile(substrate_type="tropical_oxisol"), "substrate_type must be one of"),
+    (_terrestrial_profile(substrate_type="Terrestrial_Soil"), "substrate_type must be one of"),
+    (_marine_profile(substrate_type="terrestrial_soil"), "requires soil_depth_cm"),
+    (_terrestrial_profile(sediment_stability=0.5), "must not set marine properties"),
+    (_terrestrial_profile(substrate_type="marine_matte"), "requires sediment_stability"),
+    (_marine_profile(soil_depth_cm=10.0), "must not set soil_depth_cm"),
+    (_marine_profile(capacity_function="threshold"), "not supported"),
+])
+def test_invalid_substrate_profiles_rejected(profile, message):
+    with pytest.raises(ValueError, match=message):
+        validate_substrate_profile(profile)

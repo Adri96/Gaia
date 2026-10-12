@@ -3,7 +3,7 @@
 ## 1. Case Overview
 
 **Ecosystem:** Central Amazon old-growth lowland rainforest (terra firme)
-**Reference area:** 10,000 hectares (~100 km²) of intact lowland forest
+**Reference area:** 1,000 hectares (~10 km²) of intact lowland forest (400,000 trees at 400 trees/ha; `AMAZON_AREA_HA` in `gaia/cases/amazon_forest.py`)
 **Location archetype:** Central Amazon basin, south of Manaus (Amazonas state, Brazil)
 **Biome:** Tropical moist broadleaf forest on Oxisol/Ferralsol substrate
 **Extraction scenario:** Selective logging + progressive deforestation for cattle ranching
@@ -37,13 +37,13 @@ This case represents the world's highest-productivity terrestrial ecosystem on o
 | Net carbon accumulation (old-growth, historical) | 0.62 ± 0.37 t C ha⁻¹ yr⁻¹ | Wikipedia (1975-1996 data) |
 | Total Amazon carbon stock | ~100 billion t C (vegetation) | Various |
 
-### For 10,000 ha reference area
+### For 1,000 ha reference area
 
 | Parameter | Calculation | Value |
 |---|---|---|
-| Standing carbon stock | 173 × 10,000 | 1,730,000 Mg C |
-| Annual NPP | 11 × 10,000 | 110,000 Mg C yr⁻¹ |
-| CO₂ equivalent of stock | 1,730,000 × 3.67 | ~6,350,000 t CO₂ |
+| Standing carbon stock | 173 × 1,000 | 173,000 Mg C |
+| Annual NPP | 11 × 1,000 | 11,000 Mg C yr⁻¹ |
+| CO₂ equivalent of stock | 173,000 × 3.67 | ~635,000 t CO₂ |
 
 **Key insight:** Amazon NPP (~11 Mg C ha⁻¹ yr⁻¹) is roughly 6-7× higher than Mediterranean holm oak (~1.7 Mg C ha⁻¹ yr⁻¹), making the carbon anchor dramatically larger.
 
@@ -182,7 +182,7 @@ The Amazon's "flying rivers" concept is critical: the forest transpires so much 
 
 | Service | Value | Calculation |
 |---|---|---|
-| Rainfall recycling (10,000 ha) | ~€2M/yr | Based on agricultural losses of $9/ha/yr for 220,000 ha downwind area affected |
+| Rainfall recycling (1,000 ha) | ~€200k/yr | Based on agricultural losses of $9/ha/yr for 220,000 ha downwind area affected |
 | Freshwater regulation | ~€500k/yr | Water treatment cost avoidance |
 
 ---
@@ -258,19 +258,24 @@ Fire and repeated deforestation reduce regrowth rates by 8-55% (Nature Comms 202
 
 ### Anchor Points for v0.7 Endogenous Pricing
 
-For the 10,000 ha reference area:
+For the 1,000 ha reference area:
 
 | Anchor | Annual Value | Calculation | Confidence |
 |---|---|---|---|
-| **Carbon sequestration** | €880,000/yr | 11 Mg C/ha × 10,000 ha × 3.67 → 403,700 t CO₂ × €80/t (EU ETS) × 0.027 (net uptake fraction) | HIGH |
-| **Carbon stock protection** | €5,080,000/yr | 6.35M t CO₂ stock × €80/t ÷ 100 yr amortized | HIGH |
-| **Water cycling / rainfall** | €1,500,000/yr | Rainfall recycling service: $15-20/ha/yr × 10,000 ha + downwind agricultural value | MEDIUM |
-| **Biodiversity / habitat** | €410,000/yr | $410/ha/yr meta-analysis mean (conservative, only local values) | MEDIUM |
-| **REDD+ avoided deforestation** | €540,000/yr | 54 t CO₂/ha × 10,000 ha × $10/t CO₂ × 1% annual deforestation risk | MEDIUM |
+| ~~Carbon sequestration~~ | ~~€88,000/yr~~ | Removed (Step 3.4): carbon is valued by `gaia/carbon.py` only | – |
+| ~~Carbon stock protection~~ | ~~€508,000/yr~~ | Removed (Step 3.4): the NPV capitalised this amortised stock a second time (audit C5) | – |
+| **Water cycling / rainfall** | €150,000/yr | Rainfall recycling service: $15-20/ha/yr × 1,000 ha + downwind agricultural value | MEDIUM |
+| **Fisheries** | €20,000/yr | River fish catch value for the 1,000 ha watershed | MEDIUM |
+| **Biodiversity / habitat** | €410,000/yr | $410/ha/yr meta-analysis mean × 1,000 ha (conservative, only local values) | MEDIUM |
+| ~~REDD+ avoided deforestation~~ | ~~€5,400/yr~~ | Removed (Step 3.4): carbon (54 t CO₂/ha × $10/t × 1% risk) | – |
 
-**Total annual ecosystem service value: ~€8.4M/yr for 10,000 ha** (~€840/ha/yr)
+**Total annual ecosystem service value: €580/ha/yr** (€580,000/yr for 1,000 ha) = water cycling + fisheries + biodiversity/habitat, the figure the agent rates (`annual_value_per_ha`, scaled by `area_ha`) use.
 
-**Note on carbon anchor:** The Amazon is unusual because **stock protection** dominates over **annual sequestration**. Each hectare stores ~635 t CO₂. At EU ETS prices (€80/t), that's €50,800/ha in stored carbon value. The annual sequestration flow is much smaller because old-growth forests are near carbon equilibrium (net uptake only ~0.62 t C/ha/yr historically). The value comes from NOT releasing the stock.
+> **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula.
+>
+> **Carbon removed, value reconciled (Step 3.4, decision D3).** The anchors, carbon included, summed to ~€1,160/ha/yr while the agent value was €840/ha/yr, a figure with no derivation of its own. Carbon now leaves the anchors and the agent values entirely: `gaia/carbon.py` values the release of the stock (one-off, at the social cost of carbon) and the foregone absorption (PV of the annual flow). The agent value was brought to the sum of the remaining, documented anchors (€580/ha/yr) rather than the anchors to the undocumented €840.
+
+**Note on carbon:** The Amazon is unusual because **stock release** dominates over **annual sequestration**. Each hectare stores ~635 t CO₂ (~€106,000/ha at the social cost of carbon, €166/t). The annual sequestration flow is much smaller because old-growth forests are near carbon equilibrium (net uptake only ~0.62 t C/ha/yr historically). In Gaia this value enters once, as `gaia/carbon.py`'s carbon release, never through an agent or an anchor.
 
 This creates an interesting pricing dynamic for v0.7: the "price of destruction" is front-loaded (releasing stock), while the "price of prevention" accumulates (protecting ongoing services).
 
@@ -283,23 +288,21 @@ This creates an interesting pricing dynamic for v0.7: the "price of destruction"
 ```python
 AmazonRainforest = EcosystemConfig(
     name="Central Amazon Old-Growth Lowland Forest",
-    area_hectares=10000,
-    initial_population=400_000,  # ~400 trees/ha is typical for Amazon
+    area_hectares=1000,
+    initial_population=400_000,  # 400 trees/ha × 1,000 ha (terra firme: ~400-600 stems/ha)
     carrying_capacity=None,  # DERIVED from substrate in v0.5+
     threshold=0.20,  # Amazon tipping point (Lovejoy & Nobre)
-    monetary_rate=840.0,  # €/ha/yr baseline (from meta-analysis)
+    annual_value_per_ha=580.0,  # €/ha/yr: non-carbon §8 anchors, × area_ha
     # v0.5 substrate
-    substrate_type="tropical_oxisol",
+    substrate_type="terrestrial_soil",  # Oxisol/Ferralsol, modelled as terrestrial soil
     substrate_capacity_function="threshold",
     substrate_threshold=0.25,
     substrate_max_capacity=400_000,
     # v0.7 pricing
     pricing_config=PricingConfig(
         anchors=[
-            AnchorPoint("canopy_trees", 5_080_000, "carbon_stock_protection", "HIGH"),
-            AnchorPoint("canopy_trees", 880_000, "carbon_sequestration", "HIGH"),
-            AnchorPoint("canopy_trees", 1_500_000, "water_cycling", "MEDIUM"),
-            AnchorPoint("aquatic_system", 200_000, "fisheries", "MEDIUM"),
+            AnchorPoint("canopy_trees", 150_000, "water_cycling", "MEDIUM"),
+            AnchorPoint("aquatic_system", 20_000, "fisheries", "MEDIUM"),
             AnchorPoint("pollinators", 410_000, "biodiversity_habitat", "MEDIUM"),
         ],
         scarcity_functions={
@@ -336,7 +339,7 @@ AmazonRainforest = EcosystemConfig(
 ### Expected Model Behaviors
 
 1. **Mycorrhizal fungi emerge as most expensive agent** — highest network centrality (all producers depend on them), highest scarcity alpha, non-substitutable
-2. **Canopy trees are second most expensive** — largest carbon anchor, most demanded by consumers
+2. **Canopy trees are second most expensive** — water-cycling anchor, most demanded by consumers
 3. **Apex predators are cheapest** — few dependents, low network centrality
 4. **Degradation spiral is faster than Mediterranean cases** — due to dual feedback (substrate + atmospheric moisture)
 5. **Prevention advantage ratio should exceed Mediterranean cases** — stock protection value + moisture recycling feedback
@@ -348,7 +351,7 @@ AmazonRainforest = EcosystemConfig(
 
 | Test | Expected Range | Rationale |
 |---|---|---|
-| Total externality at 50% extraction | €50M - €200M | Higher than any Mediterranean case due to carbon stock |
+| Total externality at 50% extraction | €5M - €20M | Dominated by carbon stock (range scaled from the original 10,000 ha draft) |
 | Prevention advantage at 30% extraction | >100× | Extreme asymmetry: stock release + moisture feedback |
 | Mycorrhizal price / Apex predator price | >20:1 | Network centrality ratio |
 | Price increase from pristine → 25% degraded | 3-5× | Approaching tipping point |
@@ -360,7 +363,7 @@ AmazonRainforest = EcosystemConfig(
 
 | Feature | Oak Valley | Costa Brava Holm Oak | Costa Brava Posidonia | **Amazon** |
 |---|---|---|---|---|
-| Area (ha) | 100 | 1,000 | 1,000 | **10,000** |
+| Area (ha) | 100 | 1,000 | 1,000 | **1,000** |
 | Population | 10,000 trees | 1,800 trees | 1,000 ha meadow | **400,000 trees** |
 | NPP (Mg C/ha/yr) | ~1.7 | ~1.7 | ~3.0 | **~11** |
 | Carbon stock (t CO₂/ha) | ~200 | ~200 | ~400 | **~635** |
@@ -370,7 +373,7 @@ AmazonRainforest = EcosystemConfig(
 | Tipping point (%) | 30% | 25% | 20% | **20%** |
 | Key interaction | Mycorrhizal | Mycorrhizal | Posidonia meadow | **Mycorrhizal + Water** |
 | Agents | 4-6 | 6-8 | 5-7 | **11** |
-| Annual service value (€/ha) | ~€100 | ~€60 | ~€2,500 | **~€840** |
+| Annual service value (€/ha) | ~€100 | ~€60 | ~€2,500 | **~€580** (non-carbon) |
 | Unique dynamics | Basic | Succession | Marine substrate | **Moisture feedback, tipping point** |
 
 ---
@@ -425,6 +428,6 @@ AmazonRainforest = EcosystemConfig(
 
 3. **Tipping point dynamics:** The 20-25% threshold creates a sharp nonlinearity. Should this be modeled as a separate mechanism or can the threshold scarcity function capture it? Recommend: threshold scarcity function on canopy trees with additional "cascade multiplier" when total health < 0.25.
 
-4. **Scale considerations:** 10,000 ha is tiny relative to the Amazon basin (420M ha). The flying rivers effect operates at basin scale. For the reference area, we should note that our externality calculations are conservative because they don't capture the full cascading effects on downwind regions.
+4. **Scale considerations:** 1,000 ha is tiny relative to the Amazon basin (420M ha). The flying rivers effect operates at basin scale. For the reference area, we should note that our externality calculations are conservative because they don't capture the full cascading effects on downwind regions.
 
 5. **Carbon stock vs flow:** Unlike Mediterranean cases where annual service flow dominates, the Amazon case is dominated by the stored carbon stock. The v0.7 pricing system should handle this via the carbon stock protection anchor, but we should verify the NPV calculations handle one-time stock release correctly.

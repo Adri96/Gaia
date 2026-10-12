@@ -1,0 +1,1349 @@
+{
+  "agents": [
+    "Mycorrhizal Fungi",
+    "Soil Microbiome",
+    "Canopy Trees",
+    "Understory & Matorral",
+    "Pollinators & Insects",
+    "Forest Birds",
+    "Forest Mammals",
+    "Raptors & Apex Predators",
+    "Watershed & Water Cycle",
+    "Fire & Microclimate Regulation",
+    "Human Communities"
+  ],
+  "cli_summary_json": {
+    "calibration": {
+      "calibration_regime": "B",
+      "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
+      "ecosystem_provenance_recorded": true,
+      "n_high": 0,
+      "n_low": 14,
+      "n_medium": 4,
+      "n_params": 59,
+      "n_placeholder": 41,
+      "n_user_supplied": 0,
+      "parameters": [
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_transfer_efficiency",
+          "note": "Midpoint of the 5-20% energy transfer efficiency between trophic levels (the textbook range following Lindeman 1942; from memory, verify). The midpoint is a choice, not a measurement.",
+          "source": null,
+          "unit": "ratio",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.trophic_amplification_exponent",
+          "note": "No source: damps the pyramid ratio to 1.6-4.1\u00d7 amplification for trophic levels 1-3.",
+          "source": null,
+          "unit": "exponent",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "model.keystone_edge_multiplier",
+          "note": "No source: outgoing edge strengths of a collapsed keystone agent are multiplied by this factor.",
+          "source": null,
+          "unit": "\u00d7",
+          "value": 2.0
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.year0",
+          "note": "Social cost of carbon. The 2020-emissions value is used as the year-0 price: EPA's own path gives about $215 for 2026 emissions, so year-0 carbon damage is understated by about 13%. 2020 euros, no inflation adjustment.",
+          "source": "US EPA (2023), Report on the Social Cost of Greenhouse Gases, Table ES.1: $190/tCO2 (2020 emissions, 2020 USD, 2% near-term rate), at the ECB 2020 average rate of 1.1422 USD/EUR",
+          "unit": "\u20ac/tCO2",
+          "value": 166.3456487480301
+        },
+        {
+          "confidence": "medium",
+          "name": "carbon_price.growth",
+          "note": "60-year average of a decelerating path (1.6%/yr in 2020-2050, 1.2%/yr in 2030-2080).",
+          "source": "US EPA (2023) Table ES.1, 2% column: $190 (2020) to $410 (2080)",
+          "unit": "1/yr",
+          "value": 0.013
+        },
+        {
+          "confidence": "placeholder",
+          "name": "resource.area_ha",
+          "note": "Units / reference density of 100 trees/ha. Chosen so the per-tree absorption gives ~1.8 t CO2/ha/yr.",
+          "source": null,
+          "unit": "ha",
+          "value": 10.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.unit_value",
+          "note": "Revenue per holm oak felled (one-off). Rated Medium in the case docstring, but no market source is cited.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "\u20ac/tree",
+          "value": 60.0
+        },
+        {
+          "confidence": "low",
+          "name": "resource.safe_threshold_ratio",
+          "note": "Safe extraction threshold, lower than temperate forest for drought and fire (stated rationale, no cited source); also the inflection of every damage curve.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "ratio",
+          "value": 0.25
+        },
+        {
+          "confidence": "low",
+          "name": "agents.annual_value_per_ha",
+          "note": "Every agent; the dependency weights split it. Figure partly from memory, to be checked against the paper (Step 8); 2007 Int$ used as \u20ac with no currency or price-year conversion; a global woodland mean, not a Mediterranean holm-oak valuation.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: woodlands Int$1,588/ha/yr; minus climate regulation Int$7 (SM Table 9.1)",
+          "unit": "\u20ac/ha/yr",
+          "value": 1593.0
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Mycorrhizal Fungi].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.13
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Soil Microbiome].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Canopy Trees].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Understory & Matorral].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Pollinators & Insects].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Forest Birds].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.08
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Forest Mammals].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.07
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Raptors & Apex Predators].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.04
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Watershed & Water Cycle].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.12
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Fire & Microclimate Regulation].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.1
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Human Communities].dependency_weight",
+          "note": "Rated Medium in the case docstring; an expert judgement with no cited source.",
+          "source": "owner specification (case docstring), no external source",
+          "unit": "share",
+          "value": 0.06
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.logistic_steepness",
+          "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 12.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "damage.exponential_base",
+          "note": "Exponential damage of Fire & Microclimate Regulation (fire feedback, no plateau); not fitted to fire data.",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 2.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Mycorrhizal Fungi].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "agent[Pollinators & Insects].keystone_threshold",
+          "note": "",
+          "source": null,
+          "unit": "health",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.185
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Mycorrhizal Fungi \u2192 Soil Microbiome].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators & Insects \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.222
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Pollinators & Insects \u2192 Forest Birds].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Understory & Matorral].strength",
+          "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.185
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Soil Microbiome].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Watershed & Water Cycle].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Forest Mammals \u2192 Raptors & Apex Predators].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.3
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Forest Birds \u2192 Raptors & Apex Predators].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory & Matorral \u2192 Forest Mammals].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Understory & Matorral \u2192 Pollinators & Insects].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Microbiome \u2192 Canopy Trees].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.15
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Soil Microbiome \u2192 Watershed & Water Cycle].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.2
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Canopy Trees \u2192 Fire & Microclimate Regulation].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Watershed & Water Cycle \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "edge[Fire & Microclimate Regulation \u2192 Human Communities].strength",
+          "note": "",
+          "source": null,
+          "unit": "fraction of source damage",
+          "value": 0.1
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.stored_carbon_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.5
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.annual_absorption_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree/yr",
+          "value": 0.018
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_carbon_tonnes",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "tCO2/tree",
+          "value": 0.35
+        },
+        {
+          "confidence": "placeholder",
+          "name": "carbon.soil_release_fraction",
+          "note": "Pending calibration against Mediterranean carbon data.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.25
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.soil_depth_cm",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "cm",
+          "value": 30.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_unprotected",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 25.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_rate_protected",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 1.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.formation_rate",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "t/ha/yr",
+          "value": 0.4
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.erosion_alpha",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "exponent",
+          "value": 2.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.critical_minimum",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "cm",
+          "value": 8.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "substrate.residual_fraction",
+          "note": "Pending calibration against Mediterranean soil surveys.",
+          "source": null,
+          "unit": "fraction",
+          "value": 0.05
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.rate_schedule",
+          "note": "",
+          "source": "Ramsey r = \u03b4 + \u03b7g with \u03b4 0.5%, \u03b7 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "unit": "1/yr",
+          "value": 0.023
+        },
+        {
+          "confidence": "medium",
+          "name": "discount.scarcity_rate",
+          "note": "",
+          "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+          "unit": "1/yr",
+          "value": 0.0128
+        },
+        {
+          "confidence": "placeholder",
+          "name": "discount.horizon_years",
+          "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity).",
+          "source": null,
+          "unit": "years",
+          "value": 100.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.planting_cost_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree",
+          "value": 80.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.annual_maintenance_per_unit",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "\u20ac/tree/yr",
+          "value": 15.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "restoration.maintenance_years",
+          "note": "No cost survey behind it.",
+          "source": null,
+          "unit": "years",
+          "value": 15.0
+        },
+        {
+          "confidence": "placeholder",
+          "name": "recovery.logistic_steepness",
+          "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted).",
+          "source": null,
+          "unit": "dimensionless",
+          "value": 7.0
+        }
+      ],
+      "statement": "ILLUSTRATIVE: 55 of 59 recorded parameters are placeholders (41) or low-confidence (14). Results are not real-world estimates.",
+      "status": "illustrative"
+    },
+    "carbon_breakeven": {
+      "breakeven_price_eur_per_t": 383.37,
+      "current_price_eur_per_t": 166.35,
+      "gap_to_current_eur_per_t": 217.02,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 65
+    },
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered_eur_pv": 88380.17,
+      "foregone_revenue_eur": 54000.0,
+      "horizon_years": 100,
+      "maturation_gap_eur_pv": 0.0,
+      "penalty_ratio": 6.1571,
+      "recovery_shortfall_eur_pv": 0.0,
+      "restoration_cost_eur_pv": 241634.38,
+      "substrate_loss_eur_pv": 2466.39,
+      "total_eur_pv": 332480.94
+    },
+    "ecosystem": {
+      "agents": [
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.13,
+          "description": "Keystone underground network \u2014 nutrient/water transport, cascades to all tree regeneration",
+          "is_keystone": true,
+          "keystone_threshold": 0.3,
+          "name": "Mycorrhizal Fungi",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.1,
+          "description": "Soil microbiome and biocrusts \u2014 nitrogen fixation, nutrient cycling, erosion prevention",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Soil Microbiome",
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.12,
+          "description": "Remaining canopy trees \u2014 self-reinforcing decline from microclimate loss and network fragmentation",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Canopy Trees",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.08,
+          "description": "Understory shrubs and aromatic plants \u2014 microclimate collapse and biodiversity loss",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Understory & Matorral",
+          "trophic_level": 0
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.1,
+          "description": "Keystone pollination services \u2014 base of animal food web, agricultural crop dependency",
+          "is_keystone": true,
+          "keystone_threshold": 0.4,
+          "name": "Pollinators & Insects",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.08,
+          "description": "Nesting and migratory stopover habitat \u2014 seed dispersal, insect control, ecotourism",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Forest Birds",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.07,
+          "description": "Habitat displacement \u2014 predator-prey disruption, human-wildlife conflict, crop damage",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Forest Mammals",
+          "trophic_level": 1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.04,
+          "description": "Apex trophic control \u2014 carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Raptors & Apex Predators",
+          "trophic_level": 3
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.12,
+          "description": "Aquifer recharge, flood control, drought buffering \u2014 Costa Brava water and tourism supply",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Watershed & Water Cycle",
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.1,
+          "description": "Fire risk amplification, loss of shade and moisture buffering \u2014 self-reinforcing, no plateau",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Fire & Microclimate Regulation",
+          "trophic_level": -1
+        },
+        {
+          "annual_value_eur_per_ha_yr": 1593.0,
+          "annual_value_eur_yr": 15930.0,
+          "dependency_weight": 0.06,
+          "description": "Water, fire protection, tourism economy, traditional livelihoods \u2014 Costa Brava coastal dependency",
+          "is_keystone": false,
+          "keystone_threshold": null,
+          "name": "Human Communities",
+          "trophic_level": -1
+        }
+      ],
+      "calibration_regime": "B",
+      "interactions": [
+        {
+          "description": "Mycorrhizal collapse cuts nutrient/water supply to remaining trees",
+          "interaction_type": "keystone",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.35,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Understory plants lose mycorrhizal nutrient access",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.185,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Mycorrhizal network supports bacterial communities and nutrient cycling",
+          "interaction_type": "dependency",
+          "source": "Mycorrhizal Fungi",
+          "strength": 0.3,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Pollinator loss collapses plant reproduction",
+          "interaction_type": "keystone",
+          "source": "Pollinators & Insects",
+          "strength": 0.222,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Insect decline reduces food for insectivorous birds",
+          "interaction_type": "trophic",
+          "source": "Pollinators & Insects",
+          "strength": 0.2,
+          "target": "Forest Birds"
+        },
+        {
+          "description": "Canopy loss removes shade \u2192 understory heat/drought stress",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.185,
+          "target": "Understory & Matorral"
+        },
+        {
+          "description": "Canopy loss exposes soil to UV and drying \u2192 biocrust collapse",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.2,
+          "target": "Soil Microbiome"
+        },
+        {
+          "description": "Root loss reduces water infiltration and aquifer recharge",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.3,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Prey decline starves apex predators",
+          "interaction_type": "trophic",
+          "source": "Forest Mammals",
+          "strength": 0.3,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Bird decline reduces prey for raptors",
+          "interaction_type": "trophic",
+          "source": "Forest Birds",
+          "strength": 0.2,
+          "target": "Raptors & Apex Predators"
+        },
+        {
+          "description": "Vegetation loss reduces food and cover for herbivores",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.25,
+          "target": "Forest Mammals"
+        },
+        {
+          "description": "Understory flowering loss reduces pollinator food sources",
+          "interaction_type": "dependency",
+          "source": "Understory & Matorral",
+          "strength": 0.2,
+          "target": "Pollinators & Insects"
+        },
+        {
+          "description": "Soil health decline reduces tree nutrient availability",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.15,
+          "target": "Canopy Trees"
+        },
+        {
+          "description": "Soil degradation reduces water retention capacity",
+          "interaction_type": "dependency",
+          "source": "Soil Microbiome",
+          "strength": 0.2,
+          "target": "Watershed & Water Cycle"
+        },
+        {
+          "description": "Canopy loss dries and heats the stand, raising fire risk",
+          "interaction_type": "dependency",
+          "source": "Canopy Trees",
+          "strength": 0.35,
+          "target": "Fire & Microclimate Regulation"
+        },
+        {
+          "description": "Water quality decline affects human health and tourism",
+          "interaction_type": "dependency",
+          "source": "Watershed & Water Cycle",
+          "strength": 0.25,
+          "target": "Human Communities"
+        },
+        {
+          "description": "Loss of fire and microclimate regulation increases fire risk and heat stress",
+          "interaction_type": "dependency",
+          "source": "Fire & Microclimate Regulation",
+          "strength": 0.1,
+          "target": "Human Communities"
+        }
+      ],
+      "name": "Costa Brava Holm Oak Forest",
+      "resource": {
+        "area_ha": 10.0,
+        "carbon_absorption_per_unit_yr": 0.018,
+        "carbon_price_basis": "social cost of carbon, US EPA 2023",
+        "carbon_price_eur_per_t": 166.35,
+        "carbon_price_growth": 0.013,
+        "carbon_stored_per_unit": 0.5,
+        "discount_horizon_years": 100,
+        "discount_rate": 0.023,
+        "has_carbon_profile": true,
+        "has_discount": true,
+        "has_substrate": true,
+        "name": "Costa Brava Holm Oak Forest",
+        "safe_threshold_ratio": 0.25,
+        "safe_threshold_units": 250,
+        "substrate_type": "terrestrial_soil",
+        "total_units": 1000,
+        "unit_value_eur": 60.0,
+        "units_per_ha": 100.0
+      }
+    },
+    "gaia_version": "<gaia_version>",
+    "mode": "restoration",
+    "npv_analysis": {
+      "carbon_benefits_eur_pv": 170342.71,
+      "carbon_payback_years": 33,
+      "cost_eur_pv": 241634.38,
+      "horizon_years": 100,
+      "net_present_value_eur_pv": 917476.8,
+      "roi": 4.797,
+      "service_benefits_eur_pv": 988768.46,
+      "total_benefits_eur_pv": 1159111.18
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit_eur_yr": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit_eur": 80.0,
+      "total_cost_per_unit_eur": 305.0
+    },
+    "substrate": {
+      "substrate_ceiling": 0.997512,
+      "substrate_recovery_years": 18.73
+    },
+    "summary": {
+      "agent_service_value_eur_yr": {
+        "Canopy Trees": 1906.52,
+        "Fire & Microclimate Regulation": 1437.77,
+        "Forest Birds": 1271.23,
+        "Forest Mammals": 1112.33,
+        "Human Communities": 952.71,
+        "Mycorrhizal Fungi": 2063.44,
+        "Pollinators & Insects": 1589.04,
+        "Raptors & Apex Predators": 635.61,
+        "Soil Microbiome": 1588.68,
+        "Understory & Matorral": 1271.23,
+        "Watershed & Water Cycle": 1905.78
+      },
+      "annual_damage_reversal_eur_yr": 15773.59,
+      "annual_recovered_value_eur_yr": 15734.34,
+      "depletion_after": 0.0,
+      "depletion_before": 0.9,
+      "final_ecosystem_health": 0.997536,
+      "initial_ecosystem_health": 0.009819,
+      "net_restoration_value_eur_pv": 917476.8,
+      "net_restoration_value_h100_eur_pv": 917476.8,
+      "net_restoration_value_h200_eur_pv": 1344254.65,
+      "net_restoration_value_h50_eur_pv": 479751.69,
+      "num_steps": 900,
+      "restoration_cost_ratio": 6.0833,
+      "total_restoration_cost_eur": 274500.0,
+      "total_units_restored": 900,
+      "units_lost": 900
+    }
+  },
+  "per_agent": {
+    "Canopy Trees": 1906.522042379579,
+    "Fire & Microclimate Regulation": 1437.7731065674434,
+    "Forest Birds": 1271.2290326619893,
+    "Forest Mammals": 1112.3254035792406,
+    "Human Communities": 952.7136741819874,
+    "Mycorrhizal Fungi": 2063.4397905323494,
+    "Pollinators & Insects": 1589.0362908274867,
+    "Raptors & Apex Predators": 635.6145163309947,
+    "Soil Microbiome": 1588.6797221015863,
+    "Understory & Matorral": 1271.2267324862537,
+    "Watershed & Water Cycle": 1905.777411375849
+  },
+  "result": {
+    "annual_damage_reversal": 15773.585623853822,
+    "annual_recovered_value": 15734.337723024759,
+    "carbon_breakeven": {
+      "breakeven_price": 383.3673212457505,
+      "current_price": 166.3456487480301,
+      "gap_to_current": 217.02167249772037,
+      "npv_absorption_per_euro": 630.2946739137574,
+      "npv_cost": 241634.38073378097,
+      "profitable_at_current": false,
+      "projected_breakeven_year": 65
+    },
+    "depletion_after": 0.0,
+    "depletion_before": 0.9,
+    "destroy_then_restore_penalty": {
+      "carbon_not_recovered": 88380.1664641958,
+      "foregone_revenue": 54000.0,
+      "horizon": 100,
+      "maturation_gap": 0.0,
+      "ratio": 6.157054478937867,
+      "recovery_shortfall": 0.0,
+      "restoration_cost": 241634.38073378097,
+      "substrate_loss": 2466.394664668013,
+      "total": 332480.9418626448
+    },
+    "final_ecosystem_health": 0.9975362271921493,
+    "initial_ecosystem_health": 0.00981885600415433,
+    "maturation_gap_pv": 0.0,
+    "net_restoration_pv": 917476.7952243071,
+    "net_restoration_pv_by_horizon": {
+      "100": 917476.7952243071,
+      "200": 1344254.6455495725,
+      "50": 479751.68932600255
+    },
+    "restoration_cost": {
+      "annual_maintenance_per_unit": 15.0,
+      "maintenance_years": 15,
+      "planting_cost_per_unit": 80.0
+    },
+    "restoration_cost_ratio": 6.083333333333333,
+    "restoration_npv": {
+      "carbon_benefits": 170342.712106449,
+      "carbon_payback_years": 33,
+      "cost": 241634.38073378097,
+      "horizon": 100,
+      "net_present_value": 917476.7952243071,
+      "roi": 4.796962967099996,
+      "service_benefits": 988768.4638516392,
+      "total_benefits": 1159111.1759580881
+    },
+    "substrate_ceiling": 0.9975117958741284,
+    "substrate_recovery_years": 18.727009999980115,
+    "total_restoration_cost": 274500.0,
+    "total_units_restored": 900,
+    "units_lost": 900,
+    "years_to_50pct": 0.0,
+    "years_to_90pct": 0.0,
+    "years_to_pioneer": 0.0
+  },
+  "scenario": {
+    "argv": [
+      "--mode",
+      "restore",
+      "--trees",
+      "1000",
+      "--units",
+      "900"
+    ],
+    "case": "costa_brava",
+    "name": "costa_brava__restore_severe"
+  },
+  "step_sums": {
+    "agent_recoveries": [
+      279.3035292351378,
+      258.1836304114903,
+      257.92135720905236,
+      244.32393749310103,
+      235.9421580152311,
+      231.99920010775094,
+      234.85493263163488,
+      167.9367679325617,
+      259.75726962611736,
+      254.9836087511837,
+      266.3265813590477
+    ],
+    "agent_service_values": [
+      578409.6786930466,
+      411286.5232455039,
+      493042.4664408241,
+      311366.425941208,
+      375855.85771826335,
+      295659.78061731794,
+      261886.73537753604,
+      107009.3085266283,
+      496551.9966172856,
+      406188.8887406358,
+      254554.946462978
+    ],
+    "cumulative_service_value": 3991812.6083812276,
+    "depletion_ratio": 404.55,
+    "ecosystem_health": 259.42156603344546,
+    "marginal_service_value": 15734.337723024759,
+    "recovery_ratio": 450.5,
+    "restoration_cost_so_far": 123662250.0,
+    "step": 405450.0,
+    "units_restored": 405450.0
+  },
+  "steps": [
+    {
+      "agent_recoveries": [
+        2.3546990388154426e-09,
+        4.751843399604574e-10,
+        3.577146712820208e-10,
+        5.299343262729778e-12,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.1800023520310768e-09,
+        1.1107038949982841e-07,
+        1.5857273743482132e-09
+      ],
+      "agent_service_values": [
+        4.8763462394829e-06,
+        7.569686535570086e-07,
+        6.838073656227108e-07,
+        6.753483054022829e-09,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.255692496142606e-06,
+        0.00017693513047322665,
+        1.515638224402022e-06
+      ],
+      "cumulative_service_value": 0.00018703033693548792,
+      "depletion_ratio": 0.899,
+      "ecosystem_health": 0.009818867744916249,
+      "marginal_service_value": 0.00018703033693548792,
+      "recovery_ratio": 0.0011111111111111111,
+      "restoration_cost_so_far": 305.0,
+      "step": 1,
+      "units_restored": 1
+    },
+    {
+      "agent_recoveries": [
+        5.001262062456301e-05,
+        1.0218011211539751e-05,
+        7.730848123226018e-06,
+        1.995067869736416e-07,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.5140989741423912e-05,
+        0.0012630266151050947,
+        3.413343762108392e-05
+      ],
+      "agent_service_values": [
+        0.10357113605140754,
+        0.016277291859982824,
+        0.014778289272358854,
+        0.00025425144931920884,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.048059515989705946,
+        2.0120013978624156,
+        0.03262473967823201
+      ],
+      "cumulative_service_value": 2.227566622163422,
+      "depletion_ratio": 0.809,
+      "ecosystem_health": 0.009958690694811256,
+      "marginal_service_value": 0.058310728034443926,
+      "recovery_ratio": 0.10111111111111111,
+      "restoration_cost_so_far": 27755.0,
+      "step": 91,
+      "units_restored": 91
+    },
+    {
+      "agent_recoveries": [
+        0.0005665754148954876,
+        0.00011988674965104008,
+        9.196870807326019e-05,
+        5.125669168557247e-06,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.00028739499911770405,
+        0.007070993951335635,
+        0.00039301384645131914
+      ],
+      "agent_service_values": [
+        1.1733210267070653,
+        0.19097959219410685,
+        0.17580738235284418,
+        0.006532152788409355,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.549384280313403,
+        11.264093364477667,
+        0.3756426344381708
+      ],
+      "cumulative_service_value": 13.735760433271667,
+      "depletion_ratio": 0.719,
+      "ecosystem_health": 0.010681113407372989,
+      "marginal_service_value": 0.22582757875795245,
+      "recovery_ratio": 0.2011111111111111,
+      "restoration_cost_so_far": 55205.0,
+      "step": 181,
+      "units_restored": 181
+    },
+    {
+      "agent_recoveries": [
+        0.003901252671274342,
+        0.0009063436462438327,
+        0.000719161832179426,
+        9.137834911362454e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0020294345306302738,
+        0.022921174282426543,
+        0.0027667952511250724
+      ],
+      "agent_service_values": [
+        8.079104156942035,
+        1.4438054284664257,
+        1.3747497583941908,
+        0.11645256811040312,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.879467048752831,
+        36.51343063190548,
+        2.6445029010253442
+      ],
+      "cumulative_service_value": 54.05151249359672,
+      "depletion_ratio": 0.629,
+      "ecosystem_health": 0.013211920190820958,
+      "marginal_service_value": 0.7766573065918578,
+      "recovery_ratio": 0.3011111111111111,
+      "restoration_cost_so_far": 82655.0,
+      "step": 271,
+      "units_restored": 271
+    },
+    {
+      "agent_recoveries": [
+        0.02123641264127731,
+        0.006106445112205274,
+        0.005160822141638263,
+        0.0013110304552564713,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.011780182935607291,
+        0.05952617497439188,
+        0.015615619726235371
+      ],
+      "agent_service_values": [
+        43.97848693882118,
+        9.727567063743003,
+        9.865427605955704,
+        1.6707772121788471,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        22.518997699706897,
+        94.82519673420627,
+        14.925409334335768
+      ],
+      "cumulative_service_value": 197.51186258894768,
+      "depletion_ratio": 0.539,
+      "ecosystem_health": 0.022217591885444254,
+      "marginal_service_value": 2.8366768485248315,
+      "recovery_ratio": 0.4011111111111111,
+      "restoration_cost_so_far": 110105.0,
+      "step": 361,
+      "units_restored": 361
+    },
+    {
+      "agent_recoveries": [
+        0.09027523351597087,
+        0.03724208693830541,
+        0.033927515277201316,
+        0.013401284396624425,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.057129516904929935,
+        0.13573765102162635,
+        0.07066717185163962
+      ],
+      "agent_service_values": [
+        186.95098108822407,
+        59.326644492720526,
+        64.85583820389803,
+        17.078596835058168,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        109.20878451546406,
+        216.2300780774508,
+        67.54368285579714
+      ],
+      "cumulative_service_value": 721.1946060686129,
+      "depletion_ratio": 0.449,
+      "ecosystem_health": 0.055091587081907756,
+      "marginal_service_value": 10.045051440642055,
+      "recovery_ratio": 0.5011111111111111,
+      "restoration_cost_so_far": 137555.0,
+      "step": 451,
+      "units_restored": 451
+    },
+    {
+      "agent_recoveries": [
+        0.2674372972838104,
+        0.20274929681933487,
+        0.20277839649004545,
+        0.1268383972556756,
+        0.10302040008108193,
+        0.0784562259641725,
+        0.10024630892538293,
+        0.0,
+        0.20257469879507173,
+        0.2707834269040474,
+        0.22809453969183655
+      ],
+      "agent_service_values": [
+        553.8358989450429,
+        322.9796298332005,
+        387.6311827303709,
+        161.642853462633,
+        164.1114973291635,
+        99.98461436874143,
+        111.7846590826945,
+        0.0,
+        387.2417942166591,
+        431.35799905814747,
+        218.01276103745738
+      ],
+      "cumulative_service_value": 2838.582890064111,
+      "depletion_ratio": 0.36,
+      "ecosystem_health": 0.188009872329585,
+      "marginal_service_value": 36.9423060865729,
+      "recovery_ratio": 0.6,
+      "restoration_cost_so_far": 164700.0,
+      "step": 540,
+      "units_restored": 540
+    },
+    {
+      "agent_recoveries": [
+        0.5342732127024277,
+        0.47115390078590935,
+        0.4711930869093395,
+        0.4424048502002563,
+        0.4128276092528658,
+        0.4002911422914745,
+        0.40766310167106357,
+        0.006481001249332298,
+        0.47091878404532883,
+        0.456917512722534,
+        0.49268501455879693
+      ],
+      "agent_service_values": [
+        1106.4263961854574,
+        750.5481639519537,
+        900.7327049358934,
+        563.8007410952067,
+        657.6343815398153,
+        510.1310317362551,
+        454.585124673403,
+        4.129693996074541,
+        900.2083475810506,
+        727.8695977669967,
+        470.9083369152981
+      ],
+      "cumulative_service_value": 7046.974520377405,
+      "depletion_ratio": 0.27,
+      "ecosystem_health": 0.45219013788597506,
+      "marginal_service_value": 52.82206580609636,
+      "recovery_ratio": 0.7,
+      "restoration_cost_so_far": 192150.0,
+      "step": 630,
+      "units_restored": 630
+    },
+    {
+      "agent_recoveries": [
+        0.7701241777722134,
+        0.7365334671027779,
+        0.7365806891581617,
+        0.7211477576826241,
+        0.712383083677645,
+        0.7045406021232147,
+        0.7091523045775416,
+        0.4954167733244534,
+        0.7362501347704754,
+        0.6418474036088737,
+        0.744085469479101
+      ],
+      "agent_service_values": [
+        1594.8501597484767,
+        1173.2978130947251,
+        1408.0476453947417,
+        919.0307023907361,
+        1134.8262522984885,
+        897.8665433458248,
+        790.7757348344167,
+        315.6795679623417,
+        1407.4157576272407,
+        1022.4629139489359,
+        711.1968917281247
+      ],
+      "cumulative_service_value": 11375.449982374052,
+      "depletion_ratio": 0.18,
+      "ecosystem_health": 0.7239086226315274,
+      "marginal_service_value": 40.61199935660625,
+      "recovery_ratio": 0.8,
+      "restoration_cost_so_far": 219600.0,
+      "step": 720,
+      "units_restored": 720
+    },
+    {
+      "agent_recoveries": [
+        0.9180176015049029,
+        0.907741100353515,
+        0.9077936430271271,
+        0.9029097167372521,
+        0.9008620616711934,
+        0.8982040472858978,
+        0.8997670693190679,
+        0.8308512015161101,
+        0.9074258443118426,
+        0.7909284061304781,
+        0.9075665505630448
+      ],
+      "agent_service_values": [
+        1901.1226509565033,
+        1446.0315728631494,
+        1735.3383280106561,
+        1150.668143009954,
+        1435.0732642422113,
+        1144.671237861148,
+        1003.3302589976928,
+        529.4183856060654,
+        1734.6352439865182,
+        1259.9489509658517,
+        867.4521090281581
+      ],
+      "cumulative_service_value": 14207.69014552791,
+      "depletion_ratio": 0.09,
+      "ecosystem_health": 0.9017014765646005,
+      "marginal_service_value": 23.201068044498243,
+      "recovery_ratio": 0.9,
+      "restoration_cost_so_far": 247050.0,
+      "step": 810,
+      "units_restored": 810
+    },
+    {
+      "agent_recoveries": [
+        0.996397600334323,
+        0.9972879611434942,
+        0.9973436086940674,
+        0.9975099909653592,
+        0.9975117958741284,
+        0.9975117958741284,
+        0.9975117958741284,
+        0.9975117958741284,
+        0.9969540758400549,
+        0.9025568779456643,
+        0.9967709501799408
+      ],
+      "agent_service_values": [
+        2063.4397905323494,
+        1588.6797221015863,
+        1906.522042379579,
+        1271.2267324862537,
+        1589.0362908274867,
+        1271.2290326619893,
+        1112.3254035792406,
+        635.6145163309947,
+        1905.777411375849,
+        1437.7731065674434,
+        952.7136741819874
+      ],
+      "cumulative_service_value": 15734.337723024759,
+      "depletion_ratio": 0.0,
+      "ecosystem_health": 0.9975362271921493,
+      "marginal_service_value": 11.966695544377217,
+      "recovery_ratio": 1.0,
+      "restoration_cost_so_far": 274500.0,
+      "step": 900,
+      "units_restored": 900
+    }
+  ]
+}
