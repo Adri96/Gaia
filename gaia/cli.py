@@ -62,7 +62,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
     Adds: --version, --mode, --format, --output, --with-pricing, --summary-only,
-    --steps-every, --area-ha, --carbon-price.
+    --steps-every, --area-ha, --resource-name, --carbon-price.
     """
     parser.add_argument(
         "--version",
@@ -107,10 +107,24 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="HA",
         help=(
-            "Area of the resource in hectares (default: the number of units "
-            "divided by the case's reference density). Agent values are "
-            "€/ha/yr, so holding the area fixed while changing the number of "
-            "units changes per-unit figures but not the per-ha externality"
+            "Area of the reference resource in hectares (default: the case's; "
+            "for a case counted in units, the number of units divided by its "
+            "reference density). For a case counted in hectares (e.g. "
+            "posidonia) it is the reference resource itself — e.g. the "
+            "specific meadow a project affects instead of the regional stock — "
+            "and sets the number of units. Agent values are €/ha/yr, so holding "
+            "the area fixed while changing the number of units changes per-unit "
+            "figures but not the per-ha externality"
+        ),
+    )
+    parser.add_argument(
+        "--resource-name",
+        type=str,
+        default=None,
+        metavar="NAME",
+        help=(
+            "Name of the reference resource in the outputs, e.g. the meadow "
+            "the project affects (default: the case's)"
         ),
     )
     parser.add_argument(
@@ -187,6 +201,7 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
     overrides: Dict[str, Any] = {
         "total_units": args.total_units, "unit_value": args.unit_value,
         "area_ha": args.area_ha, "labels": labels,
+        "resource_name": getattr(args, "resource_name", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -490,7 +505,10 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     if legacy is None:
         parser.add_argument(
             "--total-units", type=int, default=total, metavar="N",
-            help=f"Total number of units ({case.unit}) in the resource (default: {total})",
+            help=(
+                f"Total number of units ({case.unit}) in the reference resource "
+                f"(default: {total})"
+            ),
         )
     else:
         parser.add_argument(
@@ -564,6 +582,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             with_pricing=args.with_pricing,
             area_ha=args.area_ha,
             labels=labels,
+            resource_name=getattr(args, "resource_name", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any

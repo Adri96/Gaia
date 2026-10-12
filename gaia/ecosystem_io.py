@@ -489,23 +489,48 @@ class Case:
         area_ha: Optional[float] = None,
         with_pricing: Optional[bool] = None,
         labels: Optional[Dict[str, str]] = None,
+        resource_name: Optional[str] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
+
+        The reference resource — the stock whose depletion the damage
+        curves see — is the document's (resource.name, total_units, area);
+        ``total_units``/``area_ha`` and ``resource_name`` replace it with,
+        e.g., the specific meadow a project affects (Step 8c.4).
 
         Args:
             total_units, safe_threshold_ratio, unit_value, area_ha: Override
                 the document's value; a different value is recorded as
-                user-supplied (gaia.provenance.user_or_default).
+                user-supplied (gaia.provenance.user_or_default). With unit
+                "ha" the area is the number of units, so ``area_ha`` (a
+                whole number of hectares) sets both; ``total_units`` may
+                then only repeat it, or stay at the document's value.
             with_pricing: Attach the EXPERIMENTAL pricing configuration
                 (default: the document's pricing.enabled).
             labels: How the user sets each value, for the user-supplied
                 provenance (default DEFAULT_LABELS).
+            resource_name: Name of the reference resource (default: the
+                document's resource.name).
 
         Raises:
-            ValueError: With unit "ha", if area_ha differs from total_units;
-                with pricing requested and no pricing block.
+            ValueError: With unit "ha", if area_ha is not a whole number of
+                hectares or conflicts with an explicit total_units; with
+                pricing requested and no pricing block.
         """
         lab = dict(DEFAULT_LABELS, **(labels or {}))
+        if self.unit == "ha" and area_ha is not None:
+            if not (math.isfinite(area_ha) and area_ha > 0 and area_ha == int(area_ha)):
+                raise ValueError(
+                    f"{self.resource_name}: the unit is the hectare, so area_ha must be "
+                    f"a whole number of hectares > 0, got {area_ha}"
+                )
+            if total_units is not None and total_units not in (int(area_ha), self.total_units.value):
+                raise ValueError(
+                    f"{self.resource_name}: the unit is the hectare, so area_ha "
+                    f"({area_ha:g}) must equal the number of units ({total_units})"
+                )
+            total_units = int(area_ha)
+            lab["total_units"] = lab["area_ha"]
         total, total_param = _override(self.total_units, total_units, lab["total_units"])
         threshold, threshold_param = _override(
             self.safe_threshold_ratio, safe_threshold_ratio, lab["safe_threshold_ratio"]
@@ -528,7 +553,7 @@ class Case:
         ]
         interactions = [InteractionEdge(*edge) for edge in self.interactions]
         resource = Resource(
-            name=self.resource_name,
+            name=self.resource_name if resource_name is None else resource_name,
             total_units=total,
             safe_threshold_ratio=threshold,
             unit_value=value,

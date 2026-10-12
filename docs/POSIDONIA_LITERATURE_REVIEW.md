@@ -34,10 +34,12 @@ The case remains **illustrative** by Gaia's own rule (`CalibrationStatus.status`
 
 | Parameter | Value | Source | Range / notes | Confidence |
 |---|---|---|---|---|
-| `resource.area_ha` (= `total_units`) | 4,582 ha | Generalitat de Catalunya, *Mapa d'hàbitats marins de Catalunya*, presented 29 May 2025 (Hipermapa). P. oceanica covers 4,582 ha, 2.4% of ~190,000 ha mapped down to 50 m. Figure as reported by Ara (29 May 2025, <https://en.ara.cat/society/from-portbou-to-alcanar-this-is-the-catalan-seabed_1_5395705.html>); 3Cat and Ecoticias give the same figures. | The whole Catalan stock. The map's breakdown by coast (how much is Costa Brava) and the dataset itself were not available to this review, and the Govern's press-release PDF returned HTTP 403. The former 5,000 ha exceeded the entire Catalan stock. | medium |
+| `resource.area_ha` (= `total_units`), the default reference resource | 4,582 ha | Generalitat de Catalunya, *Mapa d'hàbitats marins de Catalunya*, presented 29 May 2025 (Hipermapa). P. oceanica covers 4,582 ha, 2.4% of ~190,000 ha mapped down to 50 m. Figure as reported by Ara (29 May 2025, <https://en.ara.cat/society/from-portbou-to-alcanar-this-is-the-catalan-seabed_1_5395705.html>); 3Cat and Ecoticias give the same figures. | The whole Catalan stock. The map's breakdown by coast (how much is Costa Brava) and the dataset itself were not available to this review, and the Govern's press-release PDF returned HTTP 403. The former 5,000 ha exceeded the entire Catalan stock. | medium |
 | `resource.unit_value` | €2,500/ha | none | Project-specific: the private gain per hectare destroyed. The user sets it (`--unit-value`) for the project assessed. | placeholder |
 | `resource.safe_threshold_ratio` | 0.20 | none | No ecological or regulatory source supports a "safe" loss of 20% of a priority habitat (Habitats Directive 1120\*). It also sets the inflection of every damage curve (§3). | placeholder |
 | run default `units` | 50 ha | none | An illustrative project size, about 1.1% of the stock; the user sets N. | — |
+
+**The reference resource is an input (Step 8c.4).** The regional stock is the default; a user assessing one project enters the specific meadow it affects (`--area-ha N --resource-name NAME`, or the case file's `resource.total_units`/`area_ha` and `resource.name`). Both are recorded as user-supplied. The choice changes the depletion fraction N_destroyed / N_reference, so it matters only past the safe threshold: below it every hectare costs its average value whatever the reference (Step 8c.3, §3).
 
 Context, not a parameter:
 - **Regional decline.** Telesca et al. (2015), *Sci. Rep.* 5:12505, doi:10.1038/srep12505, map 1,224,707 ha of known *P. oceanica* and estimate a 34% regression over the last 50 years.

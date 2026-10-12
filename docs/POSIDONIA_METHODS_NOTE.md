@@ -10,7 +10,7 @@
 
 **Question:** if the project destroys *N* hectares of the Catalan *Posidonia* stock, what is the present value of the ecosystem services and carbon lost? How does it compare with the project's private gain, and with what uncertainty? Which inputs drive the answer?
 
-The reference resource is the regional stock: 4,582 ha of *P. oceanica* mapped by the Generalitat de Catalunya in 2025, as reported. The default project destroys an illustrative 50 ha (1.1%) for a private gain of €2,500/ha (a placeholder; the user enters the project's own figure). Gaia answers with:
+The reference resource is, by default, the regional stock: 4,582 ha of *P. oceanica* mapped by the Generalitat de Catalunya in 2025, as reported. The user can replace it with the specific meadow the project affects (`--area-ha N --resource-name NAME`, or the case file's `resource` block). The default project destroys an illustrative 50 ha (1.1%) for a private gain of €2,500/ha (a placeholder; the user enters the project's own figure). Gaia answers with:
 
 - one deterministic run: `gaia run posidonia --units N --unit-value G`;
 - a Monte Carlo over the parameter ranges: `--uncertainty`.

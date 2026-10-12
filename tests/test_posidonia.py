@@ -352,3 +352,60 @@ def test_posidonia_cascade_increases_coastal_protection_cost():
     assert cascade_dmg > 0, (
         f"Coastal Protection should have non-zero cascade damage, got {cascade_dmg:.6f}"
     )
+
+
+# ── Step 8c.4: the reference resource is an input ────────────────────────────
+
+def test_reference_resource_defaults_to_the_catalan_stock():
+    """Without an input the reference resource is the regional stock."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem()
+    assert eco.resource.total_units == 4582
+    assert eco.resource.area_ha == 4582.0
+
+
+def test_reference_resource_can_be_the_affected_meadow():
+    """--area-ha (and --resource-name) set the specific meadow a project
+    affects: it becomes the stock whose depletion the curves see, recorded
+    as user-supplied."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    eco = case.build_ecosystem(area_ha=300.0, resource_name="Meadow of the bay")
+    assert eco.resource.total_units == 300
+    assert eco.resource.area_ha == 300.0
+    assert eco.resource.name == "Meadow of the bay"
+    area = next(p for p in eco.provenance if p.name == "resource.area_ha")
+    assert area.confidence.value == "user-supplied"
+    assert "--area-ha" in area.source
+    # the same depletion of a smaller stock is reached with fewer hectares
+    small = run_extraction(eco, 60)
+    assert small.steps[-1].depletion_ratio == pytest.approx(0.2)
+
+
+def test_reference_resource_rejects_fractional_or_conflicting_areas():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    with pytest.raises(ValueError, match="whole number of hectares"):
+        case.build_ecosystem(area_ha=300.5)
+    with pytest.raises(ValueError, match="must equal the number of units"):
+        case.build_ecosystem(total_units=200, area_ha=300.0)
+    # repeating the same figure is fine
+    assert case.build_ecosystem(total_units=300, area_ha=300.0).resource.total_units == 300
+
+
+def test_reference_resource_cli(capsys):
+    """gaia run posidonia --area-ha N --resource-name NAME."""
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--area-ha", "300", "--resource-name",
+                 "Meadow of the bay", "--units", "30", "--format", "json",
+                 "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    resource = out["ecosystem"]["resource"]
+    assert resource["total_units"] == 300
+    assert resource["name"] == "Meadow of the bay"

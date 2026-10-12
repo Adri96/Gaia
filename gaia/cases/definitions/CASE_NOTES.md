@@ -189,12 +189,19 @@ parameter and a DOI or stable URL for every source, is
 `docs/POSIDONIA_LITERATURE_REVIEW.md`, and the method is described in
 `docs/POSIDONIA_METHODS_NOTE.md`. This section keeps the derivations.
 
-**Reference resource.** The Catalan *P. oceanica* stock, 4,582 ha (the
-Generalitat's 2025 marine habitat map, as reported); the unit is the
-hectare, so 4,582 units. The default run destroys an illustrative 50 ha
-(about 1.1% of the stock), the scale of a port or marina project (the
-proposed first user, `PROJECT_DEFINITION.md` v1.0). Before Step 8 the case
-used 5,000 ha, more than the whole Catalan stock, and 2,000 ha destroyed.
+**Reference resource.** By default the Catalan *P. oceanica* stock,
+4,582 ha (the Generalitat's 2025 marine habitat map, as reported); the unit
+is the hectare, so 4,582 units. The default run destroys an illustrative
+50 ha (about 1.1% of the stock), the scale of a port or marina project (the
+first user, `PROJECT_DEFINITION.md` v1.0). Since Step 8c.4 the reference is
+an input: the user replaces it with the specific meadow the project
+affects, `gaia run posidonia --area-ha 300 --resource-name "…"` (or
+`resource.total_units`/`area_ha` and `resource.name` in a copy of the
+file), recorded as user-supplied. The reference sets the depletion
+fraction: below the safe threshold the cost per hectare does not depend on
+it (Step 8c.3), above it the remaining meadow degrades. Before Step 8 the
+case used 5,000 ha, more than the whole Catalan stock, and 2,000 ha
+destroyed.
 
 **Monetary semantics.** As in every case: agent values are yearly flows,
 revenue is one-off (€2,500/ha, a project-specific placeholder the user

@@ -12,7 +12,7 @@
       "unit": "ha",
       "source": "Generalitat de Catalunya, Mapa d'hàbitats marins de Catalunya (presented 29 May 2025; Hipermapa): P. oceanica meadows 4,582 ha, 2.4% of ~190,000 ha mapped to 50 m depth, as reported by Ara (29 May 2025, https://en.ara.cat/society/from-portbou-to-alcanar-this-is-the-catalan-seabed_1_5395705.html)",
       "confidence": "medium",
-      "note": "The whole Catalan stock (Portbou to Alcanar), the reference resource for a regional authority; the Costa Brava holds much of it (Cap de Creus) but the map's breakdown by coast was not available to this review, nor the dataset itself (the Govern's press-release PDF returned HTTP 403). The former 5,000 ha exceeded the whole Catalan stock."
+      "note": "The default reference resource: the whole Catalan stock (Portbou to Alcanar). A user assessing one project replaces it with the specific meadow the project affects (--area-ha N [--resource-name NAME], or resource.total_units/area_ha and resource.name in a copy of this file); the reference sets the depletion fraction, which matters once a project passes the safe threshold. The Costa Brava holds much of it (Cap de Creus) but the map's breakdown by coast was not available to this review, nor the dataset itself (the Govern's press-release PDF returned HTTP 403). The former 5,000 ha exceeded the whole Catalan stock."
     },
     "unit_value": {
       "value": 2500.0,
