@@ -26,15 +26,13 @@ The factories reject parameters that would make the curve undefined or break
 these invariants (ValueError), instead of failing with ZeroDivisionError or
 OverflowError at the first evaluation.
 
-All functions are float -> float in the hot path — Cython-compatible.
+All functions are float -> float.
 
 Kernel tags:
     Every factory attaches a ``kernel`` attribute to the function it returns:
     a 5-tuple ``(kind, p1, p2, p3, p4)`` holding the pre-computed parameters.
-    The Cython loop evaluates the same formula from this tag, so it never has
-    to inspect closures. ``evaluate_kernel`` is the pure-Python reference for
-    each kind; the simulation checks it against the function itself before
-    trusting a tag, and falls back to the Python loop on any mismatch.
+    gaia.ecosystem_io reads it to write a curve back to a case file (and
+    checks that rebuilding the curve gives the same tag).
 """
 
 import math
@@ -43,7 +41,7 @@ from typing import Callable, Optional, Tuple
 DamageFunc = Callable[[float], float]
 Kernel = Tuple[int, float, float, float, float]
 
-# Kernel kinds (must match gaia/cy/simulation_cy.pyx)
+# Kernel kinds
 KERNEL_LOGISTIC: int = 0     # (inflection, raw_0, span, steepness)
 KERNEL_EXPONENTIAL: int = 1  # (scale, raw_1, base, 0.0)
 KERNEL_PIECEWISE: int = 2    # (threshold, pre_slope, post_slope, pre_slope_ratio)
@@ -54,25 +52,6 @@ def _require_threshold(threshold: float, factory: str) -> None:
     if not (isinstance(threshold, (int, float)) and math.isfinite(threshold)
             and 0.0 < threshold < 1.0):
         raise ValueError(f"{factory}: threshold must be in (0.0, 1.0), got {threshold!r}")
-
-
-def evaluate_kernel(kernel: Kernel, depletion_ratio: float) -> float:
-    """Evaluate a kernel tag with the same arithmetic as the factory closures.
-
-    Raises:
-        ValueError: If the kernel kind is unknown.
-    """
-    kind, p1, p2, p3, p4 = kernel
-    if kind == KERNEL_LOGISTIC:
-        raw: float = 1.0 / (1.0 + math.exp(-p4 * (depletion_ratio - p1)))
-        return (raw - p2) / p3
-    if kind == KERNEL_EXPONENTIAL:
-        return ((p3 ** (depletion_ratio * p1)) - 1.0) / p2
-    if kind == KERNEL_PIECEWISE:
-        if depletion_ratio <= p1:
-            return p2 * depletion_ratio
-        return p4 + p3 * (depletion_ratio - p1)
-    raise ValueError(f"Unknown damage kernel kind: {kind!r}")
 
 
 def logistic_damage(threshold: float, steepness: float = 12.0) -> DamageFunc:

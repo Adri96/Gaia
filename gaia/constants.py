@@ -1,9 +1,8 @@
 """
 Gaia — model constants for trophic amplification and interaction cascades.
 
-The single home of these numbers: gaia.propagation, gaia.validation,
-gaia.report and the Cython loop (which receives them as arguments from
-gaia.simulation) all read them from here, so the engines and the text report
+The single home of these numbers: gaia.propagation, gaia.validation and
+gaia.report all read them from here, so the engine and the text report
 cannot drift apart.
 
 Every constant carries a source, or an explicit PLACEHOLDER flag when the

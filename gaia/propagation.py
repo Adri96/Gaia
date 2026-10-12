@@ -17,8 +17,8 @@ MAX_INCOMING_EDGE_STRENGTH = 1, so effective damage stays in [0, 1] without
 clamping and keeps rising with depletion instead of saturating.
 
 The constants live in gaia.constants. All propagation functions use
-primitive types (float, int, list, dict) for Cython compatibility; the
-ecosystem-level helpers at the end are for validation, not the hot loop.
+primitive types (float, int, list, dict); the ecosystem-level helpers at the
+end are for validation and reporting.
 No third-party dependencies.
 
 Scientific foundations used: F3 (Trophic Pyramids), F6 (Keystone Species), F10 (Coevolution).
@@ -41,7 +41,7 @@ def trophic_amplification_factor(
     services (level <= 0), else
         (1 / transfer_efficiency) ** (TROPHIC_AMPLIFICATION_EXPONENT * level)
     i.e. 1.6× / 2.6× / 4.1× for levels 1 / 2 / 3 at the default efficiency.
-    Both engines and the text report use this one function.
+    The engine and the text report use this one function.
     """
     if trophic_level <= 0:
         return 1.0
@@ -216,7 +216,7 @@ def propagate_interactions(
     return (effective, cascade, keystone_triggered)
 
 
-# ── Ecosystem-level helpers (validation; not used by the hot loops) ─────────
+# ── Ecosystem-level helpers (validation and reporting) ──────────────────────
 
 
 def worst_case_incoming_strengths(agents: list, interactions: list) -> dict:
@@ -243,7 +243,7 @@ def worst_case_incoming_strengths(agents: list, interactions: list) -> dict:
 def effective_damages_at(ecosystem, depletion_ratio: float) -> list:
     """
     Every agent's effective damage at one depletion ratio — the same
-    computation as one step of the extraction loop (damage function, trophic
+    computation as one extraction step (damage function, trophic
     amplification, interaction propagation), without running the loop.
     """
     agents: list = ecosystem.agents
@@ -268,7 +268,7 @@ def effective_damages_at(ecosystem, depletion_ratio: float) -> list:
 
 def ecosystem_health_at(ecosystem, depletion_ratio: float) -> float:
     """Ecosystem health, 1 − Σ weight × effective damage clamped to [0, 1],
-    at one depletion ratio (as in the extraction loop)."""
+    at one depletion ratio (as in an extraction step)."""
     damages: list = effective_damages_at(ecosystem, depletion_ratio)
     health: float = 1.0 - sum(
         a.dependency_weight * d for a, d in zip(ecosystem.agents, damages)

@@ -4,7 +4,7 @@ Gaia v0.6 -- Discount mechanics, NPV calculations, carbon breakeven.
 Implements proper time-value-of-money economics for Gaia. All monetary values
 become discountable to present value using Ramsey-based discount rates.
 
-All functions use primitive types for Cython compatibility.
+All functions use primitive types.
 No third-party dependencies.
 
 Year convention (one convention everywhere in Gaia):

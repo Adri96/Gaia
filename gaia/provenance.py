@@ -5,7 +5,7 @@ Implements the project's own rule: every number traceable to a source, and
 placeholders flagged in the output. A case file records each economically or
 ecologically meaningful parameter as {value, unit, source, confidence, note}
 (gaia.ecosystem_io), which becomes a ``Param``; the model receives
-``param.value`` — a plain float — so neither engine ever sees a ``Param``.
+``param.value`` — a plain float — so the engine never sees a ``Param``.
 The list is attached to ``Ecosystem.provenance``; ``calibration_status`` adds the model-wide
 parameters (trophic and keystone constants, carbon price, default discount)
 and every result carries the outcome in its ``calibration`` field, which the

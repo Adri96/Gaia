@@ -149,7 +149,7 @@ def test_ecosystem_weights_sum():
 
 
 def test_ecosystem_agents_list_type():
-    """Ecosystem.agents is a plain list (Cython compat)."""
+    """Ecosystem.agents is a plain list."""
     eco = _make_ecosystem(3)
     assert isinstance(eco.agents, list)
 

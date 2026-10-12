@@ -1,16 +1,8 @@
 # Gaia — packaging, lint, type-check and test configuration.
 #
-# Cython is OPTIONAL. A plain build (`pip install .`) needs only setuptools
-# and installs the pure-Python engine. To build the compiled extraction loop,
-# install Cython first and build without isolation:
-#
-#     pip install "Cython>=3.0"
-#     pip install --no-build-isolation -e .        # or:
-#     python3 setup.py build_ext --inplace
-#
-# setup.py embeds the SHA-256 of gaia/cy/simulation_cy.pyx in the compiled
-# module; gaia.simulation falls back to the Python loop (with a warning) when
-# the build is stale.
+# Pure Python, standard library only: `pip install .` (or `pip install -e .`)
+# needs only setuptools. The optional Cython loop was removed with decision
+# D5 option B / D7 (the engine evaluates its static function directly).
 
 [build-system]
 requires = ["setuptools>=77"]
@@ -18,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gaia"
-dynamic = ["version"]   # read from gaia/__init__.py by setup.py
+dynamic = ["version"]   # gaia.__version__ (tool.setuptools.dynamic below)
 description = "Gaia — Externality Computation Framework"
 readme = "README.md"
 license = "MIT"
@@ -35,17 +27,19 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-speedups = ["Cython>=3.0"]
 dev = ["pytest>=7", "ruff==0.17.0", "mypy==1.20.2"]  # mypy 2.x cannot target 3.9
 
 [project.scripts]
 gaia = "gaia.cli:main"
 
+[tool.setuptools.dynamic]
+version = { attr = "gaia.__version__" }
+
 [tool.setuptools.packages.find]
 include = ["gaia*"]
 
 [tool.setuptools.package-data]
-gaia = ["cy/*.pyx", "cases/definitions/*.md", "cases/data/*.json"]
+gaia = ["cases/definitions/*.md", "cases/data/*.json"]
 
 # ── Ruff ──────────────────────────────────────────────────────────────────────
 [tool.ruff]
@@ -72,10 +66,6 @@ files = ["gaia"]
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
-
-[[tool.mypy.overrides]]
-module = ["gaia.cy.simulation_cy"]
-ignore_missing_imports = true
 
 # ── pytest ────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]

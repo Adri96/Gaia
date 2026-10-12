@@ -24,14 +24,6 @@ MANIFEST
 htmlcov/
 .tox/
 
-# ── Cython ────────────────────────────────────────────────────────────────────
-# Generated C/C++ source from .pyx files
-gaia/cy/*.c
-gaia/cy/*.cpp
-# Compiled extension modules
-*.so
-*.pyd
-
 # ── Jupyter ───────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
 *.ipynb

@@ -11,11 +11,7 @@ Scientific basis:
     - Posidonia matte accretion: ~1 mm/yr (Monnier et al. 2020)
     - Bulk density for t/ha -> mm conversion: ~1,300 kg/m³
 
-All code is Cython-compatible:
-    - No dynamic attributes
-    - No **kwargs
-    - Primitive floats and ints in hot paths
-    - No third-party dependencies
+Primitive floats and ints, no third-party dependencies.
 """
 
 import math
@@ -34,8 +30,7 @@ _T_HA_TO_MM_FACTOR: float = 100.0 / _BULK_DENSITY_KG_M3  # ≈ 0.0769 mm per t/h
 def is_terrestrial(profile: SubstrateProfile) -> bool:
     """True if the profile tracks soil depth (substrate_type terrestrial_soil).
 
-    This is the single dispatch rule for substrate behaviour, shared by the
-    pure-Python functions below and the Cython extraction loop.
+    This is the single dispatch rule for substrate behaviour.
     """
     return profile.substrate_type == SubstrateType.TERRESTRIAL_SOIL
 
@@ -180,8 +175,7 @@ def _capacity_logistic(state: SubstrateState) -> float:
     Designed for light-limited marine systems (Posidonia: water clarity
     determines habitable depth via Beer-Lambert, a smooth but nonlinear
     relationship), where the ratio is sediment stability. The curve depends
-    only on current/pristine, so terrestrial profiles apply it to soil depth,
-    exactly as the Cython loop does.
+    only on current/pristine, so terrestrial profiles apply it to soil depth.
     """
     ratio = _substrate_ratio(state)
     if ratio is None:

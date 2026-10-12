@@ -36,7 +36,7 @@ AND fully matured, the services lost to the damage return. Maturation delay is
 handled separately by the succession curve (gaia.succession) — the recovery
 function models the shape of the return curve, not the time dimension.
 
-All functions are float → float in the hot path — Cython-compatible.
+All functions are float → float.
 """
 
 import math
