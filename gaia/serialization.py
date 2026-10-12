@@ -206,6 +206,12 @@ def _calibration_to_dict(calibration) -> Dict[str, Any]:
     }
 
 
+def _damage_model(ecosystem) -> Dict[str, Any]:
+    """{"damage_model": ...} when it is not the default "direct" (Step 8c.3)."""
+    model = getattr(ecosystem, "damage_model", "direct")
+    return {} if model == "direct" else {"damage_model": model}
+
+
 def _calibration_regime(ecosystem) -> Optional[str]:
     """Ecosystem.calibration_regime as "A" / "B" (None when undeclared)."""
     regime = ecosystem.calibration_regime
@@ -506,6 +512,7 @@ def simulation_result_to_dict(
             "interactions": _interaction_metadata(eco.interactions),
             "calibration_regime": _calibration_regime(eco),
             "has_pricing": eco.pricing is not None,
+            **_damage_model(eco),
         },
         "summary": {
             "total_units_extracted": result.total_units_extracted,
@@ -588,6 +595,7 @@ def restoration_result_to_dict(
             "agents": _agent_metadata(agents, eco.resource.area_ha),
             "interactions": _interaction_metadata(eco.interactions),
             "calibration_regime": _calibration_regime(eco),
+            **_damage_model(eco),
         },
         "restoration_cost": {
             "planting_cost_per_unit_eur": (

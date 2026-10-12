@@ -252,9 +252,26 @@ probably low. Re-absorption is not modelled in the extraction view: a
 port footprint is permanent, and natural recolonisation around it would
 re-absorb about 8% of the PV of the foregone burial.
 
-**Damage curves, threshold, edges, keystone.** Unchanged placeholders:
-- the same logistic for every agent (steepness 12, inflection at 32%,
-  just past the 20% "safe" threshold), with nothing to fit it to;
+**Damage model: small losses priced linearly (Step 8c.3).** The owner's
+answer to open question 3: the marginal hectare costs its average value
+(standard benefit transfer), and the threshold behaviour is kept for
+larger losses. The case declares `"damage_model": "area_loss"`: each
+agent's damage at depletion D is D + (1 − D) × degradation(D). The
+hectares lost take their own services (the linear part, slope exactly 1),
+and the curve, trophic amplification and cascades describe how the
+REMAINING meadow degrades. The curve is a `threshold_logistic`: zero up
+to the safe threshold, then the former logistic (steepness 12, inflection
+15% into the post-threshold span, 32% loss). So below the threshold the
+annual externality is exactly N ha × the per-hectare total, whatever the
+reference resource and the curve parameters. Past it, the hectares just
+beyond the threshold cost about 3–4 times their average value, and once
+the remaining meadow is mostly degraded further hectares cost little.
+Applied per case: the other three cases keep their direct curves (no
+number changes there), because their values and curves have not been
+reviewed in this light (an open question for the owner).
+
+**Damage curves, threshold, edges, keystone.** Placeholders:
+- the same degradation curve for every agent, with nothing to fit it to;
 - 15 hand-set edges; the links are documented (e.g. wave attenuation by
   the meadow, Infantes et al. 2012), their strengths are not;
 - a keystone threshold of 0.3.
@@ -265,15 +282,16 @@ structural lower bound for chains longer than one hop). In-degree cap:
 every agent's incoming strengths sum to at most 0.80 with the keystone
 boost, so no edge was changed.
 
-**CalibrationWarning (health 0.67 at the 20% threshold) remains.** No
-source supports a threshold-shaped response of Posidonia services to the
-fraction of meadow lost, and none supports a "safe" loss of 20% of a
-priority habitat. Fixing the warning would mean tuning placeholders to
-silence it. The warning is the honest signal that 20% is not safe. For
-small losses, which is the user's question, the curve gives each hectare
-about a quarter of its average per-hectare value (initial slope 0.25).
-That is why the review reports, next to Gaia's figure, the linear
-benefit transfer (N ha × €284.83/ha/yr).
+**CalibrationWarning: resolved by the damage model, not by tuning.**
+Before Step 8c.3 the placeholder logistic put heavy damage inside the
+"safe" zone (health 0.67 at 20%) and charged each hectare about a quarter
+of its average value at small losses. Under `area_loss` the health at
+depletion t is at most 1 − t by construction (the lost area's services
+are gone), so the old test (health ≥ 0.8 at t = 0.2) would only check
+that arithmetic. The check now looks at the remaining meadow: its health
+at the threshold is 1.0 (it starts degrading only past it), so there is
+no warning. Nothing makes a 20% loss of a priority habitat "safe": in
+this model it costs 20% of the services, priced linearly.
 
 **Restoration and succession.**
 - Planting cost €50,000/ha: of the order of the median marine

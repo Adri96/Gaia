@@ -246,6 +246,11 @@ def format_report(result: SimulationResult) -> str:
         f"  {'Safe Threshold:':<18} {resource.safe_threshold_units:>10,} units  "
         f"({resource.safe_threshold_ratio:.1%})"
     )
+    if ecosystem.damage_model == "area_loss":
+        lines.append(
+            f"  {'Damage model:':<18} area lost + degradation of what remains "
+            f"(each unit costs its average value below the threshold)"
+        )
     lines.append(
         f"  {'Units Extracted:':<18} {result.total_units_extracted:>10,}"
     )

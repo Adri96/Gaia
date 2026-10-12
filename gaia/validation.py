@@ -41,7 +41,7 @@ from gaia.models import (
     SubstrateType,
     SuccessionCurve,
 )
-from gaia.propagation import ecosystem_health_at, worst_case_incoming_strengths
+from gaia.propagation import DAMAGE_MODELS, ecosystem_health_at, worst_case_incoming_strengths
 
 # Valid trophic levels: -1 (abiotic), 0 (producer), 1-3 (consumers)
 _VALID_TROPHIC_LEVELS = {-1, 0, 1, 2, 3}
@@ -195,6 +195,7 @@ def validate_ecosystem(
             name=f"Agent '{agent.name}' damage_function",
             threshold=threshold,
         )
+    _validate_damage_model(ecosystem)
 
     # v0.3: Validate interaction edges
     agent_names = {a.name for a in ecosystem.agents}
@@ -324,6 +325,41 @@ def validate_damage_function(
             f"second differences are negative at {violations} of {m - 1} points "
             f"in [{t:g}, {t + window:g}]"
         )
+
+
+# The "area_loss" model's curves must be flat at small losses: their slope
+# near 0, f(h) / h, at most this (Step 8c.3).
+_SMALL_LOSS_PROBE: float = 1e-4
+_SMALL_LOSS_SLOPE_TOLERANCE: float = 1e-6
+
+
+def _validate_damage_model(ecosystem: Ecosystem) -> None:
+    """Ecosystem.damage_model is known; under "area_loss" every curve is
+    flat at small losses, so the damage D + (1 − D) × degradation has
+    slope 1 there (the marginal unit costs its average value).
+
+    Raises:
+        ValueError: For an unknown model, or a curve with a positive slope
+            at small losses (e.g. a plain logistic: about 0.25).
+    """
+    model = ecosystem.damage_model
+    if model not in DAMAGE_MODELS:
+        raise ValueError(
+            f"Ecosystem '{ecosystem.name}' damage_model must be one of "
+            f"{list(DAMAGE_MODELS)}, got {model!r}"
+        )
+    if model != "area_loss":
+        return
+    h: float = _SMALL_LOSS_PROBE
+    for agent in ecosystem.agents:
+        slope: float = agent.damage_function(h) / h
+        if slope > _SMALL_LOSS_SLOPE_TOLERANCE:
+            raise ValueError(
+                f"Agent '{agent.name}': under the 'area_loss' damage model the "
+                f"damage curve describes the degradation of the remaining "
+                f"resource and must be flat at small losses (slope near 0 "
+                f"is {slope:.3g}); use e.g. a 'threshold_logistic' curve"
+            )
 
 
 def _validate_interaction_edge(edge: InteractionEdge, agent_names: set) -> None:
@@ -463,10 +499,17 @@ def check_threshold_health(
             f"threshold health warning level must be in (0.0, 1.0], got {min_health!r}"
         )
     threshold: float = ecosystem.resource.safe_threshold_ratio
-    health: float = ecosystem_health_at(ecosystem, threshold)
+    area_loss: bool = ecosystem.damage_model == "area_loss"
+    # Under "area_loss" the health at depletion t is at most 1 − t by
+    # construction (the area lost takes its services), so the check is on
+    # the degradation of the resource that remains (Step 8c.3).
+    health: float = ecosystem_health_at(ecosystem, threshold, remaining_only=area_loss)
     if health < min_health:
+        what: str = (
+            "health of the remaining resource" if area_loss else "ecosystem health"
+        )
         warnings.warn(
-            f"{ecosystem.name}: ecosystem health at the safe threshold "
+            f"{ecosystem.name}: {what} at the safe threshold "
             f"({threshold:.0%} depletion) is {health:.2f}, below {min_health:.2f}. "
             f"The damage curves or interaction edges put heavy damage inside "
             f"the 'safe' zone (over-steep curves or over-strong edges).",

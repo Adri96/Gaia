@@ -3,6 +3,7 @@
   "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
   "description": "Posidonia oceanica meadows of the Catalan coast, most of them on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare and the resource is the regional stock (4,582 ha). Monetary values sit on the four final services that a primary Posidonia valuation measured (coastal protection, water purification, fisheries, knowledge use), per hectare; the six ecological agents carry health weight and cascade damage but no euro value of their own. Carbon is valued by gaia.carbon. Sources: docs/POSIDONIA_LITERATURE_REVIEW.md; derivations: gaia/cases/definitions/CASE_NOTES.md.",
   "calibration_regime": "B",
+  "damage_model": "area_loss",
   "resource": {
     "name": "Posidonia oceanica meadows of Catalonia (Costa Brava)",
     "unit": "ha",
@@ -24,7 +25,7 @@
       "value": 0.2,
       "unit": "ratio",
       "confidence": "placeholder",
-      "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification, kept because it shapes every damage curve (inflection at 32%). At small losses the curves give each hectare about a quarter of its average per-hectare value (initial slope 0.25); see the methods note. Monte Carlo range 0.1-0.3, uniform (judgement).",
+      "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification. Under the case's area_loss damage model (Step 8c.3) it is the depletion of the reference resource beyond which the REMAINING meadow starts to degrade; below it each hectare lost costs exactly its average per-hectare value (linear benefit transfer). Monte Carlo range 0.1-0.3, uniform (judgement).",
       "range": [
         0.1,
         0.3
@@ -50,16 +51,16 @@
     }
   },
   "agent_defaults": {
-    "damage": "logistic"
+    "damage": "threshold_logistic"
   },
   "damage_curves": {
-    "logistic": {
-      "type": "logistic",
+    "threshold_logistic": {
+      "type": "threshold_logistic",
       "steepness": {
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection at 32% loss (just past the 20% threshold); no Posidonia study relates the fraction of a meadow lost to the fraction of each service lost, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
+        "note": "Degradation of the remaining meadow past the safe threshold (damage model area_loss, Step 8c.3): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span (32% loss at the default threshold), the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. No Posidonia study relates the fraction of a meadow lost to the degradation of the rest, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
         "range": [
           6.0,
           18.0

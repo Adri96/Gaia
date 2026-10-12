@@ -16,6 +16,10 @@ A document (every key below is optional unless marked *required*):
     name                *required*, the ecosystem name
     description         free text (not used by the model)
     calibration_regime  "A" | "B" | null (gaia.models.CalibrationRegime)
+    damage_model        "direct" (default) | "area_loss" (gaia.models.Ecosystem:
+                        damage = depletion + (1 − depletion) × degradation,
+                        slope 1 at small losses; curves flat there, e.g.
+                        "threshold_logistic")
     resource            *required*: name, unit, total_units*, unit_value*,
                         safe_threshold_ratio*, and the area as area_ha or
                         units_per_ha (see below)
@@ -51,8 +55,10 @@ A document (every key below is optional unless marked *required*):
                         name, low, high, optional central, unit, source,
                         note, includes_carbon; gaia.benchmarks)
 
-Curves: {"type": "logistic", "steepness": 12}, {"type": "exponential",
-"base": 2} or {"type": "piecewise", "pre_slope_ratio": 0.1}, each with an
+Curves: {"type": "logistic", "steepness": 12}, {"type": "threshold_logistic",
+"steepness": 12} (zero up to the threshold, a logistic after it),
+{"type": "exponential", "base": 2} or {"type": "piecewise",
+"pre_slope_ratio": 0.1}, each with an
 optional "threshold" (default: the resource's safe threshold, so a
 --threshold override moves every curve that does not set its own).
 
@@ -113,9 +119,11 @@ from gaia.damage import (
     KERNEL_EXPONENTIAL,
     KERNEL_LOGISTIC,
     KERNEL_PIECEWISE,
+    KERNEL_THRESHOLD_LOGISTIC,
     exponential_damage,
     logistic_damage,
     piecewise_damage,
+    threshold_logistic_damage,
 )
 from gaia.models import (
     Agent,
@@ -150,7 +158,7 @@ DEFAULT_LABELS: Dict[str, str] = {
 }
 
 _TOP_LEVEL = (
-    "gaia_schema", "name", "description", "calibration_regime", "resource",
+    "gaia_schema", "name", "description", "calibration_regime", "damage_model", "resource",
     "provenance_defaults", "agent_defaults", "damage_curves", "agents",
     "interactions", "carbon", "resilience", "substrate", "discount", "pricing",
     "restoration", "recovery", "succession", "run",
@@ -158,6 +166,7 @@ _TOP_LEVEL = (
 
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
     "logistic": (logistic_damage, ("steepness",)),
+    "threshold_logistic": (threshold_logistic_damage, ("steepness",)),
     "exponential": (exponential_damage, ("base",)),
     "piecewise": (piecewise_damage, ("pre_slope_ratio",)),
 }
@@ -407,6 +416,7 @@ class Case:
         area: The fixed area (area_ha) or None.
         density: The reference density (units_per_ha) or None.
         calibration_regime: CalibrationRegime or None.
+        damage_model: "direct" or "area_loss" (gaia.models.Ecosystem).
         units: Default number of units of a run (run.units).
         report_note: Text appended to the text report.
         json_notes: Notes added to the JSON output.
@@ -423,6 +433,7 @@ class Case:
     area: Optional[Quantity]
     density: Optional[Quantity]
     calibration_regime: Optional[CalibrationRegime]
+    damage_model: str
     agents: Tuple[_AgentSpec, ...]
     interactions: Tuple[Tuple[str, str, float, str, str], ...]
     buckets: Dict[str, Tuple[Param, ...]]
@@ -599,6 +610,7 @@ class Case:
             interactions=interactions,
             pricing=pricing,
             calibration_regime=self.calibration_regime,
+            damage_model=self.damage_model,
             provenance=provenance,
         )
 
@@ -835,6 +847,10 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         if regime_raw not in valid:
             raise ValueError(f"$.calibration_regime: expected one of {valid} or null, got {regime_raw!r}")
         regime = CalibrationRegime(regime_raw)
+    from gaia.propagation import DAMAGE_MODELS
+    damage_model = _str(doc.get("damage_model", "direct"), "$.damage_model")
+    if damage_model not in DAMAGE_MODELS:
+        raise ValueError(f"$.damage_model: expected one of {list(DAMAGE_MODELS)}, got {damage_model!r}")
 
     reader = _Reader(_parse_provenance_defaults(doc.get("provenance_defaults", {})))
     buckets: Dict[str, List[Param]] = {b: [] for b in _BUCKETS}
@@ -914,6 +930,7 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         area=res["area"],
         density=res["density"],
         calibration_regime=regime,
+        damage_model=damage_model,
         agents=tuple(agents),
         interactions=tuple(interactions),
         buckets={k: tuple(v) for k, v in buckets.items()},
@@ -1441,6 +1458,8 @@ def _curve_spec(fn: Any, agent: str) -> Tuple[str, Tuple[Tuple[str, float], ...]
     kind = kernel[0]
     if kind == KERNEL_LOGISTIC:
         spec: Tuple[str, Tuple[Tuple[str, float], ...]] = ("logistic", (("steepness", kernel[4]),))
+    elif kind == KERNEL_THRESHOLD_LOGISTIC:
+        spec = ("threshold_logistic", (("steepness", kernel[4]),))
     elif kind == KERNEL_EXPONENTIAL:
         spec = ("exponential", (("base", kernel[3]),))
     elif kind == KERNEL_PIECEWISE:
@@ -1494,6 +1513,8 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
     doc: Dict[str, Any] = {"gaia_schema": SCHEMA_VERSION, "name": ecosystem.name}
     regime = ecosystem.calibration_regime
     doc["calibration_regime"] = None if regime is None else CalibrationRegime(regime).value
+    if ecosystem.damage_model != "direct":
+        doc["damage_model"] = ecosystem.damage_model
     res: Dict[str, Any] = {}
     if resource.name != ecosystem.name:
         res["name"] = resource.name

@@ -216,6 +216,29 @@ def propagate_interactions(
     return (effective, cascade, keystone_triggered)
 
 
+# ── Damage models (Step 8c.3) ────────────────────────────────────────────────
+
+DAMAGE_MODELS: tuple = ("direct", "area_loss")
+"""Ecosystem.damage_model values. "direct": the curves (with trophic
+amplification and cascades) are the damage. "area_loss": the damage is the
+area lost plus the degradation of what remains (area_loss_damages)."""
+
+
+def area_loss_damages(depletion_ratio: float, degradations: list) -> list:
+    """Damage under the "area_loss" model: D + (1 − D) × degradation.
+
+    Each unit lost takes its own services (the linear part D, a benefit
+    transfer of the average value per unit), and the curves, trophic
+    amplification and cascades (``degradations``, in [0, 1]) describe the
+    degradation of the remaining 1 − D. With degradation curves that are
+    flat at small losses, the damage has slope 1 at D = 0: the marginal
+    unit costs its average value. It stays in [0, 1], is 1 at D = 1 and
+    rises with D whenever the degradation does.
+    """
+    remaining: float = 1.0 - depletion_ratio
+    return [depletion_ratio + remaining * d for d in degradations]
+
+
 # ── Ecosystem-level helpers (validation and reporting) ──────────────────────
 
 
@@ -244,7 +267,20 @@ def effective_damages_at(ecosystem, depletion_ratio: float) -> list:
     """
     Every agent's effective damage at one depletion ratio — the same
     computation as one extraction step (damage function, trophic
-    amplification, interaction propagation), without running the loop.
+    amplification, interaction propagation and, under the "area_loss"
+    damage model, the area lost), without running the loop.
+    """
+    degradation: list = degradations_at(ecosystem, depletion_ratio)
+    if getattr(ecosystem, "damage_model", "direct") == "area_loss":
+        return area_loss_damages(depletion_ratio, degradation)
+    return degradation
+
+
+def degradations_at(ecosystem, depletion_ratio: float) -> list:
+    """
+    The damage the curves, trophic amplification and cascades give at one
+    depletion ratio: the whole damage under the "direct" model, the
+    degradation of the remaining resource under "area_loss".
     """
     agents: list = ecosystem.agents
     direct: list = [
@@ -266,10 +302,18 @@ def effective_damages_at(ecosystem, depletion_ratio: float) -> list:
     return effective
 
 
-def ecosystem_health_at(ecosystem, depletion_ratio: float) -> float:
+def ecosystem_health_at(ecosystem, depletion_ratio: float, remaining_only: bool = False) -> float:
     """Ecosystem health, 1 − Σ weight × effective damage clamped to [0, 1],
-    at one depletion ratio (as in an extraction step)."""
-    damages: list = effective_damages_at(ecosystem, depletion_ratio)
+    at one depletion ratio (as in an extraction step).
+
+    With ``remaining_only`` the damage is the degradation of what remains
+    (degradations_at), which leaves out the area lost under the
+    "area_loss" model (the same as the health under "direct").
+    """
+    damages: list = (
+        degradations_at(ecosystem, depletion_ratio) if remaining_only
+        else effective_damages_at(ecosystem, depletion_ratio)
+    )
     health: float = 1.0 - sum(
         a.dependency_weight * d for a, d in zip(ecosystem.agents, damages)
     )

@@ -732,6 +732,15 @@ class Ecosystem:
         provenance: gaia.provenance.Param list, the source and confidence
             of each parameter the case set (Step 5). Never read by the
             engines; every result reports it in ``calibration``.
+        damage_model: How an agent's damage follows depletion D (Step 8c.3,
+            gaia.propagation.DAMAGE_MODELS). "direct" (default): the damage
+            curve, trophic amplification and cascades give the damage.
+            "area_loss": each unit lost takes its own services (damage D,
+            slope 1 at small losses: the marginal unit costs its average
+            value, a linear benefit transfer) and the remaining resource
+            degrades by the curve, amplification and cascades:
+            damage = D + (1 − D) × degradation(D). Its curves must be flat
+            at small losses (e.g. "threshold_logistic").
     """
 
     name: str
@@ -749,6 +758,9 @@ class Ecosystem:
 
     # Step 5: parameter provenance (List[gaia.provenance.Param])
     provenance: list = field(default_factory=list)
+
+    # Step 8c.3: "direct" or "area_loss" (gaia.propagation.DAMAGE_MODELS)
+    damage_model: str = "direct"
 
 
 @dataclass

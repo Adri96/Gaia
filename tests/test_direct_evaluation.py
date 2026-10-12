@@ -20,7 +20,12 @@ from gaia.cases.amazon_forest import build_amazon_ecosystem
 from gaia.cases.costa_brava import build_costa_brava_ecosystem
 from gaia.cases.forest import build_forest_ecosystem
 from gaia.cases.posidonia import build_posidonia_ecosystem
-from gaia.damage import exponential_damage, logistic_damage, piecewise_damage
+from gaia.damage import (
+    exponential_damage,
+    logistic_damage,
+    piecewise_damage,
+    threshold_logistic_damage,
+)
 from gaia.models import (
     Agent,
     CalibrationRegime,
@@ -45,6 +50,7 @@ _DAMAGE = {
     "logistic": lambda t: logistic_damage(threshold=t, steepness=12.0),
     "exponential": lambda t: exponential_damage(threshold=t, base=3.0),
     "piecewise": lambda t: piecewise_damage(threshold=t),
+    "threshold_logistic": lambda t: threshold_logistic_damage(threshold=t, steepness=12.0),
 }
 _MIXED = ["logistic", "exponential", "piecewise", "logistic"]
 
@@ -88,6 +94,7 @@ def _synthetic(
     resilience=True,
     discount=False,
     total_units=400,
+    damage_model="direct",
 ):
     """Four-agent ecosystem exercising every phase of the extraction loop."""
     kinds = _MIXED if damage == "mixed" else [damage] * 4
@@ -148,6 +155,7 @@ def _synthetic(
             for s, t, k in edges
         ] if interactions else [],
         calibration_regime=CalibrationRegime.DIRECT_ONLY,
+        damage_model=damage_model,
     )
 
 
@@ -164,6 +172,11 @@ CONFIGS = {
     "dmg_exponential": (lambda: _synthetic("exponential"), 360),
     "dmg_piecewise": (lambda: _synthetic("piecewise"), 360),
     "dmg_mixed": (lambda: _synthetic("mixed"), 400),
+    # Step 8c.3: area lost + degradation of what remains
+    "area_loss": (lambda: _synthetic("threshold_logistic", damage_model="area_loss"), 380),
+    "area_loss_discount": (
+        lambda: _synthetic("threshold_logistic", damage_model="area_loss", discount=True), 300,
+    ),
     # Propagation variants
     "keystones_off": (lambda: _synthetic("mixed", keystone=False), 360),
     "no_interactions": (lambda: _synthetic("mixed", interactions=False), 360),
@@ -229,6 +242,10 @@ def _reference_steps(ecosystem, units):
         depletion = step / total_units
         direct = sim._compute_damage(damage_functions, trophic_levels, has_trophic, depletion)
         effective, cascade, keystone = sim._propagate(network, direct)
+        if ecosystem.damage_model == "area_loss":
+            direct = [depletion + (1.0 - depletion) * d for d in direct]
+            effective = [depletion + (1.0 - depletion) * d for d in effective]
+            cascade = [(1.0 - depletion) * c for c in cascade]
         price_result, prices = None, []
         if ecosystem.pricing is not None:
             price_result, prices = sim._price(
@@ -303,7 +320,7 @@ def test_direct_evaluation_equals_the_sequential_loop(config):
 
 
 @pytest.mark.parametrize("config", ["forest", "posidonia", "dmg_mixed", "matte_logistic",
-                                    "soil_threshold"])
+                                    "soil_threshold", "area_loss"])
 def test_restoration_steps_equal_the_sequential_loop(config):
     """Lazy restoration steps match a loop over the reference extraction."""
     factory, units = CONFIGS[config]
@@ -380,7 +397,7 @@ def test_configs_exercise_every_branch():
         sub = eco.resource.substrate
         if sub is not None:
             substrates.add((sub.substrate_type, sub.capacity_function))
-    assert kinds == {0, 1, 2}
+    assert kinds == {0, 1, 2, 3}
     assert substrates >= {
         ("terrestrial_soil", "linear"), ("terrestrial_soil", "threshold"),
         ("terrestrial_soil", "logistic"), ("marine_sediment", "linear"),

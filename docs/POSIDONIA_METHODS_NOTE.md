@@ -36,9 +36,15 @@ Each agent *i* has:
 
 The meadow is a keystone: while its health is below 0.3, the strengths of its outgoing edges double. Validation caps each agent's incoming strengths at 1 (keystone boost included), so damage stays in [0, 1].
 
+**Damage model: the area lost plus the degradation of what remains (Step 8c.3).** The case declares `"damage_model": "area_loss"`. The hectares lost take their own services, a linear benefit transfer. The curves, amplification and cascades above describe the degradation g_i(D) of the meadow that **remains**:
+
+  damage_i(D) = D + (1 − D) · g_i(D)
+
+The degradation curve is zero up to the safe threshold, so damage_i has slope exactly 1 at small losses: the marginal hectare costs its average value.
+
 **Money.** At depletion D:
-- annual externality = Σ_i effective_i(D) · w_i · v_i · area;
-- ecosystem health = 1 − Σ_i w_i · effective_i(D).
+- annual externality = Σ_i damage_i(D) · w_i · v_i · area;
+- ecosystem health = 1 − Σ_i w_i · damage_i(D).
 
 **A static function, evaluated directly.** Every quantity above depends on D alone, so the cost of the 51st hectare is the difference between the function at 51 and at 50 hectares (decision D5, option B).
 
@@ -70,10 +76,10 @@ Carbon is valued only by the carbon module (decision D3): no agent value contain
 
 ## 4. Calibration regime and what the curves are
 
-The ten damage curves are the same normalised logistic. Its inflection is at 32% loss, just past the 20% "safe threshold", and its steepness is 12. **No study relates the fraction of a Posidonia meadow lost to the fraction of each service lost.** The curves are therefore placeholders, read as each agent's direct dependency on the meadow, and the edges add the indirect part (calibration regime B). Two consequences matter for the question:
+The ten degradation curves are the same `threshold_logistic`: zero up to the 20% "safe threshold", then a logistic with its inflection at 32% loss and steepness 12. **No study relates the fraction of a Posidonia meadow lost to the degradation of the rest.** The curves are therefore placeholders: each agent's direct degradation, with the edges adding the indirect part (calibration regime B). Two consequences matter for the question:
 
-1. **At small losses the curve charges less than the average value of a hectare.** The normalised logistic starts with slope ≈ 0.25. With cascades and trophic amplification, the default run charges €126 per hectare lost per year, against an average of €285/ha/yr. That is 44% of what a linear benefit transfer (hectares × average value) would charge. The ratio grows with the loss: €153/ha/yr at 200 ha, €385 at the 20% "threshold", €610 at 44%. Reviewers should judge whether a convex, threshold-shaped response is the right prior for a seagrass meadow. The alternative is a linear one (each hectare delivers its own services), possibly with fragmentation effects. Both figures are reported.
-2. **Health at the "safe" threshold is 0.67, and Gaia warns** (CalibrationWarning). No source supports calling the loss of 20% of a priority habitat safe. The warning is left in place rather than tuned away.
+1. **Small losses are priced linearly (the owner's decision, Step 8c.3).** Below the threshold the annual externality is exactly N ha × the per-hectare total of the service ledger (§5), whatever the reference resource and the curve parameters. Before Step 8c the plain logistic (initial slope ≈ 0.25) charged 44% of that. Past the threshold the remaining meadow degrades. The hectares just beyond it cost 3–4 times their average value, and once most of what remains is degraded, further hectares cost little. Reviewers should judge whether this "linear, then collapse of the remainder" shape is the right prior for a seagrass meadow, and where the threshold of a given meadow lies.
+2. **No CalibrationWarning.** Health at the threshold is 1 − t by construction (the lost area's services are gone). The check therefore looks at the remaining meadow, which does not degrade before the threshold. The 20% threshold is still unsourced; it marks where degradation of the remainder starts. It does not make a 20% loss "safe", because that loss still costs 20% of the services.
 
 Single-pass cascades cut chains longer than one hop. Under regime B, the cascade part is therefore a structural lower bound.
 
@@ -231,7 +237,7 @@ Every output lists every parameter with its source, confidence and, where docume
 ## 10. Questions for the reviewers
 
 **Ecologist (Track 1).**
-- Is a convex, threshold-shaped response to the fraction of meadow lost a defensible prior, or should small losses be linear per hectare?
+- Small losses are now priced linearly and the remaining meadow degrades past a threshold. Is that a defensible prior, and where would the threshold of a real meadow lie (fragmentation, patch size)?
 - Is the agent and edge structure right? Are the six intermediate agents and the 15 edges the relevant ones?
 - Which edges matter most, and is there evidence for their strengths?
 - Is natural recolonisation (Kendrick et al. 2005) the right basis for the succession curve after transplanting?

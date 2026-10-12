@@ -279,3 +279,28 @@ def test_threshold_near_one(fname, factory):
     vals = [fn(i / 100) for i in range(101)]
     for i in range(1, len(vals)):
         assert vals[i] >= vals[i - 1] - FP_TOL
+
+
+# ── Step 8c.3: threshold_logistic (degradation of what remains) ──────────────
+
+
+class TestThresholdLogistic:
+    @pytest.mark.parametrize("threshold", [0.1, 0.2, 0.3, 0.5])
+    @pytest.mark.parametrize("steepness", [6.0, 12.0, 18.0])
+    def test_invariants_and_flat_start(self, threshold, steepness):
+        from gaia.damage import threshold_logistic_damage
+        from gaia.validation import validate_damage_function
+
+        f = threshold_logistic_damage(threshold, steepness)
+        validate_damage_function(f, threshold=threshold)
+        assert f(0.0) == 0.0 and f(threshold) == 0.0 and f(threshold / 2) == 0.0
+        assert f(1.0) == pytest.approx(1.0, abs=1e-12)
+        assert f(threshold + 0.01) > 0.0
+
+    def test_rejects_bad_parameters(self):
+        from gaia.damage import threshold_logistic_damage
+
+        with pytest.raises(ValueError, match="threshold"):
+            threshold_logistic_damage(0.0)
+        with pytest.raises(ValueError, match="steepness"):
+            threshold_logistic_damage(0.2, steepness=0.0)

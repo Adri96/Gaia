@@ -180,7 +180,8 @@ def test_known_flags_are_honest():
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
     for case in BUILDERS:
-        assert param(case, "damage.logistic_steepness").confidence is Confidence.PLACEHOLDER
+        curve = "threshold_logistic" if case == "posidonia" else "logistic"  # Step 8c.3
+        assert param(case, f"damage.{curve}_steepness").confidence is Confidence.PLACEHOLDER
     retuned = [
         p for case in ("costa_brava", "amazon_forest") for p in _build(case).provenance
         if "in-degree cap" in p.note

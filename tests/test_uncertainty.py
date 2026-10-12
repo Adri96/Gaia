@@ -56,7 +56,7 @@ def test_what_is_sampled(posidonia_mc):
     names = {s.name for s in posidonia_mc.sampled}
     # documented ranges, carbon first among the drivers
     assert {"carbon.soil_release_fraction", "carbon.soil_carbon_tonnes",
-            "carbon.annual_absorption_tonnes", "damage.logistic_steepness",
+            "carbon.annual_absorption_tonnes", "damage.threshold_logistic_steepness",
             "resource.safe_threshold_ratio"} <= names
     # never: normative, project inputs, irrelevant to extraction, fixed, zeros
     for prefix in ("discount.", "carbon_price.", "restoration.", "succession.",

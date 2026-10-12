@@ -409,3 +409,69 @@ def test_reference_resource_cli(capsys):
     resource = out["ecosystem"]["resource"]
     assert resource["total_units"] == 300
     assert resource["name"] == "Meadow of the bay"
+
+
+# ── Step 8c.3: small losses priced linearly ──────────────────────────────────
+
+def _average_value_per_ha(eco):
+    return sum(a.dependency_weight * a.annual_value_per_ha for a in eco.agents)
+
+
+@pytest.mark.parametrize("reference_ha", [4582, 300])
+@pytest.mark.parametrize("fraction", [0.001, 0.05, 0.19])
+def test_small_losses_cost_their_average_value(reference_ha, fraction):
+    """Below the safe threshold each hectare lost costs exactly its average
+    value (slope 1, linear benefit transfer), whatever the reference."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem(area_ha=float(reference_ha))
+    assert eco.damage_model == "area_loss"
+    k = max(1, int(fraction * reference_ha))
+    result = run_extraction(eco, k)
+    avg = _average_value_per_ha(eco)
+    assert result.annual_externality == pytest.approx(k * avg, rel=1e-12)
+    assert result.steps[0].marginal_annual_externality == pytest.approx(avg, rel=1e-12)
+    assert result.steps[-1].marginal_annual_externality == pytest.approx(avg, rel=1e-9)
+
+
+def test_threshold_behaviour_is_kept_past_the_threshold():
+    """Past the threshold the remaining meadow degrades: the hectares just
+    past it cost several times their average value (later ones less, once
+    the remaining meadow is mostly degraded), and the loss exceeds the
+    linear transfer."""
+    from gaia.cases import load_case
+
+    eco = load_case("posidonia").build_ecosystem()
+    avg = _average_value_per_ha(eco)
+    n = eco.resource.total_units
+    result = run_extraction(eco, int(0.6 * n))
+    t_units = int(eco.resource.safe_threshold_ratio * n)
+    marginal = [s.marginal_annual_externality for s in result.steps]
+    assert marginal[t_units - 1] == pytest.approx(avg, rel=1e-9)
+    assert marginal[t_units + 50] > 1.5 * avg
+    assert result.annual_externality > 1.5 * len(result.steps) * avg
+
+
+def test_area_loss_rejects_curves_that_are_not_flat_at_small_losses():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["damage_curves"]["threshold_logistic"]["type"] = "logistic"
+    with pytest.raises(ValueError, match="flat at small losses"):
+        run_extraction(case_from_dict(doc).build_ecosystem(), 10)
+
+
+def test_damage_model_round_trips():
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import ecosystem_from_dict, ecosystem_to_dict
+
+    eco = load_case("posidonia").build_ecosystem()
+    doc = ecosystem_to_dict(eco)
+    assert doc["damage_model"] == "area_loss"
+    again = ecosystem_from_dict(doc)
+    assert again.damage_model == "area_loss"
+    assert run_extraction(again, 1200).annual_externality == run_extraction(
+        eco, 1200).annual_externality

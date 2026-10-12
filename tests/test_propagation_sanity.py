@@ -241,18 +241,37 @@ def test_threshold_warning_rejects_bad_level(level):
         check_threshold_health(_eco(), level)
 
 
-@pytest.mark.parametrize("case", list(SHIPPED))
+@pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest"])
 def test_shipped_cases_warn_because_of_their_curves(case):
-    """Every shipped case warns, and would still warn without any edge: the
-    placeholder logistic puts 17–21% direct damage at the safe threshold
-    (plus trophic amplification). The warning is honest; fixing it means
-    calibrating the curves (Step 8), not tuning edges."""
+    """Every shipped case with direct damage curves warns, and would still
+    warn without any edge: the placeholder logistic puts 17–21% direct
+    damage at the safe threshold (plus trophic amplification). The warning
+    is honest; fixing it means calibrating the curves (Step 8), not tuning
+    edges."""
     eco = SHIPPED[case]()
     with pytest.warns(CalibrationWarning, match="safe threshold"):
         validate_ecosystem(eco)
     eco.interactions = []
     assert ecosystem_health_at(eco, eco.resource.safe_threshold_ratio) < (
         constants.THRESHOLD_HEALTH_WARNING_LEVEL)
+
+
+def test_area_loss_checks_the_remaining_resource():
+    """Posidonia (Step 8c.3, damage model "area_loss"): at the safe
+    threshold the health is 1 − t by construction (the area lost takes its
+    services), so the warning looks at the remaining meadow, which does not
+    degrade before the threshold: no CalibrationWarning."""
+    import warnings
+
+    eco = build_posidonia_ecosystem()
+    t = eco.resource.safe_threshold_ratio
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", CalibrationWarning)
+        validate_ecosystem(eco)
+    assert ecosystem_health_at(eco, t, remaining_only=True) == 1.0
+    assert ecosystem_health_at(eco, t) == pytest.approx(1.0 - t, rel=1e-12)
+    # past the threshold the remaining meadow degrades
+    assert ecosystem_health_at(eco, t + 0.1, remaining_only=True) < 0.8
 
 
 # ── One source for the constants ──────────────────────────────────────────────
