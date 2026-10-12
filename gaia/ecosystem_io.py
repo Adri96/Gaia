@@ -95,11 +95,17 @@ names of the entries it would otherwise count again) books value = gross −
 their values; a production_function (gaia.production) derives the gross
 from primary production. Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
-it is net of, and a chain that does not give its gross. ``Case.ledger_check()`` lists the
+it is net of, a chain that does not give its gross, and an agent with no
+entry that applies on every hectare. ``Case.ledger_check()`` lists the
 agents whose weight × annual_value_per_ha (and weight ×
 site_value_per_ha) differs from the sum of their ledger values (the
 shipped files have none; it is not enforced on parse, so the Monte Carlo
 can perturb agent values).
+
+Every agent carries a positive value under any input, preset or flag
+(PROJECT_DEFINITION.md, "Core Valuation Principles", (b)): parsing
+requires annual_value_per_ha > 0, and the low end of its Monte Carlo
+range > 0, for every agent; no site share or intensity scales it.
 
 Site-restricted values (Step 8d.4, 8e.6): an agent with a service enjoyed
 only near some sites (for Posidonia, the meadow's diving amenity near dive
@@ -713,6 +719,15 @@ class Case:
             )
             for a in self.agents
         ]
+        for agent in agents:
+            # The Core Valuation Principles (PROJECT_DEFINITION.md), (b):
+            # every agent carries a positive value under any input; the
+            # parser guarantees it (annual_value_per_ha > 0), this re-checks.
+            if not agent.annual_value(1.0) > 0.0:  # pragma: no cover - parse rejects it first
+                raise ValueError(
+                    f"{self.name}: agent {agent.name!r} would carry no value "
+                    f"(PROJECT_DEFINITION.md, Core Valuation Principles (b))"
+                )
         interactions = [InteractionEdge(*edge) for edge in self.interactions]
         resource = Resource(
             name=self.resource_name if resource_name is None else resource_name,
@@ -942,13 +957,8 @@ class Case:
             / (a.value + a.site_value * a.site_share)
             for a in self.agents if a.site_share is not None
         }
-        for anchor in spec.config.anchors:
-            if factor.get(anchor.agent_name, 1.0) == 0.0:
-                raise ValueError(
-                    f"{self.name}: EXPERIMENTAL pricing needs the anchor of {anchor.agent_name} > 0, "
-                    f"but its value is 0 at this {self.sites} share or intensity "
-                    f"(--{self.site_input} 0 or --{self.intensity_input or 'intensity'} none)"
-                )
+        # every factor is > 0: annual_value_per_ha > 0 (the Core Valuation
+        # Principles, (b)), so no share or intensity zeroes an anchor
         config = dataclasses.replace(
             spec.config,
             anchors=[
@@ -1352,6 +1362,18 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
                 f"{entry['gross']:.6g} − {counted:.6g} = {entry['gross'] - counted:.6g}, got {entry['value']:.6g} "
                 f"(otherwise the subtracted services would be counted twice)"
             )
+    if ledger:
+        # The Core Valuation Principles (PROJECT_DEFINITION.md), (b), (c):
+        # every agent owns at least one final service that applies on every
+        # hectare, so no site share or intensity can leave it at €0
+        everywhere = {e["agent"] for e in ledger if not e["site_restricted"]}
+        for a in agents:
+            if a.name not in everywhere:
+                raise ValueError(
+                    f"$.service_ledger: agent {a.name!r} owns no service that applies on every hectare "
+                    f"(only site-restricted ones, or none): every agent carries a positive value under "
+                    f"any input (PROJECT_DEFINITION.md, Core Valuation Principles (b))"
+                )
     shares: Dict[str, float] = {}
     for i, entry in enumerate(ledger):
         parent = entry["split_of"]
@@ -1762,6 +1784,7 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             values[name] = default_value
         else:
             raise ValueError(f"{_key(path, 'annual_value_per_ha')}: required (no agent_defaults value)")
+    _require_positive_values(buckets["agent_values"], values, objs)
     site_values: Dict[str, float] = {}
     for path, name, obj in objs:
         if "site_value_per_ha" not in obj:
@@ -1866,6 +1889,31 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         )
         for path, name, obj in objs
     ]
+
+
+def _require_positive_values(params: List[Param], values: Dict[str, float], objs: list) -> None:
+    """The Core Valuation Principles (PROJECT_DEFINITION.md), (b): every
+    agent always carries a positive euro value, under any input, preset or
+    flag. Its annual_value_per_ha (the value on every hectare, which no site
+    share or site intensity scales) must be > 0, and so must the low end of
+    its Monte Carlo range, so that no draw brings it to €0 either."""
+    for path, name, _obj in objs:
+        if not (math.isfinite(values[name]) and values[name] > 0.0):
+            raise ValueError(
+                f"{_key(path, 'annual_value_per_ha')}: must be > 0, got {values[name]}: every agent "
+                f"carries a positive value under any input (PROJECT_DEFINITION.md, Core Valuation "
+                f"Principles (b)); an agent at €0 is a defect, never an exception"
+            )
+    for p in params:
+        if not (p.name == "agents.annual_value_per_ha" or p.name.endswith("].annual_value_per_ha")):
+            continue
+        bounds = p.bounds
+        if bounds is not None and not bounds[0] > 0.0:
+            raise ValueError(
+                f"{p.name}: the low end of its range must be > 0, got {bounds[0]}: a Monte Carlo "
+                f"draw must never bring an agent to €0 (PROJECT_DEFINITION.md, Core Valuation "
+                f"Principles (b))"
+            )
 
 
 def _curve_ref(raw: Any, path: str, curves: Dict[str, _Curve]) -> _Curve:

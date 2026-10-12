@@ -87,7 +87,7 @@ Single-pass cascades cut chains longer than one hop. Under regime B, the cascade
 
 A Posidonia extraction run records 63 parameters (73 with restoration; one more since Step 8e.6, the meadow's value on every hectare, `low`): 28 sourced (22 by DOI or arXiv id, 6 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
-**Service values: the service ledger (Step 8c.2).** Every agent carries euros under any input, and each final service is counted once, owned by one agent (PROJECT_DEFINITION.md, Core Valuation Principles). Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009); a value that overlaps services counted elsewhere is booked net of them (`net_of`, Step 8e.6). € /ha/yr at full damage:
+**Service values: the service ledger (Step 8c.2).** Every agent carries euros under any input, and each final service is counted once, owned by one agent (PROJECT_DEFINITION.md, Core Valuation Principles). Since Step 8e.7 this is a validated invariant: an agent whose value on every hectare is not > 0, or whose Monte Carlo range reaches 0, is rejected, and a test runs every case under every preset and flag. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009); a value that overlaps services counted elsewhere is booked net of them (`net_of`, Step 8e.6). € /ha/yr at full damage:
 
 | Agent | Final service | €/ha/yr | Source (method) |
 |---|---|---|---|

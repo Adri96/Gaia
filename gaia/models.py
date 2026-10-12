@@ -630,6 +630,12 @@ class Agent:
                       * (annual_value_per_ha + site_value_per_ha * site_share)
                       * resource.area_ha
 
+    Every agent carries a positive value whatever the inputs
+    (PROJECT_DEFINITION.md, "Core Valuation Principles", (b)):
+    annual_value_per_ha, the part that applies on every hectare, must be
+    > 0 (gaia.validation.validate_ecosystem), so no site share or site
+    intensity can bring an agent to €0.
+
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
         dependency_weight: This agent's share of total ecosystem damage. Must be in (0, 1].
@@ -639,7 +645,7 @@ class Agent:
             damage (damage_ratio = 1.0) on EVERY hectare of the resource —
             decisions D1 (a yearly flow, never a one-off total) and D2
             (scaled by Resource.area_ha, so results do not depend on how
-            finely the resource is divided into units).
+            finely the resource is divided into units). Must be > 0.
         description: Short description of what damage means for this agent.
         site_share: Share of the resource near the sites where
             site_value_per_ha applies (Step 8d.4), in [0, 1]; 1.0 (default).

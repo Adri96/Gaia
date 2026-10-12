@@ -37,8 +37,11 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
 
-Agent values are yearly flows per hectare (decisions D1, D2): every agent
-uses the biome-level value below, and the dependency weights split it, so
+Agent values are yearly flows per hectare (decisions D1, D2). In every
+case every agent carries a value > 0 under any input, preset or flag
+(PROJECT_DEFINITION.md, Core Valuation Principles (b); a validated
+invariant since Step 8e.7, tests/test_valuation_principles.py). Here every
+agent uses the biome-level value below, and the dependency weights split it, so
 sum(weight × value) = €2,848/ha/yr × area_ha at full damage
 (€113,920/yr for the 40 ha reference forest).
 

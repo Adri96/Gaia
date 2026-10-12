@@ -157,13 +157,20 @@ def validate_ecosystem(
                 f"Agent '{agent.name}' dependency_weight must be in (0.0, 1.0], "
                 f"got {agent.dependency_weight}"
             )
+        # The Core Valuation Principles (PROJECT_DEFINITION.md), (b): every
+        # agent always carries a positive euro value, under any input. The
+        # part of its value that applies on every hectare must be > 0, so no
+        # site share or site intensity can bring the agent to €0.
         if not (
             math.isfinite(agent.annual_value_per_ha)
-            and agent.annual_value_per_ha >= 0.0
+            and agent.annual_value_per_ha > 0.0
         ):
             raise ValueError(
                 f"Agent '{agent.name}' annual_value_per_ha must be finite and "
-                f">= 0.0 (€/ha/yr at full damage), got {agent.annual_value_per_ha}"
+                f"> 0 (€/ha/yr at full damage, on every hectare), got "
+                f"{agent.annual_value_per_ha}: every agent carries a positive "
+                f"value under any input (PROJECT_DEFINITION.md, Core Valuation "
+                f"Principles (b)); an agent at €0 is a defect"
             )
         site_value = getattr(agent, "site_value_per_ha", 0.0)
         if not (isinstance(site_value, (int, float)) and math.isfinite(site_value)
