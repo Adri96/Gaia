@@ -617,7 +617,7 @@ class Case:
                 continue
             provenance.extend(self.buckets.get(bucket, ()))
         if pricing is not None:
-            provenance.extend(anchor_params(pricing))
+            provenance.extend(anchor_params(pricing, [a.name for a in agents]))
         return Ecosystem(
             name=self.name,
             resource=resource,

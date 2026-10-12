@@ -227,7 +227,22 @@ These are value judgements as much as facts. The uncertainty analysis therefore 
 
 ## 8. Out of scope: EXPERIMENTAL pricing
 
-The quarantined endogenous pricing (decision D4) keeps the two anchors it had. Both are `low`, with sources in the case file. The six agents without a euro value get their former owner-specified impacts as PLACEHOLDER anchors, because pricing requires a positive anchor for every agent. Pricing is not part of the v1.0 output.
+The quarantined endogenous pricing (decision D4) solves V = S·W·V + S·A. Here S is the diagonal of scarcity multipliers, W[target][source] holds the edge strengths, and A holds the anchors.
+
+**Since Step 8c.6 a few anchors determine every price.**
+- **The condition.** An agent without an anchor must be reachable from an anchored one along edges of positive strength (source → target). Under that condition, and with ρ(S·W) < 1 (certified at every step), the solution V = Σ_k (S·W)^k S·A is unique and strictly positive.
+- **Derived prices.** An unanchored agent's price is derived: V_i = S_i Σ_j W_ij V_j.
+- **Why Step 4 required every agent to be anchored.** It was the simplest sufficient condition: in the forest case an unanchored agent with nothing anchored upstream had been priced at €0 (C8.3). Reachability is the exact condition.
+- **The Posidonia anchors.** The case anchors three agents with their service-ledger values:
+  - Fish Populations: auction prices, a market price;
+  - Coastal Protection: damage cost avoided, a market cost;
+  - the Posidonia Meadow, which must be anchored because it is the only agent with no incoming edge. Its anchor is a stated-preference value, because the meadow has no market price.
+- **The other seven prices are derived**, and they are labelled as derived in the text, the JSON (`derived_prices`) and the provenance (`pricing.derived[…]`, placeholder). The former PLACEHOLDER anchors are gone.
+- **The other three cases** keep `anchor_every_agent`: their roots have no documented anchor.
+
+**What derived prices rest on.** They carry no information of their own. Doubling an anchor doubles every price it reaches. Each derived price moves one for one with the placeholder edge strengths and with the hand-set scarcity multipliers. They also add each upstream anchor again into every agent downstream, which is the double counting of C8.4.
+
+At 30% depletion of a 1,000-ha meadow, for instance, the derived price of Marine Megafauna reaches €1.8 billion/yr: scarcity at its 50× cap, times a network multiplier of about 290. Pricing therefore stays EXPERIMENTAL, quarantined (certified convergence, explicit failure, no fallback) and outside the v1.0 output.
 
 ## 9. What was searched for and not found
 

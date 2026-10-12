@@ -164,12 +164,15 @@ def user_or_default(default: Param, value: float, flag: str) -> Param:
     )
 
 
-def anchor_params(pricing) -> List[Param]:
+def anchor_params(pricing, agent_names: Optional[List[str]] = None) -> List[Param]:
     """One Param per pricing anchor of an (EXPERIMENTAL) PricingConfig.
 
     Anchors whose source starts with "PLACEHOLDER" (gaia.pricing.
     anchor_every_agent) are placeholders; the others keep the confidence
-    stated on the AnchorPoint.
+    stated on the AnchorPoint. With ``agent_names``, each agent without an
+    anchor gets a ``pricing.derived[<agent>]`` Param (value 0, placeholder):
+    its price is derived from the anchored agents through the placeholder
+    edge strengths (Step 8c.6).
     """
     out: List[Param] = []
     for a in pricing.anchors:
@@ -183,6 +186,18 @@ def anchor_params(pricing) -> List[Param]:
                 if placeholder else a.description
             ),
             name=f"pricing.anchor[{a.agent_name}]",
+        ))
+    anchored = {a.agent_name for a in pricing.anchors}
+    for agent in agent_names or []:
+        if agent in anchored:
+            continue
+        out.append(Param(
+            0.0, "€/yr (no anchor)", None, Confidence.PLACEHOLDER,
+            "EXPERIMENTAL pricing (quarantined). DERIVED price: no anchor of its "
+            "own; its price is its scarcity multiplier × the sum, over the edges "
+            "into it, of edge strength × the upstream agent's price, so it rests "
+            "on the anchored agents and on the placeholder edge strengths.",
+            name=f"pricing.derived[{agent}]",
         ))
     defaults = pricing.default_scarcity
     out.append(Param(

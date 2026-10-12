@@ -564,6 +564,9 @@ def format_report(result: SimulationResult) -> str:
                 f"{'Scarcity':>10} {'Demand':>10}"
             )
             lines.append(f"  {_SINGLE_LINE}")
+            derived: set = {
+                name for name, share in pr.anchor_contributions.items() if share == 0.0
+            }
             for agent_name in pr.prices:
                 price_val: float = pr.prices[agent_name]
                 scarcity_m: float = pr.scarcity_multipliers.get(agent_name, 1.0)
@@ -573,6 +576,15 @@ def format_report(result: SimulationResult) -> str:
                     f"\u20ac{price_val:>10,.0f}/yr "
                     f"{scarcity_m:>10.2f}x "
                     f"{demand_m:>10.2f}x"
+                    + ("  (derived)" if agent_name in derived else "")
+                )
+            if derived:
+                lines.append(
+                    "  (derived): no anchor of its own; the price comes from the "
+                    "anchored agents upstream"
+                )
+                lines.append(
+                    "  through the placeholder edge strengths (Step 8c.6)."
                 )
 
     if result.calibration is not None:

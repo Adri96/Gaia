@@ -381,7 +381,18 @@ def _penalty_to_dict(pen: DestroyThenRestorePenalty) -> Dict[str, Any]:
 
 
 def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
-    """Convert PriceResult to dict."""
+    """Convert PriceResult to dict; ``derived_prices`` lists the agents whose
+    price has no anchor of its own (Step 8c.6), when there are any."""
+    from gaia.pricing import derived_agents
+
+    derived = derived_agents(pr)
+    extra: Dict[str, Any] = {}
+    if derived:
+        extra["derived_prices"] = derived
+        extra["derived_prices_note"] = (
+            "No anchor of their own: each price is derived from the anchored "
+            "agents upstream through the placeholder edge strengths (Step 8c.6)."
+        )
     return {
         "prices_eur_yr": {k: round(v, 2) for k, v in pr.prices.items()},
         "scarcity_multipliers": {
@@ -393,6 +404,7 @@ def _price_result_to_dict(pr: PriceResult) -> Dict[str, Any]:
         "spectral_radius_bound": round(pr.spectral_radius_bound, 6),
         "convergence_check": pr.convergence_check,
         "iterations": pr.iterations,
+        **extra,
     }
 
 

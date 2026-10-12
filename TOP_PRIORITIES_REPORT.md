@@ -670,6 +670,8 @@ Do these in order: each later fix assumes the earlier ones. After each sub-step,
 3. **Remove the scale-switching fallback.** If the system doesn't converge, raise an error or mark the step as `pricing_failed`; never silently substitute static one-off rates.
 4. Require every agent to be anchored when pricing is on, or raise a validation error.
 
+   > **Revised (owner, Step 8c.6):** every agent's price must be *determined*, and "every agent anchored" was only the simplest sufficient condition. The exact condition is reachability: every unanchored agent must be reachable from an anchored one along edges of positive strength, with ρ(S·W) < 1 certified. Its price is then derived, V_i = S_i Σ_j W_ij V_j, and labelled as derived in every output. The quarantine is unchanged. Posidonia now prices with three sourced anchors; the other cases still anchor every agent (`anchor_every_agent`).
+
 **Later (proper fix):**
 - Revisit `V = S·W·V + S·A`. Either price only *direct* service value per agent and use the network for scarcity propagation, or report only the system total, so upstream value isn't counted again per agent.
 - Integrate the marginal scarcity price over the lost quantity (area under the inverse demand curve) instead of pricing everything at the end-state price.

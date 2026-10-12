@@ -206,7 +206,11 @@ def validate_ecosystem(
 
     # v0.7: Validate optional pricing config
     if ecosystem.pricing is not None:
-        validate_pricing_config(ecosystem.pricing, agent_names)
+        validate_pricing_config(
+            ecosystem.pricing, agent_names,
+            interactions=ecosystem.interactions,
+            agent_order=[a.name for a in ecosystem.agents],
+        )
 
     if threshold_health_warning is not None:
         check_threshold_health(ecosystem, threshold_health_warning)
@@ -1031,12 +1035,18 @@ def validate_pricing_config(
     config: PricingConfig,
     agent_names: set,
     name: str = "PricingConfig",
+    interactions: Optional[list] = None,
+    agent_order: Optional[list] = None,
 ) -> None:
     """Validate a PricingConfig dataclass.
 
-    Every agent must be anchored (Step 4, C8): an unanchored agent used to
-    be priced at €0. gaia.pricing.anchor_every_agent gives the remaining
-    agents a PLACEHOLDER anchor at their own direct annual service value.
+    Every agent's price must be determined (C8: an unanchored agent used to
+    be priced at €0). Given the ecosystem's ``interactions``, the condition
+    is reachability (Step 8c.6, gaia.pricing.unreachable_agents): an agent
+    without an anchor must be reachable from an anchored one, and its price
+    is derived. Without ``interactions`` (no network to derive from) every
+    agent must be anchored, as in Step 4. gaia.pricing.anchor_every_agent
+    gives agents a PLACEHOLDER anchor at their own direct annual value.
 
     Raises:
         ValueError: If any constraint is violated.
@@ -1048,13 +1058,27 @@ def validate_pricing_config(
     for i, anchor in enumerate(config.anchors):
         validate_anchor_point(anchor, agent_names, name=f"{name}.anchors[{i}]")
 
-    unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
-    if unanchored:
-        raise ValueError(
-            f"{name}: every agent must be anchored when pricing is on; no "
-            f"anchor for {unanchored}. Add an AnchorPoint for each (e.g. "
-            f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
-        )
+    if interactions is None:
+        unanchored = sorted(set(agent_names) - {a.agent_name for a in config.anchors})
+        if unanchored:
+            raise ValueError(
+                f"{name}: every agent must be anchored when pricing is on and no "
+                f"interactions are given; no anchor for {unanchored}. Add an "
+                f"AnchorPoint for each (e.g. gaia.pricing.anchor_every_agent: the "
+                f"agent's own annual value)."
+            )
+    else:
+        from gaia.pricing import unreachable_agents
+
+        order = list(agent_order) if agent_order is not None else sorted(agent_names)
+        unreachable = unreachable_agents(order, interactions, config.anchors)
+        if unreachable:
+            raise ValueError(
+                f"{name}: no anchored agent reaches {unreachable} along the "
+                f"interaction edges, so their prices are not determined. Anchor "
+                f"them, or an agent upstream of them (Step 8c.6; or "
+                f"gaia.pricing.anchor_every_agent: the agent's own annual value)."
+            )
 
     for agent_key, scarcity_fn in config.scarcity_functions.items():
         if agent_key not in agent_names:

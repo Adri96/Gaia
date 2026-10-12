@@ -332,10 +332,19 @@ al. 2024, whose own aggregate estimate (1.66%) would make the 200-year PV
 diverge. The uncertainty analysis treats these as normative sensitivities,
 not as random parameters.
 
-**EXPERIMENTAL pricing.** Pricing requires a positive anchor for every
-agent. The six agents without a euro value get their former
-owner-specified impacts as PLACEHOLDER anchors. Pricing is quarantined and
-is not part of the v1.0 output.
+**EXPERIMENTAL pricing (Step 8c.6).** Three sourced anchors, all at
+their service-ledger values (the agent's static €/yr for the 4,582-ha
+reference, scaled with the area):
+- the Posidonia Meadow, required because it is the only agent with no
+  incoming edge, and anchored at a stated-preference value;
+- Fish Populations, a market price (auction prices);
+- Coastal Protection, a market cost (damage cost avoided).
+
+Every other agent is reachable from them, so its price is derived from
+upstream through the placeholder edge strengths, and it is labelled
+derived in every output. The former PLACEHOLDER anchors are removed
+(`anchor_every_agent: false`). Pricing is quarantined and is not part of
+the v1.0 output.
 
 **Context.**
 - *P. oceanica* meadows regressed by an estimated 34% in the last 50 years

@@ -225,7 +225,7 @@ Destroying and then restoring is therefore much worse than not destroying: the d
 6. **Carbon fate** (§5, §7): the release fraction and its half-life are project inputs; the defaults (0.63, 10 years) are a global assumption range and an inferred central half-life for matte left exposed. No Mediterranean measurement of the release rate from exposed *P. oceanica* matte was found.
 7. **Currency.** The SCC is in 2020 euros and the services in 2014 euros, and the two are not harmonised; the benchmarks are not converted at all.
 8. **Not varied:** the model-wide trophic and keystone constants, and the health weights.
-9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded.
+9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded. Since Step 8c.6 three sourced anchors (meadow, fisheries, coastal protection) determine every price through the network. The other seven prices are derived through placeholder edge strengths, labelled as such, and are not estimates.
 10. **Restoration** evidence for *P. oceanica* is thin and mostly negative.
 
 ## 9. Reproducing the figures

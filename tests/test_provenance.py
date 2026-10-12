@@ -155,8 +155,17 @@ def test_pricing_anchors_recorded_only_with_pricing(case):
     assert not any(n.startswith("pricing.") for n in without)
     eco = _build(case, with_pricing=True)
     anchors = [p for p in eco.provenance if p.name.startswith("pricing.anchor[")]
-    assert len(anchors) == len(eco.agents)
-    # derived (Step 4) anchors are placeholders; none claims more than low
+    derived = [p for p in eco.provenance if p.name.startswith("pricing.derived[")]
+    # every agent is either anchored or derived (Step 8c.6), never both
+    assert len(anchors) + len(derived) == len(eco.agents)
+    assert all(p.confidence is Confidence.PLACEHOLDER for p in derived)
+    if case == "posidonia":
+        # three sourced anchors (service ledger), seven derived prices
+        assert len(anchors) == 3 and len(derived) == 7
+        assert all(p.source and "doi:" in p.source for p in anchors)
+        return
+    # the other cases anchor every agent; the Step 4 placeholders remain
+    assert not derived
     assert all(p.confidence in (Confidence.LOW, Confidence.PLACEHOLDER) for p in anchors)
     assert any(p.confidence is Confidence.PLACEHOLDER for p in anchors)
 

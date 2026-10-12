@@ -2,9 +2,21 @@
 Gaia v0.7 -- Endogenous pricing engine. EXPERIMENTAL (decision D4).
 
 Quarantined (Step 4, C8): opt-in with ``--with-pricing``, labelled
-experimental in every output, every agent must be anchored, convergence is
-certified with guaranteed bounds, and a state that cannot be certified
-raises PricingConvergenceError — no fallback price is ever substituted.
+experimental in every output, convergence is certified with guaranteed
+bounds, and a state that cannot be certified raises PricingConvergenceError
+— no fallback price is ever substituted.
+
+Anchors (Step 8c.6): a few anchored agents determine every price. The
+condition is reachability: every agent without a positive anchor must be
+reachable from an anchored agent along interaction edges of positive
+strength (source → target, the direction value flows in V = S·W·V + S·A).
+Then V = Σ_k (S·W)^k S·A is strictly positive wherever ρ(S·W) < 1, and the
+price of an unanchored agent is DERIVED: V_i = S_i Σ_j W_ij V_j, its
+upstream prices passed through the (placeholder) edge strengths and its
+scarcity multiplier. Derived prices are labelled as such in every output
+and in the provenance. Step 4 required every agent to be anchored: the
+simplest sufficient condition (an unanchored agent with nothing anchored
+upstream used to be priced at €0, C8.3); reachability is the exact one.
 Known open problems (the "proper fix", not done): V = S·W·V + S·A counts
 upstream value once per dependent agent, and the whole loss is priced at
 the end-state scarcity price instead of integrating the marginal price.
@@ -91,6 +103,41 @@ def scale_anchors(pricing: PricingConfig, factor: float) -> PricingConfig:
     )
 
 
+def unreachable_agents(
+    agent_names: List[str],
+    interactions: List[InteractionEdge],
+    anchors: List[AnchorPoint],
+) -> List[str]:
+    """Agents with no positive anchor that no anchored agent reaches.
+
+    Value flows along an edge source → target (the target depends on the
+    source: W[target][source] = strength), so an agent's price can be
+    derived only from agents upstream of it. An agent is priced (> 0) iff
+    it has a positive anchor or a directed path of edges with positive
+    strength leads to it from one that has (Step 8c.6).
+
+    Returns:
+        The unreachable agents, in ``agent_names`` order (empty when every
+        price is determined).
+    """
+    anchored = {a.agent_name for a in anchors if a.anchor_value > 0.0}
+    reached = {name for name in agent_names if name in anchored}
+    changed = True
+    while changed:
+        changed = False
+        for edge in interactions:
+            if edge.strength > 0.0 and edge.source in reached and edge.target not in reached:
+                reached.add(edge.target)
+                changed = True
+    return [name for name in agent_names if name not in reached]
+
+
+def derived_agents(price_result: PriceResult) -> List[str]:
+    """The agents whose price is derived (no anchor of their own: their
+    anchor contribution is 0), in price order."""
+    return [name for name, share in price_result.anchor_contributions.items() if share == 0.0]
+
+
 def anchor_every_agent(
     pricing: PricingConfig,
     agents: list,
@@ -98,7 +145,9 @@ def anchor_every_agent(
 ) -> PricingConfig:
     """Return a copy of ``pricing`` with an anchor for every agent.
 
-    Pricing requires every agent to be anchored (Step 4, C8). An agent with
+    For cases whose documented anchors do not reach every agent (the
+    ``anchor_every_agent`` option of the case format; Step 8c.6 replaced
+    the requirement by reachability, see unreachable_agents). An agent with
     no documented anchor gets a PLACEHOLDER one: its own direct annual
     service value, annual_value_per_ha × area_ha (€/yr), the same €/yr scale
     as the documented anchors and the static values. Documented anchors are
@@ -271,9 +320,9 @@ def build_anchor_vector(
 
     Anchors ground the relative price system in absolute euro values.
     Each anchor provides an external market price for one agent. Agents
-    without anchors get 0.0, which solve_prices rejects: every agent must
-    be anchored when pricing is on (an unanchored agent used to be priced
-    at €0, C8).
+    without anchors get 0.0: their price is derived from upstream, and
+    solve_prices rejects them unless an anchored agent reaches them
+    (Step 8c.6; an unreachable agent used to be priced at €0, C8).
 
     If multiple anchors exist for the same agent, values are summed
     (weighted by confidence could be a future extension).
@@ -608,9 +657,10 @@ def certify_convergence(
     2. Direct iteration otherwise ("direct_iteration"): V_0 = b,
        V_{k+1} = S·W·V_k + b with b = S·A, alongside a power iterate
        u_{k+1} = (S·W + I)·u_k (normalised; the shift keeps it positive and
-       aperiodic, and it tends to the Perron vector of S·W). Both stay
-       positive (b > 0: every agent is anchored), so each gives
-       Collatz–Wielandt bounds on ρ(S·W) at every iteration:
+       aperiodic, and it tends to the Perron vector of S·W). u stays
+       positive, and so does V_k once every derived agent has been reached
+       (at most n − 1 iterations under the reachability condition); each
+       positive vector gives Collatz–Wielandt bounds on ρ(S·W):
          - an upper bound < 1 proves convergence. With x = V_k it also bounds
            the residual: V_{k+1} − V_k shrinks geometrically, by at least
            that factor per iteration in the V_k-weighted max norm.
@@ -621,7 +671,7 @@ def certify_convergence(
 
     Args:
         sw_matrix: N x N non-negative matrix S·W.
-        b_vector: N-length vector S·A, every entry > 0.
+        b_vector: N-length vector S·A, entries >= 0 (0 for derived agents).
         max_iterations: Cap on direct iterations.
 
     Returns:
@@ -644,10 +694,9 @@ def certify_convergence(
     for iteration in range(1, max_iterations + 1):
         swv: List[float] = matrix_vector_multiply(sw_matrix, v)
         swu: List[float] = matrix_vector_multiply(sw_matrix, u)
-        upper: float = min(
-            max(swv[i] / v[i] for i in range(n)),
-            max(swu[i] / u[i] for i in range(n)),
-        )
+        upper: float = max(swu[i] / u[i] for i in range(n))
+        if all(x > 0.0 for x in v):
+            upper = min(upper, max(swv[i] / v[i] for i in range(n)))
         lower: float = _support_lower_bound(sw_matrix, u)
         best_upper = min(best_upper, upper)
         if upper < limit:
@@ -714,7 +763,9 @@ def solve_prices(
 
     1. Build the scarcity matrix S (diagonal, health-dependent).
     2. Build the value-flow matrix W (from interaction edges, transposed).
-    3. Build the anchor vector A. Every agent must be anchored (A > 0).
+    3. Build the anchor vector A. Every agent without a positive anchor
+       must be reachable from an anchored one (unreachable_agents); its
+       price is derived.
     4. Compute SW = S @ W and certify ρ(SW) < 1 (certify_convergence):
        a guaranteed bound, never an estimate.
     5. Solve V = (I - SW)^(-1) * S * A via Gaussian elimination.
@@ -741,7 +792,8 @@ def solve_prices(
         convergence certificate.
 
     Raises:
-        ValueError: If an agent has no anchor, or S·W has a negative entry.
+        ValueError: If an agent without an anchor is not reachable from an
+            anchored one, or S·W has a negative entry.
         PricingConvergenceError: If convergence cannot be proven or the
             solve is invalid.
     """
@@ -766,13 +818,12 @@ def solve_prices(
     w_matrix: List[List[float]] = build_value_matrix(agent_names, interactions)
     a_vector: List[float] = build_anchor_vector(agent_names, pricing.anchors)
 
-    unanchored: List[str] = [
-        agent_names[i] for i in range(n) if not a_vector[i] > 0.0
-    ]
-    if unanchored:
+    unreachable: List[str] = unreachable_agents(agent_names, interactions, pricing.anchors)
+    if unreachable:
         raise ValueError(
-            f"Every agent must be anchored when pricing is on; no positive "
-            f"anchor for: {unanchored}"
+            f"Every agent without an anchor must be reachable from an anchored "
+            f"agent along the interaction edges (its price is derived from "
+            f"upstream); no anchor reaches: {unreachable}"
         )
 
     # Step 2: Compute SW = S @ W. S is diagonal, so SW scales row i of W
@@ -789,7 +840,7 @@ def solve_prices(
                     f"({agent_names[i]!r}, {agent_names[j]!r})"
                 )
 
-    # Effective anchor b = S * A (every entry > 0)
+    # Effective anchor b = S * A (>= 0; 0 for the derived agents)
     effective_anchor: List[float] = [s_matrix[i][i] * a_vector[i] for i in range(n)]
 
     # Step 3: Certify convergence (raises PricingConvergenceError)
