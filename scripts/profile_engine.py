@@ -18,6 +18,9 @@ Usage:
     python3 scripts/profile_engine.py              # everything (minutes)
     python3 scripts/profile_engine.py --quick      # smaller sizes
     python3 scripts/profile_engine.py --hotspots   # cProfile of the slowest runs
+    python3 scripts/profile_engine.py --smoke      # tiny sizes, one repeat (a test runs it)
+
+Without the Cython extension the Cython column reads "n/a".
 """
 
 import argparse
@@ -69,20 +72,19 @@ def best_of(fn, repeat: int) -> float:
     return min(times)
 
 
-def runs(quick: bool):
-    """(label, case, mode, total units, units, with_pricing)."""
-    scale = 10 if quick else 1
+def runs(scale: int):
+    """(label, case, mode, total units, units, with_pricing), sizes / scale."""
     for name in CASE_NAMES:
         case = load_case(name)
-        total = case.total_units.value // scale
-        units = case.default_units // scale
+        total = max(case.total_units.value // scale, 2)
+        units = max(case.default_units // scale, 1)
         yield ("default", name, "extract", total, units, False)
         yield ("default", name, "restore", total, units, False)
     for name in CASE_NAMES:
         total, units = PRICING[name]
-        yield ("pricing", name, "extract", total // scale, units // scale, True)
+        yield ("pricing", name, "extract", max(total // scale, 2), max(units // scale, 1), True)
     for name in CASE_NAMES:
-        n = SWEEP_UNITS // scale
+        n = max(SWEEP_UNITS // scale, 2)
         yield ("sweep", name, "extract", n, n, False)
 
 
@@ -96,40 +98,56 @@ def run_once(name: str, mode: str, total: int, units: int, with_pricing: bool):
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--quick", action="store_true", help="1/10 of the sizes")
+    parser.add_argument("--smoke", action="store_true",
+                        help="1/1000 of the sizes and one repeat: checks the script runs")
     parser.add_argument("--repeat", type=int, default=3, help="best of N (default 3)")
     parser.add_argument("--hotspots", action="store_true", help="cProfile the slowest runs")
     args = parser.parse_args(argv)
-    warnings.simplefilter("ignore")
+    if args.smoke:
+        args.repeat = 1
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return _profile(args)
 
-    if not sim._HAS_CYTHON:
-        print("The Cython extension is not built or is stale: "
-              "python3 setup.py build_ext --inplace", file=sys.stderr)
-        return 1
+
+def _profile(args: argparse.Namespace) -> int:
+    scale = 1000 if args.smoke else 10 if args.quick else 1
+    has_cython = sim._HAS_CYTHON
+    if not has_cython:
+        print("The Cython extension is not built or is stale "
+              "(python3 setup.py build_ext --inplace): Python times only.", file=sys.stderr)
 
     print(f"Python {platform.python_version()} on {platform.machine()} "
           f"({platform.system()}), best of {args.repeat}\n")
     print("| Run | Case | Mode | Units (of total) | Python (s) | Cython (s) | Python / Cython |")
     print("|---|---|---|---|---|---|---|")
-    for label, name, mode, total, units, with_pricing in runs(args.quick):
+    for label, name, mode, total, units, with_pricing in runs(scale):
         times = {}
-        for eng in ("python", "cython"):
+        for eng in ("python", "cython") if has_cython else ("python",):
             with engine(eng):
                 times[eng] = best_of(functools.partial(run_once, name, mode, total, units, with_pricing), args.repeat)
-        ratio = times["python"] / times["cython"]
+        if has_cython:
+            cython = f"{times['cython']:.3f}"
+            ratio = f"{times['python'] / max(times['cython'], 1e-9):.1f}×"
+        else:
+            cython = ratio = "n/a"
         print(f"| {label} | {name} | {mode} | {units:,} of {total:,} "
-              f"| {times['python']:.3f} | {times['cython']:.3f} | {ratio:.1f}× |")
+              f"| {times['python']:.3f} | {cython} | {ratio} |")
         sys.stdout.flush()
 
     if args.hotspots:
-        scale = 10 if args.quick else 1
+        sweep = max(SWEEP_UNITS // scale, 2)
+        p_total, p_units = (max(n // scale, k) for n, k in zip(PRICING["amazon_forest"], (2, 1)))
         for title, eng, call in (
             ("sweep amazon_forest, Python loop", "python",
-             lambda: run_once("amazon_forest", "extract", SWEEP_UNITS // scale, SWEEP_UNITS // scale, False)),
+             lambda: run_once("amazon_forest", "extract", sweep, sweep, False)),
             ("sweep amazon_forest, Cython loop", "cython",
-             lambda: run_once("amazon_forest", "extract", SWEEP_UNITS // scale, SWEEP_UNITS // scale, False)),
+             lambda: run_once("amazon_forest", "extract", sweep, sweep, False)),
             ("pricing amazon_forest", "python",
-             lambda: run_once("amazon_forest", "extract", *(n // scale for n in PRICING["amazon_forest"]), True)),
+             lambda: run_once("amazon_forest", "extract", p_total, p_units, True)),
         ):
+            if eng == "cython" and not has_cython:
+                continue
             profiler = cProfile.Profile()
             with engine(eng):
                 profiler.runcall(call)
