@@ -115,10 +115,15 @@ Services of the meadow itself are spread over the meadow area. Services of the w
 | Release half-life (project input) | 10 yr | Pendleton et al. 2012 (5–10 yr); seagrass evidence 3–50 yr (Arias-Ortiz et al. 2018; Macreadie et al. 2015; Serrano et al. 2016) | 0–27 yr |
 | Biomass | none counted separately | the leaves are negligible next to the matte | — |
 
-On the fraction lost and its timing, which depend on what the project does to the matte (literature review §4, "Release over time versus re-absorption"):
-- **excavated or dredged:** the IPCC (2013) Wetlands Supplement emits the top-metre soil carbon in the year of extraction (`--carbon-release-fraction 0.96 --carbon-release-half-life 0`);
-- **left exposed in place:** 0.25–1.0 (central 0.63), released over years to decades (half-life 10 yr, range 0–27);
-- **buried under fill:** no source; probably much lower.
+On the fraction lost and its timing, which depend on what the project does to the matte (literature review §4, "Release over time versus re-absorption"). The user states it with `--matte-fate` (Step 8d.2), a preset of `--carbon-release-fraction` and `--carbon-release-half-life`, which still override it:
+
+| `--matte-fate` | What happens to the matte, in plain words | Fraction released | Half-life | Basis |
+|---|---|---|---|---|
+| `exposed` (default) | The meadow dies but its matte stays in place, uncovered (shading, turbidity, anchoring, scour). Open to oxygen, the dead matte erodes and its carbon escapes over years to decades. | 0.63 (range 0.25–1.0) | 10 yr (range 0–27) | Pendleton et al. 2012 (sourced); the 10-yr central half-life is inferred |
+| `excavated` | The matte is dug out or dredged (port basins, channels, docks). The carbon-rich soil is removed and broken up, so nearly all its carbon goes in the year of the works. | 0.96 | 0 (at once) | IPCC (2013) Wetlands Supplement, Tier 1 for port excavation (sourced) |
+| `buried` | The matte is covered by fill (breakwaters, reclaimed land). Kept without oxygen, it probably keeps most of its carbon. | 0.125 | 10 yr | **inferred, no source**: the midpoint of the inferred 0–0.25 range; the half-life is the exposed default |
+
+The default stays "exposed" (the owner's decision, Step 8d.2). A fate other than the default is recorded as a user-supplied project input, with its basis, and is held fixed in the Monte Carlo.
 
 Re-absorption is not modelled in the extraction view. On the footprint the conversion is permanent. Around it, natural recolonisation over centuries would re-absorb about 8% of the PV of the foregone burial, about 1.5% of the release.
 
@@ -211,7 +216,7 @@ The fisheries, coralligenous and invertebrate values each swing it by less than 
    - the foregone burial costs about €19,000 in PV.
 2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 55–125 times the default private gain (ETS carbon price: 55×; P5: 69×; P95: 127×). To break even, a project would need a private gain of about €140,000 (ETS carbon price) to €320,000 per hectare: the PV of the externality per hectare, which is €175,000 at P5 and €320,000 at P95.
 3. That conclusion rests on two uncertain terms:
-   - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve: excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
+   - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve (`--matte-fate`): excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
    - the meadow's diving value, a benefit transfer that a Catalan valuation should replace.
 
 **Restoration** of the same 50 ha (`--mode restore --units 50 --time-horizon 200`, €200,000/ha including maintenance):
@@ -242,7 +247,7 @@ gaia run posidonia --uncertainty                     # + Monte Carlo (1,000 draw
 gaia run posidonia --uncertainty --format json --summary-only
 gaia run posidonia --units N --unit-value G --uncertainty   # the user's project
 gaia run posidonia --units N --unit-value G --area-ha M --resource-name "…" \
-    --carbon-release-fraction 0.96 --carbon-release-half-life 0   # an excavated footprint in a meadow of M ha
+    --matte-fate excavated                           # an excavated footprint in a meadow of M ha
 gaia run posidonia --mode restore --units 50 --time-horizon 200
 ```
 

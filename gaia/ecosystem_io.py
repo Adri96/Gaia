@@ -34,7 +34,8 @@ A document (every key below is optional unless marked *required*):
     interactions        list: source*, target*, strength*, type, description
     carbon              gaia.models.CarbonProfile fields (the four tonnage
                         and fraction fields required; release_half_life_years
-                        optional, default 0 = all released at extraction)
+                        optional, default 0 = all released at extraction),
+                        and optional release_fates (see "Release fates" below)
     resilience          gaia.models.ResilienceConfig fields
     substrate           gaia.models.SubstrateProfile fields (substrate_type*)
     discount            gaia.models.DiscountConfig fields; rate_schedule is a
@@ -81,6 +82,16 @@ service listed twice, an unknown agent and a value <= 0; ``Case.
 ledger_check()`` lists the agents whose weight × annual_value_per_ha
 differs from the sum of their ledger values (the shipped files have none;
 it is not enforced on parse, so the Monte Carlo can perturb agent values).
+
+Release fates (Step 8d.2): carbon.release_fates names what a project can do
+to the soil (for Posidonia, the matte) and the release fraction and
+half-life each fate implies: {"subject": "matte", "default": "exposed",
+"fates": {"<fate>": {"description"*, "soil_release_fraction"*,
+"release_half_life_years"*, "basis"*, "confidence"*}}}. The default fate
+documents the carbon block's own values (``Case.fate_check()``). ``gaia run`` then offers
+``--<subject>-fate {<fates>}``, a preset of --carbon-release-fraction and
+--carbon-release-half-life (each still overridable); a fate other than the
+default is recorded as a user-supplied project input.
 
 Provenance (Step 5): every numeric parameter is either a bare number or an
 object {"value", "unit", "source", "confidence", "note"} (value, unit and
@@ -194,6 +205,7 @@ _CARBON_FIELDS = (
     "soil_release_fraction",
 )
 _CARBON_OPTIONAL = ("release_half_life_years",)
+_FATE_FIELDS = ("description", "soil_release_fraction", "release_half_life_years", "basis", "confidence")
 _RESILIENCE_FIELDS = (
     "warning_zone_width", "confidence_green", "confidence_yellow", "confidence_red",
     "irreversibility_flag_ratio",
@@ -466,6 +478,8 @@ class Case:
     json_notes: Tuple[str, ...] = field(default_factory=tuple)
     benchmarks: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
     service_ledger: Tuple[Dict[str, Any], ...] = field(default_factory=tuple, compare=False)
+    # carbon.release_fates (Step 8d.2): {"subject", "default", "fates": {...}} or None
+    release_fates: Optional[Dict[str, Any]] = field(default=None, compare=False)
     # The parsed document and the JSON path of every recorded parameter, for
     # gaia.uncertainty (which re-parses perturbed copies of the document)
     document: Optional[Dict[str, Any]] = field(default=None, compare=False, repr=False)
@@ -523,6 +537,7 @@ class Case:
         resource_name: Optional[str] = None,
         carbon_release_fraction: Optional[float] = None,
         carbon_release_half_life: Optional[float] = None,
+        carbon_fate: Optional[str] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
 
@@ -549,6 +564,11 @@ class Case:
                 carbon.soil_release_fraction and
                 carbon.release_half_life_years (what the project does to the
                 soil or matte); recorded as user-supplied.
+            carbon_fate: A fate of carbon.release_fates (Step 8d.2, e.g.
+                "excavated"): a preset of both inputs, each still overridden
+                by an explicit carbon_release_fraction /
+                carbon_release_half_life; recorded as user-supplied, with
+                the fate's basis, when it differs from the case default.
 
         Raises:
             ValueError: With unit "ha", if area_ha is not a whole number of
@@ -575,6 +595,15 @@ class Case:
         )
         value, value_param = _override(self.unit_value, unit_value, lab["unit_value"])
         area, a_param = self._area(total, area_ha, lab)
+        if carbon_fate is not None:
+            fate = self.release_fate(carbon_fate)
+            label = f"--{self.release_fates['subject']}-fate {carbon_fate}: {fate['basis']}"  # type: ignore[index]
+            if carbon_release_fraction is None:
+                carbon_release_fraction = fate["soil_release_fraction"]
+                lab["soil_release_fraction"] = label
+            if carbon_release_half_life is None:
+                carbon_release_half_life = fate["release_half_life_years"]
+                lab["release_half_life_years"] = label
         carbon, carbon_params = self._carbon(carbon_release_fraction, carbon_release_half_life, lab)
 
         agents = [
@@ -688,6 +717,34 @@ class Case:
                     name=name,
                 ))
         return carbon, params
+
+    def release_fate(self, name: str) -> Dict[str, Any]:
+        """The fate ``name`` of carbon.release_fates (Step 8d.2).
+
+        Raises:
+            ValueError: If the case has no release fates or no such fate.
+        """
+        if self.release_fates is None:
+            raise ValueError(f"{self.name}: the case defines no carbon release fates")
+        fates = self.release_fates["fates"]
+        if name not in fates:
+            raise ValueError(
+                f"{self.name}: unknown {self.release_fates['subject']} fate {name!r} "
+                f"(defined: {', '.join(fates)})"
+            )
+        return dict(fates[name])
+
+    def fate_check(self) -> List[str]:
+        """The carbon fields on which the default release fate and the carbon
+        block disagree (empty when they agree, or without fates)."""
+        if self.release_fates is None or self.carbon is None:
+            return []
+        fate = self.release_fates["fates"][self.release_fates["default"]]
+        return [
+            f"{key}: default fate {fate[key]:g}, carbon block {self.carbon.get(key, 0.0):g}"
+            for key in ("soil_release_fraction", "release_half_life_years")
+            if fate[key] != self.carbon.get(key, 0.0)
+        ]
 
     def _pricing(self, agents: list, area: float) -> PricingConfig:
         assert self.pricing is not None
@@ -904,12 +961,15 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     interactions = _parse_interactions(doc.get("interactions", []), reader, set(names), buckets["edges"])
 
     carbon = resilience = substrate = discount = None
+    release_fates: Optional[Dict[str, Any]] = None
     if doc.get("carbon") is not None:
-        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS, _CARBON_OPTIONAL)
+        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS, _CARBON_OPTIONAL + ("release_fates",))
         carbon = {
             k: reader.number(obj[k], _key("$.carbon", k), f"carbon.{k}", buckets["carbon"])
             for k in _CARBON_FIELDS + _CARBON_OPTIONAL if k in obj
         }
+        if "release_fates" in obj:
+            release_fates = _parse_release_fates(obj["release_fates"], "$.carbon.release_fates")
     if doc.get("resilience") is not None:
         obj = _object(doc["resilience"], "$.resilience", (), _RESILIENCE_FIELDS)
         resilience = {
@@ -1021,6 +1081,7 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         json_notes=notes,
         benchmarks=benchmarks,
         service_ledger=ledger,
+        release_fates=release_fates,
         document=copy.deepcopy(doc),
         param_paths=dict(reader.paths),
     )
@@ -1028,6 +1089,49 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     # document's threshold, the area, the pricing block.
     case.recovery_functions(case.build_ecosystem(with_pricing=pricing is not None))
     return case
+
+
+def _parse_release_fates(raw: Any, path: str) -> Dict[str, Any]:
+    """carbon.release_fates (Step 8d.2): what a project can do to the soil
+    and the release fraction and half-life each fate implies. The default
+    fate documents the carbon block's own values (``Case.fate_check``; not
+    enforced on parse, so the Monte Carlo can perturb them)."""
+    obj = _object(raw, path, ("subject", "default", "fates"))
+    subject = _str(obj["subject"], _key(path, "subject"))
+    if not re.fullmatch(r"[a-z][a-z-]*", subject):
+        raise ValueError(f"{_key(path, 'subject')}: a lower-case word (it names the --<subject>-fate flag), got {subject!r}")
+    fates_raw = obj["fates"]
+    if not isinstance(fates_raw, dict):
+        raise ValueError(f"{_key(path, 'fates')}: expected an object, got {_kind(fates_raw)}")
+    if not fates_raw:
+        raise ValueError(f"{_key(path, 'fates')}: at least one fate is required")
+    fates: Dict[str, Dict[str, Any]] = {}
+    for name, entry in fates_raw.items():
+        fpath = _key(_key(path, "fates"), name)
+        if not re.fullmatch(r"[a-z][a-z-]*", name):
+            raise ValueError(f"{fpath}: a fate name is a lower-case word, got {name!r}")
+        f = _object(entry, fpath, _FATE_FIELDS)
+        fraction = _plain_number(f["soil_release_fraction"], _key(fpath, "soil_release_fraction"))
+        if not 0.0 <= fraction <= 1.0:
+            raise ValueError(f"{_key(fpath, 'soil_release_fraction')}: must be in [0, 1], got {fraction}")
+        half_life = _plain_number(f["release_half_life_years"], _key(fpath, "release_half_life_years"))
+        if not half_life >= 0.0:
+            raise ValueError(f"{_key(fpath, 'release_half_life_years')}: must be >= 0, got {half_life}")
+        confidence = _str(f["confidence"], _key(fpath, "confidence"))
+        valid = [c.value for c in Confidence if c != Confidence.USER]
+        if confidence not in valid:
+            raise ValueError(f"{_key(fpath, 'confidence')}: expected one of {valid}, got {confidence!r}")
+        fates[name] = {
+            "description": _str(f["description"], _key(fpath, "description")),
+            "soil_release_fraction": float(fraction),
+            "release_half_life_years": float(half_life),
+            "basis": _str(f["basis"], _key(fpath, "basis")),
+            "confidence": confidence,
+        }
+    default = _str(obj["default"], _key(path, "default"))
+    if default not in fates:
+        raise ValueError(f"{_key(path, 'default')}: unknown fate {default!r} (defined: {', '.join(fates)})")
+    return {"subject": subject, "default": default, "fates": fates}
 
 
 _LEDGER_SECTIONS = ("provisioning", "regulation and maintenance", "cultural")

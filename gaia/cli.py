@@ -148,7 +148,8 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "project releases, which depends on what it does to the soil or "
             "matte (default: the case's). Recommended for "
             "Posidonia matte: 0.96 if excavated or dredged (IPCC 2013), 0.25-1.0 "
-            "(central 0.63) if left exposed; see docs/POSIDONIA_LITERATURE_REVIEW.md §4"
+            "(central 0.63) if left exposed (or use --matte-fate); see "
+            "docs/POSIDONIA_LITERATURE_REVIEW.md §4"
         ),
     )
     parser.add_argument(
@@ -161,7 +162,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "at extraction, a positive value spreads it as a negative "
             "exponential, each year valued at that year's carbon price and "
             "discounted (default: the case's). Recommended for Posidonia "
-            "matte: 0 if excavated, about 10 (3-27) if left exposed"
+            "matte: 0 if excavated, about 10 (3-27) if left exposed; or use --matte-fate"
         ),
     )
     parser.add_argument(
@@ -180,6 +181,39 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             f"output; 1 = all steps. Default: all steps up to "
             f"{MAX_JSON_STEPS:,}, none (summary only, with a warning) above"
         ),
+    )
+
+
+def add_fate_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<subject>-fate`` (e.g. ``--matte-fate``) for a case whose
+    carbon block defines release fates (Step 8d.2): a preset of
+    --carbon-release-fraction and --carbon-release-half-life, explained in
+    plain words in the help."""
+    spec = getattr(case, "release_fates", None)
+    if spec is None:
+        return
+    subject, default = spec["subject"], spec["default"]
+    lines = []
+    for name, fate in spec["fates"].items():
+        half = fate["release_half_life_years"]
+        timing = "all at once" if half == 0 else f"half-life {half:g} yr"
+        lines.append(
+            f"'{name}'{' (default)' if name == default else ''}: {fate['description']} "
+            f"Releases {fate['soil_release_fraction']:g} of the {subject}'s carbon, {timing} "
+            f"[{fate['basis']}]"
+        )
+    parser.add_argument(
+        f"--{subject}-fate",
+        dest="carbon_fate",
+        choices=list(spec["fates"]),
+        default=None,
+        metavar="{" + ",".join(spec["fates"]) + "}",
+        help=(
+            f"Project input: what the project does to the {subject}, which sets how "
+            f"much of its carbon is released and how fast (a preset of "
+            f"--carbon-release-fraction and --carbon-release-half-life, which still "
+            f"override it). " + " ".join(lines)
+        ).replace("%", "%%"),
     )
 
 
@@ -231,6 +265,7 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
         "resource_name": getattr(args, "resource_name", None),
         "carbon_release_fraction": getattr(args, "carbon_release_fraction", None),
         "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
+        "carbon_fate": getattr(args, "carbon_fate", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -565,6 +600,7 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
         parser.add_argument(legacy.unit_value_alias, dest="unit_value_alias", type=float,
                             default=None, metavar="EUROS", help=argparse.SUPPRESS)
     add_common_arguments(parser)
+    add_fate_argument(parser, case)
     add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
@@ -614,6 +650,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             resource_name=getattr(args, "resource_name", None),
             carbon_release_fraction=getattr(args, "carbon_release_fraction", None),
             carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
+            carbon_fate=getattr(args, "carbon_fate", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any

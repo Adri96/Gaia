@@ -377,3 +377,94 @@ class TestReleaseProjectInputs:
         eco = load_case("posidonia").build_ecosystem()
         again = ecosystem_from_dict(ecosystem_to_dict(eco))
         assert again.resource.carbon_profile.release_half_life_years == 10.0
+
+
+class TestMatteFate:
+    """--matte-fate {exposed,excavated,buried} (Step 8d.2): a preset of the
+    release fraction and half-life from the sourced table."""
+
+    def test_presets(self):
+        from gaia.cases import load_case
+
+        case = load_case("posidonia")
+        assert case.release_fates["subject"] == "matte"
+        assert case.release_fates["default"] == "exposed"
+        expected = {"exposed": (0.63, 10.0), "excavated": (0.96, 0.0), "buried": (0.125, 10.0)}
+        for fate, values in expected.items():
+            cp = case.build_ecosystem(carbon_fate=fate).resource.carbon_profile
+            assert (cp.soil_release_fraction, cp.release_half_life_years) == values
+        assert "INFERRED" in case.release_fate("buried")["basis"]
+        assert case.release_fate("buried")["confidence"] == "placeholder"
+
+    def test_default_fate_changes_nothing(self):
+        from gaia.cases import load_case
+
+        case = load_case("posidonia")
+        default = case.build_ecosystem()
+        exposed = case.build_ecosystem(carbon_fate="exposed")
+        assert exposed.resource.carbon_profile == default.resource.carbon_profile
+        assert [p for p in exposed.provenance] == [p for p in default.provenance]
+
+    def test_explicit_inputs_override_the_preset(self):
+        from gaia.cases import load_case
+
+        case = load_case("posidonia")
+        eco = case.build_ecosystem(carbon_fate="excavated", carbon_release_half_life=2.0)
+        cp = eco.resource.carbon_profile
+        assert (cp.soil_release_fraction, cp.release_half_life_years) == (0.96, 2.0)
+        by_name = {p.name: p for p in eco.provenance}
+        assert "--matte-fate excavated" in by_name["carbon.soil_release_fraction"].source
+        assert "IPCC 2013" in by_name["carbon.soil_release_fraction"].source
+        assert by_name["carbon.release_half_life_years"].source == (
+            "user-supplied (--carbon-release-half-life)")
+
+    def test_unknown_fate(self):
+        from gaia.cases import load_case
+
+        with pytest.raises(ValueError, match="unknown matte fate 'dredged'"):
+            load_case("posidonia").build_ecosystem(carbon_fate="dredged")
+        with pytest.raises(ValueError, match="no carbon release fates"):
+            load_case("forest").build_ecosystem(carbon_fate="excavated")
+
+    def test_default_matches_the_carbon_block(self):
+        import copy
+
+        from gaia.cases import load_case
+        from gaia.ecosystem_io import case_from_dict
+
+        assert load_case("posidonia").fate_check() == []
+        doc = copy.deepcopy(load_case("posidonia").document)
+        doc["carbon"]["release_fates"]["fates"]["exposed"]["soil_release_fraction"] = 0.5
+        assert case_from_dict(doc).fate_check() == [
+            "soil_release_fraction: default fate 0.5, carbon block 0.63"]
+        doc = copy.deepcopy(load_case("posidonia").document)
+        doc["carbon"]["release_fates"]["default"] = "sunk"
+        with pytest.raises(ValueError, match="unknown fate 'sunk'"):
+            case_from_dict(doc)
+
+    def test_cli_flag_and_help(self, capsys):
+        import json
+
+        from gaia.cli import main
+
+        assert main(["run", "posidonia", "--matte-fate", "excavated", "--format", "json",
+                     "--summary-only"]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["npv_analysis"]["carbon_released_tco2"] == pytest.approx(
+            50 * 1199.0 * 0.96, rel=1e-6)
+        assert main(["run", "posidonia", "--help"]) == 0
+        text = " ".join(capsys.readouterr().out.split())
+        for words in ("--matte-fate {exposed,excavated,buried}", "dug out or dredged",
+                      "covered by fill", "stays in place, uncovered", "INFERRED"):
+            assert words in text
+        assert main(["run", "forest", "--matte-fate", "excavated"]) == 2
+
+    def test_preset_is_not_sampled(self):
+        from gaia.cases import load_case
+        from gaia.uncertainty import run_uncertainty
+
+        res = run_uncertainty(load_case("posidonia"), 50, build_kwargs={"carbon_fate": "excavated"},
+                              draws=4, tornado=False, normative=False)
+        names = {s.name for s in res.sampled}
+        assert "carbon.soil_release_fraction" not in names
+        assert "carbon.release_half_life_years" not in names

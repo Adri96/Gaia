@@ -411,6 +411,33 @@
         0.0,
         27.0
       ]
+    },
+    "release_fates": {
+      "subject": "matte",
+      "default": "exposed",
+      "fates": {
+        "exposed": {
+          "description": "The meadow dies but its matte stays in place, uncovered (killed by shading, turbidity, anchoring or scour around the works): the dead matte is open to oxygen and erodes, so its carbon escapes gradually over years to decades.",
+          "soil_release_fraction": 0.63,
+          "release_half_life_years": 10.0,
+          "basis": "sourced: Pendleton et al. 2012, doi:10.1371/journal.pone.0043542, 25-100% lost, central 63%, negative exponential with a half-life of the order of 5-10 years; the 10-year central half-life is inferred (docs/POSIDONIA_LITERATURE_REVIEW.md §4)",
+          "confidence": "low"
+        },
+        "excavated": {
+          "description": "The matte is dug out or dredged (port basins, access channels, marina docks): the carbon-rich soil is removed and broken up, so nearly all of its carbon is released in the year of the works.",
+          "soil_release_fraction": 0.96,
+          "release_half_life_years": 0.0,
+          "basis": "sourced: IPCC 2013 Wetlands Supplement, ch. 4, Tier 1 for 'excavation to enable port, harbour and marina construction': the top-metre soil carbon emitted in the year of extraction, minus 4% refractory",
+          "confidence": "medium"
+        },
+        "buried": {
+          "description": "The matte is covered by fill (breakwaters, reclaimed land, rock armour): it stays buried without oxygen, which probably preserves most of its carbon.",
+          "soil_release_fraction": 0.125,
+          "release_half_life_years": 10.0,
+          "basis": "INFERRED, no source: the midpoint of the inferred 0-0.25 range for anoxic burial; the half-life is the exposed default, for want of a measurement",
+          "confidence": "placeholder"
+        }
+      }
     }
   },
   "resilience": {

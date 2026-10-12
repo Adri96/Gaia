@@ -428,6 +428,7 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 | `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares |
 | `--resource-name NAME` | Name of the reference resource in the outputs |
 | `--carbon-release-fraction F`, `--carbon-release-half-life YEARS` | Project inputs: share of the soil carbon released, and the half-life of its release (0: all at once) |
+| `--matte-fate {exposed,excavated,buried}` | Posidonia: what the project does to the matte, a preset of the two inputs above (which still override it). **exposed** (default): the meadow dies but the matte stays uncovered and erodes, 0.63 released with a 10-year half-life. **excavated**: dug out or dredged, 0.96 released in the year of the works (IPCC 2013). **buried**: covered by fill and kept without oxygen, 0.125 (inferred, no source) |
 | `--mode {extract,restore}` | Simulation mode |
 | `--units-lost N` | [restore] Units missing at the start (default: `--units`) |
 | `--planting-cost`, `--maintenance-cost`, `--maintenance-years` | [restore] Restoration costs per unit |
@@ -495,7 +496,7 @@ What the values rest on. The authoritative, per-parameter list is in each output
 
     Beach tourism and the meadow's own existence value are not valued, so the total is still a lower bound, ~11× below the Mediterranean seagrass meta-regression.
   - **Small losses are priced linearly** (damage model `area_loss`): below the 20% threshold each hectare costs its average value; past it the remaining meadow degrades. The reference resource is the regional stock unless the user enters the meadow a project affects (`--area-ha`).
-  - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs: 0.96 at once for excavated matte (IPCC 2013). Carbon is as large as the services for the default project.
+  - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
 - **Amazon**: the agent value is the sum of the non-carbon anchors of its spec (`gaia/cases/definitions/AMAZON_FOREST.md`). Several of those anchors' sources are unverified. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
 - **All cases**: placeholder damage curves (steepness 12; Posidonia's start at the threshold), placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.

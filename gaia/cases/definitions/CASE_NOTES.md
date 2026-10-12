@@ -269,7 +269,11 @@ year's tranche is valued at that year's SCC and discounted (€111,000 PV
 per hectare instead of €126,000 at once). Recommended inputs: excavated
 or dredged matte 0.96 and 0 (IPCC 2013); matte left exposed 0.63
 (0.25–1.0) and 10 years (0–27); matte buried under fill: no source,
-probably low. Re-absorption is not modelled in the extraction view: a
+probably low. Since Step 8d.2 they are a preset, `--matte-fate
+{exposed,excavated,buried}` (`carbon.release_fates`; buried: 0.125 and
+10 years, inferred), explained in plain words in `--help`; the default
+stays "exposed" (owner's decision, no numeric change), and the two flags
+above still override it. Re-absorption is not modelled in the extraction view: a
 port footprint is permanent, and natural recolonisation around it would
 re-absorb about 8% of the PV of the foregone burial.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — the owner's answers, second round (Step 8d)
+
+### Added
+
+- **`--matte-fate {exposed,excavated,buried}`** (Posidonia; Step 8d.2): what the project does to the matte, a preset of `--carbon-release-fraction` and `--carbon-release-half-life` (which still override it), from the sourced table of the literature review §4. **exposed** (default, unchanged): 0.63, half-life 10 yr; **excavated**: 0.96, at once (IPCC 2013); **buried**: 0.125, half-life 10 yr, *inferred, no source*. `--help`, the README and the methods note explain the three fates in plain words. The case format gains `carbon.release_fates` (`--<subject>-fate` for any case that defines it; `Case.fate_check()`). No number changes.
+
 ## Unreleased — Posidonia v1.0 case (Step 8b; decision D6)
 
 The Posidonia meadow is the v1.0 case (D6): one case with every parameter sourced or flagged, results with uncertainty bounds, and a methods note ready for external review. **Posidonia numbers change. For the other three cases, no number changes**; their golden files lose only the retired heuristic band.
