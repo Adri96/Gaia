@@ -212,15 +212,22 @@ def test_posidonia_marginal_cost_curve_shape():
 def test_posidonia_carbon_valued_by_carbon_profile_only():
     """
     Blue carbon is valued by gaia.carbon (release + foregone absorption), not
-    by an agent: the absorption is the single S5 value, IPCC 2013 Tier 1
-    seagrass 0.43 t C/ha/yr = 1.58 t CO₂/ha/yr.
+    by an agent. S5: one sourced absorption value, the Balearic burial rate
+    of Mazarrasa et al. (2017), 26 g C/m²/yr = 0.26 t C/ha/yr; the release is
+    the top-metre matte stock (327 t C/ha) × the Pendleton et al. (2012)
+    central loss fraction 0.63, with no separate biomass term.
     """
     eco = build_posidonia_ecosystem()
-    assert eco.resource.carbon_profile.annual_absorption_tonnes == pytest.approx(
-        0.43 * 44 / 12)
+    profile = eco.resource.carbon_profile
+    assert profile.annual_absorption_tonnes == pytest.approx(0.26 * 44 / 12)
+    assert profile.soil_carbon_tonnes == pytest.approx(327 * 44 / 12)
+    assert profile.soil_release_fraction == 0.63
+    assert profile.stored_carbon_tonnes == 0.0
     result = run_extraction(eco, 1_000)
     assert result.extraction_npv.carbon_absorption_lost_t_yr == pytest.approx(
-        1_000 * 0.43 * 44 / 12)
+        1_000 * 0.26 * 44 / 12)
+    assert result.extraction_npv.carbon_released_t == pytest.approx(
+        1_000 * 327 * 44 / 12 * 0.63)
 
 
 # ── Report tests ───────────────────────────────────────────────────────────────

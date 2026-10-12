@@ -173,7 +173,9 @@ def test_known_flags_are_honest():
     assert scarcity.value == 0.02 and scarcity.confidence is Confidence.LOW
     assert "Drupp" in scarcity.note
     absorption = param("posidonia", "carbon.annual_absorption_tonnes")
-    assert "not verified" in absorption.note and "Krause-Jensen" in absorption.note
+    assert "doi:10.1002/lno.10510" in absorption.source and "S5" in absorption.note
+    release = param("posidonia", "carbon.soil_release_fraction")
+    assert release.confidence is Confidence.LOW and "global assumption" in release.note
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
     for case in BUILDERS:

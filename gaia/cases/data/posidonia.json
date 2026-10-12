@@ -248,29 +248,32 @@
   ],
   "carbon": {
     "stored_carbon_tonnes": {
-      "value": 130.0,
+      "value": 0.0,
       "unit": "tCO2/ha",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Label Bas-Carbone, 'Méthode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf), §7: the carbon in the living leaves is 'négligeable comparé au carbone stocké et séquestré dans la matte'",
+      "confidence": "low",
+      "note": "Living biomass is not counted separately: the leaves are negligible next to the matte, and the living rhizomes and roots lie inside the top-metre matte stock counted in soil_carbon_tonnes (counting them here too would double count). No Posidonia leaf-biomass carbon figure was verified for this review."
     },
     "annual_absorption_tonnes": {
-      "value": 1.5766666666666664,
+      "value": 0.9533333333333335,
       "unit": "tCO2/ha/yr",
-      "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) × 44/12",
+      "source": "Mazarrasa et al. (2017), Limnology and Oceanography 62:1436-1450, doi:10.1002/lno.10510: organic carbon burial 26 ± 6 g C/m2/yr in Balearic P. oceanica meadows since 1900 (210Pb-dated cores) = 0.26 t C/ha/yr × 44/12",
       "confidence": "medium",
-      "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified."
+      "note": "S5 resolved: one long-term burial (sequestration) rate, from the nearest region with direct measurements. Range 0.28-3.09 tCO2/ha/yr: 7.7-84.4 g C/m2/yr, the depth range of mean sequestration in a large Corsican meadow (Pergent-Martini et al. 2021, Marine Environmental Research 165:105236, doi:10.1016/j.marenvres.2020.105236). The former value, 1.58 tCO2/ha/yr, was the IPCC (2013) Wetlands Supplement Table 4.12 seagrass factor (0.434 t C/ha/yr, 95% CI 0.2-0.7, from Mateo & Romero 1997 and Serrano et al. 2012), which applies to revegetated meadows; it lies inside the range."
     },
     "soil_carbon_tonnes": {
-      "value": 2600.0,
+      "value": 1199.0,
       "unit": "tCO2/ha",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Monnier et al. (2022), Science of the Total Environment 838:155864, doi:10.1016/j.scitotenv.2022.155864 (39 matte cores, eastern Corsica: 327 ± 150 t Corg/ha), adopted as the Tier 1 default for 1 m of matte by Label Bas-Carbone, 'Méthode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf); × 44/12",
+      "confidence": "medium",
+      "note": "Organic carbon in the top metre of matte (the depth IPCC and the Label Bas-Carbone method treat as exposed), not the whole matte, which can be several metres thick. Range 741-1,844 tCO2/ha: 20.2-50.3 kg Corg/m2 in the first metre of matte in Calvi Bay (Leduc et al. 2023, Marine Environmental Research 183:105847, doi:10.1016/j.marenvres.2022.105847). Corsican, not Catalan, measurements; for scale, the IPCC (2013) global Tier 1 seagrass soil stock is 108 t C/ha to 1 m (Table 4.11) and Balearic P. oceanica holds 6.1 ± 1.4 kg C/m2 in the top 30 cm alone (Mazarrasa et al. 2017)."
     },
     "soil_release_fraction": {
-      "value": 0.05,
+      "value": 0.63,
       "unit": "fraction",
-      "confidence": "placeholder",
-      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+      "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
+      "confidence": "low",
+      "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality."
     }
   },
   "resilience": {

@@ -17,10 +17,10 @@
       "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
       "ecosystem_provenance_recorded": true,
       "n_high": 0,
-      "n_low": 23,
-      "n_medium": 5,
+      "n_low": 25,
+      "n_medium": 6,
       "n_params": 59,
-      "n_placeholder": 31,
+      "n_placeholder": 28,
       "n_user_supplied": 0,
       "parameters": [
         {
@@ -384,36 +384,36 @@
           "value": 0.15
         },
         {
-          "confidence": "placeholder",
+          "confidence": "low",
           "name": "carbon.stored_carbon_tonnes",
-          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
-          "source": null,
+          "note": "Living biomass is not counted separately: the leaves are negligible next to the matte, and the living rhizomes and roots lie inside the top-metre matte stock counted in soil_carbon_tonnes (counting them here too would double count). No Posidonia leaf-biomass carbon figure was verified for this review.",
+          "source": "Label Bas-Carbone, 'M\u00e9thode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf), \u00a77: the carbon in the living leaves is 'n\u00e9gligeable compar\u00e9 au carbone stock\u00e9 et s\u00e9questr\u00e9 dans la matte'",
           "unit": "tCO2/ha",
-          "value": 130.0
+          "value": 0.0
         },
         {
           "confidence": "medium",
           "name": "carbon.annual_absorption_tonnes",
-          "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified.",
-          "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) \u00d7 44/12",
+          "note": "S5 resolved: one long-term burial (sequestration) rate, from the nearest region with direct measurements. Range 0.28-3.09 tCO2/ha/yr: 7.7-84.4 g C/m2/yr, the depth range of mean sequestration in a large Corsican meadow (Pergent-Martini et al. 2021, Marine Environmental Research 165:105236, doi:10.1016/j.marenvres.2020.105236). The former value, 1.58 tCO2/ha/yr, was the IPCC (2013) Wetlands Supplement Table 4.12 seagrass factor (0.434 t C/ha/yr, 95% CI 0.2-0.7, from Mateo & Romero 1997 and Serrano et al. 2012), which applies to revegetated meadows; it lies inside the range.",
+          "source": "Mazarrasa et al. (2017), Limnology and Oceanography 62:1436-1450, doi:10.1002/lno.10510: organic carbon burial 26 \u00b1 6 g C/m2/yr in Balearic P. oceanica meadows since 1900 (210Pb-dated cores) = 0.26 t C/ha/yr \u00d7 44/12",
           "unit": "tCO2/ha/yr",
-          "value": 1.5766666666666664
+          "value": 0.9533333333333335
         },
         {
-          "confidence": "placeholder",
+          "confidence": "medium",
           "name": "carbon.soil_carbon_tonnes",
-          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
-          "source": null,
+          "note": "Organic carbon in the top metre of matte (the depth IPCC and the Label Bas-Carbone method treat as exposed), not the whole matte, which can be several metres thick. Range 741-1,844 tCO2/ha: 20.2-50.3 kg Corg/m2 in the first metre of matte in Calvi Bay (Leduc et al. 2023, Marine Environmental Research 183:105847, doi:10.1016/j.marenvres.2022.105847). Corsican, not Catalan, measurements; for scale, the IPCC (2013) global Tier 1 seagrass soil stock is 108 t C/ha to 1 m (Table 4.11) and Balearic P. oceanica holds 6.1 \u00b1 1.4 kg C/m2 in the top 30 cm alone (Mazarrasa et al. 2017).",
+          "source": "Monnier et al. (2022), Science of the Total Environment 838:155864, doi:10.1016/j.scitotenv.2022.155864 (39 matte cores, eastern Corsica: 327 \u00b1 150 t Corg/ha), adopted as the Tier 1 default for 1 m of matte by Label Bas-Carbone, 'M\u00e9thode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf); \u00d7 44/12",
           "unit": "tCO2/ha",
-          "value": 2600.0
+          "value": 1199.0
         },
         {
-          "confidence": "placeholder",
+          "confidence": "low",
           "name": "carbon.soil_release_fraction",
-          "note": "Stocks pending calibration against IPCC Blue Carbon data.",
-          "source": null,
+          "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality.",
+          "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
           "unit": "fraction",
-          "value": 0.05
+          "value": 0.63
         },
         {
           "confidence": "placeholder",
@@ -496,7 +496,7 @@
           "value": 200.0
         }
       ],
-      "statement": "ILLUSTRATIVE: 54 of 59 recorded parameters are placeholders (31) or low-confidence (23). Results are not real-world estimates.",
+      "statement": "ILLUSTRATIVE: 53 of 59 recorded parameters are placeholders (28) or low-confidence (25). Results are not real-world estimates.",
       "status": "illustrative"
     },
     "ecosystem": {
@@ -724,11 +724,11 @@
       "name": "Costa Brava Posidonia Meadow",
       "resource": {
         "area_ha": 5000.0,
-        "carbon_absorption_per_unit_yr": 1.5766666666666664,
+        "carbon_absorption_per_unit_yr": 0.9533333333333335,
         "carbon_price_basis": "social cost of carbon, US EPA 2023",
         "carbon_price_eur_per_t": 166.35,
         "carbon_price_growth": 0.013,
-        "carbon_stored_per_unit": 130.0,
+        "carbon_stored_per_unit": 0.0,
         "discount_horizon_years": 200,
         "discount_rate": 0.023,
         "has_carbon_profile": true,
@@ -749,11 +749,11 @@
       "Marine externality costs are ANNUAL (\u20ac/yr) \u2014 they recur every year the damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively permanent on human timescales. The net social cost compares the one-off revenue with the present value of these annual losses."
     ],
     "npv_analysis": {
-      "carbon_absorption_lost_tco2_yr": 3153.3333,
-      "carbon_foregone_eur_pv": 62979050.0,
+      "carbon_absorption_lost_tco2_yr": 1906.6667,
+      "carbon_foregone_eur_pv": 38080355.81,
       "carbon_price_eur_per_t": 166.35,
-      "carbon_release_eur_pv": 86499737.35,
-      "carbon_released_tco2": 520000.0,
+      "carbon_release_eur_pv": 251305025.39,
+      "carbon_released_tco2": 1510740.0,
       "discount": {
         "carbon_price_eur_per_t": 166.35,
         "carbon_price_growth": 0.013,
@@ -781,7 +781,7 @@
       "horizon_years": 200,
       "services_eur_pv": 440211098.03,
       "substrate_unrecoverable_eur_pv": 28075.88,
-      "total_eur_pv": 589689885.38
+      "total_eur_pv": 729596479.23
     },
     "substrate": {
       "capacity_lost_units": 1,
@@ -836,12 +836,12 @@
       "annual_externality_eur_yr": 4703404.24,
       "discount_is_default": false,
       "final_ecosystem_health": 0.100511,
-      "net_social_cost_eur_pv": 584689885.38,
+      "net_social_cost_eur_pv": 724596479.23,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 589689885.38,
-      "pv_externality_h100_eur_pv": 411267934.5,
-      "pv_externality_h200_eur_pv": 589689885.38,
-      "pv_externality_h50_eur_pv": 282983382.61,
+      "pv_externality_eur_pv": 729596479.23,
+      "pv_externality_h100_eur_pv": 561588808.5,
+      "pv_externality_h200_eur_pv": 729596479.23,
+      "pv_externality_h50_eur_pv": 439492220.03,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
@@ -925,24 +925,24 @@
     },
     "discount_is_default": false,
     "extraction_npv": {
-      "carbon_absorption_lost_t_yr": 3153.333333333333,
-      "carbon_foregone": 62979049.99815554,
+      "carbon_absorption_lost_t_yr": 1906.666666666667,
+      "carbon_foregone": 38080355.81283827,
       "carbon_price": 166.3456487480301,
-      "carbon_release": 86499737.34897566,
-      "carbon_released_t": 520000.0,
+      "carbon_release": 251305025.389599,
+      "carbon_released_t": 1510740.0,
       "direct": 440211098.02917224,
       "horizon": 200,
       "substrate_unrecoverable": 28075.882660928823,
-      "total": 589689885.3763034
+      "total": 729596479.2316096
     },
     "final_ecosystem_health": 0.1005114582347244,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 584689885.3763034,
-    "pv_externality": 589689885.3763034,
+    "net_social_cost": 724596479.2316096,
+    "pv_externality": 729596479.2316096,
     "pv_externality_by_horizon": {
-      "100": 411267934.50043195,
-      "200": 589689885.3763034,
-      "50": 282983382.6123693
+      "100": 561588808.501244,
+      "200": 729596479.2316096,
+      "50": 439492220.02616036
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,
@@ -1342,7 +1342,7 @@
       "k_fraction": 0.9999983640720822,
       "keystone_triggered": [],
       "marginal_annual_externality": 2535.7094656962436,
-      "model_confidence": 0.6795999999999999,
+      "model_confidence": 0.6795999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
       "revenue": 2002500.0,
