@@ -114,7 +114,9 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "reference density). For a case counted in hectares (e.g. "
             "posidonia) it is the reference resource itself — e.g. the "
             "specific meadow a project affects instead of the regional stock — "
-            "and sets the number of units. Agent values are €/ha/yr, so holding "
+            "and sets the number of units (a case with site-restricted values, "
+            "e.g. posidonia's diving value, then requires their inputs: "
+            "--dive-intensity and/or --dive-site-share). Agent values are €/ha/yr, so holding "
             "the area fixed while changing the number of units changes per-unit "
             "figures but not the per-ha externality"
         ),
@@ -273,6 +275,38 @@ def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
             f"the regional average, {default:,.1f} {unit} (about €{near:,.0f}/ha/yr near the "
             f"{case.sites}). Levels: " + " ".join(lines)
         ).replace("%", "%%"),
+    )
+
+
+def require_site_input(case, args: argparse.Namespace) -> None:
+    """A project run must state the diving input (Step 8e.3).
+
+    With --area-ha the user names a specific project resource (e.g. the
+    meadow a project affects), whose site share and intensity the regional
+    averages do not describe; a case with site-restricted values (Posidonia:
+    the meadow's diving value) then needs --<site>-share and/or
+    --<activity>-intensity. The default regional run keeps its defaults.
+
+    Raises:
+        ValueError: With a plain message, when neither is given.
+    """
+    if getattr(args, "area_ha", None) is None or not getattr(case, "site_restricted_agents", []):
+        return
+    if getattr(args, "site_share", None) is not None or getattr(args, "site_intensity", None) is not None:
+        return
+    intensity = case.intensity_input
+    levels = case.intensity_levels or {}
+    site = case.sites[:-1] if case.sites.endswith("s") else case.sites
+    options = (
+        f"--{intensity} {{{','.join(levels)}}} (how intensely the resource near the "
+        f"{case.sites} is used) and/or " if intensity else ""
+    )
+    nothing = f"--{intensity} none" if "none" in levels else f"--{case.site_input} 0"
+    raise ValueError(
+        f"with --area-ha (a specific project site), the {case.sites} input is required: "
+        f"{options}--{case.site_input} F (the share, 0 to 1, of the affected resource "
+        f"within reach of {case.sites}). If no {site} is within reach, give {nothing}. "
+        f"Without --area-ha the run uses the regional averages."
     )
 
 
@@ -716,6 +750,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             site_share=getattr(args, "site_share", None),
             site_intensity=getattr(args, "site_intensity", None),
         )
+        require_site_input(case, args)
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any
         if args.mode == "restore":

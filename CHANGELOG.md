@@ -12,6 +12,7 @@ The owner's answers to the five open questions of #8, one commit each. The versi
 
 #### Changed
 
+- **A project meadow must state its diving** (Posidonia; Step 8e.3). `gaia run` with `--area-ha` (a specific project meadow) now requires `--dive-intensity` and/or `--dive-site-share`, and otherwise stops (exit status 1) with a plain message: *"with --area-ha (a specific project site), the dive sites input is required: --dive-intensity {none,low,medium,high} … and/or --dive-site-share F …. If no dive site is within reach, give --dive-intensity none. Without --area-ha the run uses the regional averages."* The regional averages describe a meadow of unknown location, not a named one. The default regional run, `--total-units`/`--hectares` (the size of the reference stock), the other cases and the Python API (`Case.build_ecosystem`) are unchanged. No number changes.
 - **The `buried` matte preset is kept** (Posidonia; Step 8e.1): 0.125 released with a 10-year half-life, labelled *inferred, no source*, as before. It is no longer an open question (literature review §4, methods note §5). No number changes.
 
 ## 0.10.0 — Step 8: the Posidonia v1.0 case (2026-10-12)

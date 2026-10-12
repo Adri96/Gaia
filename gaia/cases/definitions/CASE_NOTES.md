@@ -243,9 +243,14 @@ is the hectare, so 4,582 units. The default run destroys an illustrative
 50 ha (about 1.1% of the stock), the scale of a port or marina project (the
 first user, `PROJECT_DEFINITION.md` v1.0). Since Step 8c.4 the reference is
 an input: the user replaces it with the specific meadow the project
-affects, `gaia run posidonia --area-ha 300 --resource-name "…"` (or
-`resource.total_units`/`area_ha` and `resource.name` in a copy of the
-file), recorded as user-supplied. The reference sets the depletion
+affects, `gaia run posidonia --area-ha 300 --resource-name "…"
+--dive-intensity low` (or `resource.total_units`/`area_ha` and
+`resource.name` in a copy of the file), recorded as user-supplied. Since
+Step 8e.3 a run with `--area-ha` must also state the diving input,
+`--dive-intensity` and/or `--dive-site-share` (`--dive-intensity none`
+when no dive site is within reach): the regional averages describe a
+meadow of unknown location, not a named one, so the run stops with a
+plain error otherwise. The reference sets the depletion
 fraction: below the safe threshold the cost per hectare does not depend on
 it (Step 8c.3), above it the remaining meadow degrades. Before Step 8 the
 case used 5,000 ha, more than the whole Catalan stock, and 2,000 ha

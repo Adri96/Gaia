@@ -435,7 +435,7 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 | `--units N` | Units to extract (extract mode) or to replant (restore mode) |
 | `--threshold RATIO` | Safe extraction threshold, which also places the inflection of every damage curve (for Posidonia, where the remaining meadow starts to degrade) |
 | `--unit-value EUROS` | One-off revenue per unit extracted |
-| `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares |
+| `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares; it then requires `--dive-intensity` and/or `--dive-site-share` (Step 8e.3) |
 | `--resource-name NAME` | Name of the reference resource in the outputs |
 | `--carbon-release-fraction F`, `--carbon-release-half-life YEARS` | Project inputs: share of the soil carbon released, and the half-life of its release (0: all at once) |
 | `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share, or 1 when `--dive-intensity` is given alone) |

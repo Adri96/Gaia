@@ -409,8 +409,8 @@ def test_reference_resource_cli(capsys):
     from gaia.cli import main
 
     assert main(["run", "posidonia", "--area-ha", "300", "--resource-name",
-                 "Meadow of the bay", "--units", "30", "--format", "json",
-                 "--summary-only"]) == 0
+                 "Meadow of the bay", "--units", "30", "--dive-site-share", "0.5",
+                 "--format", "json", "--summary-only"]) == 0
     out = json.loads(capsys.readouterr().out)
     resource = out["ecosystem"]["resource"]
     assert resource["total_units"] == 300
@@ -834,6 +834,49 @@ def test_intensity_document_errors():
         e.pop("site_restricted", None)
     with pytest.raises(ValueError, match="needs sites and site_share"):
         case_from_dict(doc)
+
+
+# ── Step 8e.3: a project meadow must state its diving ────────────────────────
+
+@pytest.mark.parametrize("mode", [[], ["--mode", "restore"]])
+def test_project_meadow_requires_the_dive_input(mode, capsys):
+    """With --area-ha the run needs --dive-intensity and/or
+    --dive-site-share, and fails with a plain message otherwise; the
+    regional run keeps its defaults."""
+    import json
+
+    from gaia.cli import main
+
+    base = ["run", "posidonia", "--area-ha", "300", "--units", "30"] + mode
+    assert main(base) == 1
+    err = " ".join(capsys.readouterr().err.split())
+    assert err.startswith("Error: with --area-ha (a specific project site)")
+    assert "--dive-intensity {none,low,medium,high}" in err and "--dive-site-share F" in err
+    assert "give --dive-intensity none" in err
+    for given in (["--dive-intensity", "none"], ["--dive-site-share", "0"],
+                  ["--dive-intensity", "high", "--dive-site-share", "0.1"]):
+        assert main(base + given + ["--format", "json", "--summary-only"]) == 0
+        json.loads(capsys.readouterr().out)
+    # the regional run (no --area-ha) and the other cases are not affected
+    assert main(["run", "posidonia", "--units", "30", "--format", "json", "--summary-only"]) == 0
+    capsys.readouterr()
+    assert main(["run", "forest", "--area-ha", "40", "--format", "json", "--summary-only"]) == 0
+    capsys.readouterr()
+
+
+def test_project_meadow_with_intensity_alone_is_the_whole_meadow(capsys):
+    """--area-ha with --dive-intensity alone: the whole affected meadow is
+    dived at that intensity (share 1)."""
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--area-ha", "300", "--units", "30",
+                 "--dive-intensity", "low", "--format", "json", "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
+    assert meadow["site_share"] == 1.0
+    assert meadow["site_intensity"] == pytest.approx(LEVELS["low"])
 
 
 # ── Step 8d.1: every case prices small losses linearly ──────────────────────
