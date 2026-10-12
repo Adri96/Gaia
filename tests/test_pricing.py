@@ -877,7 +877,7 @@ class TestAnchoring:
         assert anchored == {a.name for a in eco.agents}
         for anchor in eco.pricing.anchors:
             agent = next(a for a in eco.agents if a.name == anchor.agent_name)
-            if "PLACEHOLDER" in anchor.source:
+            if anchor.source.startswith("PLACEHOLDER: no documented anchor"):
                 assert anchor.anchor_value == pytest.approx(agent.annual_value(area))
 
 

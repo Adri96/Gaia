@@ -181,127 +181,111 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     tuning edges to silence the warning.
 ```
 
-## Costa Brava Posidonia Meadow (`posidonia`)
+## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
-```text
-Marine ecosystem with 10 agents spanning the full web of biological and
-physical dependencies: from the Posidonia meadow itself as foundation species,
-through coralligenous reefs, fish nurseries, and apex megafauna, to the
-coastal protection and tourism economy of the Costa Brava.
+The v1.0 case (decision D6). Since Step 8.2 every parameter is sourced or
+flagged; the full review, with the value, range and mapping of each
+parameter and a DOI or stable URL for every source, is
+`docs/POSIDONIA_LITERATURE_REVIEW.md`, and the method is described in
+`docs/POSIDONIA_METHODS_NOTE.md`. This section keeps the derivations.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MONETARY SEMANTICS — ONE-OFF REVENUE vs YEARLY LOSSES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Reference resource.** The Catalan *P. oceanica* stock, 4,582 ha (the
+Generalitat's 2025 marine habitat map, as reported); the unit is the
+hectare, so 4,582 units. The default run destroys an illustrative 50 ha
+(about 1.1% of the stock), the scale of a port or marina project (the
+proposed first user, `PROJECT_DEFINITION.md` v1.0). Before Step 8 the case
+used 5,000 ha, more than the whole Catalan stock, and 2,000 ha destroyed.
 
-As in every Gaia case, agent values are YEARLY FLOWS and revenue is ONE-OFF:
+**Monetary semantics.** As in every case: agent values are yearly flows,
+revenue is one-off (€2,500/ha, a project-specific placeholder the user
+replaces with `--unit-value`), and they meet only through present values.
 
-    Private revenue:    ONE-TIME gain from coastal development, marina
-                        construction, or trawling permits that destroy
-                        Posidonia (modeled as €2,500/ha destroyed).
+**Agent values: final services only (Step 8.2).** The euro values sit on
+the four final services that a primary *P. oceanica* valuation measured
+(Campagne et al. 2015, Table 2, € 2014/ha/yr): coastal protection 188,
+water purification (wastewater treatment) 60, fisheries 35 (range 27–74,
+the upper end derived from Jackson et al. 2015), and the cultural services
+they could value, 1.83 (bioindicator use 1.5 + knowledge 0.33). Total
+€284.83/ha/yr at full damage. Each is entered as
+`annual_value_per_ha = service value / dependency_weight`, so that
+weight × value is the sourced figure and the owner's weights keep their
+role in the health index. The six ecological agents (the meadow itself,
+coralligenous, epiphytes, invertebrates, megafauna, seabirds) carry no euro
+value of their own: they are intermediate services whose value reaches
+people through the final ones (Boyd & Banzhaf 2007; Fisher et al. 2009), or
+non-use values for which no per-hectare estimate tied to *Posidonia* was
+found. They keep their health weights and their edges, so their damage
+still raises the damage of the final services. **The total is a lower
+bound**: tourism, recreation and non-use values are not valued (Campagne et
+al. say the same of their own figure). Before Step 8.2 the agent values
+restated an owner specification (€1,066/ha/yr in total, no source).
 
-    Externality costs:  ANNUAL RECURRING losses — every year the meadow
-                        is gone, the ecosystem services are absent.
+**Carbon (S5, Step 8.2a).** Valued only by `gaia.carbon`:
+- absorption 0.953 tCO₂/ha/yr, i.e. 26 g C/m²/yr of burial in Balearic
+  meadows (Mazarrasa et al. 2017); range 0.28–3.09;
+- release = 1,199 tCO₂/ha in the top metre of matte (327 t C/ha, Monnier
+  et al. 2022, the French Label Bas-Carbone default) × 0.63 lost on
+  conversion (Pendleton et al. 2012, range 0.25–1.0);
+- no separate biomass term: leaves are negligible next to the matte, and
+  living rhizomes lie inside it.
 
-The report shows the annual loss (€/yr) and its present value over the
-200-year horizon (€ PV); the net social cost compares the one-off revenue
-with that present value, never with the annual figure.
+So 755 tCO₂ is released per hectare destroyed. The fraction depends on
+what the project does to the matte (excavated, buried, or eroded later),
+and it is the largest single source of uncertainty in the case.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Scientific context:
-    Posidonia oceanica is one of the most biodiverse and carbon-rich ecosystems
-    on Earth: it stores carbon in its sediment matte for millennia (valued by
-    gaia.carbon through the carbon profile below). Growth rate: 1-6 cm/year
-    horizontal — any significant destruction is irreversible on human timescales.
+**Damage curves, threshold, edges, keystone.** Unchanged placeholders:
+- the same logistic for every agent (steepness 12, inflection at 32%,
+  just past the 20% "safe" threshold), with nothing to fit it to;
+- 15 hand-set edges; the links are documented (e.g. wave attenuation by
+  the meadow, Infantes et al. 2012), their strengths are not;
+- a keystone threshold of 0.3.
 
-    34% of Mediterranean Posidonia has been lost in the last 50 years. The Costa
-    Brava is already under pressure from tourism infrastructure, boat anchoring,
-    and residual trawling. The 20% safe threshold is lower than the forest (25%)
-    because recovery is orders of magnitude slower and the ecosystem is already
-    stressed.
+Calibration regime B: the curves are read as each agent's direct
+dependency on the meadow, and the edges add the indirect part (a
+structural lower bound for chains longer than one hop). In-degree cap:
+every agent's incoming strengths sum to at most 0.80 with the keystone
+boost, so no edge was changed.
 
-    The Medes Islands MPA is the proof-of-concept: protected since 1983, fish
-    biomass is 80× higher inside the reserve than outside. The science works —
-    protection produces measurable, quantifiable recovery.
+**CalibrationWarning (health 0.67 at the 20% threshold) remains.** No
+source supports a threshold-shaped response of Posidonia services to the
+fraction of meadow lost, and none supports a "safe" loss of 20% of a
+priority habitat. Fixing the warning would mean tuning placeholders to
+silence it. The warning is the honest signal that 20% is not safe. For
+small losses, which is the user's question, the curve gives each hectare
+about a quarter of its average per-hectare value (initial slope 0.25).
+That is why the review reports, next to Gaia's figure, the linear
+benefit transfer (N ha × €284.83/ha/yr).
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Parameter documentation (per ROADMAP.md Verification & Scientific Validation Strategy):
+**Restoration and succession.**
+- Planting cost €50,000/ha: of the order of the median marine
+  restoration cost (Bayraktarov et al. 2016), low confidence.
+- Maintenance: placeholders.
+- Succession from an agent-based model of natural recolonisation
+  (Kendrick et al. 2005): limited cover after a century, a plateau after
+  400 years, two-thirds cover after 600, so restoration recovers little
+  within the 200-year horizon.
+- Transplant survival is low: 38% median for seagrass, 0–31% on disturbed
+  substrate.
 
-    Summary only. The gaia.provenance.Param objects in this module are the
-    authoritative provenance and what every output reports (Step 5). Where
-    they differ from the table, the Params apply: an owner specification
-    or 'Spec' entry with no cited source is 'low', not 'Medium'.
+**Discounting.** 2.3% (the mean social discount rate recommended by ~200
+experts, Drupp et al. 2018), declining to 1.8% and 1.4% (placeholders,
+normative). Scarcity uplift 1%/yr, the Dutch default reported by Drupp et
+al. 2024, whose own aggregate estimate (1.66%) would make the 200-year PV
+diverge. The uncertainty analysis treats these as normative sensitivities,
+not as random parameters.
 
-Agent values are yearly flows per hectare (decisions D1, D2). They restate
-the user-specified maximum annual impact of each agent for the 5,000 ha
-reference meadow per hectare and per unit of dependency weight:
-    annual_value_per_ha = max_annual_impact / (dependency_weight × 5,000 ha)
-so that weight × annual_value_per_ha × area_ha = max_annual_impact at 5,000 ha.
+**EXPERIMENTAL pricing.** Pricing requires a positive anchor for every
+agent. The six agents without a euro value get their former
+owner-specified impacts as PLACEHOLDER anchors. Pricing is quarantined and
+is not part of the v1.0 output.
 
-The Blue Carbon agent (weight 0.09, €500,000/yr) was carbon only and is
-removed: carbon is valued by gaia.carbon alone (decision D3). The remaining
-weights are renormalised by 1/0.91 (to sum to 1) and their per-ha values
-scaled by 0.91, so weight × value — each agent's maximum annual impact — is
-unchanged. The table lists the original weights and values.
-
-    | Parameter                       | Max Impact | Weight | €/ha/yr    | Source       | Confidence |
-    |---------------------------------|------------|--------|------------|--------------|------------|
-    | total_units (= area, ha)        | –          | –      | –          | User spec    | Low        |
-    | safe_threshold_ratio            | –          | –      | 0.20       | User spec    | Medium     |
-    | unit_value (revenue/ha)         | –          | –      | 2,500 €    | User spec    | Low        |
-    | Posidonia Meadow                | €800,000   | 0.10   | 1,600.0    | User spec    | Low        |
-    | Coralligenous & Red Coral       | €600,000   | 0.10   | 1,200.0    | User spec    | Low        |
-    | Epiphytes & Algae               | €250,000   | 0.07   | 714.2      | User spec    | Low        |
-    | Marine Invertebrates            | €350,000   | 0.09   | 777.8      | User spec    | Low        |
-    | Fish Populations                | €700,000   | 0.14   | 1,000.0    | User spec    | Low        |
-    | Marine Megafauna                | €200,000   | 0.04   | 1,000.0    | User spec    | Low        |
-    | Seabirds                        | €180,000   | 0.05   | 720.0      | User spec    | Low        |
-    | Coastal Protection              | €900,000   | 0.13   | 1,384.6    | User spec    | Low        |
-    | Water Quality                   | €650,000   | 0.11   | 1,181.8    | User spec    | Low        |
-    | Human Communities               | €700,000   | 0.08   | 1,750.0    | User spec    | Low        |
-    | logistic steepness              | –          | –      | 12.0       | Placeholder  | Low        |
-    | dependency weight sum           | –          | 1.00   | –          | Verified ✓   | High       |
-
-Total at full damage: sum(weight × annual_value_per_ha) = €1,066/ha/yr
-    (€5,330,000/yr for 5,000 ha; €1,166/ha/yr before the €500,000/yr Blue
-    Carbon agent was removed) [User spec, PLACEHOLDER].
-
-For scale, global meta-analyses value seagrass / coastal systems far higher:
-Costanza et al. (2014), Global Environmental Change 26:152-158, $28,916/ha/yr
-for seagrass/algae beds; de Groot et al. (2012), Ecosystem Services 1:50-61,
-Int$28,917/ha/yr for coastal systems (2007 price levels). A Posidonia-
-specific valuation is pending (Step 8). Both totals include climate
-regulation (Int$479/ha/yr for coastal systems in de Groot 2012), which
-gaia.carbon values separately.
-
-An earlier version of this docstring claimed the rates were set so that the
-externality stays below revenue at the 20% threshold "at annual scale" (a
-flow compared with a one-off amount, and contradicted by its own numbers);
-rates are never tuned to produce an outcome.
-
-Dependency weights sum: (0.10+0.10+0.07+0.09+0.14+0.04+0.05+0.13+0.11+0.08) / 0.91 = 1.00 ✓
-
-Calibration regime: B, direct effects only (CalibrationRegime.DIRECT_ONLY;
-PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
-    All 10 damage curves are the same placeholder logistic (steepness 12,
-    inflection just past the 20% threshold), not fitted to field data on
-    total impact (the agent impacts are a user specification), so Option A —
-    curves that already embed the indirect pathways — cannot be claimed. The
-    curves are read as each agent's direct dependency on the meadow, and the
-    15 interaction edges add the indirect part; single-pass propagation makes
-    the result a structural lower bound for chains longer than one hop. B is
-    what an uncalibrated curve implies, not a claim of lab or
-    first-principles calibration.
-
-    In-degree cap (Step 3.8, S2): every agent's incoming strengths sum to at
-    most 0.80 with the Posidonia keystone boost (Coastal Protection), within
-    the cap of 1.0, so no edge was changed.
-
-    Health at the safe threshold is below 0.8, so validation issues a
-    CalibrationWarning. That is honest: the logistic alone puts ~17% direct
-    damage at the threshold, trophic amplification multiplies it for
-    consumers, and fixing it means calibrating the curves (Step 8), not
-    tuning edges to silence the warning.
-```
+**Context.**
+- *P. oceanica* meadows regressed by an estimated 34% in the last 50 years
+  across the Mediterranean (Telesca et al. 2015).
+- Exploited fish in the Medes Islands no-take reserve took 25–35 years to
+  reach carrying-capacity biomass (García-Rubies et al. 2013). An earlier
+  version of these notes claimed "80× higher fish biomass inside the
+  reserve". No source was found for it, so it is removed.
 
 ## Central Amazon Old-Growth Lowland Forest (`amazon_forest`)
 

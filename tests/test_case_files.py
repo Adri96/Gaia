@@ -46,7 +46,9 @@ def test_case_files_validate_and_round_trip(name):
 
 @pytest.mark.parametrize("name,units,total", [
     ("forest", 5000, 10000), ("costa_brava", 4000, 10000),
-    ("posidonia", 2000, 5000), ("amazon_forest", 80000, 400000),
+    # Posidonia since Step 8.2: the Catalan stock (4,582 ha) and an
+    # illustrative 50 ha project (the 0.9 defaults were 5,000 and 2,000)
+    ("posidonia", 50, 4582), ("amazon_forest", 80000, 400000),
 ])
 def test_run_defaults_are_the_0_9_cli_defaults(name, units, total):
     case = load_case(name)
@@ -109,14 +111,14 @@ def test_gaia_run_help_shows_case_defaults(capsys):
     assert main(["run", "posidonia", "--help"]) == 0
     out = " ".join(capsys.readouterr().out.split())
     assert out.startswith("usage: gaia run posidonia")
-    assert "--total-units N Total number of units (ha) in the resource (default: 5000)" in out
-    assert "(default: 2000)" in out  # --units
+    assert "--total-units N Total number of units (ha) in the resource (default: 4582)" in out
+    assert "(default: 50)" in out  # --units
     assert "(default: 50000.0)" in out  # --planting-cost from the file
 
 
 def test_case_notes_keep_the_derivations():
     notes = (DATA_DIR.parent / "definitions" / "CASE_NOTES.md").read_text(encoding="utf-8")
     for heading in ("Oak Valley Forest", "Costa Brava Holm Oak Forest",
-                    "Costa Brava Posidonia Meadow", "Central Amazon"):
+                    "Posidonia oceanica meadows of Catalonia", "Central Amazon"):
         assert f"## {heading}" in notes
     assert "--cut" not in notes
