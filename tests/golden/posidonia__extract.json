@@ -94,9 +94,9 @@
       "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
       "ecosystem_provenance_recorded": true,
       "n_high": 0,
-      "n_low": 19,
+      "n_low": 20,
       "n_medium": 10,
-      "n_params": 59,
+      "n_params": 60,
       "n_placeholder": 29,
       "n_user_supplied": 1,
       "parameters": [
@@ -596,7 +596,7 @@
         {
           "confidence": "low",
           "name": "carbon.soil_release_fraction",
-          "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality.",
+          "note": "A project input (--carbon-release-fraction): it depends on what the project does to the matte. Recommended values (docs/POSIDONIA_LITERATURE_REVIEW.md \u00a74): excavated or dredged (port basins, channels) 0.96, the IPCC (2013) Wetlands Supplement Tier 1 for 'excavation to enable port, harbour and marina construction' (the top-metre soil carbon emitted in the year of extraction, minus 4% refractory); left exposed in place (meadow killed by shading, turbidity, anchoring or scour) 0.25-1.0, central 0.63 (this value, Pendleton et al.'s global range); buried under fill (breakwaters, reclaimed land) no source was found: the anoxic matte may keep much of its carbon (inferred, not sourced). The Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019). The dominant uncertainty of the carbon externality.",
           "range": [
             0.25,
             1.0
@@ -604,6 +604,18 @@
           "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
           "unit": "fraction",
           "value": 0.63
+        },
+        {
+          "confidence": "low",
+          "name": "carbon.release_half_life_years",
+          "note": "A project input (--carbon-release-half-life): the time profile of the release, valued year by year at the carbon price of that year and discounted. 10 years is the upper end of Pendleton et al.'s order of magnitude; seagrass evidence brackets it: the exposed share of Shark Bay's seagrass soil carbon was estimated released within three years of the 2010/11 die-off (Arias-Ortiz et al. 2018, Nature Climate Change 8:338-344, doi:10.1038/s41558-018-0096-y); soil stocks were 72% lower 50 years after a disturbance (Macreadie et al. 2015, Proc. R. Soc. B 282:20151537, doi:10.1098/rspb.2015.1537), i.e. a half-life of at most 27 years if the decay were exponential (inferred here); 4.8 of 6.4 kg Corg/m2 of the top 50 cm were lost under moorings deployed from the 1930s (Serrano et al. 2016, Sci. Rep. 6:23193, doi:10.1038/srep23193). Excavated matte: 0 (the IPCC emits it in the year of extraction). Range 0-27 years (judgement from these sources).",
+          "range": [
+            0.0,
+            27.0
+          ],
+          "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: at a converted site the rate of release 'likely follows a negative exponential curve with time', with 'a half-life on the order of 5-10 years' (their ref. 29, a cleared mangrove)",
+          "unit": "years",
+          "value": 10.0
         },
         {
           "confidence": "placeholder",
@@ -686,7 +698,7 @@
           "value": 200.0
         }
       ],
-      "statement": "ILLUSTRATIVE: 48 of 59 recorded parameters are placeholders (29) or low-confidence (19); 1 user-supplied, not assessed. Results are not real-world estimates.",
+      "statement": "ILLUSTRATIVE: 49 of 60 recorded parameters are placeholders (29) or low-confidence (20); 1 user-supplied, not assessed. Results are not real-world estimates.",
       "status": "illustrative"
     },
     "ecosystem": {
@@ -918,6 +930,8 @@
         "carbon_price_basis": "social cost of carbon, US EPA 2023",
         "carbon_price_eur_per_t": 166.35,
         "carbon_price_growth": 0.013,
+        "carbon_release_fraction": 0.63,
+        "carbon_release_half_life_years": 10.0,
         "carbon_stored_per_unit": 0.0,
         "discount_horizon_years": 200,
         "discount_rate": 0.023,
@@ -942,7 +956,7 @@
       "carbon_absorption_lost_tco2_yr": 1906.6667,
       "carbon_foregone_eur_pv": 38080355.81,
       "carbon_price_eur_per_t": 166.35,
-      "carbon_release_eur_pv": 251305025.39,
+      "carbon_release_eur_pv": 222493638.07,
       "carbon_released_tco2": 1510740.0,
       "discount": {
         "carbon_price_eur_per_t": 166.35,
@@ -971,7 +985,7 @@
       "horizon_years": 200,
       "services_eur_pv": 119243777.08,
       "substrate_unrecoverable_eur_pv": 7605.16,
-      "total_eur_pv": 408629158.28
+      "total_eur_pv": 379817770.96
     },
     "substrate": {
       "capacity_lost_units": 1,
@@ -1019,12 +1033,12 @@
       "annual_externality_eur_yr": 1274051.68,
       "discount_is_default": false,
       "final_ecosystem_health": 0.100511,
-      "net_social_cost_eur_pv": 403629158.28,
+      "net_social_cost_eur_pv": 374817770.96,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 408629158.28,
-      "pv_externality_h100_eur_pv": 351506228.41,
-      "pv_externality_h200_eur_pv": 408629158.28,
-      "pv_externality_h50_eur_pv": 311532508.48,
+      "pv_externality_eur_pv": 379817770.96,
+      "pv_externality_h100_eur_pv": 322567220.4,
+      "pv_externality_h200_eur_pv": 379817770.96,
+      "pv_externality_h50_eur_pv": 277753891.74,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
@@ -1107,21 +1121,21 @@
       "carbon_absorption_lost_t_yr": 1906.666666666667,
       "carbon_foregone": 38080355.81283827,
       "carbon_price": 166.3456487480301,
-      "carbon_release": 251305025.389599,
+      "carbon_release": 222493638.07241184,
       "carbon_released_t": 1510740.0,
       "direct": 119243777.07629892,
       "horizon": 200,
       "substrate_unrecoverable": 7605.1564992990325,
-      "total": 408629158.2787362
+      "total": 379817770.961549
     },
     "final_ecosystem_health": 0.1005114582347244,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 403629158.2787362,
-    "pv_externality": 408629158.2787362,
+    "net_social_cost": 374817770.961549,
+    "pv_externality": 379817770.961549,
     "pv_externality_by_horizon": {
-      "100": 351506228.4112437,
-      "200": 408629158.2787362,
-      "50": 311532508.48021
+      "100": 322567220.3988523,
+      "200": 379817770.961549,
+      "50": 277753891.7427962
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,

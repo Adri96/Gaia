@@ -174,8 +174,10 @@ def compute_extraction_npv(
     Components:
         direct: Annual ecosystem service loss projected over horizon,
             discounted with scarcity uplift.
-        carbon_release: One-time carbon release at year 0, valued at the
-            year-0 carbon price (gaia.carbon).
+        carbon_release: The carbon release, valued at the year-0 carbon
+            price when it happens at extraction, or spread over the years
+            by the profile's release half-life, each year's tranche at that
+            year's price, discounted (gaia.carbon.pv_carbon_release).
         carbon_foregone: The extracted units' absorption, lost every year
             of the horizon (like the direct loss), valued at the growing
             carbon price and discounted (gaia.carbon).
@@ -220,7 +222,10 @@ def compute_extraction_npv(
         absorption_lost_t_yr = (
             units_extracted * carbon_profile.annual_absorption_tonnes
         )
-    npv_carbon_release: float = pv_carbon_release(release_t, discount)
+    npv_carbon_release: float = pv_carbon_release(
+        release_t, discount,
+        carbon_profile.release_half_life_years if carbon_profile is not None else 0.0,
+    )
     npv_carbon_foregone: float = pv_absorption(absorption_lost_t_yr, discount)
 
     # Substrate: the share of the (permanent) direct loss that restoration
@@ -527,7 +532,8 @@ def compute_destroy_then_restore_penalty(
     carbon_not_recovered: float = 0.0
     if carbon_profile is not None and units > 0:
         carbon_not_recovered = pv_carbon_release(
-            compute_carbon_release(carbon_profile, units), discount
+            compute_carbon_release(carbon_profile, units), discount,
+            carbon_profile.release_half_life_years
         ) + pv_absorption(
             units * carbon_profile.annual_absorption_tonnes,
             discount, succession_curve, substrate_ceiling, shortfall=True,

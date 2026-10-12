@@ -28,7 +28,9 @@ A document (every key below is optional unless marked *required*):
                         curve name or an inline curve), trophic_level,
                         is_keystone, keystone_threshold
     interactions        list: source*, target*, strength*, type, description
-    carbon              gaia.models.CarbonProfile fields (all four required)
+    carbon              gaia.models.CarbonProfile fields (the four tonnage
+                        and fraction fields required; release_half_life_years
+                        optional, default 0 = all released at extraction)
     resilience          gaia.models.ResilienceConfig fields
     substrate           gaia.models.SubstrateProfile fields (substrate_type*)
     discount            gaia.models.DiscountConfig fields; rate_schedule is a
@@ -143,6 +145,8 @@ DEFAULT_LABELS: Dict[str, str] = {
     "unit_value": "--unit-value / unit_value",
     "safe_threshold_ratio": "--threshold",
     "area_ha": "--area-ha / area_ha",
+    "soil_release_fraction": "--carbon-release-fraction",
+    "release_half_life_years": "--carbon-release-half-life",
 }
 
 _TOP_LEVEL = (
@@ -166,6 +170,7 @@ _CARBON_FIELDS = (
     "stored_carbon_tonnes", "annual_absorption_tonnes", "soil_carbon_tonnes",
     "soil_release_fraction",
 )
+_CARBON_OPTIONAL = ("release_half_life_years",)
 _RESILIENCE_FIELDS = (
     "warning_zone_width", "confidence_green", "confidence_yellow", "confidence_red",
     "irreversibility_flag_ratio",
@@ -490,6 +495,8 @@ class Case:
         with_pricing: Optional[bool] = None,
         labels: Optional[Dict[str, str]] = None,
         resource_name: Optional[str] = None,
+        carbon_release_fraction: Optional[float] = None,
+        carbon_release_half_life: Optional[float] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
 
@@ -511,6 +518,11 @@ class Case:
                 provenance (default DEFAULT_LABELS).
             resource_name: Name of the reference resource (default: the
                 document's resource.name).
+            carbon_release_fraction, carbon_release_half_life: Project
+                inputs (Step 8c.5) replacing the document's
+                carbon.soil_release_fraction and
+                carbon.release_half_life_years (what the project does to the
+                soil or matte); recorded as user-supplied.
 
         Raises:
             ValueError: With unit "ha", if area_ha is not a whole number of
@@ -537,6 +549,7 @@ class Case:
         )
         value, value_param = _override(self.unit_value, unit_value, lab["unit_value"])
         area, a_param = self._area(total, area_ha, lab)
+        carbon, carbon_params = self._carbon(carbon_release_fraction, carbon_release_half_life, lab)
 
         agents = [
             Agent(
@@ -558,7 +571,7 @@ class Case:
             safe_threshold_ratio=threshold,
             unit_value=value,
             area_ha=area,
-            carbon_profile=CarbonProfile(**self.carbon) if self.carbon is not None else None,
+            carbon_profile=CarbonProfile(**carbon) if carbon is not None else None,
             resilience=ResilienceConfig(**self.resilience) if self.resilience is not None else None,
             substrate=SubstrateProfile(**self.substrate) if self.substrate is not None else None,
             discount=_discount_config(self.discount) if self.discount is not None else None,
@@ -573,6 +586,9 @@ class Case:
 
         provenance = [p for p in (total_param, a_param, value_param, threshold_param) if p is not None]
         for bucket in _BUCKETS:
+            if bucket == "carbon":
+                provenance.extend(carbon_params)
+                continue
             provenance.extend(self.buckets.get(bucket, ()))
         if pricing is not None:
             provenance.extend(anchor_params(pricing))
@@ -608,6 +624,43 @@ class Case:
         area = self.area.value if area_ha is None else area_ha
         param = self.area.param
         return area, user_or_default(param, area, lab["area_ha"]) if param else None
+
+    def _carbon(
+        self,
+        fraction: Optional[float],
+        half_life: Optional[float],
+        lab: Dict[str, str],
+    ) -> Tuple[Optional[Dict[str, float]], List[Param]]:
+        """The carbon fields and their Params, with the project's inputs
+        (release fraction, release half-life) replacing the document's."""
+        params: List[Param] = list(self.buckets.get("carbon", ()))
+        given = {"soil_release_fraction": fraction, "release_half_life_years": half_life}
+        if all(v is None for v in given.values()):
+            return self.carbon, params
+        if self.carbon is None:
+            raise ValueError(
+                f"{self.name}: the case has no carbon profile, so the carbon "
+                f"release fraction and half-life cannot be set"
+            )
+        carbon = dict(self.carbon)
+        for key, val in given.items():
+            if val is None:
+                continue
+            carbon[key] = float(val)
+            name = f"carbon.{key}"
+            idx = next((i for i, p in enumerate(params) if p.name == name), None)
+            if idx is not None:
+                params[idx] = user_or_default(params[idx], float(val), lab[key])
+            elif float(val) != self.carbon.get(key, 0.0):
+                params.append(Param(
+                    value=float(val),
+                    unit="fraction" if key == "soil_release_fraction" else "years",
+                    source=f"user-supplied ({lab[key]})",
+                    confidence=Confidence.USER,
+                    note="project input",
+                    name=name,
+                ))
+        return carbon, params
 
     def _pricing(self, agents: list, area: float) -> PricingConfig:
         assert self.pricing is not None
@@ -794,8 +847,11 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
 
     carbon = resilience = substrate = discount = None
     if doc.get("carbon") is not None:
-        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS)
-        carbon = {k: reader.number(obj[k], _key("$.carbon", k), f"carbon.{k}", buckets["carbon"]) for k in _CARBON_FIELDS}
+        obj = _object(doc["carbon"], "$.carbon", _CARBON_FIELDS, _CARBON_OPTIONAL)
+        carbon = {
+            k: reader.number(obj[k], _key("$.carbon", k), f"carbon.{k}", buckets["carbon"])
+            for k in _CARBON_FIELDS + _CARBON_OPTIONAL if k in obj
+        }
     if doc.get("resilience") is not None:
         obj = _object(doc["resilience"], "$.resilience", (), _RESILIENCE_FIELDS)
         resilience = {
@@ -1579,6 +1635,9 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
     if resource.carbon_profile is not None:
         cp = resource.carbon_profile
         doc["carbon"] = {k: num(getattr(cp, k), f"carbon.{k}") for k in _CARBON_FIELDS}
+        if cp.release_half_life_years != 0.0 or "carbon.release_half_life_years" in params:
+            doc["carbon"]["release_half_life_years"] = num(
+                cp.release_half_life_years, "carbon.release_half_life_years")
     if resource.resilience is not None:
         rc = resource.resilience
         doc["resilience"] = {k: num(getattr(rc, k), f"resilience.{k}") for k in _RESILIENCE_FIELDS}

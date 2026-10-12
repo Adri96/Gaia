@@ -100,11 +100,59 @@ S5 was that the case used two different absorption rates. It now uses one source
 | `carbon.annual_absorption_tonnes` | 0.953 tCO₂/ha/yr | Mazarrasa et al. (2017), *Limnology and Oceanography* 62:1436–1450, doi:10.1002/lno.10510: organic-carbon burial **26 ± 6 g C/m²/yr** in Balearic *P. oceanica* since 1900 (²¹⁰Pb), the nearest region with direct measurements; × 44/12 | 0.28–3.09 tCO₂/ha/yr = 7.7–84.4 g C/m²/yr, the depth range of mean sequestration in a large Corsican meadow (Pergent-Martini et al. 2021, *Mar. Environ. Res.* 165:105236, doi:10.1016/j.marenvres.2020.105236). Campagne et al. quote 6–175 g C/m²/yr from Pergent et al. (2012, grey literature, not checked). The former value, the IPCC (2013) Wetlands Supplement Table 4.12 seagrass factor of 0.434 t C/ha/yr (95% CI 0.2–0.7, n = 6, from Mateo & Romero 1997 and Serrano et al. 2012), applies to re-established meadows and lies inside the range. | medium |
 | `carbon.soil_carbon_tonnes` | 1,199 tCO₂/ha | Monnier et al. (2022), *Sci. Total Environ.* 838:155864, doi:10.1016/j.scitotenv.2022.155864: 327 ± 150 t Corg/ha (mean ± SE, 39 matte cores, eastern Corsica). Adopted as the Tier 1 default for **1 m of matte** by the French Label Bas-Carbone method (below); × 44/12 | 741–1,844 tCO₂/ha = 20.2–50.3 kg Corg/m² in the first metre of matte, Calvi Bay (Leduc et al. 2023, *Mar. Environ. Res.* 183:105847, doi:10.1016/j.marenvres.2022.105847). For scale: the IPCC (2013) global Tier 1 seagrass soil stock is 108 t C/ha to 1 m (Table 4.11); Balearic meadows hold 6.1 ± 1.4 kg C/m² in the top 30 cm alone (Mazarrasa et al. 2017); the global mean to 20 cm is 15.4 Mg C/ha, with the largest stocks in Mediterranean *P. oceanica* (Kennedy et al. 2022, *Global Biogeochem. Cycles* 36:e2022GB007481, doi:10.1029/2022gb007481). | medium |
 | `carbon.soil_release_fraction` | 0.63 | Pendleton et al. (2012), *PLoS ONE* 7:e43542, doi:10.1371/journal.pone.0043542 (full text): **25–100% of near-surface (top-metre) carbon lost upon conversion, central 63%** | 0.25–1.0. The fraction depends on what the project does. The IPCC (2013) Wetlands Supplement (ch. 4, read) treats "excavation to enable port, harbour and marina construction" as extraction and emits the top-metre soil carbon in that year, minus 4% refractory, i.e. 0.96. The Label Bas-Carbone method models anchoring damage as a gradual loss, 10.7% of the top metre over 10 years (after Mateo et al. 2019, LIFE Blue Natura, not checked). Burial under fill may keep much of the carbon. Salinas et al. (2020), *Glob. Change Biol.* 26:4772–4784, doi:10.1111/gcb.15204, found soil carbon eroded after seagrass loss in shallow, exposed areas (4.5 → 0.5 kg Corg/m², top 50 cm) but not in deeper ones. | low |
+| `carbon.release_half_life_years` | 10 yr | Pendleton et al. (2012), as above (full text): at a converted site the release "likely follows a negative exponential curve with time", with "a half-life on the order of 5–10 years" (their ref. 29, a cleared mangrove) | 0–27 yr: see "Release over time" below. A project input (`--carbon-release-half-life`); 0 for excavated matte. | low |
 | `carbon.stored_carbon_tonnes` (living biomass) | 0 | Label Bas-Carbone method (below), §7: the carbon in the leaves is "négligeable comparé au carbone stocké et séquestré dans la matte" | Living rhizomes and roots lie inside the top-metre matte stock, so a separate biomass term would double count. No *P. oceanica* leaf-biomass carbon figure was checked. | low |
 
 **Label Bas-Carbone method.** Ministère de la Transition écologique, *Méthode de protection des herbiers de posidonie éligibles pour l'obtention du Label Bas-Carbone*, approved by decision of 21 March 2023 (NOR ENER2305073S), <https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf> (read). The method is described in Comte et al. (2024), *Mar. Pollut. Bull.* 198:115822, doi:10.1016/j.marpolbul.2023.115822.
 
-**Release per hectare destroyed:** 1,199 × 0.63 = 755 tCO₂ (formerly 260). At the social cost of carbon (€166/t) that is about €126,000 per hectare, one-off. It is the largest single term of the externality, and its release fraction is the least certain input. The Monte Carlo confirms both points.
+**Release per hectare destroyed:** 1,199 × 0.63 = 755 tCO₂ (formerly 260). At the social cost of carbon (€166/t) that would be about €126,000 per hectare if all of it were released at once; released with a 10-year half-life it is €111,000 in PV. It is the largest single term of the externality, and its release fraction is the least certain input. The Monte Carlo confirms both points.
+
+### Release over time versus re-absorption (Step 8c.5)
+
+The owner asked how much carbon is released per unit time after the meadow and its matte are lost, how much is re-absorbed as the meadow recolonises, and which defaults to use. Both the release fraction and its time profile are now **project inputs** (`--carbon-release-fraction`, `--carbon-release-half-life`). They are recorded as user-supplied and held fixed in the Monte Carlo.
+
+**Release per unit time. Sourced:**
+- **Excavated or dredged matte.** The IPCC (2013) Wetlands Supplement, ch. 4 (read), treats "excavation to enable port, harbour and marina construction" as extraction: the top-metre soil carbon is emitted in the year of extraction, minus 4% refractory.
+- **Exposed matte, general.** Pendleton et al. (2012, full text) expect a negative exponential release with "a half-life on the order of 5–10 years". That figure comes from mangroves (their ref. 29), not seagrass.
+- **Exposed matte, seagrass evidence:**
+  - Arias-Ortiz et al. (2018), *Nature Climate Change* 8:338–344, doi:10.1038/s41558-018-0096-y (abstract, institutional repository): after the 2010/11 heatwave damaged 36% of Shark Bay's seagrass, "between 2 and 9 Tg CO₂ could have been released to the atmosphere during the following three years". They assumed 10–50% of the soil stock was exposed to oxic conditions.
+  - Macreadie et al. (2015), *Proc. R. Soc. B* 282:20151537, doi:10.1098/rspb.2015.1537 (abstract): soil carbon stocks were 72% lower in a seagrass ecosystem disturbed 50 years earlier.
+  - Serrano et al. (2016), *Sci. Rep.* 6:23193, doi:10.1038/srep23193 (abstract): 4.8 of 6.4 kg Corg/m² in the top 50 cm were lost under moorings deployed from the 1930s (*Posidonia* spp., Western Australia).
+  - Marbà et al. (2015), *J. Ecol.* 103:296–302, doi:10.1111/1365-2745.12370 (abstract): the upper sediments eroded where vegetation did not return after loss.
+  - Salinas et al. (2020) found the erosion in shallow, exposed areas only (§4 table).
+  - The Label Bas-Carbone method takes 10.7% of the top metre over 10 years for anchoring damage, which is a partial loss.
+
+**Re-absorption over time. Sourced:**
+- Burial needs the meadow. Marbà et al. (2015) found sediment accumulation coincided with the presence of vegetation. After replanting *P. australis*, burial rates rose with the age of the restored sites and "18 years after planting … were similar to that in continuously vegetated meadows (26.4 ± 0.8 gCorg m⁻² year⁻¹)".
+- Macreadie et al. (2015): areas that recovered from disturbance held 35% less carbon than undisturbed ones, but more than twice as much as disturbed ones.
+- *P. oceanica* recolonises naturally over centuries: limited cover after 100 years (Kendrick et al. 2005, §6).
+
+**Inferred here, not sourced:**
+- The 10-year default half-life. It is the upper end of Pendleton et al.'s order of magnitude, consistent with the three-year release at Shark Bay.
+- The upper end of the range, 27 years. It is the half-life that would leave 28% of the stock after 50 years (Macreadie et al.), so a bound only if the decay were exponential.
+- Buried matte. No source gives a release fraction for matte covered by fill; anoxic burial probably preserves much of it.
+- Re-absorption on the footprint. A port or marina footprint is a permanent conversion, so nothing is re-absorbed there.
+- Re-absorption around the footprint under natural recolonisation. With the case's succession curve, re-absorption would recover about 8% of the PV of the foregone burial (€1,600 of €19,000 per hectare at the SCC). That is about 1.5% of the release's PV, so the extraction view keeps the foregone burial permanent. Replanting is the restoration mode's question.
+
+**Recommended inputs:**
+
+| What the project does to the matte | `--carbon-release-fraction` | `--carbon-release-half-life` | Re-absorption | Basis |
+|---|---|---|---|---|
+| Excavated or dredged (basins, channels) | 0.96 | 0 | none on the footprint | IPCC 2013 (sourced) |
+| Left exposed in place (meadow killed by shading, turbidity, anchoring, scour) | 0.63 (range 0.25–1.0) | 10 yr (range 0–27) | about 8% of the foregone burial's PV under natural recolonisation (not modelled) | Pendleton 2012 range; time profile sourced as bracketed above, the 10-yr central inferred |
+| Buried under fill (breakwaters, reclaimed land) | low, 0–0.25 | — | none | inferred, no source |
+
+The case default is the "exposed" row, because the fate is unknown until the user enters it.
+
+PV of the release per hectare destroyed at the SCC (central discount schedule):
+
+| Fate | PV per ha |
+|---|---|
+| Excavated (0.96, immediate) | €191,000 |
+| Exposed, immediate (0.63, half-life 0) | €126,000 |
+| Exposed, half-life 5 / 10 / 27 yr | €118,000 / €111,000 / €97,000 |
+
+Time enters only through discounting: the SCC grows at 1.3%/yr, below the 2.3% discount rate. This is consistent with the static engine. The path-dependent option A is not used.
 
 ## 5. Substrate (matte)
 

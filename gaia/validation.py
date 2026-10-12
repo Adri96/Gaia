@@ -566,6 +566,7 @@ def validate_carbon_profile(
     Checks:
         - All tonnage values >= 0
         - soil_release_fraction in [0.0, 1.0]
+        - release_half_life_years >= 0
 
     Raises:
         ValueError: If any constraint is violated.
@@ -590,6 +591,11 @@ def validate_carbon_profile(
         raise ValueError(
             f"{name}: soil_release_fraction must be in [0.0, 1.0], "
             f"got {profile.soil_release_fraction}"
+        )
+    if profile.release_half_life_years < 0.0:
+        raise ValueError(
+            f"{name}: release_half_life_years must be >= 0.0 (0 = all at "
+            f"extraction), got {profile.release_half_life_years}"
         )
 
 

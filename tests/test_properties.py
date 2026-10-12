@@ -297,12 +297,25 @@ def _carbon_at_stake(eco, units):
     release = units * (cp.stored_carbon_tonnes
                        + cp.soil_carbon_tonnes * cp.soil_release_fraction)
     absorption = units * cp.annual_absorption_tonnes
+    # The release: at year 0, or spread by its half-life (Step 8c.5), the
+    # share released during year t valued at the price of year t
+    if cp.release_half_life_years == 0.0:
+        release_eur = release * SOCIAL_COST_OF_CARBON_EUR
+    else:
+        lam = math.log(2.0) / cp.release_half_life_years
+        release_eur = sum(
+            release * (math.exp(-lam * t) - math.exp(-lam * (t + 1)))
+            * SOCIAL_COST_OF_CARBON_EUR * (1 + discount.carbon_price_growth) ** t
+            * discount.discount_factor(t)
+            for t in range(discount.horizon_years)
+        )
+        assert release_eur < release * SOCIAL_COST_OF_CARBON_EUR
     foregone = sum(
         absorption * SOCIAL_COST_OF_CARBON_EUR
         * (1 + discount.carbon_price_growth) ** t * discount.discount_factor(t)
         for t in range(1, discount.horizon_years + 1)
     )
-    return release * SOCIAL_COST_OF_CARBON_EUR, foregone
+    return release_eur, foregone
 
 
 @pytest.mark.parametrize("succession", [True, False], ids=["succession", "instant"])

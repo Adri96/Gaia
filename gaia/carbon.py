@@ -26,6 +26,7 @@ Scientific foundations used: F9 (Nutrient Cycles & Carbon Cycle).
 """
 
 import dataclasses
+import math
 from typing import Optional
 
 from gaia.models import CarbonProfile, DiscountConfig, SuccessionCurve
@@ -152,13 +153,56 @@ def compute_annual_absorption(
 # ── Monetary values (€) ──────────────────────────────────────────────────────
 
 
-def pv_carbon_release(release_tonnes: float, discount: DiscountConfig) -> float:
-    """Value of a carbon release at year 0 (€, one-off; a stock).
+def release_schedule(half_life_years: float, horizon_years: int) -> list:
+    """Share of a carbon release that happens during each year 0..H−1.
 
-    The release happens at extraction, so it is valued at the carbon price
-    of year 0 and needs no discounting.
+    A half-life of 0 releases everything at once, in year 0 (``[1.0]``).
+    A positive half-life releases it as a negative exponential decay of the
+    exposed stock (the profile Pendleton et al. 2012 describe for converted
+    coastal soils): the share e^(−λt) − e^(−λ(t+1)) during year t, with
+    λ = ln 2 / half-life. The tail released after the horizon,
+    e^(−λH), is left out, like every stream beyond the horizon.
+
+    Raises:
+        ValueError: If the half-life is negative or not finite.
     """
-    return release_tonnes * discount.carbon_price_at_year(0)
+    if not (math.isfinite(half_life_years) and half_life_years >= 0.0):
+        raise ValueError(
+            f"release half-life must be a finite number of years >= 0, got {half_life_years!r}"
+        )
+    if half_life_years == 0.0:
+        return [1.0]
+    lam: float = math.log(2.0) / half_life_years
+    return [math.exp(-lam * t) - math.exp(-lam * (t + 1)) for t in range(horizon_years)]
+
+
+def pv_carbon_release(
+    release_tonnes: float,
+    discount: DiscountConfig,
+    half_life_years: float = 0.0,
+) -> float:
+    """Present value of a carbon release (€).
+
+    With a half-life of 0 (the default) the release happens at extraction
+    and is valued at the carbon price of year 0, undiscounted. With a
+    positive half-life the share released during year t
+    (release_schedule) is valued at the carbon price of year t and
+    discounted to year 0:
+
+        PV = Σ_{t=0}^{H−1} release × share(t) × price(t) × df(t)
+
+    Each year's tranche is valued at the start of its year, so the PV is
+    continuous as the half-life tends to 0. Time enters only through
+    discounting (the static engine, decision D5 option B).
+    """
+    if release_tonnes == 0.0:
+        return 0.0
+    if half_life_years == 0.0:
+        return release_tonnes * discount.carbon_price_at_year(0)
+    pv: float = 0.0
+    for year, share in enumerate(release_schedule(half_life_years, discount.horizon_years)):
+        pv += release_tonnes * share * discount.carbon_price_at_year(year) * discount.discount_factor(year)
+    return pv
 
 
 def _absorption_fraction(
@@ -249,7 +293,7 @@ def compute_carbon_cost(
     """
     release: float = compute_carbon_release(profile, units_extracted)
     foregone_per_year: float = profile.annual_absorption_tonnes * units_extracted
-    release_cost: float = pv_carbon_release(release, discount)
+    release_cost: float = pv_carbon_release(release, discount, profile.release_half_life_years)
     foregone_pv: float = pv_absorption(foregone_per_year, discount)
     return {
         "release_tonnes": release,

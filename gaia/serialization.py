@@ -154,6 +154,9 @@ def _resource_metadata(resource) -> Dict[str, Any]:
         discount = resource.discount if resource.discount is not None else DEFAULT_DISCOUNT
         d["carbon_stored_per_unit"] = cp.stored_carbon_tonnes
         d["carbon_absorption_per_unit_yr"] = cp.annual_absorption_tonnes
+        if cp.release_half_life_years != 0.0:
+            d["carbon_release_fraction"] = cp.soil_release_fraction
+            d["carbon_release_half_life_years"] = cp.release_half_life_years
         d["carbon_price_eur_per_t"] = round(discount.carbon_price_current, 2)
         d["carbon_price_growth"] = discount.carbon_price_growth
         d["carbon_price_basis"] = carbon_price_label(discount)

@@ -61,7 +61,7 @@ The succession curve spreads that value over time.
 |---|---|---|
 | Agent values, annual externality | €/yr (a flow) | Lost every year the meadow is gone; the loss is treated as permanent over the horizon (natural recolonisation leaves "limited cover after a century", Kendrick et al. 2005) |
 | Present value of the externality | € PV at year 0 | Σ_{t=1}^{200} flow × DF(t) × (1 + 1%)^t. DF uses 2.3%/yr for years 0–30, 1.8% to year 100 and 1.4% after; the 1%/yr relative price change of ecosystem services is the scarcity uplift (Drupp et al. 2018, 2024). Reported at 50, 100 and 200 years. |
-| Carbon released | € one-off at year 0 | ha × top-metre matte carbon (1,199 tCO₂/ha) × fraction lost (0.63) × the social cost of carbon (€166.35/t: US EPA 2023, $190 for 2020 emissions at 2%, at the ECB 2020 rate) |
+| Carbon released | € PV | ha × top-metre matte carbon (1,199 tCO₂/ha) × fraction lost (0.63), released as a negative exponential with a 10-year half-life: the share released in year t is valued at the social cost of carbon of year t (€166.35/t in year 0: US EPA 2023, $190 for 2020 emissions at 2%, at the ECB 2020 rate) and discounted. Both the fraction and the half-life are project inputs; a half-life of 0 releases everything at year 0 (excavation) |
 | Carbon burial lost | € PV | ha × 0.953 tCO₂/ha/yr × SCC(t), growing 1.3%/yr (EPA path) × DF(t) |
 | Private gain | € one-off | Compared with the PV only, never with the €/yr flow |
 | Net social cost | € PV | PV of externality − private gain; positive means society loses more than the project gains |
@@ -99,10 +99,16 @@ The meadow, coralligenous, epiphytes and invertebrates are intermediate services
 |---|---|---|---|
 | Burial | 0.953 tCO₂/ha/yr (26 g C/m²/yr) | Mazarrasa et al. 2017, Balearic Islands | 0.28–3.09 (Pergent-Martini et al. 2021) |
 | Top-metre matte stock | 1,199 tCO₂/ha (327 t C/ha) | Monnier et al. 2022, the French Label Bas-Carbone default | 741–1,844 (Leduc et al. 2023) |
-| Fraction lost on conversion | 0.63 | Pendleton et al. 2012 | 0.25–1.0 |
+| Fraction lost on conversion (project input) | 0.63 | Pendleton et al. 2012 | 0.25–1.0 |
+| Release half-life (project input) | 10 yr | Pendleton et al. 2012 (5–10 yr); seagrass evidence 3–50 yr (Arias-Ortiz et al. 2018; Macreadie et al. 2015; Serrano et al. 2016) | 0–27 yr |
 | Biomass | none counted separately | the leaves are negligible next to the matte | — |
 
-On the fraction lost: the IPCC (2013) Wetlands Supplement treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon (0.96).
+On the fraction lost and its timing, which depend on what the project does to the matte (literature review §4, "Release over time versus re-absorption"):
+- **excavated or dredged:** the IPCC (2013) Wetlands Supplement emits the top-metre soil carbon in the year of extraction (`--carbon-release-fraction 0.96 --carbon-release-half-life 0`);
+- **left exposed in place:** 0.25–1.0 (central 0.63), released over years to decades (half-life 10 yr, range 0–27);
+- **buried under fill:** no source; probably much lower.
+
+Re-absorption is not modelled in the extraction view. On the footprint the conversion is permanent. Around it, natural recolonisation over centuries would re-absorb about 8% of the PV of the foregone burial, about 1.5% of the release.
 
 **Unsourced, flagged.**
 - The damage curves, threshold and steepness.
@@ -204,7 +210,7 @@ Destroying and then restoring is therefore much worse than not destroying: the d
 3. **Unfitted response curves and edges** (§4). These are the main structural uncertainty for the services part, and they are outside the Monte Carlo bounds.
 4. **Benefit transfer.** The service values come from French Mediterranean meadows (2014 euros, no price-year adjustment), the carbon stocks from Corsica, and the burial rate from the Balearic Islands. No Catalan primary data are used.
 5. **Scale and space.** The resource is the regional stock, treated as one homogeneous meadow. Depth, shoot density, wave exposure and distance to beaches, which all change a hectare's services and carbon, are not represented. The default 50 ha is illustrative.
-6. **Carbon fate** (§5, §7): the release fraction is a global assumption range.
+6. **Carbon fate** (§5, §7): the release fraction and its half-life are project inputs; the defaults (0.63, 10 years) are a global assumption range and an inferred central half-life for matte left exposed. No Mediterranean measurement of the release rate from exposed *P. oceanica* matte was found.
 7. **Currency.** The SCC is in 2020 euros and the services in 2014 euros, and the two are not harmonised; the benchmarks are not converted at all.
 8. **Not varied:** the model-wide trophic and keystone constants, and the health weights.
 9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded.
@@ -229,11 +235,11 @@ Every output lists every parameter with its source, confidence and, where docume
 - Is the agent and edge structure right? Are the six intermediate agents and the 15 edges the relevant ones?
 - Which edges matter most, and is there evidence for their strengths?
 - Is natural recolonisation (Kendrick et al. 2005) the right basis for the succession curve after transplanting?
-- Which matte-loss fraction applies to a port or marina footprint (excavated vs. buried vs. exposed)?
+- Which matte-loss fraction and half-life apply to a port or marina footprint (excavated vs. buried vs. exposed)? Is 10 years a defensible central half-life for matte left exposed?
 
 **Environmental economist (Track 2).**
 - Is final-services accounting with zero euro value on intermediate agents the right way to avoid double counting here?
 - Is Campagne et al.'s per-hectare value transferable to Catalonia?
 - Which recreation or non-use study should fill the main gap?
-- Is the SCC-based carbon valuation with a one-off release at year 0 appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.
+- Is the SCC-based carbon valuation, with the release spread over time by a half-life and each year valued at that year's SCC, appropriate for an EIA? So are the normative settings: a declining 2.3% → 1.4% schedule, 1%/yr relative price change, 200-year horizon.
 - Is treating the normative choices as sensitivities rather than distributions the right presentation for a decision-maker?

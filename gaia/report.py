@@ -409,9 +409,14 @@ def format_report(result: SimulationResult) -> str:
             f"  {'Carbon price (year 0):':<40} "
             f"{npv_c.carbon_price:>10,.2f}\u20ac/t CO\u2082"
         )
+        half_life: float = resource.carbon_profile.release_half_life_years
+        release_kind: str = (
+            "(one-off)" if half_life == 0.0
+            else f"(PV; released with a {half_life:g}-yr half-life)"
+        )
         lines.append(
             f"  {'Carbon externality (release):':<40} "
-            f"{npv_c.carbon_release:>14,.2f}\u20ac (one-off)"
+            f"{npv_c.carbon_release:>14,.2f}\u20ac {release_kind}"
         )
         lines.append(
             f"  {'Carbon externality (absorption lost):':<40} "
@@ -501,8 +506,14 @@ def format_report(result: SimulationResult) -> str:
             f"    {'Ecosystem services (annual flow):':<36} "
             f"\u20ac{npv.direct:>14,.0f}"
         )
+        released_label: str = (
+            "Carbon released (one-off):"
+            if resource.carbon_profile is None
+            or resource.carbon_profile.release_half_life_years == 0.0
+            else "Carbon released (over time):"
+        )
         lines.append(
-            f"    {'Carbon released (one-off):':<36} "
+            f"    {released_label:<36} "
             f"\u20ac{npv.carbon_release:>14,.0f}"
         )
         lines.append(

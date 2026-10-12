@@ -39,7 +39,7 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 6,325 | 7,826,571 | 99.4% | 48 of 59 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 6,325 | 7,106,287 | 99.4% | 49 of 60 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
 <!-- END:example -->
 
@@ -312,17 +312,17 @@ The JSON output starts with the calibration status:
   "mode": "extraction",
   "calibration": {
     "status": "illustrative",
-    "statement": "ILLUSTRATIVE: 48 of 59 recorded parameters are placeholders (29) or low-confidence (19). Results are not real-world estimates.",
+    "statement": "ILLUSTRATIVE: 49 of 60 recorded parameters are placeholders (29) or low-confidence (20). Results are not real-world estimates.",
     "calibration_regime": "B",
-    "n_params": 59,
+    "n_params": 60,
     "n_placeholder": 29,
-    "n_low": 19,
+    "n_low": 20,
     "n_medium": 11
   },
   "summary": {
     "annual_externality_eur_yr": 6324.51,
-    "pv_externality_eur_pv": 7826571.24,
-    "net_social_cost_eur_pv": 7701571.24
+    "pv_externality_eur_pv": 7106286.55,
+    "net_social_cost_eur_pv": 6981286.55
   }
 }
 ```

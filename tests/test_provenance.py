@@ -175,7 +175,8 @@ def test_known_flags_are_honest():
     absorption = param("posidonia", "carbon.annual_absorption_tonnes")
     assert "doi:10.1002/lno.10510" in absorption.source and "S5" in absorption.note
     release = param("posidonia", "carbon.soil_release_fraction")
-    assert release.confidence is Confidence.LOW and "global assumption" in release.note
+    assert release.confidence is Confidence.LOW and "project input" in release.note
+    assert "0.96" in release.note  # excavation (IPCC 2013), Step 8c.5
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
     for case in BUILDERS:

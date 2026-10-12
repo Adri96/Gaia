@@ -504,12 +504,19 @@ class CarbonProfile:
         annual_absorption_tonnes: Tonnes CO₂ absorbed per unit per year at climax.
         soil_carbon_tonnes: Tonnes CO₂ stored in soil beneath each unit.
         soil_release_fraction: Fraction of soil carbon released on extraction (0.0–1.0).
+        release_half_life_years: Time profile of the release (Step 8c.5):
+            0 (default) releases it all at extraction (year 0); a positive
+            half-life releases it as a negative exponential, the share
+            e^(−λt) − e^(−λ(t+1)) during year t (λ = ln 2 / half-life),
+            each tranche valued at the carbon price of year t and
+            discounted (gaia.carbon.pv_carbon_release).
     """
 
     stored_carbon_tonnes: float
     annual_absorption_tonnes: float
     soil_carbon_tonnes: float
     soil_release_fraction: float
+    release_half_life_years: float = 0.0
 
 
 @dataclass

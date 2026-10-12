@@ -62,7 +62,8 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments common to all case CLIs.
 
     Adds: --version, --mode, --format, --output, --with-pricing, --summary-only,
-    --steps-every, --area-ha, --resource-name, --carbon-price.
+    --steps-every, --area-ha, --resource-name, --carbon-price,
+    --carbon-release-fraction, --carbon-release-half-life.
     """
     parser.add_argument(
         "--version",
@@ -138,6 +139,32 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--carbon-release-fraction",
+        type=float,
+        default=None,
+        metavar="F",
+        help=(
+            "Project input: fraction (0-1) of the soil carbon stock the "
+            "project releases, which depends on what it does to the soil or "
+            "matte (default: the case's). Recommended for "
+            "Posidonia matte: 0.96 if excavated or dredged (IPCC 2013), 0.25-1.0 "
+            "(central 0.63) if left exposed; see docs/POSIDONIA_LITERATURE_REVIEW.md §4"
+        ),
+    )
+    parser.add_argument(
+        "--carbon-release-half-life",
+        type=float,
+        default=None,
+        metavar="YEARS",
+        help=(
+            "Project input: half-life of the release in years; 0 releases it all "
+            "at extraction, a positive value spreads it as a negative "
+            "exponential, each year valued at that year's carbon price and "
+            "discounted (default: the case's). Recommended for Posidonia "
+            "matte: 0 if excavated, about 10 (3-27) if left exposed"
+        ),
+    )
+    parser.add_argument(
         "--summary-only",
         action="store_true",
         default=False,
@@ -202,6 +229,8 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
         "total_units": args.total_units, "unit_value": args.unit_value,
         "area_ha": args.area_ha, "labels": labels,
         "resource_name": getattr(args, "resource_name", None),
+        "carbon_release_fraction": getattr(args, "carbon_release_fraction", None),
+        "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -583,6 +612,8 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             area_ha=args.area_ha,
             labels=labels,
             resource_name=getattr(args, "resource_name", None),
+            carbon_release_fraction=getattr(args, "carbon_release_fraction", None),
+            carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any

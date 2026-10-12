@@ -265,3 +265,115 @@ class TestCarbonPaybackPeriod:
             zero_profile, 100, 100, _FOREST_SUCCESSION
         )
         assert period == 0.0
+
+
+# ── Step 8c.5: the release as a project input with a time profile ────────────
+
+
+class TestReleaseTimeProfile:
+    """A release spread over time by a half-life, discounted in the PV."""
+
+    def test_zero_half_life_releases_everything_at_year_0(self):
+        from gaia.carbon import release_schedule
+
+        assert release_schedule(0.0, 200) == [1.0]
+        d = DISCOUNT_CENTRAL
+        assert pv_carbon_release(100.0, d, 0.0) == pytest.approx(
+            100.0 * d.carbon_price_at_year(0), rel=1e-15)
+
+    def test_schedule_is_a_negative_exponential(self):
+        from gaia.carbon import release_schedule
+
+        shares = release_schedule(10.0, 200)
+        assert len(shares) == 200
+        assert sum(shares[:10]) == pytest.approx(0.5, rel=1e-12)  # one half-life
+        assert sum(shares) == pytest.approx(1.0 - 2.0 ** -20, rel=1e-12)
+        assert all(a > b for a, b in zip(shares, shares[1:]))
+
+    def test_pv_is_continuous_at_zero_and_falls_with_the_half_life(self):
+        """Price growth (1.3%) is below the discount rate, so spreading the
+        release over time lowers its PV; a tiny half-life gives the year-0 PV."""
+        d = DISCOUNT_CENTRAL
+        immediate = pv_carbon_release(100.0, d, 0.0)
+        assert pv_carbon_release(100.0, d, 1e-6) == pytest.approx(immediate, rel=1e-9)
+        pvs = [pv_carbon_release(100.0, d, h) for h in (1.0, 5.0, 10.0, 27.0)]
+        assert immediate > pvs[0] > pvs[1] > pvs[2] > pvs[3] > 0.0
+
+    def test_negative_half_life_is_rejected(self):
+        from gaia.carbon import release_schedule
+        from gaia.validation import validate_carbon_profile
+
+        with pytest.raises(ValueError, match="half-life"):
+            release_schedule(-1.0, 10)
+        bad = dataclasses.replace(_FOREST_CARBON, release_half_life_years=-1.0)
+        with pytest.raises(ValueError, match="release_half_life_years"):
+            validate_carbon_profile(bad)
+
+    def test_carbon_cost_uses_the_profile_half_life(self):
+        d = DISCOUNT_CENTRAL
+        spread = dataclasses.replace(_FOREST_CARBON, release_half_life_years=10.0)
+        assert compute_carbon_cost(spread, 10, d)["release_cost_eur"] == pytest.approx(
+            pv_carbon_release(compute_carbon_release(spread, 10), d, 10.0), rel=1e-15)
+        assert (compute_carbon_cost(spread, 10, d)["release_cost_eur"]
+                < compute_carbon_cost(_FOREST_CARBON, 10, d)["release_cost_eur"])
+
+
+class TestReleaseProjectInputs:
+    """--carbon-release-fraction and --carbon-release-half-life (Step 8c.5)."""
+
+    def test_case_default_and_override(self):
+        from gaia.cases import load_case
+        from gaia.simulation import run_extraction
+
+        case = load_case("posidonia")
+        default = case.build_ecosystem()
+        assert default.resource.carbon_profile.soil_release_fraction == 0.63
+        assert default.resource.carbon_profile.release_half_life_years == 10.0
+        eco = case.build_ecosystem(carbon_release_fraction=0.96, carbon_release_half_life=0.0)
+        cp = eco.resource.carbon_profile
+        assert (cp.soil_release_fraction, cp.release_half_life_years) == (0.96, 0.0)
+        by_name = {p.name: p for p in eco.provenance}
+        for name in ("carbon.soil_release_fraction", "carbon.release_half_life_years"):
+            assert by_name[name].confidence.value == "user-supplied"
+        npv = run_extraction(eco, 50).extraction_npv
+        assert npv.carbon_released_t == pytest.approx(50 * 1199.0 * 0.96, rel=1e-12)
+        assert npv.carbon_release == pytest.approx(
+            npv.carbon_released_t * SOCIAL_COST_OF_CARBON_EUR, rel=1e-12)
+
+    def test_inputs_are_not_sampled(self):
+        from gaia.cases import load_case
+        from gaia.uncertainty import run_uncertainty
+
+        case = load_case("posidonia")
+        res = run_uncertainty(case, 50, build_kwargs={"carbon_release_fraction": 0.96},
+                              draws=4, tornado=False, normative=False)
+        names = {s.name for s in res.sampled}
+        assert "carbon.soil_release_fraction" not in names
+        assert "carbon.release_half_life_years" in names
+
+    def test_case_without_carbon_rejects_the_inputs(self):
+        from gaia.ecosystem_io import case_from_dict
+        from tests.test_ecosystem_io import doc
+
+        with pytest.raises(ValueError, match="no carbon profile"):
+            case_from_dict(doc()).build_ecosystem(carbon_release_fraction=0.5)
+
+    def test_cli_flags(self, capsys):
+        import json
+
+        from gaia.cli import main
+
+        assert main(["run", "posidonia", "--carbon-release-fraction", "0.96",
+                     "--carbon-release-half-life", "0", "--format", "json",
+                     "--summary-only"]) == 0
+        out = json.loads(capsys.readouterr().out)
+        assert out["npv_analysis"]["carbon_released_tco2"] == pytest.approx(
+            50 * 1199.0 * 0.96, rel=1e-6)
+
+    def test_roundtrip_keeps_the_half_life(self):
+        from gaia.cases import load_case
+        from gaia.ecosystem_io import ecosystem_from_dict, ecosystem_to_dict
+
+        eco = load_case("posidonia").build_ecosystem()
+        again = ecosystem_from_dict(ecosystem_to_dict(eco))
+        assert again.resource.carbon_profile.release_half_life_years == 10.0
