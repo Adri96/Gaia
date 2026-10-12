@@ -293,7 +293,11 @@ def test_json_calibration_block(case, mode_args, summary_only):
     assert cal["n_params"] == len(cal["parameters"])
     counts = {c.value: 0 for c in Confidence}
     for p in cal["parameters"]:
-        assert set(p) == {"name", "value", "unit", "source", "confidence", "note"}
+        assert {"name", "value", "unit", "source", "confidence", "note"} <= set(p)
+        assert set(p) <= {"name", "value", "unit", "source", "confidence", "note",
+                          "range", "distribution"}  # range: Step 8.4, when documented
+        if "range" in p:
+            assert p["range"][0] <= p["value"] <= p["range"][1]
         counts[p["confidence"]] += 1
     assert counts["placeholder"] == cal["n_placeholder"] > 0
     assert counts["low"] == cal["n_low"]

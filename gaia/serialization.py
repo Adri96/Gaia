@@ -182,6 +182,23 @@ def _resource_metadata(resource) -> Dict[str, Any]:
     return d
 
 
+def _param_to_dict(p) -> Dict[str, Any]:
+    """One recorded parameter; its range (Step 8.4) only when it has one."""
+    d: Dict[str, Any] = {
+        "name": p.name,
+        "value": p.value,
+        "unit": p.unit,
+        "source": p.source,
+        "confidence": p.confidence.value,
+        "note": p.note,
+    }
+    if p.bounds is not None:
+        d["range"] = list(p.bounds)
+    if p.distribution:
+        d["distribution"] = p.distribution
+    return d
+
+
 def _calibration_to_dict(calibration) -> Dict[str, Any]:
     """The "calibration" block (Step 5): what a reader must know first."""
     if calibration is None:
@@ -204,17 +221,7 @@ def _calibration_to_dict(calibration) -> Dict[str, Any]:
         "n_medium": calibration.count(Confidence.MEDIUM),
         "n_high": calibration.count(Confidence.HIGH),
         "n_user_supplied": calibration.count(Confidence.USER),
-        "parameters": [
-            {
-                "name": p.name,
-                "value": p.value,
-                "unit": p.unit,
-                "source": p.source,
-                "confidence": p.confidence.value,
-                "note": p.note,
-            }
-            for p in calibration.params
-        ],
+        "parameters": [_param_to_dict(p) for p in calibration.params],
     }
 
 

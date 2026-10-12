@@ -65,6 +65,14 @@ class Param:
         note: What a reader must know before relying on the value.
         name: Dotted name of the field it sets, e.g.
             "carbon.stored_carbon_tonnes" (``named`` fills it in).
+        spread: The uncertainty range a source gives (Step 8.4), or None:
+            ("range", low, high) in the parameter's unit, or
+            ("relative_range", f_low, f_high), factors of the value.
+            ``bounds`` gives it in absolute terms. gaia.uncertainty
+            derives a range from the confidence when there is none.
+        distribution: How gaia.uncertainty samples it: "" (default,
+            triangular with the value as mode), "triangular", "uniform",
+            or "fixed" (never sampled).
     """
 
     value: float
@@ -73,6 +81,8 @@ class Param:
     confidence: Confidence
     note: str = ""
     name: str = ""
+    spread: Optional[Tuple[str, float, float]] = None
+    distribution: str = ""
 
     def __post_init__(self) -> None:
         if isinstance(self.value, bool) or not isinstance(self.value, (int, float)):
@@ -86,6 +96,39 @@ class Param:
                 f"Param {self.name!r}: a {self.confidence.value}-confidence "
                 f"value needs a source"
             )
+        if self.distribution not in DISTRIBUTIONS:
+            raise ValueError(
+                f"Param {self.name!r}: distribution must be one of "
+                f"{', '.join(repr(d) for d in DISTRIBUTIONS)}, got {self.distribution!r}"
+            )
+        if self.spread is not None:
+            kind, a, b = self.spread
+            if kind not in ("range", "relative_range"):
+                raise ValueError(f"Param {self.name!r}: unknown spread kind {kind!r}")
+            if not (math.isfinite(a) and math.isfinite(b)) or a > b:
+                raise ValueError(f"Param {self.name!r}: {kind} must be finite with low <= high, got [{a}, {b}]")
+            if kind == "relative_range" and not a <= 1.0 <= b:
+                raise ValueError(f"Param {self.name!r}: relative_range [{a}, {b}] must contain 1")
+            low, high = self.bounds or (a, b)
+            if not low <= self.value <= high:
+                raise ValueError(
+                    f"Param {self.name!r}: value {self.value} is outside its range [{low}, {high}]"
+                )
+
+    @property
+    def bounds(self) -> Optional[Tuple[float, float]]:
+        """The spread as an absolute (low, high), or None."""
+        if self.spread is None:
+            return None
+        kind, a, b = self.spread
+        if kind == "range":
+            return (float(a), float(b))
+        lo, hi = sorted((self.value * a, self.value * b))
+        return (lo, hi)
+
+
+DISTRIBUTIONS: Tuple[str, ...] = ("", "triangular", "uniform", "fixed")
+"""Allowed Param.distribution values (see Param)."""
 
 
 def named(prefix: str, params: Dict[str, Param]) -> List[Param]:

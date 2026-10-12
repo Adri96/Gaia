@@ -81,8 +81,13 @@
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "resource.safe_threshold_ratio",
-          "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification, kept because it shapes every damage curve (inflection at 32%). At small losses the curves give each hectare about a quarter of its average per-hectare value (initial slope 0.25); see the methods note.",
+          "note": "No ecological or regulatory source supports a 'safe' loss of 20% of a priority habitat (Habitats Directive 1120*): the value is the former owner specification, kept because it shapes every damage curve (inflection at 32%). At small losses the curves give each hectare about a quarter of its average per-hectare value (initial slope 0.25); see the methods note. Monte Carlo range 0.1-0.3, uniform (judgement).",
+          "range": [
+            0.1,
+            0.3
+          ],
           "source": null,
           "unit": "ratio",
           "value": 0.2
@@ -123,6 +128,10 @@
           "confidence": "medium",
           "name": "agent[Fish Populations].annual_value_per_ha",
           "note": "35 EUR/ha/yr of service at full damage = weight \u00d7 value (35 / 0.153846). Range 27-74 EUR/ha/yr. 74 is derived here, not published: Jackson et al. (2015, Conservation Biology 29:899-909, doi:10.1111/cobi.12436) attribute EUR 58-91 million/yr of Mediterranean commercial landings to seagrass; divided by the known P. oceanica area, 1,224,707 ha (Telesca et al. 2015, Scientific Reports 5:12505, doi:10.1038/srep12505), that is EUR 47-74/ha/yr (an overestimate per ha of P. oceanica, since other seagrasses also contribute).",
+          "range": [
+            175.5,
+            481.0
+          ],
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): fishery contribution 27-35 EUR/ha/yr (production function); upper end of the range used",
           "unit": "\u20ac/ha/yr",
           "value": 227.5
@@ -147,6 +156,10 @@
           "confidence": "medium",
           "name": "agent[Coastal Protection].annual_value_per_ha",
           "note": "188 EUR/ha/yr of service at full damage = weight \u00d7 value (188 / 0.142857). A single estimate; it covers wave attenuation, beach-cast banquettes and matte sediment stabilisation (Campagne et al.'s three services). Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
+          "range": [
+            658.0,
+            2632.0
+          ],
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): protection from coastal erosion 188 EUR/ha/yr (damage cost avoided, Mediterranean scale, 2001 data inflated to 2014)",
           "unit": "\u20ac/ha/yr",
           "value": 1316.0
@@ -155,6 +168,10 @@
           "confidence": "medium",
           "name": "agent[Water Quality].annual_value_per_ha",
           "note": "60 EUR/ha/yr of service at full damage = weight \u00d7 value (60 / 0.120879). A single, crude benefit-transfer estimate. Its spread in the Monte Carlo (\u00d7/\u00f72) is a judgement.",
+          "range": [
+            248.1818181818182,
+            992.7272727272727
+          ],
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): wastewater treatment 60 EUR/ha/yr (benefit transfer of the French water-protection tax, one third attributed to coastal systems after Costanza et al. 1997)",
           "unit": "\u20ac/ha/yr",
           "value": 496.3636363636364
@@ -163,12 +180,17 @@
           "confidence": "medium",
           "name": "agent[Human Communities].annual_value_per_ha",
           "note": "1.83 EUR/ha/yr of service at full damage = weight \u00d7 value (1.83 / 0.087912). Only the cultural services Campagne et al. could value. Tourism, recreation and non-use values are NOT valued (no Posidonia-specific per-hectare welfare estimate was found): the main reason the total is a lower bound. Recreational fisheries expenditure (EUR 112 million/yr for Mediterranean seagrass, Jackson et al. 2015) is spending, not a welfare value, and is not used.",
+          "range": [
+            10.408125000000002,
+            41.63250000000001
+          ],
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr",
           "unit": "\u20ac/ha/yr",
           "value": 20.816250000000004
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Posidonia Meadow].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -177,6 +199,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Coralligenous & Red Coral].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -185,6 +208,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Epiphytes & Algae].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -193,6 +217,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Marine Invertebrates].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -201,6 +226,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Fish Populations].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -209,6 +235,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Marine Megafauna].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -217,6 +244,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Seabirds].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -225,6 +253,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Coastal Protection].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -233,6 +262,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Water Quality].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -241,6 +271,7 @@
         },
         {
           "confidence": "low",
+          "distribution": "fixed",
           "name": "agent[Human Communities].dependency_weight",
           "note": "Owner-specified shares of ecosystem health (weights / 0.91 after the Blue Carbon agent was removed); no source. They set the health index and, with each agent's value, its \u20ac at full damage (weight \u00d7 value = the sourced \u20ac/ha/yr service value).",
           "source": null,
@@ -249,16 +280,26 @@
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "damage.logistic_steepness",
-          "note": "The same placeholder curve for every agent, inflection at 32% loss (just past the 20% threshold); no Posidonia study relates the fraction of a meadow lost to the fraction of each service lost, so the curve is not fitted (calibration regime B).",
+          "note": "The same placeholder curve for every agent, inflection at 32% loss (just past the 20% threshold); no Posidonia study relates the fraction of a meadow lost to the fraction of each service lost, so the curve is not fitted (calibration regime B). Monte Carlo range 6-18, uniform (judgement).",
+          "range": [
+            6.0,
+            18.0
+          ],
           "source": null,
           "unit": "dimensionless",
           "value": 12.0
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "agent[Posidonia Meadow].keystone_threshold",
-          "note": "Health below which the meadow's outgoing edges double; hand-set, no source.",
+          "note": "Health below which the meadow's outgoing edges double; hand-set, no source. Monte Carlo range 0.15-0.45, uniform (judgement).",
+          "range": [
+            0.15,
+            0.45
+          ],
           "source": null,
           "unit": "health",
           "value": 0.3
@@ -266,7 +307,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Posidonia Meadow \u2192 Coralligenous & Red Coral].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -274,7 +319,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Posidonia Meadow \u2192 Epiphytes & Algae].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.175,
+            0.5249999999999999
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.35
@@ -282,7 +331,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Posidonia Meadow \u2192 Coastal Protection].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.2,
+            0.6000000000000001
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.4
@@ -290,7 +343,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Posidonia Meadow \u2192 Water Quality].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -298,7 +355,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Coralligenous & Red Coral \u2192 Marine Invertebrates].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.25
@@ -306,7 +367,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Coralligenous & Red Coral \u2192 Fish Populations].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -314,7 +379,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Epiphytes & Algae \u2192 Marine Invertebrates].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -322,7 +391,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Marine Invertebrates \u2192 Fish Populations].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.25
@@ -330,7 +403,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Fish Populations \u2192 Marine Megafauna].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.175,
+            0.5249999999999999
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.35
@@ -338,7 +415,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Fish Populations \u2192 Seabirds].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.3
@@ -346,7 +427,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Marine Invertebrates \u2192 Water Quality].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.15
@@ -354,7 +439,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Water Quality \u2192 Coralligenous & Red Coral].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.15
@@ -362,7 +451,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Coastal Protection \u2192 Human Communities].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.25
@@ -370,7 +463,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Fish Populations \u2192 Human Communities].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.2
@@ -378,7 +475,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Water Quality \u2192 Human Communities].strength",
-          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not.",
+          "note": "Hand-set cascade strengths. The links themselves are documented (e.g. meadow -> wave attenuation: Infantes et al. 2012, MEPS 456:63-72, doi:10.3354/meps09754; seagrass -> fisheries: Jackson et al. 2015), their strengths are not. Monte Carlo range: \u00d70.5 to \u00d71.5 (judgement; wider ranges breach the in-degree cap).",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": null,
           "unit": "fraction of source damage",
           "value": 0.15
@@ -395,6 +496,10 @@
           "confidence": "medium",
           "name": "carbon.annual_absorption_tonnes",
           "note": "S5 resolved: one long-term burial (sequestration) rate, from the nearest region with direct measurements. Range 0.28-3.09 tCO2/ha/yr: 7.7-84.4 g C/m2/yr, the depth range of mean sequestration in a large Corsican meadow (Pergent-Martini et al. 2021, Marine Environmental Research 165:105236, doi:10.1016/j.marenvres.2020.105236). The former value, 1.58 tCO2/ha/yr, was the IPCC (2013) Wetlands Supplement Table 4.12 seagrass factor (0.434 t C/ha/yr, 95% CI 0.2-0.7, from Mateo & Romero 1997 and Serrano et al. 2012), which applies to revegetated meadows; it lies inside the range.",
+          "range": [
+            0.2823333333333333,
+            3.0946666666666665
+          ],
           "source": "Mazarrasa et al. (2017), Limnology and Oceanography 62:1436-1450, doi:10.1002/lno.10510: organic carbon burial 26 \u00b1 6 g C/m2/yr in Balearic P. oceanica meadows since 1900 (210Pb-dated cores) = 0.26 t C/ha/yr \u00d7 44/12",
           "unit": "tCO2/ha/yr",
           "value": 0.9533333333333335
@@ -403,6 +508,10 @@
           "confidence": "medium",
           "name": "carbon.soil_carbon_tonnes",
           "note": "Organic carbon in the top metre of matte (the depth IPCC and the Label Bas-Carbone method treat as exposed), not the whole matte, which can be several metres thick. Range 741-1,844 tCO2/ha: 20.2-50.3 kg Corg/m2 in the first metre of matte in Calvi Bay (Leduc et al. 2023, Marine Environmental Research 183:105847, doi:10.1016/j.marenvres.2022.105847). Corsican, not Catalan, measurements; for scale, the IPCC (2013) global Tier 1 seagrass soil stock is 108 t C/ha to 1 m (Table 4.11) and Balearic P. oceanica holds 6.1 \u00b1 1.4 kg C/m2 in the top 30 cm alone (Mazarrasa et al. 2017).",
+          "range": [
+            740.6666666666666,
+            1844.3333333333333
+          ],
           "source": "Monnier et al. (2022), Science of the Total Environment 838:155864, doi:10.1016/j.scitotenv.2022.155864 (39 matte cores, eastern Corsica: 327 \u00b1 150 t Corg/ha), adopted as the Tier 1 default for 1 m of matte by Label Bas-Carbone, 'M\u00e9thode de protection des herbiers de posidonie' (French Ministry of Ecological Transition, approved 21 March 2023, NOR ENER2305073S; https://aida.ineris.fr/sites/aida/files/2023-04/Dec20230321_1.pdf); \u00d7 44/12",
           "unit": "tCO2/ha",
           "value": 1199.0
@@ -411,6 +520,10 @@
           "confidence": "low",
           "name": "carbon.soil_release_fraction",
           "note": "A global assumption range, not a Posidonia measurement, and the fraction depends on what the project does to the matte: IPCC (2013) Wetlands Supplement Tier 1 treats excavation for port, harbour and marina construction as emitting the top-metre soil carbon in the year of extraction (4% refractory, i.e. 0.96); the Label Bas-Carbone method models anchoring damage as a gradual loss (10.7% of the top-metre carbon over 10 years, after Mateo et al. 2019); burial under fill may preserve much of it. The dominant uncertainty of the carbon externality.",
+          "range": [
+            0.25,
+            1.0
+          ],
           "source": "Pendleton et al. (2012), PLoS ONE 7:e43542, doi:10.1371/journal.pone.0043542: 25-100% of near-surface (top-metre) carbon lost upon conversion, central estimate 63%",
           "unit": "fraction",
           "value": 0.63

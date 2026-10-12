@@ -142,6 +142,61 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_uncertainty_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add --uncertainty [N] and --seed (Step 8.4, gaia.uncertainty)."""
+    from gaia.uncertainty import DEFAULT_DRAWS, DEFAULT_SEED
+
+    parser.add_argument(
+        "--uncertainty",
+        type=_positive_int,
+        nargs="?",
+        const=DEFAULT_DRAWS,
+        default=None,
+        metavar="N",
+        help=(
+            f"[extract mode] Monte Carlo over the case's parameter ranges: "
+            f"P5/P50/P95 of the headline numbers, a sensitivity ranking and the "
+            f"normative choices (N draws, default {DEFAULT_DRAWS:,} when given "
+            f"without N; about 4 s per 1,000 draws for Posidonia)"
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        metavar="S",
+        help=f"[with --uncertainty] Seed of the random generator (default {DEFAULT_SEED})",
+    )
+
+
+def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]]):
+    """The Monte Carlo of an extraction run (None unless --uncertainty)."""
+    draws = getattr(args, "uncertainty", None)
+    if draws is None:
+        return None
+    if args.mode != "extract":
+        warnings.warn("--uncertainty applies to extraction only. Ignored in restore mode.",
+                      UserWarning, stacklevel=2)
+        return None
+    if args.with_pricing:
+        raise ValueError("--uncertainty cannot be combined with --with-pricing (EXPERIMENTAL)")
+    if draws < 2:
+        raise ValueError(f"--uncertainty needs at least 2 draws, got {draws}")
+    from gaia.uncertainty import run_uncertainty
+
+    overrides: Dict[str, Any] = {
+        "total_units": args.total_units, "unit_value": args.unit_value,
+        "area_ha": args.area_ha, "labels": labels,
+    }
+    if args.threshold != case.safe_threshold_ratio.value:
+        overrides["safe_threshold_ratio"] = args.threshold
+    return run_uncertainty(
+        case, args.units, build_kwargs=overrides,
+        prepare=lambda eco: apply_carbon_price_view(eco, args.carbon_price),
+        draws=draws, seed=args.seed,
+    )
+
+
 def add_restoration_arguments(
     parser: argparse.ArgumentParser,
     planting_cost_default: float = 50.0,
@@ -463,6 +518,7 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
         parser.add_argument(legacy.unit_value_alias, dest="unit_value_alias", type=float,
                             default=None, metavar="EUROS", help=argparse.SUPPRESS)
     add_common_arguments(parser)
+    add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
         parser,
@@ -526,8 +582,14 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             )
         else:
             result = run_extraction(ecosystem, args.units)
-        text_report = case.report(result)
-        extra = {"benchmarks": case.benchmark_block(result)}
+        from gaia.uncertainty import format_uncertainty, uncertainty_to_dict
+
+        uncertainty = _uncertainty(case, args, labels)
+        text_report = case.report(result, appendix=format_uncertainty(uncertainty))
+        extra = {
+            "benchmarks": case.benchmark_block(result),
+            "uncertainty": uncertainty_to_dict(uncertainty),
+        }
         output_result(text_report, result, args, notes=list(case.json_notes) or None,
                       extra=extra)
     except ValueError as exc:

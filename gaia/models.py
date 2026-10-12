@@ -199,11 +199,19 @@ class DiscountConfig:
         """
         if isinstance(self.rate_schedule, (int, float)):
             return 1.0 / (1.0 + float(self.rate_schedule)) ** year
-        # For declining schedules, compound year by year
-        factor: float = 1.0
-        for t in range(1, year + 1):
-            factor /= (1.0 + self.rate_at_year(t))
-        return factor
+        # For declining schedules, compound year by year. The cumulative
+        # factors are cached (keyed on the schedule's content), extended
+        # with exactly the divisions the loop would do, so the values are
+        # bit-identical and a horizon costs O(H) instead of O(H²).
+        key = tuple(tuple(step) for step in self.rate_schedule)
+        cache = self.__dict__.get("_discount_factors")
+        if cache is None or cache[0] != key:
+            cache = (key, [1.0])
+            object.__setattr__(self, "_discount_factors", cache)
+        factors: list = cache[1]
+        while len(factors) <= year:
+            factors.append(factors[-1] / (1.0 + self.rate_at_year(len(factors))))
+        return factors[year] if year >= 0 else 1.0
 
     def carbon_price_at_year(self, year: int) -> float:
         """Carbon price in year t, growing at carbon_price_growth rate."""
