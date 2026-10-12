@@ -37,10 +37,10 @@ Default run of each case (extraction):
 <!-- BEGIN:example name="cases" table="cases" -->
 | Case (default run) | Extracted | Revenue (€, one-off) | Annual externality (€/yr) | PV of externality (€ PV) | Health after | Placeholder or low-confidence parameters |
 |---|---|---|---|---|---|---|
-| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
-| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
+| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 101,899 | 10,704,259 | 10.6% | 24 of 27 |
+| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 127,048 | 9,133,733 | 20.2% | 51 of 55 |
 | Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 50 of 61 |
-| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
+| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 116,000 | 34,933,804 | 80.0% | 66 of 71 |
 <!-- END:example -->
 
 The forest case in full (the same run as the first row):
@@ -59,34 +59,35 @@ $ gaia run forest --total-units 10000 --units 5000
   Resource:              10,000 units  (Oak Valley Forest)
   Area:                    40.0 ha     (250.0 units/ha)
   Safe Threshold:         3,000 units  (30.0%)
+  Damage model:      area lost + degradation of what remains (each unit costs its average value below the threshold)
   Units Extracted:        5,000
   Depletion:              50.0%
-  Ecosystem Health:       16.6%
+  Ecosystem Health:       10.6%
 
   ── Private Gains ───────────────────────────────────────────────
   Revenue:                                     500,000.00€ (one-off)
 
   ── Annual Externalized Costs ───────────────────────────────────
-  Human Communities:                            17,788.95€/yr
+  Human Communities:                            19,602.00€/yr
     → Health costs, water treatment, lost recreation
-    → Direct: €17,234/yr | Cascade: €555/yr
+    → Direct: €19,248/yr | Cascade: €354/yr
   Animal Populations:                           34,176.00€/yr
     → Habitat loss, population decline, species loss
     → Trophic amplification: 1.6× (primary consumer)
-  Vegetation & Flora:                           12,925.45€/yr
+  Vegetation & Flora:                           14,436.33€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                    30,159.39€/yr
+  Watershed & Local Climate:                    33,684.78€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  ANNUAL EXTERNALITY:                           95,049.79€/yr
-  PV OF EXTERNALITY:                        10,111,612.54€ (PV)
+  ANNUAL EXTERNALITY:                          101,899.11€/yr
+  PV OF EXTERNALITY:                        10,704,259.24€ (PV)
     (services and carbon over 100 years; see NPV Analysis)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €     5,860,652
-      100-year horizon:                  €    10,111,613
-      200-year horizon:                  €    16,677,102
+      50-year horizon:                   €     6,178,693
+      100-year horizon:                  €    10,704,259
+      200-year horizon:                  €    17,711,574
   ---------------------------------------------------------------
-  NET SOCIAL COST (PV − revenue):            9,611,612.54€ (PV)
+  NET SOCIAL COST (PV − revenue):           10,204,259.24€ (PV)
 
   ── Resilience Assessment ───────────────────────────────────────
   Current zone:          ⚠⚠ RED — Resilience likely compromised
@@ -121,12 +122,12 @@ $ gaia run forest --total-units 10000 --units 5000
     (social cost of carbon, US EPA 2023)
 
   Externality present value (€ PV at year 0):
-    Ecosystem services (annual flow):    €     8,224,317
+    Ecosystem services (annual flow):    €     8,816,964
     Carbon released (one-off):           €       727,762
     Absorption lost (annual flow):       €     1,159,533
     ==================================== ===============
-    Total extraction PV:                 €    10,111,613
-    of which unrecoverable (substrate):  €         2,402
+    Total extraction PV:                 €    10,704,259
+    of which unrecoverable (substrate):  €         2,575
       (part of the services PV that restoration cannot recover; not added)
 
   ── Parameter Provenance ────────────────────────────────────────
@@ -152,14 +153,23 @@ $ gaia run forest --total-units 10000 --units 5000
     [placeholder] resource.unit_value = 100 €/tree
         Revenue per tree felled (one-off); no market source.
     [placeholder] resource.safe_threshold_ratio = 0.3 ratio
-        Safe extraction threshold; also the inflection of every
-        damage curve.
+        Safe extraction threshold; under the area_loss damage
+        model (Step 8d.1) the depletion beyond which the
+        REMAINING resource starts to degrade; below it each
+        hectare lost costs its average value.
     [placeholder] 4 × agent[…].dependency_weight = 0.15-0.35
     share
-    [placeholder] damage.logistic_steepness = 12 dimensionless
-        The same placeholder curve for every agent, inflection
-        just past the safe threshold; not fitted to field data
-        (hence calibration regime B).
+    [placeholder] damage.threshold_logistic_steepness = 12
+    dimensionless
+        Degradation of the REMAINING resource past the safe
+        threshold (damage model area_loss, Step 8d.1, as for
+        Posidonia): zero up to the threshold, then a logistic
+        with its inflection 15% into the post-threshold span, the
+        same curve for every agent. The damage of each agent is D
+        + (1 - D) x degradation, so its slope at small losses is
+        exactly 1 (each hectare lost costs its average value) and
+        the curve shapes only the threshold behaviour. Not fitted
+        to field data (calibration regime B).
     [placeholder] 2 × edge[…].strength = 0.1-0.2 fraction of
     source damage
     [placeholder] carbon: stored_carbon_tonnes = 0.8 tCO2/tree;
@@ -215,7 +225,7 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Units Restored:                     500
   Restoration Coverage:             50.0%  of total capacity
   Depletion:                       100.0%  → 50.0%
-  Ecosystem Health:                  0.0%  → 5.7%  (at maturity)
+  Ecosystem Health:                  0.0%  → 3.6%  (at maturity)
 
   ── Restoration Costs ───────────────────────────────────────────
   Planting cost/unit:                           50.00€
@@ -225,25 +235,25 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   TOTAL RESTORATION COST:                       75,000.00€ (one-off)
 
   ── Recovered Ecosystem Services ────────────────────────────────
-  Human Communities:                               170.51€/yr
+  Human Communities:                               108.62€/yr
     → Health costs, water treatment, lost recreation
   Animal Populations:                                0.00€/yr
     → Habitat loss, population decline, species loss
-  Vegetation & Flora:                              142.09€/yr
+  Vegetation & Flora:                               90.52€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                       331.55€/yr
+  Watershed & Local Climate:                       211.21€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  Damage reversal (upper bound):                 1,887.02€/yr
+  Damage reversal (upper bound):                 1,202.09€/yr
     (annual externality before − after restoring, same damage model)
-  ANNUAL RECOVERED VALUE:                          644.15€/yr
+  ANNUAL RECOVERED VALUE:                          410.35€/yr
   ---------------------------------------------------------------
-  NET RESTORATION VALUE:                        36,974.50€ (PV)
+  NET RESTORATION VALUE:                        23,494.61€ (PV)
     (PV of recovered services and carbon − PV of restoration costs)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €       -32,406
-      100-year horizon:                  €        36,974
-      200-year horizon:                  €       121,904
+      50-year horizon:                   €       -36,564
+      100-year horizon:                  €        23,495
+      200-year horizon:                  €        93,342
 
   ── Restoration Cost Ratio ──────────────────────────────────────
   (Revenue + restoration cost) / revenue:        2.50
@@ -256,7 +266,7 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Years to 90% service recovery:                   48 years
 
   ── Maturation Gap ──────────────────────────────────────────────
-  Lost services during maturation:              18,598.55€ (PV)
+  Lost services during maturation:              11,847.84€ (PV)
   (discounted services not delivered while succession proceeds,
    over the 100-year NPV horizon)
 
@@ -271,12 +281,12 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
 
   ── Investment Analysis (NPV, 100-year) ─────────────────────────
   Restoration cost (PV):                   €        69,216
-  Service recovery (PV):                   €        37,138
+  Service recovery (PV):                   €        23,658
   Carbon absorption (PV):                  €        69,053
-  Total benefits (PV):                     €       106,191
+  Total benefits (PV):                     €        92,711
   ---------------------------------------------------------------
-  Net Present Value:                       €        36,974
-  ROI (benefits / cost):                             1.53x
+  Net Present Value:                       €        23,495
+  ROI (benefits / cost):                             1.34x
   Carbon payback:                                      71 years
 
   ── Carbon Credit Breakeven ─────────────────────────────────────
@@ -290,14 +300,14 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Social cost of cutting these units and restoring them, over
   not cutting them:
     Restoration cost:                      €        69,216
-    Maturation gap (temporary):            €        18,599
-    Substrate loss (permanent):            €            51
-    Recovery shortfall (permanent):        €       107,490
+    Maturation gap (temporary):            €        11,848
+    Substrate loss (permanent):            €            32
+    Recovery shortfall (permanent):        €        68,474
     Carbon not recovered:                  €       119,677
     ====================================== ===============
-    Penalty:                               €       315,032
+    Penalty:                               €       269,247
     Foregone revenue (PV of not cutting):  €        50,000
-    Penalty per € of foregone revenue:                6.30
+    Penalty per € of foregone revenue:                5.38
   [... excerpt: the output continues with '── Parameter Provenance']
 ```
 <!-- END:example -->
@@ -500,7 +510,7 @@ What the values rest on. The authoritative, per-parameter list is in each output
   - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
 - **Amazon**: the agent value is the sum of the non-carbon anchors of its spec (`gaia/cases/definitions/AMAZON_FOREST.md`). Several of those anchors' sources are unverified. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
-- **All cases**: placeholder damage curves (steepness 12; Posidonia's start at the threshold), placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
+- **All cases**: small losses priced linearly (damage model `area_loss`, Steps 8c.3 and 8d.1): below the safe threshold each unit lost costs its average value, past it the remaining resource degrades along placeholder curves (steepness 12; Costa Brava's fire agent exponential), which start at the threshold. Placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
 
 ---
 

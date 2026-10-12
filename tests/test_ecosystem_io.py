@@ -132,10 +132,10 @@ def test_save_and_load(tmp_path):
 def test_canonical_form_shares_curves_and_provenance():
     d = ecosystem_to_dict(build_costa_brava_ecosystem(total_trees=1000))
     assert d["gaia_schema"] == SCHEMA_VERSION
-    assert set(d["damage_curves"]) == {"logistic", "exponential"}
-    assert d["agent_defaults"]["damage"] == "logistic"
+    assert set(d["damage_curves"]) == {"threshold_logistic", "threshold_exponential"}  # Step 8d.1
+    assert d["agent_defaults"]["damage"] == "threshold_logistic"
     fire = next(a for a in d["agents"] if a["name"].startswith("Fire"))
-    assert fire["damage"] == "exponential"
+    assert fire["damage"] == "threshold_exponential"
     assert "agent[*].dependency_weight" in d["provenance_defaults"]
     retuned = [e for e in d["interactions"] if isinstance(e["strength"], dict)]
     assert len(retuned) == 3  # the in-degree-cap edges keep their own note
@@ -360,6 +360,7 @@ def test_quantities_are_typed_like_the_models():
 
 def test_logistic_damage_is_rebuilt_exactly():
     eco = build_forest_ecosystem(total_trees=100)
+    eco.damage_model = "direct"  # a plain logistic is not flat at small losses (area_loss)
     eco.agents[0].damage_function = logistic_damage(threshold=0.45, steepness=7.5)
     again = ecosystem_from_dict(ecosystem_to_dict(eco))
     assert again.agents[0].damage_function.kernel == eco.agents[0].damage_function.kernel

@@ -61,6 +61,8 @@ A document (every key below is optional unless marked *required*):
 
 Curves: {"type": "logistic", "steepness": 12}, {"type": "threshold_logistic",
 "steepness": 12} (zero up to the threshold, a logistic after it),
+{"type": "threshold_exponential", "base": 2} (zero up to the threshold, an
+exponential after it),
 {"type": "exponential", "base": 2} or {"type": "piecewise",
 "pre_slope_ratio": 0.1}, each with an
 optional "threshold" (default: the resource's safe threshold, so a
@@ -162,10 +164,12 @@ from gaia.damage import (
     KERNEL_EXPONENTIAL,
     KERNEL_LOGISTIC,
     KERNEL_PIECEWISE,
+    KERNEL_THRESHOLD_EXPONENTIAL,
     KERNEL_THRESHOLD_LOGISTIC,
     exponential_damage,
     logistic_damage,
     piecewise_damage,
+    threshold_exponential_damage,
     threshold_logistic_damage,
 )
 from gaia.models import (
@@ -210,6 +214,7 @@ _TOP_LEVEL = (
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
     "logistic": (logistic_damage, ("steepness",)),
     "threshold_logistic": (threshold_logistic_damage, ("steepness",)),
+    "threshold_exponential": (threshold_exponential_damage, ("base",)),
     "exponential": (exponential_damage, ("base",)),
     "piecewise": (piecewise_damage, ("pre_slope_ratio",)),
 }
@@ -1807,6 +1812,8 @@ def _curve_spec(fn: Any, agent: str) -> Tuple[str, Tuple[Tuple[str, float], ...]
         spec = ("threshold_logistic", (("steepness", kernel[4]),))
     elif kind == KERNEL_EXPONENTIAL:
         spec = ("exponential", (("base", kernel[3]),))
+    elif kind == KERNEL_THRESHOLD_EXPONENTIAL:
+        spec = ("threshold_exponential", (("base", kernel[4]),))
     elif kind == KERNEL_PIECEWISE:
         spec = ("piecewise", (("pre_slope_ratio", kernel[4]),))
     else:

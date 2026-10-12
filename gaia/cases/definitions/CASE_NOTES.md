@@ -76,6 +76,23 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     tuning parameters to silence the warning.
 ```
 
+**Since Step 8d.1: small losses priced linearly** (the owner's answer; the
+structure of Posidonia, Step 8c.3). The case declares `"damage_model":
+"area_loss"`: each agent's damage at depletion D is D + (1 − D) ×
+degradation(D), so the trees cut take their hectares' services at the
+average value (€2,848/ha/yr, i.e. €11.39 a tree at 250 trees/ha), and
+past the 30% threshold the remaining forest degrades along a
+`threshold_logistic` (zero up to the threshold, then the former logistic:
+steepness 12, inflection 15% into the post-threshold span). The default
+run (50%, past the threshold) costs €101,899/yr instead of €95,050, PV
+€10.70 M instead of €10.11 M. **The CalibrationWarning above is gone**:
+under `area_loss` the check looks at the remaining forest, whose health at
+the threshold is 1.0 (it degrades only past it). Nothing was tuned: the
+warning measured the logistic's ~21% damage inside the "safe" zone, which
+the linear model replaces by the area lost. What remains is what the
+warning pointed at: the post-threshold curve and the 30% threshold are
+still unfitted placeholders.
+
 ## Costa Brava Holm Oak Forest (`costa_brava`)
 
 ```text
@@ -180,6 +197,18 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     consumers, and fixing it means calibrating the curves (Step 8), not
     tuning edges to silence the warning.
 ```
+
+**Since Step 8d.1: small losses priced linearly** (`"damage_model":
+"area_loss"`, as Posidonia): the trees cut take their hectares' services
+at the average value (€1,593/ha/yr, €15.93 a tree), and past the 25%
+threshold the remaining forest degrades: ten agents along a
+`threshold_logistic`, Fire & Microclimate Regulation along a new
+`threshold_exponential` (zero up to the threshold, then (2^((D − t)/(1 −
+t)) − 1), no plateau: the fire feedback). Default run (40%): €127,048/yr
+instead of €121,767, PV €9.13 M instead of €8.80 M. **The
+CalibrationWarning is gone** (the remaining forest's health at the
+threshold is 1.0); what remains is the unfitted post-threshold curves and
+threshold.
 
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
@@ -304,9 +333,8 @@ annual externality is exactly N ha × the per-hectare total, whatever the
 reference resource and the curve parameters. Past it, the hectares just
 beyond the threshold cost about 3–4 times their average value, and once
 the remaining meadow is mostly degraded further hectares cost little.
-Applied per case: the other three cases keep their direct curves (no
-number changes there), because their values and curves have not been
-reviewed in this light (an open question for the owner).
+Applied per case at first; since Step 8d.1 (the owner's answer) the other
+three cases use the same model.
 
 **Damage curves, threshold, edges, keystone.** Placeholders:
 - the same degradation curve for every agent, with nothing to fit it to;
@@ -474,3 +502,15 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
     consumers, and fixing it means calibrating the curves (Step 8), not
     tuning edges to silence the warning.
 ```
+
+**Since Step 8d.1: small losses priced linearly** (`"damage_model":
+"area_loss"`, as Posidonia; `threshold_logistic` curves). The default run
+destroys exactly the 20% threshold (80,000 of 400,000 trees), so it now
+costs exactly the linear transfer, 20% × €580/ha/yr × 1,000 ha =
+€116,000/yr (was €177,757, of which the logistic's damage inside the
+"safe" zone, amplified for consumers and spread by 34 edges, made the
+excess); PV €34.93 M instead of €38.81 M (the carbon release is
+unchanged). **The CalibrationWarning is gone.** What remains: the
+basin-scale 20% tipping point applied to a 1,000-ha patch (S4), now the
+point where the remaining forest starts to degrade, and the unfitted
+post-threshold curve.

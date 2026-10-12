@@ -567,16 +567,31 @@ class TestOutputErrors:
 
 
 class TestWarningFormat:
-    def test_cli_warnings_have_no_source_line(self):
+    def test_cli_warnings_have_no_source_line(self, tmp_path):
         import subprocess
         import sys
+
+        from gaia.cases import load_case
+
         out = subprocess.run(
             [sys.executable, "-m", "gaia", "forest", "--trees", "100", "--units", "10",
              "--format", "json", "--summary-only", "--cut", "10"],
             capture_output=True, text=True, check=True,
         )
-        assert "Warning (CalibrationWarning): Oak Valley Forest" in out.stderr
         assert "Warning (FutureWarning): --cut is deprecated, use --units instead" in out.stderr
+        assert "warnings.warn" not in out.stderr and ".py:" not in out.stderr
+        # the shipped cases no longer warn (area_loss, Step 8d.1): the forest
+        # case with its former direct logistic curve does
+        doc = load_case("forest").document
+        doc["damage_model"] = "direct"
+        doc["damage_curves"]["threshold_logistic"]["type"] = "logistic"
+        path = tmp_path / "direct_forest.json"
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        out = subprocess.run(
+            [sys.executable, "-m", "gaia", "run", str(path), "--format", "json", "--summary-only"],
+            capture_output=True, text=True, check=True,
+        )
+        assert "Warning (CalibrationWarning): Oak Valley Forest" in out.stderr
         assert "warnings.warn" not in out.stderr and ".py:" not in out.stderr
 
     def test_library_formatting_untouched(self):

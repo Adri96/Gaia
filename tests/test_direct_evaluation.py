@@ -397,7 +397,7 @@ def test_configs_exercise_every_branch():
         sub = eco.resource.substrate
         if sub is not None:
             substrates.add((sub.substrate_type, sub.capacity_function))
-    assert kinds == {0, 1, 2, 3}
+    assert kinds == {0, 1, 2, 3, 4}
     assert substrates >= {
         ("terrestrial_soil", "linear"), ("terrestrial_soil", "threshold"),
         ("terrestrial_soil", "logistic"), ("marine_sediment", "linear"),

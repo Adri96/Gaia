@@ -1,8 +1,9 @@
 {
   "gaia_schema": 1,
   "name": "Central Amazon Old-Growth Lowland Forest",
-  "description": "Central Amazon old-growth lowland rainforest on Oxisol: 11 agents, mycorrhizal fungi and pollinators keystone, 400 trees/ha on a 1,000 ha reference area; twelve edges into Canopy Trees and Understory are rescaled to the in-degree cap (Step 3.8). Illustrative. Sources: gaia/cases/definitions/AMAZON_FOREST.md; derivations: CASE_NOTES.md there.",
+  "description": "Central Amazon old-growth lowland rainforest on Oxisol: 11 agents, mycorrhizal fungi and pollinators keystone, 400 trees/ha on a 1,000 ha reference area; twelve edges into Canopy Trees and Understory are rescaled to the in-degree cap (Step 3.8). Small losses are priced linearly (damage model area_loss, Step 8d.1). Illustrative. Sources: gaia/cases/definitions/AMAZON_FOREST.md; derivations: CASE_NOTES.md there.",
   "calibration_regime": "B",
+  "damage_model": "area_loss",
   "resource": {
     "name": "Central Amazon Old-Growth Lowland Forest",
     "unit": "trees",
@@ -26,7 +27,7 @@
       "unit": "ratio",
       "source": "Lovejoy & Nobre (2018): Amazon tipping point at 20-25% deforestation (via AMAZON_FOREST.md §6)",
       "confidence": "low",
-      "note": "A basin-scale tipping point applied to a 1,000 ha patch, a scale mismatch (audit S4); also the inflection of every damage curve."
+      "note": "A basin-scale tipping point applied to a 1,000 ha patch, a scale mismatch (audit S4); under the area_loss damage model (Step 8d.1) the depletion beyond which the REMAINING resource starts to degrade; below it each hectare lost costs its average value."
     }
   },
   "provenance_defaults": {
@@ -54,16 +55,16 @@
       "confidence": "low",
       "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044."
     },
-    "damage": "logistic"
+    "damage": "threshold_logistic"
   },
   "damage_curves": {
-    "logistic": {
-      "type": "logistic",
+    "threshold_logistic": {
+      "type": "threshold_logistic",
       "steepness": {
         "value": 12.0,
         "unit": "dimensionless",
         "confidence": "placeholder",
-        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+        "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B)."
       }
     }
   },

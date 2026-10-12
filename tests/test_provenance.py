@@ -188,9 +188,9 @@ def test_known_flags_are_honest():
     assert "0.96" in release.note  # excavation (IPCC 2013), Step 8c.5
     assert param("amazon_forest", "resource.safe_threshold_ratio").confidence is Confidence.LOW
     assert "scale" in param("amazon_forest", "resource.safe_threshold_ratio").note
-    for case in BUILDERS:
-        curve = "threshold_logistic" if case == "posidonia" else "logistic"  # Step 8c.3
-        assert param(case, f"damage.{curve}_steepness").confidence is Confidence.PLACEHOLDER
+    for case in BUILDERS:  # every case prices small losses linearly (Steps 8c.3, 8d.1)
+        assert param(case, "damage.threshold_logistic_steepness").confidence is Confidence.PLACEHOLDER
+    assert param("costa_brava", "damage.threshold_exponential_base").confidence is Confidence.PLACEHOLDER
     retuned = [
         p for case in ("costa_brava", "amazon_forest") for p in _build(case).provenance
         if "in-degree cap" in p.note

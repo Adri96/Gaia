@@ -304,3 +304,31 @@ class TestThresholdLogistic:
             threshold_logistic_damage(0.0)
         with pytest.raises(ValueError, match="steepness"):
             threshold_logistic_damage(0.2, steepness=0.0)
+
+
+# ── Step 8d.1: threshold_exponential (Costa Brava's fire feedback) ──────────
+
+
+class TestThresholdExponential:
+    @pytest.mark.parametrize("threshold", [0.1, 0.25, 0.3, 0.5])
+    @pytest.mark.parametrize("base", [1.5, 2.0, 4.0])
+    def test_invariants_and_flat_start(self, threshold, base):
+        from gaia.damage import threshold_exponential_damage
+        from gaia.validation import validate_damage_function
+
+        f = threshold_exponential_damage(threshold, base)
+        validate_damage_function(f, threshold=threshold)
+        assert f(0.0) == 0.0 and f(threshold) == 0.0 and f(threshold / 2) == 0.0
+        assert f(1.0) == pytest.approx(1.0, abs=1e-12)
+        x = threshold + (1.0 - threshold) / 2
+        assert f(x) == pytest.approx((base ** 0.5 - 1.0) / (base - 1.0), rel=1e-12)
+        # convex past the threshold: no plateau
+        assert f(x) < 0.5
+
+    def test_rejects_bad_parameters(self):
+        from gaia.damage import threshold_exponential_damage
+
+        with pytest.raises(ValueError, match="threshold"):
+            threshold_exponential_damage(1.0)
+        with pytest.raises(ValueError, match="base"):
+            threshold_exponential_damage(0.25, base=1.0)

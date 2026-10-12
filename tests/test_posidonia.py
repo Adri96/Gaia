@@ -662,3 +662,25 @@ def test_ledger_rejects_a_site_mismatch():
     del next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")["sites"]
     with pytest.raises(ValueError, match="give both sites and site_share"):
         case_from_dict(doc)
+
+
+# ── Step 8d.1: every case prices small losses linearly ──────────────────────
+
+@pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest"])
+def test_other_cases_price_small_losses_linearly(case):
+    """Below the safe threshold the annual externality is exactly the area
+    lost × the per-hectare value at full damage, and each unit lost costs
+    its average value; past it the remaining forest degrades and units cost
+    more."""
+    from gaia.cases import load_case
+
+    eco = load_case(case).build_ecosystem()
+    assert eco.damage_model == "area_loss"
+    n, area = eco.resource.total_units, eco.resource.area_ha
+    full = sum(a.dependency_weight * a.annual_value(area) for a in eco.agents)
+    k = int(0.5 * eco.resource.safe_threshold_ratio * n)
+    result = run_extraction(eco, k)
+    assert result.annual_externality == pytest.approx(full * k / n, rel=1e-12)
+    assert result.steps[-1].marginal_annual_externality == pytest.approx(full / n, rel=1e-9)
+    past = run_extraction(eco, int((eco.resource.safe_threshold_ratio + 0.1) * n))
+    assert past.annual_externality > full * past.steps[-1].units_extracted / n

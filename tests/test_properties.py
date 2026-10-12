@@ -246,7 +246,19 @@ def test_cost_continuous_where_pricing_succeeds(case):
     coarse_inc = increments(coarse)
     fine_inc = increments(fine[:10 * k])
     assert min(fine_inc) >= -1e-9 * max(fine)
-    assert max(fine_inc) <= 0.5 * max(coarse_inc), (max(fine_inc), max(coarse_inc))
+    if max(fine_inc) <= 0.5 * max(coarse_inc):
+        return
+    # A steep but continuous rise narrower than the fine grid (since Step
+    # 8d.1 Costa Brava's pricing converges up to where an amplified agent's
+    # health nears 0 and its scarcity multiplier climbs to its cap) shrinks
+    # again when that one interval is refined 10× more; a jump would not.
+    i = max(range(len(fine_inc)), key=fine_inc.__getitem__)  # interval (i, i + 1] of 1000
+    eco, _ = build(case, 10_000, with_pricing=True)
+    steps = run_extraction(eco, 10 * (i + 1)).steps
+    finer = [steps[u - 1].annual_externality / (10_000 / density) if u else 0.0
+             for u in range(10 * i, 10 * (i + 1) + 1)]
+    assert finer[-1] == pytest.approx(fine[i], rel=1e-9)
+    assert max(increments(finer)[1:]) <= 0.5 * fine_inc[i], (max(increments(finer)[1:]), fine_inc[i])
 
 
 # ── 6. No hidden carbon (C5, D3) ─────────────────────────────────────────────
