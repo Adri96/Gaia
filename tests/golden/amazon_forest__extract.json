@@ -1649,7 +1649,7 @@
       "resilience_zone": "yellow",
       "revenue": 601.5,
       "step": 401,
-      "substrate_erosion": 2.8974940001771464e-06,
+      "substrate_erosion": 2.897494000177147e-06,
       "units_extracted": 401
     },
     {
@@ -1789,7 +1789,7 @@
       "resilience_zone": "yellow",
       "revenue": 840.0,
       "step": 560,
-      "substrate_erosion": 6.489599599036079e-06,
+      "substrate_erosion": 6.489599599036081e-06,
       "units_extracted": 560
     },
     {

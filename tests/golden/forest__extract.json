@@ -660,7 +660,7 @@
       "resilience_zone": "green",
       "revenue": 150100.0,
       "step": 1501,
-      "substrate_erosion": 1.2718233e-06,
+      "substrate_erosion": 1.2718233000000003e-06,
       "units_extracted": 1501
     },
     {
