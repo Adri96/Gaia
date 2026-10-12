@@ -17,6 +17,21 @@ The core thesis is simple: **profits are privatized, but externalities are socia
 
 ---
 
+## Core Valuation Principles (non-negotiable)
+
+These rules are set by the owner. Code, data, tests and documents must follow them; a change that breaks one is a defect, whatever else it fixes.
+
+- **(a) Ecosystem services are a large economic asset, and Gaia exists to make that visible.**
+- **(b) Every agent in every case always carries a positive euro value**, under any input, preset or flag. An agent at €0 is a defect, never a documented exception. The code enforces it: `gaia.validation.validate_ecosystem` rejects an agent whose value on every hectare is not > 0, case parsing rejects such an agent (and a Monte Carlo range that reaches 0), and a property test runs every case under every preset and flag.
+- **(c) Double counting is avoided through the service ledger**, never by zeroing an agent: each final service is counted once, owned by one agent, and a value that overlaps services counted elsewhere is booked net of them (`net_of`; `gaia/ecosystem_io.py`, "Service ledger").
+- **(d) Where there is no stated-preference (willingness-to-pay) evidence, value comes from what people consume**, through production functions: primary production → food web → fish and other consumables → market prices (`gaia/production.py`).
+- **(e) The primary productivity of foundation ecosystems must be visible in the outputs**, with the NPP → € chain shown (e.g. *Posidonia oceanica*, one of the most productive habitats of the sea: the meadow's line in the report, the "Primary Production" section, the JSON `production_functions`).
+- **(f) Every number is sourced and verified at its source, or explicitly flagged** (its provenance confidence, and for a production function each link's status: verified, derived, secondary or inferred).
+
+How the Posidonia case applies them: `docs/POSIDONIA_LITERATURE_REVIEW.md` §2 (the service ledger) and §2b (the meadow's production function), and `docs/POSIDONIA_METHODS_NOTE.md` §5.
+
+---
+
 ## Scientific Foundations
 
 These are observable truths about how natural systems behave. They are drawn from thermodynamics, ecology, population biology, and systems science. Gaia does not invent them — it respects them. **If the code contradicts a scientific foundation, the code is wrong.**
