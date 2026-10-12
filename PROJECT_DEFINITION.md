@@ -139,7 +139,7 @@ The most dramatic example: early photosynthetic bacteria transformed Earth's atm
 
 For Gaia, the principle is this: **extraction does not just remove a resource — it changes the conditions for everything that depended on that resource, which changes the conditions for everything that depended on _them_, and so on.** The damage propagates through the network of ecological relationships. This is why a step-by-step simulation that propagates consequences through agents is not a convenience — it is a scientific necessity. Static calculations cannot capture coevolutionary cascades.
 
-*Implementation status:* the current engine does not yet deliver this. Each step is evaluated from the current depletion ratio alone, so no cascade state accumulates between steps (see §13 and open decision D5).
+*Implementation status:* the current engine does not deliver this. It evaluates a static function of the depletion ratio, so no cascade state accumulates over time (decision D5, option B, §13). A path-dependent engine is a committed milestone after v1.0 (§13, *Roadmap*).
 
 ---
 
@@ -238,15 +238,25 @@ Money has explicit units throughout (decision D1): an agent's value is a yearly 
 
 The aggregation into a single Ecosystem Health Index (0.0–1.0) and a total monetary externality provides both.
 
-### 13. Simulation Over Calculation
+### 13. A Static Damage Function, Evaluated Directly (and Path Dependence as a Committed Next Step)
 
-Externalities are path-dependent. The cost of cutting the 3,001st tree depends on the state of the ecosystem _after_ the first 3,000 were cut. A static formula cannot capture this — only a step-by-step simulation can.
+**What Gaia computes today (decision D5, option B, 2026-10-12).** Gaia evaluates a **static damage function of depletion**. For a depletion ratio D = units extracted / total units, every agent's direct damage is its damage curve at D, trophically amplified; the single-pass cascade adds `(1 − direct) × pressure` from the other agents' direct damage at the same D; keystone boosts apply while a keystone's health at D is below its threshold. The annual externality, ecosystem health and resilience zone are functions of D alone. The cost of cutting the 3,001st tree is therefore the difference between the function at 3,001 and at 3,000 units, whatever order or pace the first 3,000 were cut in. The engine evaluates that function directly at the requested depletion (and at the step before it, for the marginal cost); per-step data are computed only when asked for (`--steps-every`, the golden snapshots). There is no per-unit loop and no compiled extension (decision D7).
 
-This is a methodological choice about how to compute quantities that depend on sequence and accumulation. The intent is to simulate extraction (and restoration) as a sequence of discrete events, propagating consequences through the agent network at each step, so as to capture cascading effects, threshold crossings and the compounding nature of ecosystem degradation.
+**Where time enters.** Time is not a state of the engine; it enters in three places only:
 
-**What the current engine actually does (audit finding S1).** The engine is **path-independent**. Each step's damage, cascade and cost depend only on the current depletion ratio, so the step loop evaluates a static function at successive points (finite differences). Nothing carries over between steps: no hysteresis after a keystone collapse, no accumulated cascade, no time. Substrate erosion assumes the whole extraction happens within one year, and restoration retraces the same static damage path in reverse. The per-step trajectory is still useful (marginal costs, zone transitions, "what if we stop at tree 2,000?"), but it is not a simulation of path dependence.
+- **Discounting.** The annual loss at the final depletion is treated as permanent from year 1 and discounted with the resource's Ramsey schedule and scarcity uplift; carbon release is a one-off at year 0 and lost absorption a discounted flow (`gaia/discount.py`, `gaia/carbon.py`).
+- **Succession.** After restoration, recovered services ramp up along the succession curve (pioneer → intermediate → climax), which sets the maturation timeline, the maturation gap and the restoration NPV (`gaia/succession.py`).
+- **The substrate ceiling.** Substrate erosion is the one quantity integrated over the steps: the extraction is spread evenly over one year and each step's erosion applied in turn (a Riemann sum, kept as it was). The resulting soil depth or matte stability caps what restoration can ever recover.
 
-Whether Gaia should become path-dependent is **open decision D5**; `version_specs/V09_SPEC.md` sets out both options for the owner's decision (Step 7), and no engine redesign happens before it. The options are to add state that carries over between steps (hysteresis, substrate erosion over real time with an extraction rate in units/year, recovery that depends on prior damage), or to drop the claim and evaluate the static function directly. Until then this section describes an aim, not the implementation.
+**What this gives up.** The order and timing of actions never matter: a 10-year concession costs the same as a one-year clear-cut with the same final depletion (apart from when the revenue arrives), a keystone that collapsed recovers as soon as depletion falls back below its threshold, and restoring after 20 years is no harder than restoring after 2. Restoration retraces the same static damage path in reverse. Under calibration regime B, chains longer than one hop are cut (a structural lower bound, see the Critical Modelling Assumption above), and running more steps does not change that.
+
+**Path dependence is a committed roadmap milestone (option A), not an optional idea.** The owner's decision is that in Gaia's future the order and timing of actions *will* matter. It is staged after v1.0, because every parameter it adds starts as a placeholder and v1.0 is about one credible, sourced case (see *Roadmap*, "v1.x — Path-dependent engine"). The stages, specified in `version_specs/V09_SPEC.md` §2:
+
+1. **A1 — time axis and substrate erosion over real time.** A run becomes a schedule of actions over years (extraction at r(t) units/yr, restoration at q(t) later); flows are computed year by year and discounted as an actual series; bare ground keeps eroding every year it stays bare, so restoring later recovers less.
+2. **A2 — relaxation and keystone hysteresis.** Damage relaxes towards the equilibrium of the static curves with asymmetric speeds (fast when damage rises, the succession speed when it falls); the cascade is computed from the previous year's damage, so a chain of n hops propagates over n years; a collapsed keystone stays collapsed until its health rises above its threshold plus a hysteresis band (Scheffer et al. 2001, doi:10.1038/35098000).
+3. **A3 — recovery that depends on prior damage** (recovery efficiency reduced by the time agents spent collapsed), only once the damage curves are calibrated.
+
+The data format stays open for it: a case file with dynamics will carry an optional `dynamics` block (and a `run.schedule`) under `"gaia_schema": 2`, which a schema-1 reader rejects with a clear message; a file without `dynamics` keeps today's static results exactly. The static engine stays as the no-`dynamics` path and as the limit the dynamic engine must reproduce when its time constants go to zero.
 
 ---
 
@@ -327,7 +337,7 @@ Destruction drops ecosystem services rapidly. Restoration climbs back slowly, wi
 
 ## Architecture
 
-Gaia is designed as a **pure Python library** using typed dataclasses, fully compatible with **Cython compilation** for performance-critical simulation loops.
+Gaia is a **pure Python library** (standard library only) using typed dataclasses. The engine evaluates its static damage function directly (§13), so it needs no compiled extension.
 
 ### Core Abstractions
 
@@ -345,19 +355,19 @@ SuccessionCurve     — Years since restoration → service fraction (pioneer �
 RestorationCost     — Planting cost per unit + annual maintenance × years.
 DiscountConfig      — Ramsey rate (constant or declining), scarcity uplift, carbon price path, horizon.
 Param               — A parameter with value, unit, source, confidence and note (gaia.provenance).
-run_extraction      — Extraction steps → SimulationResult (flows, PV, net social cost, calibration).
+run_extraction      — The static function at the final depletion → SimulationResult (flows, PV,
+                      net social cost, calibration); steps evaluated on request.
 run_restoration     — Restoration from a starting state → RestorationResult (recovered flow,
                       NPV, maturation gap, destroy-then-restore penalty, calibration).
 format_report / format_restoration_report / to_json — text and strict-JSON outputs.
 ```
 
-### Design Constraints (Cython Compatibility)
+### Design Constraints
 
 - All data containers are **typed dataclasses** with primitive or array fields.
-- No dynamic attribute creation, no `**kwargs` in hot paths.
 - Damage and recovery functions are simple callables with `float → float` signatures.
-- Simulation loops use only basic arithmetic and array indexing.
-- No third-party dependencies in the core computation module (NumPy is optional, not required).
+- The per-step data of a run are lazy sequences (`ExtractionSteps`, `RestorationSteps`): a step is computed when it is asked for, with the same arithmetic as the former per-unit loop.
+- No third-party dependencies.
 
 ### Project Structure
 
@@ -374,18 +384,17 @@ gaia/
 ├── succession.py, carbon.py, substrate.py, resilience.py, discount.py
 ├── pricing.py                 # EXPERIMENTAL endogenous pricing (quarantined)
 ├── validation.py              # input validation, convergence, in-degree cap, damage shape properties
-├── simulation.py              # run_extraction / run_restoration
+├── simulation.py              # run_extraction / run_restoration (direct evaluation, lazy steps)
 ├── report.py, serialization.py
-├── cy/simulation_cy.pyx       # optional Cython extraction loop, parity-tested against Python
 └── cases/
     ├── __init__.py            # load_case
     ├── data/                  # forest.json, costa_brava.json, posidonia.json, amazon_forest.json
     ├── forest.py, ...         # 0.9 compatibility wrappers (deprecated)
     └── definitions/           # CASE_NOTES.md, AMAZON_FOREST.md, AMAZON_LITERATURE_REVIEW.md
-tests/                         # incl. golden snapshots, engine parity, properties, provenance, README check
-scripts/                       # regen_golden.py, gen_readme_examples.py
-version_specs/                 # historical version specs
-pyproject.toml, setup.py       # packaging; setup.py builds the optional extension
+tests/                         # incl. golden snapshots, direct evaluation vs a sequential loop, properties, provenance, README check
+scripts/                       # regen_golden.py, gen_readme_examples.py, profile_engine.py
+version_specs/                 # version specs (V09_SPEC.md: path dependence, decision D5)
+pyproject.toml                 # packaging
 ```
 
 ---
@@ -551,7 +560,7 @@ Full specification: `version_specs/V07_SPEC.md`
 
 ### 🔶 v0.8 — Performance & Generalization (partly done)
 
-- [x] Cython-optimized extraction loop (`gaia/cy/simulation_cy.pyx`), optional, same API. Since the audit it sits behind a parity test (every step and field at rel 1e-12), a stale-build guard and `GAIA_FORCE_PYTHON=1`. Restoration and pricing run in Python. Whether to keep it is decision D7, to be re-evaluated in Step 7.
+- [x] ~~Cython-optimized extraction loop~~ — removed (decision D7, 2026-10-12): with option B of D5 the engine evaluates its static function directly, so the per-unit loop the extension compiled is gone. History in `docs/ENGINE_PROFILE.md`.
 - [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
 - [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates (now part of the proposed v1.0)
 - [x] Pluggable case template system — ecosystems as JSON files, `gaia run <case | file.json>` (Step 7: data-driven ecosystem format)
@@ -576,7 +585,7 @@ Full specification: `version_specs/V081_SPEC.md`
 
 ### ✅ Audit fixes (2026-10, unreleased; Steps 0–6 of `TOP_PRIORITIES_REPORT.md`)
 
-- [x] Safety net: golden snapshots of every case and mode, Cython/Python parity, property tests
+- [x] Safety net: golden snapshots of every case and mode, Cython/Python parity (since replaced by a direct-evaluation vs sequential-loop test), property tests
 - [x] Model core: yearly flows vs present values vs one-off amounts (D1); €/ha/yr × `area_ha` (D2); restoration from a real starting state; carbon owned by `carbon.py` at the social cost of carbon (D3); the two 10× errors (Amazon density, erosion); convergent discounting with horizon sensitivity; `restoration_cost_ratio` and `destroy_then_restore_penalty`; in-degree cap, calibration regime and complementary cascade
 - [x] Endogenous pricing quarantined (D4): certified convergence, explicit failure, every agent anchored
 - [x] Honest outputs: parameter provenance and calibration status in every output; README and this document rewritten around what the model does
@@ -595,7 +604,16 @@ v1.0 = **one case that could be put in front of an ecologist and an environmenta
 - [ ] A 4–6 page methods note, reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues
 - [ ] All property tests pass with no `xfail`
 
-Prerequisites from Step 7: decisions D5 (path dependence) and D7 (Cython); the data-driven ecosystem format is done.
+Prerequisites from Step 7, all done: the data-driven ecosystem format; decision D5 (option B now: the static engine, §13; option A committed for after v1.0) and D7 (Cython dropped).
+
+### 🔲 v1.x — Path-dependent engine (committed; after v1.0; decision D5 option A)
+
+The owner's decision (2026-10-12): the order and timing of actions **will** matter in Gaia. Specified in `version_specs/V09_SPEC.md` §2 and staged (§4 there):
+
+- [ ] **A1** — time axis and substrate erosion over real time: a run is a schedule of actions over years (`run.schedule`), flows are computed per year and discounted as a series, bare ground keeps eroding while it stays bare (≈ 1.5 weeks)
+- [ ] **A2** — damage relaxation with asymmetric speeds, cascades propagated one hop per year, keystone hysteresis (Scheffer et al. 2001)
+- [ ] **A3** — recovery that depends on prior damage, only once the damage curves are calibrated
+- [ ] Schema 2: an optional `dynamics` block (every new parameter with provenance, starting as placeholders); schema-1 files keep their static results exactly, and the dynamic engine reproduces them in its static limit (property test)
 
 ### 🔲 v1.x — UI (very big effort; was v1.0)
 

@@ -13,7 +13,7 @@
 > unit, source and confidence. The numbers on this page test the model's
 > internal consistency, not the world.
 
-Gaia is a Python library for simulating the hidden costs that private actors impose on ecosystems and society when they extract a shared natural resource, and the hidden *value* recovered when the resource is restored. It is stdlib-only, with an optional Cython loop.
+Gaia is a Python library for simulating the hidden costs that private actors impose on ecosystems and society when they extract a shared natural resource, and the hidden *value* recovered when the resource is restored. It is pure Python, standard library only.
 
 ---
 
@@ -354,7 +354,7 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 
 **Calibration regime.** Every ecosystem with edges must declare what its damage curves represent (`calibration_regime`): **A**, curves fitted to field data on total impact, in which case only keystone edges may be added; or **B**, curves that describe each agent's direct dependency only, with the edges adding the indirect part. All four cases are **B**: their curves are identical placeholder logistics, so A cannot be claimed. Under B, the single-pass cascade is a structural lower bound for chains longer than one hop. Every case also triggers a `CalibrationWarning`: health at the "safe" threshold is below 0.8, which says the placeholder curves put heavy damage inside the safe zone. Calibrating the curves fixes that warning; tuning parameters to silence it does not.
 
-**The engine is path-independent.** Each step's damage depends only on the current depletion ratio, so the step loop evaluates a static function at successive points. Nothing carries over between steps: no hysteresis and no accumulated cascade. Substrate erosion assumes the whole extraction happens within one year. Whether Gaia should become genuinely path-dependent is an open decision (D5 in `TOP_PRIORITIES_REPORT.md`); `version_specs/V09_SPEC.md` sets out both options for it.
+**A static damage function, evaluated directly.** Everything per step — damage, cascade, keystone boosts, annual externality, health, resilience zone — is a function of the depletion ratio alone, so the engine evaluates it at the final depletion (and the step before, for the marginal cost) instead of looping over units; per-step data are computed only when asked for (`--steps-every`). The order and timing of actions do not matter: no hysteresis, no accumulated cascade. Time enters through discounting, the succession curve after restoration, and the substrate ceiling, whose erosion is integrated over the steps with the whole extraction spread over one year. This is decision D5, option B (`PROJECT_DEFINITION.md` §13). A path-dependent engine — a time axis with extraction schedules, substrate erosion over real time, keystone hysteresis, damage-dependent recovery — is a **committed milestone after v1.0** (option A, staged A1 → A2 → A3 in `version_specs/V09_SPEC.md`), behind an optional `dynamics` block in a schema-2 case file.
 
 **Carbon** is valued only by `gaia/carbon.py`: no agent value and no pricing anchor contains carbon. The release of stored biomass and soil carbon is a one-off at year 0. The lost absorption is a yearly flow, discounted to a present value. Both are priced at the **social cost of carbon**: US EPA (2023), $190/t CO₂ for 2020 emissions (2020 USD, 2% near-term rate), converted at the ECB 2020 average rate to **€166.35/t**, growing at 1.3%/yr. The 2020 value is used as the year-0 price; EPA's path gives about $215 for 2026 emissions. `--carbon-price ets` switches to a labelled market/ETS view at €80/t, a private price that understates the damage.
 
@@ -383,7 +383,7 @@ Gaia's model structure is **inspired by established ecological principles; its p
 - **Destruction is cheap, restoration is slow.** Recovery functions are efficiencies that never exceed the damage reversed, succession curves delay the recovered services, and substrate loss lowers the ceiling.
 - **Trophic amplification.** Consumers lose more than producers for the same depletion. The amplification constants are placeholders.
 - **Carrying-capacity thresholds.** Damage accelerates past a safe threshold (S-shaped curves). The curves are not fitted to data.
-- **Interaction cascades.** Damage propagates along interaction edges in a single pass per step, acting on the service still standing. The engine is path-independent (see above): it does not simulate coevolution or accumulated cascades over time.
+- **Interaction cascades.** Damage propagates along interaction edges in a single pass, acting on the service still standing. The engine evaluates a static function of depletion (see above): it does not simulate coevolution or accumulated cascades over time.
 
 Six **shape properties** of every damage curve are checked on every run, for every agent, by `validate_ecosystem`: f(0) ≈ 0, f(1) ≈ 1, finite and in [0, 1], monotone, accelerating at the threshold, and convex just past it. They guarantee a well-formed curve. They are not an ecological validation: any curve of these families passes them.
 
@@ -391,12 +391,11 @@ Six **shape properties** of every damage curve are checked on every run, for eve
 
 ## Installation and CLI
 
-Python 3.9+, no runtime dependencies. Cython is optional: without it, or without a C compiler, the build still succeeds and the pure-Python loop is used.
+Python 3.9+, no runtime dependencies, no compiler needed.
 
 ```bash
-pip install .                                                        # pure-Python engine
-pip install "Cython>=3.0" && pip install --no-build-isolation -e .   # with the compiled loop
-pip install pytest                                                   # to run the tests
+pip install .            # or: pip install -e .
+pip install pytest       # to run the tests
 ```
 
 This installs the `gaia` command. `gaia run <case> [options]` runs a shipped case, `gaia run my_case.json [options]` a case file of your own (see *Writing your own case*); `python -m gaia run ...` is the same. The shipped cases are `forest`, `costa_brava` (alias `costa-brava`), `posidonia` and `amazon_forest` (aliases `amazon`, `amazon-forest`), stored as JSON in `gaia/cases/data/`. `gaia run <case> --help` lists every option with the case's defaults.
@@ -571,28 +570,27 @@ Gaia/
 │   ├── discount.py            # NPV, discount profiles, restoration NPV, destroy-then-restore penalty
 │   ├── pricing.py             # EXPERIMENTAL endogenous pricing (quarantined)
 │   ├── validation.py          # input validation, convergence and in-degree checks, shape properties
-│   ├── simulation.py          # run_extraction / run_restoration (engine selection, phases)
+│   ├── simulation.py          # run_extraction / run_restoration (direct evaluation, lazy steps)
 │   ├── report.py              # text reports (formatting only)
 │   ├── serialization.py       # strict JSON output
-│   ├── cy/simulation_cy.pyx   # optional Cython extraction loop (parity-tested)
 │   └── cases/
 │       ├── __init__.py        # load_case, the shipped case names
 │       ├── data/              # forest.json, costa_brava.json, posidonia.json, amazon_forest.json
 │       ├── forest.py, ...     # 0.9 compatibility wrappers (deprecated, removed in 0.11)
 │       └── definitions/       # CASE_NOTES.md (derivations), AMAZON_FOREST.md (spec), AMAZON_LITERATURE_REVIEW.md
-├── tests/                     # unit, case, golden, parity, property, provenance and README tests
+├── tests/                     # unit, case, golden, direct-evaluation, property, provenance and README tests
 │   └── golden/                # snapshot of every case × mode (scripts/regen_golden.py)
 ├── scripts/
 │   ├── regen_golden.py        # regenerate / --check the golden snapshots
 │   ├── gen_readme_examples.py # regenerate / --check the README examples
-│   └── profile_engine.py      # time the engine, Python vs Cython (docs/ENGINE_PROFILE.md)
-├── version_specs/             # V01–V081 specs (historical; see the notes at their top); V09_SPEC.md (proposal, D5)
-├── docs/                      # ENGINE_PROFILE.md (Python vs Cython timings, decision D7)
-├── .github/workflows/ci.yml   # pytest on 3.9–3.12 with and without Cython, golden, README, ruff, mypy
+│   └── profile_engine.py      # time the engine (docs/ENGINE_PROFILE.md)
+├── version_specs/             # V01–V081 specs (historical; see the notes at their top); V09_SPEC.md (D5: option B now, A committed)
+├── docs/                      # ENGINE_PROFILE.md (engine timings; the Cython decision D7, historical)
+├── .github/workflows/ci.yml   # pytest on 3.9–3.12, golden, README, ruff, mypy
 ├── PROJECT_DEFINITION.md      # vision, foundations, roadmap
 ├── TOP_PRIORITIES_REPORT.md   # the 2026-10 audit and its fix plan
 ├── CHANGELOG.md
-├── pyproject.toml, setup.py   # packaging (setup.py builds the optional extension)
+├── pyproject.toml             # packaging
 └── LICENSE
 ```
 
@@ -602,14 +600,13 @@ Gaia/
 
 ```bash
 python -m pytest -q                         # whole suite
-GAIA_FORCE_PYTHON=1 python -m pytest -q     # with the pure-Python loop forced
 python scripts/regen_golden.py --check      # golden snapshots
 python scripts/gen_readme_examples.py --check
 ruff check gaia tests scripts && mypy
 ```
 
 - **Golden snapshots**: every case × extraction / pricing / restoration scenario. A change to any output number fails until it is regenerated deliberately.
-- **Engine parity**: the Cython and Python loops agree on every step and field at a relative tolerance of 1e-12. A stale extension is detected and not used.
+- **Direct evaluation**: the lazily evaluated steps equal, bit for bit, those of a sequential per-unit loop, on every field, for damage-curve kinds, keystones, cascades, substrates, pricing and restoration.
 - **Properties**: scale invariance, restoration ≤ damage reversed, convergent NPVs, no hidden carbon, text report ⊆ JSON, strict JSON, pricing continuity or explicit failure.
 - **Provenance**: every recorded value is the value the model uses, and every output carries the calibration status.
 - **README**: the examples above match the code.
@@ -620,7 +617,7 @@ ruff check gaia tests scripts && mypy
 
 **v0.9.0: the 2026-10 audit fixes** (see `CHANGELOG.md` and `TOP_PRIORITIES_REPORT.md`).
 
-What works: extraction and restoration for four cases with unit-consistent flows, present values and one-off amounts; €/ha/yr scaling; restoration from a real starting state; carbon at the social cost of carbon; substrate restoration ceilings; convergent discounting with horizon sensitivity; the destroy-then-restore penalty; strict JSON; parameter provenance and calibration status in every output; an optional Cython loop behind a parity test; packaging and CI.
+What works: extraction and restoration for four cases with unit-consistent flows, present values and one-off amounts; €/ha/yr scaling; restoration from a real starting state; carbon at the social cost of carbon; substrate restoration ceilings; convergent discounting with horizon sensitivity; the destroy-then-restore penalty; strict JSON; parameter provenance and calibration status in every output; a direct-evaluation engine (no per-unit loop, no compiled extension); packaging and CI.
 
 Experimental: endogenous pricing (`--with-pricing`), quarantined.
 
@@ -629,7 +626,7 @@ Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with 
 Not done:
 - Calibrated parameters.
 - Uncertainty bounds: the band is heuristic, and Monte Carlo is planned.
-- A path-dependent engine (open decision D5; proposal in `version_specs/V09_SPEC.md`).
+- A path-dependent engine: decided as a committed milestone after v1.0 (D5 option A, `version_specs/V09_SPEC.md`).
 - External expert review.
 
 The proposed next milestone (pending owner decision D6) is **one credible, fully sourced case with uncertainty bounds, reviewed by an ecologist and an environmental economist**. See `PROJECT_DEFINITION.md`.

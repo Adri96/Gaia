@@ -1,6 +1,6 @@
 # V0.9 Spec — Path dependence (decision D5)
 
-**Status: proposal — pending owner decision D5.** Nothing in this document is implemented. It sets out the two options of `TOP_PRIORITIES_REPORT.md` §8 D5 so the owner can choose, as Step 7.3 of that report asks. Decision D7 (keep Cython?) depends on the choice; its profiling data are in `docs/ENGINE_PROFILE.md` and summarised in §5.
+**Status: decided (owner, 2026-10-12) — option B now, option A a committed milestone after v1.0** (§4). Option B (§3) is implemented on branch `step8a-static-engine`: `PROJECT_DEFINITION.md` §13 rewritten, direct evaluation with lazy per-step data, the Cython extension removed (D7). Option A (§2) is not implemented; it is the specification of the path-dependent engine, to be built in the stages A1 → A2 → A3 of §4. The document first set out the two options of `TOP_PRIORITIES_REPORT.md` §8 D5 for the owner to choose, as Step 7.3 of that report asked; the analysis below is kept as written.
 
 ---
 
@@ -132,7 +132,12 @@ What it gives up: the timing of actions never matters (a 10-year concession cost
 
 If the first user's question (D6) is about timing — a concession phased over years, or the cost of delaying restoration — start Option A with its cheapest, best-grounded part: **A1**, the time axis and substrate erosion over real time (§2.1, §2.3 item 4; ≈ 1.5 weeks). Then **A2**, relaxation and keystone hysteresis (items 1–3), and **A3**, recovery that depends on prior damage (item 5), only once the curves are calibrated.
 
-**Owner decision needed:** A, B, or B-then-A1. Until then the engine stays as it is, and `PROJECT_DEFINITION.md` §13 keeps its "describes an aim, not the implementation" note.
+### Owner decision (2026-10-12)
+
+- **Option B now.** The path-dependence claim is dropped: `PROJECT_DEFINITION.md` §13 says that Gaia evaluates a static damage function of depletion, with time entering through discounting, succession and the substrate ceiling. The engine evaluates that function directly (`gaia/simulation.py`: `ExtractionSteps`, `RestorationSteps`, per-step data computed on request); the substrate's Riemann sum is kept as is, so no number changes (the golden files are byte-identical, and the new engine is bit-for-bit the former Python loop on every step of every golden scenario).
+- **Option A is a firm commitment, not an optional idea.** The owner's position is that in the future the order and timing of actions *will* matter. A is scheduled after v1.0 (the Posidonia case, decision D6) and staged exactly as above: **A1** (time axis, substrate erosion over real time) → **A2** (relaxation, keystone hysteresis) → **A3** (damage-dependent recovery, only once the curves are calibrated). It is listed in the `PROJECT_DEFINITION.md` roadmap ("v1.x — Path-dependent engine").
+- **The data format stays open for A** (§2.4): schema 2 with an optional `dynamics` block and a `run.schedule`; a schema-1 reader rejects a schema-2 document with a clear message, and a document without `dynamics` keeps the static results. Nothing in option B's implementation constrains this.
+- **D7 follows: Cython is dropped** (§5): the `.pyx`, its build configuration (`setup.py`), the CI matrix entries, the parity tests and the stale-build guard are removed. `docs/ENGINE_PROFILE.md` keeps the measurements as a historical note.
 
 ---
 
@@ -143,3 +148,4 @@ From `docs/ENGINE_PROFILE.md` (`scripts/profile_engine.py`; Python 3.10, arm64 m
 - The compiled loop speeds up a whole run by **1.2–3.3×**, never more: the per-unit Python loop costs only ~20 µs per unit for the largest case, and result building, NPVs and restoration (all Python) take the rest. The largest default run (Amazon extraction, 80,000 units) takes 1.5 s in Python and 0.6 s with Cython; the other cases take at most 0.12 s in Python.
 - **Pricing never uses Cython** (the loop has no price solver) and was the slowest path: 0.07–0.75 ms per unit, three quarters of it in n + 1 dense linear solves per step (12 for 11 agents), each repeating the same elimination. A follow-up does that elimination once for all right-hand sides, with bit-identical results: 0.05–0.24 ms per unit, 1.4–3.3× faster.
 - **Recommendation: keep Cython for now** (it is parity-tested and costs little while the engine is unchanged), **do not extend it**, and **drop it with either D5 option** (both remove the per-unit loop it compiles). If pricing is ever un-quarantined, keep optimising its solver (warm start, sparse edges, at the cost of re-checking the golden pricing snapshots), not the `.pyx`.
+- **Decided (2026-10-12): dropped**, with option B (§4).
