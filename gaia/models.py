@@ -3,7 +3,6 @@ Gaia — Core data models.
 
 All models are typed dataclasses with primitive fields.
 No inheritance, no dynamic attributes, no **kwargs.
-All models are Cython-compatible.
 
 v0.2 additions: RestorationCost, RestorationStep, RestorationResult
 v0.3 additions: Agent trophic fields, InteractionEdge, Ecosystem interactions,
@@ -28,7 +27,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
@@ -710,7 +709,6 @@ class Ecosystem:
         name: Human-readable name, e.g. "Oak Valley Forest Ecosystem"
         resource: The shared natural asset.
         agents: List of Agent instances dependent on the resource.
-                Typed as list (not List[Agent]) for Cython compatibility.
         interactions: InteractionEdge list (v0.3).
         pricing: Optional endogenous pricing config (v0.7).
         calibration_regime: What the damage curves represent (Step 3.8).
@@ -723,7 +721,7 @@ class Ecosystem:
 
     name: str
     resource: Resource
-    agents: list  # List[Agent] — typed as list for Cython compat
+    agents: list  # List[Agent]
 
     # v0.3: Agent interaction edges (empty list preserves v0.1/v0.2 behavior)
     interactions: list = field(default_factory=list)  # List[InteractionEdge]
@@ -800,7 +798,9 @@ class SimulationResult:
 
     Attributes:
         ecosystem: The ecosystem that was simulated.
-        steps: All SimulationStep records produced during the run.
+        steps: Every SimulationStep of the run, as a lazy sequence
+            (gaia.simulation.ExtractionSteps): a step is evaluated when it
+            is indexed or iterated.
         total_units_extracted: How many units were extracted.
         revenue: One-off private revenue from all extracted units (€).
         annual_externality: Ecosystem service value lost per year at the
@@ -844,7 +844,7 @@ class SimulationResult:
     """
 
     ecosystem: Ecosystem
-    steps: list               # List[SimulationStep]
+    steps: Sequence           # of SimulationStep: gaia.simulation.ExtractionSteps (lazy)
     total_units_extracted: int
     revenue: float
     annual_externality: float
@@ -953,7 +953,8 @@ class RestorationResult:
     Attributes:
         ecosystem: The ecosystem being restored.
         restoration_cost: The RestorationCost parameters used.
-        steps: All RestorationStep records.
+        steps: Every RestorationStep, as a lazy sequence
+            (gaia.simulation.RestorationSteps).
         total_units_restored: How many units were replanted.
         total_restoration_cost: Total direct cost of restoration (€, one-off,
             undiscounted planting + maintenance).
@@ -997,7 +998,7 @@ class RestorationResult:
 
     ecosystem: Ecosystem
     restoration_cost: RestorationCost
-    steps: list                  # List[RestorationStep]
+    steps: Sequence              # of RestorationStep: gaia.simulation.RestorationSteps (lazy)
     total_units_restored: int
     total_restoration_cost: float
     annual_recovered_value: float

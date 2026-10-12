@@ -467,14 +467,18 @@ def _strict(obj: Any) -> Any:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
-def _sampled(steps: list, every: int) -> list:
-    """Every ``every``-th step (steps every, 2·every, ...) plus the last one."""
+def _sampled(steps, every: int) -> list:
+    """Every ``every``-th step (steps every, 2·every, ...) plus the last one.
+
+    Only those steps are evaluated (the engine's step sequences are lazy).
+    """
     if every <= 1:
         return list(steps)
-    picked = [s for i, s in enumerate(steps, start=1) if i % every == 0]
-    if steps and (not picked or picked[-1] is not steps[-1]):
-        picked.append(steps[-1])
-    return picked
+    n: int = len(steps)
+    indices: list = list(range(every - 1, n, every))
+    if n and (not indices or indices[-1] != n - 1):
+        indices.append(n - 1)
+    return [steps[i] for i in indices]
 
 
 def _validate_steps_every(steps_every: int) -> None:

@@ -491,6 +491,8 @@ These are **your** calls. The fixes in §9 depend on them. Each has a recommenda
 
 You don't need to resolve D5 before the critical fixes, but resolve it before redesigning the engine (Step 7).
 
+> **Decided (owner, 2026-10-12): option B now, option A a firm commitment after v1.0**, staged A1 → A2 → A3 (`version_specs/V09_SPEC.md` §4). Implemented in Step 8a: `PROJECT_DEFINITION.md` §13 rewritten, direct evaluation with lazy per-step data, no number changed.
+
 ### D6 — Who is the first user, and what is v1.0?
 
 **Recommendation:** pick one concrete user (e.g. *an NGO or journalist assessing a specific deforestation concession*, or *a researcher comparing restoration vs. protection*). Redefine **v1.0 = one credible case**: every parameter sourced, sensitivity analysis, external ecologist and environmental-economist review. Move the UI to v1.x.
@@ -498,6 +500,8 @@ You don't need to resolve D5 before the critical fixes, but resolve it before re
 ### D7 — Keep Cython?
 
 **Recommendation:** keep it, but only behind a parity test (Step 2). Re-evaluate after Step 7. If the engine is simplified (D5 option B) or the hot path becomes pricing, Cython may not be worth its maintenance cost.
+
+> **Decided (owner, 2026-10-12): dropped**, following D5 option B (the per-unit loop it compiled is gone). Removed in Step 8a with its build configuration, CI matrix entries, parity tests and stale-build guard; `docs/ENGINE_PROFILE.md` keeps the measurements as a historical note.
 
 ---
 

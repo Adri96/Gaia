@@ -5,9 +5,10 @@ Any change to a case's numbers fails here. If the change is intended,
 regenerate with ``python3 scripts/regen_golden.py [case|scenario]`` and say
 in the commit message which numbers changed and why.
 
-Set ``GAIA_FORCE_PYTHON=1`` (honoured by gaia.simulation itself) to run
-against the pure-Python loop; the golden values are engine-independent
-(compared at rel=1e-9; tests/test_engine_parity.py checks rel=1e-12).
+Values are compared at rel=1e-9. The stored files were written by the
+former Cython loop, whose build fused a few multiply-adds: five values of
+the extraction snapshots differ from the (only) Python engine in their last
+digit, well inside the tolerance (see scripts/regen_golden.py).
 """
 
 import pytest

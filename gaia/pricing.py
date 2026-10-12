@@ -50,7 +50,7 @@ I + SW + (SW)^2 + ... converges. It is proven per state, never estimated
 iteration with Collatz–Wielandt bounds. When it cannot be proven, the state
 has no price and PricingConvergenceError is raised.
 
-All functions use primitive types (no numpy) for Cython compatibility.
+All functions use primitive types (no numpy).
 No third-party dependencies.
 
 Scientific references:
@@ -300,7 +300,7 @@ def build_anchor_vector(
     return vector
 
 
-# ── Linear algebra primitives (pure Python, Cython-compatible) ──────────────
+# ── Linear algebra primitives (pure Python) ─────────────────────────────────
 
 
 def matrix_multiply(a: List[List[float]], b: List[List[float]]) -> List[List[float]]:

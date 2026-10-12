@@ -12,7 +12,7 @@ Each phase uses a different interpolation:
 A maturation_delay parameter inserts a dead zone of zero service
 at the start, reflecting the time before pioneer species establish.
 
-All functions use primitive types for Cython compatibility.
+All functions use primitive types.
 No third-party dependencies.
 
 Scientific foundations used: F8 (Ecological Succession & Climax State).

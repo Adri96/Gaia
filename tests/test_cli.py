@@ -281,20 +281,16 @@ class TestVersion:
         from gaia.serialization import GAIA_VERSION
         assert GAIA_VERSION == gaia.__version__
 
-    def test_setup_reads_package_version(self):
+    def test_packaging_reads_package_version(self):
+        """pyproject.toml takes the version from gaia.__version__ (one source)."""
         import pathlib
-        import subprocess
-        import sys
-
-        pytest.importorskip("setuptools")  # not in Python 3.12+ venvs by default
+        import re
 
         import gaia
         root = pathlib.Path(gaia.__file__).resolve().parent.parent
-        out = subprocess.run(
-            [sys.executable, "setup.py", "--version"],
-            cwd=root, capture_output=True, text=True, check=True,
-        )
-        assert out.stdout.strip().splitlines()[-1] == gaia.__version__
+        text = (root / "pyproject.toml").read_text(encoding="utf-8")
+        assert re.search(r'^dynamic = \["version"\]', text, re.M)
+        assert re.search(r'^version = \{ attr = "gaia.__version__" \}', text, re.M)
 
     def test_cli_version_flag(self, capsys):
         import gaia

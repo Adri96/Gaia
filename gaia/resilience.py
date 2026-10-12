@@ -11,7 +11,7 @@ Confidence interpolates linearly within zones:
     - Yellow: linearly from confidence_green to confidence_yellow
     - Red: linearly from confidence_yellow to confidence_red
 
-All functions use primitive types for Cython compatibility.
+All functions use primitive types.
 No third-party dependencies.
 
 Scientific foundations used: F7 (Resilience Is a System Property).

@@ -16,7 +16,6 @@ import warnings
 import pytest
 
 import gaia.propagation as propagation
-import gaia.simulation as sim
 from gaia import constants
 from gaia.cases.amazon_forest import build_amazon_ecosystem
 from gaia.cases.costa_brava import build_costa_brava_ecosystem
@@ -46,7 +45,6 @@ from gaia.validation import (
     check_threshold_health,
     validate_ecosystem,
 )
-from tests.golden_support import forced_python_engine
 
 SHIPPED = {
     "forest": build_forest_ecosystem,
@@ -281,23 +279,13 @@ def test_report_trophic_factor_comes_from_propagation(monkeypatch):
     assert "Trophic amplification: 1.6×" in format_report(result)
 
 
-@pytest.mark.skipif(not sim._HAS_CYTHON,
-                    reason="Cython extension not built or stale")
-def test_both_engines_read_the_keystone_multiplier(monkeypatch):
-    """The Cython loop receives the multiplier from gaia.constants (via
-    gaia.simulation), so changing it moves both engines together."""
+def test_engine_reads_the_keystone_multiplier(monkeypatch):
+    """The engine takes the keystone multiplier from gaia.constants (through
+    gaia.propagation), so changing it changes the result."""
     def run():
         eco = _eco([("A", "B", 0.5, "keystone")], keystone_a=True, total_units=50)
-        cy = run_extraction(eco, 50)
-        with forced_python_engine():
-            py = run_extraction(eco, 50)
-        return (sum(s.annual_externality for s in cy.steps),
-                sum(s.annual_externality for s in py.steps))
+        return sum(s.annual_externality for s in run_extraction(eco, 50).steps)
 
-    base_cy, base_py = run()
-    assert base_cy == pytest.approx(base_py, rel=1e-12)
-    monkeypatch.setattr(sim, "KEYSTONE_EDGE_MULTIPLIER", 1.0)
+    base = run()
     monkeypatch.setattr(propagation, "KEYSTONE_EDGE_MULTIPLIER", 1.0)
-    one_cy, one_py = run()
-    assert one_cy == pytest.approx(one_py, rel=1e-12)
-    assert one_cy < base_cy
+    assert run() < base

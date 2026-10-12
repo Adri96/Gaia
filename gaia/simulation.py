@@ -1,27 +1,42 @@
 """
-Gaia — Simulation engine.
+Gaia — Simulation engine: a static damage function, evaluated directly.
 
-The simulation extracts (or restores) units one at a time, computing externality
-costs (or recovered service values) at each step. Damage/recovery functions return
-TOTAL value at the current depletion/recovery level (not marginal). Marginal values
-are derived by differencing consecutive totals.
+Every per-step quantity of an extraction depends only on the depletion
+ratio k / N at that step (decision D5, option B; PROJECT_DEFINITION.md §13):
+the damage functions, trophic amplification, single-pass cascade, keystone
+boost, annual externality, health and resilience zone are evaluated at the
+requested depletion, with nothing carried over from earlier steps. The one
+exception is the substrate, whose erosion is integrated over the steps (the
+whole extraction spread over one year); that Riemann sum is kept as it was,
+so its numbers do not change.
 
-All code in this module is Cython-compatible:
-    - No dynamic attributes
-    - No **kwargs
-    - All inner loop variables are primitive floats and ints
-    - No third-party dependencies
+So run_extraction and run_restoration do not loop over units. They evaluate
+the final state (and the step before it, for the marginal cost), and return
+their steps as lazy sequences (ExtractionSteps, RestorationSteps): a step is
+computed when it is indexed or iterated, with the same arithmetic the former
+per-unit loop used, so every number is bit-for-bit what that loop produced.
+Time enters only through discounting, the succession curve and the substrate
+ceiling. A path-dependent engine (option A: a time axis, relaxation,
+keystone hysteresis, damage-dependent recovery) is a committed roadmap
+milestone after v1.0 (version_specs/V09_SPEC.md §4); it would read an
+optional schema-2 ``dynamics`` block and leave this static engine as the
+no-``dynamics`` path.
+
+Damage/recovery functions return TOTAL value at the current depletion/
+recovery level (not marginal). Marginal values are differences of
+consecutive totals.
 
 v0.2: Added run_restoration() — the inverse of run_extraction().
-v0.3: Two-phase loops with trophic amplification and interaction propagation.
+v0.3: Trophic amplification and interaction propagation.
 v0.4: Resilience zone tagging in extraction, maturation pass in restoration.
-v0.5: Phase 3.5 substrate degradation in extraction, substrate ceiling in restoration.
-v0.6: NPV computation on SimulationResult and RestorationResult when DiscountConfig present.
-v0.7: Per-step price solver when PricingConfig present; dynamic prices replace
-      the static agent annual values.
+v0.5: Substrate degradation in extraction, substrate ceiling in restoration.
+v0.6: NPV computation on SimulationResult and RestorationResult.
+v0.7: Per-step price solver when PricingConfig present (EXPERIMENTAL).
 Step 3.3: run_restoration starts from a real state (an extraction result) and
       retraces its damage path in reverse; recovery functions are efficiencies
       bounded by the damage reversal.
+Step 8 (D5 option B, D7): direct evaluation replaces the per-unit loop; the
+      optional Cython loop is gone.
 
 Monetary semantics (decision D1): agent values and externalities are yearly
 flows (€/yr); revenue and restoration costs are one-off amounts (€). The two
@@ -30,16 +45,10 @@ computed — with gaia.discount.DEFAULT_DISCOUNT when a resource has no
 DiscountConfig.
 """
 
-import hashlib
-import importlib
-import math
-import os
-import warnings
-from pathlib import Path
-from typing import Callable, Optional
+from collections.abc import Sequence
+from typing import Dict, Iterator, List, Optional
 
 from gaia.carbon import compute_carbon_release
-from gaia.damage import evaluate_kernel
 from gaia.models import (
     Ecosystem,
     ExtractionNPV,
@@ -52,7 +61,6 @@ from gaia.models import (
     SubstrateState,
     SuccessionCurve,
 )
-from gaia.constants import KEYSTONE_EDGE_MULTIPLIER, MAX_EDGE_STRENGTH
 from gaia.propagation import (
     compute_trophic_amplification,
     propagate_interactions,
@@ -61,13 +69,11 @@ from gaia.propagation import (
 from gaia.provenance import calibration_status
 from gaia.resilience import compute_confidence_band, compute_resilience_zone
 from gaia.substrate import (
-    _T_HA_TO_MM_FACTOR,
     apply_erosion,
     compute_capacity_fraction,
     compute_substrate_recovery_years,
     create_substrate_state,
     degrade_substrate,
-    is_marine,
 )
 from gaia.succession import compute_maturation_timeline, find_years_to_threshold
 from gaia.validation import (
@@ -78,250 +84,8 @@ from gaia.validation import (
     validate_succession_curve,
 )
 
-_PYX_PATH: Path = Path(__file__).resolve().parent / "cy" / "simulation_cy.pyx"
 
-
-def _pyx_sha256(path: Path) -> str:
-    """SHA-256 of a source file with normalised line endings (see setup.py)."""
-    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
-
-
-def _load_cython_loop(module=None, pyx_path: Path = _PYX_PATH) -> Optional[Callable]:
-    """Return the compiled extraction loop, or None to use the Python loop.
-
-    None when ``GAIA_FORCE_PYTHON=1`` is set, when the extension is not built,
-    or when it is stale: the SHA-256 of the .pyx it was compiled from
-    (``PYX_SOURCE_SHA256``) differs from the current ``pyx_path``. A stale
-    build warns. If the .pyx is absent (installed package without sources)
-    the compiled module is trusted.
-
-    Args:
-        module: The compiled module (default: import gaia.cy.simulation_cy).
-        pyx_path: The .pyx source to compare against.
-    """
-    if os.environ.get("GAIA_FORCE_PYTHON") == "1":
-        return None
-    if module is None:
-        try:
-            module = importlib.import_module("gaia.cy.simulation_cy")
-        except ImportError:
-            return None
-    if pyx_path.is_file():
-        built = getattr(module, "PYX_SOURCE_SHA256", None)
-        current = _pyx_sha256(pyx_path)
-        if built != current:
-            warnings.warn(
-                f"Gaia's compiled extension is out of date with {pyx_path.name} "
-                f"(built from {str(built)[:12]}, source is {current[:12]}); "
-                f"using the pure-Python loop. Rebuild with: "
-                f"python3 setup.py build_ext --inplace",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            return None
-    return module.extraction_loop_cy
-
-
-# v0.8: Cython-optimized simulation loop (None → pure Python)
-extraction_loop_cy = _load_cython_loop()
-_HAS_CYTHON = extraction_loop_cy is not None
-
-_NO_KERNEL: tuple = (-1, 0.0, 0.0, 0.0, 0.0)
-_KERNEL_PROBES: tuple = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0)
-
-
-def _extract_damage_params(damage_fn) -> tuple:
-    """Return the Cython kernel tag ``(kind, p1, p2, p3, p4)`` of a damage function.
-
-    Reads the ``kernel`` attribute set by the factories in gaia.damage (see
-    that module for the kinds). The tag is trusted only if
-    ``evaluate_kernel`` reproduces the function at a few probe points, so a
-    wrapped or edited function whose tag no longer describes it cannot be
-    silently mis-evaluated by the Cython loop.
-
-    Returns kind=-1 when there is no usable tag, which signals the caller to
-    use the pure-Python path.
-    """
-    kernel = getattr(damage_fn, "kernel", None)
-    if not isinstance(kernel, tuple) or len(kernel) != 5:
-        return _NO_KERNEL
-    try:
-        for x in _KERNEL_PROBES:
-            if not math.isclose(damage_fn(x), evaluate_kernel(kernel, x),
-                                rel_tol=1e-12, abs_tol=1e-15):
-                return _NO_KERNEL
-    except (ValueError, TypeError, ArithmeticError):
-        return _NO_KERNEL
-    return kernel
-
-
-def _can_use_cython(ecosystem: Ecosystem) -> bool:
-    """Check if the Cython fast path can be used for this ecosystem.
-
-    The fast path is available when:
-    1. The Cython extension is compiled, importable and not stale
-    2. No v0.7 pricing config (pricing requires per-step Python solver)
-    3. All damage functions carry a verified kernel tag
-
-    Every validated substrate profile (terrestrial or marine) is supported.
-    """
-    if not _HAS_CYTHON:
-        return False
-    if ecosystem.pricing is not None:
-        return False
-    for agent in ecosystem.agents:
-        kind = _extract_damage_params(agent.damage_function)[0]
-        if kind == -1:
-            return False
-    return True
-
-
-# ── Extraction ────────────────────────────────────────────────────────────────
-#
-# run_extraction validates, then runs the steps with one of two engines —
-# _cython_steps (the compiled loop) or _python_steps (the phases below) —
-# and both hand their SimulationSteps (built by _make_step) to
-# _extraction_result, which computes everything that is not per-step.
-
-
-def _make_step(
-    step: int,
-    depletion_ratio: float,
-    effective_damages: list,
-    agent_costs: list,
-    marginal_cost: float,
-    total_cost: float,
-    revenue: float,
-    health: float,
-    direct_damages: list,
-    cascade_damages: list,
-    keystone_triggered: list,
-    zone: str,
-    confidence: float,
-    irreversibility: bool,
-    substrate_erosion: float,
-    effective_k: int,
-    k_fraction: float,
-    agent_prices: list,
-    price_result,
-) -> SimulationStep:
-    """One SimulationStep, from either engine's per-step values."""
-    return SimulationStep(
-        step=step,
-        units_extracted=step,
-        depletion_ratio=depletion_ratio,
-        agent_damages=effective_damages,
-        agent_annual_costs=agent_costs,
-        marginal_annual_externality=marginal_cost,
-        annual_externality=total_cost,
-        revenue=revenue,
-        ecosystem_health=health,
-        agent_direct_damages=direct_damages,
-        agent_cascade_damages=cascade_damages,
-        keystone_triggered=keystone_triggered,
-        resilience_zone=zone,
-        model_confidence=confidence,
-        irreversibility_warning=irreversibility,
-        substrate_erosion=substrate_erosion,
-        effective_k=effective_k,
-        k_fraction=k_fraction,
-        agent_prices=agent_prices,
-        price_result=price_result,
-    )
-
-
-# ── Extraction engine 1: the compiled loop ───────────────────────────────────
-
-
-def _cython_arguments(ecosystem: Ecosystem, units_to_extract: int) -> dict:
-    """Flatten the ecosystem into the primitives and lists extraction_loop_cy takes."""
-    resource = ecosystem.resource
-    agents = ecosystem.agents
-    trophic_levels = [a.trophic_level for a in agents]
-
-    # Edges as agent indices
-    interactions = ecosystem.interactions
-    name_to_idx = {a.name: i for i, a in enumerate(agents)}
-
-    r = resource.resilience
-    sub = resource.substrate
-    return dict(
-        n_agents=len(agents),
-        n_edges=len(interactions),
-        total_units=resource.total_units,
-        units_to_extract=units_to_extract,
-        unit_value=resource.unit_value,
-        safe_threshold_ratio=resource.safe_threshold_ratio,
-        damage_params=[_extract_damage_params(a.damage_function) for a in agents],
-        dep_weights=[a.dependency_weight for a in agents],
-        annual_values=[a.annual_value(resource.area_ha) for a in agents],
-        trophic_levels=trophic_levels,
-        trophic_amp_factors=[trophic_amplification_factor(lvl) for lvl in trophic_levels],
-        is_keystone=[a.is_keystone for a in agents],
-        keystone_thresholds=[a.keystone_threshold for a in agents],
-        edge_src_idx=[name_to_idx[e.source] for e in interactions],
-        edge_tgt_idx=[name_to_idx[e.target] for e in interactions],
-        edge_strengths=[e.strength for e in interactions],
-        keystone_edge_multiplier=KEYSTONE_EDGE_MULTIPLIER,
-        max_edge_strength=MAX_EDGE_STRENGTH,
-        has_trophic=any(lvl >= 1 for lvl in trophic_levels),
-        has_interactions=len(interactions) > 0,
-        has_resilience=r is not None,
-        has_substrate=sub is not None,
-        substrate_is_marine=bool(sub is not None and is_marine(sub)),
-        resilience_warning_width=r.warning_zone_width if r else 0.0,
-        resilience_conf_green=r.confidence_green if r else 0.9,
-        resilience_conf_yellow=r.confidence_yellow if r else 0.6,
-        resilience_conf_red=r.confidence_red if r else 0.3,
-        resilience_irreversibility_ratio=r.irreversibility_flag_ratio if r else 0.5,
-        substrate_soil_depth_cm=sub.soil_depth_cm if sub and sub.soil_depth_cm else 0.0,
-        substrate_sediment_stability=(
-            sub.sediment_stability if sub and sub.sediment_stability else 0.0
-        ),
-        substrate_erosion_unprotected=sub.erosion_rate_unprotected if sub else 0.0,
-        substrate_erosion_protected=sub.erosion_rate_protected if sub else 0.0,
-        substrate_formation_rate=sub.formation_rate if sub else 0.0,
-        substrate_erosion_alpha=sub.erosion_alpha if sub else 2.0,
-        substrate_critical_minimum=sub.critical_minimum if sub else 0.0,
-        substrate_residual_fraction=sub.residual_fraction if sub else 0.05,
-        substrate_capacity_function=sub.capacity_function if sub else "linear",
-        substrate_t_ha_to_mm_factor=_T_HA_TO_MM_FACTOR,
-    )
-
-
-def _cython_steps(ecosystem: Ecosystem, units_to_extract: int) -> list:
-    """The extraction steps computed by the compiled loop.
-
-    The loop returns one raw tuple per step; keystone crossings come back
-    as agent indices and are mapped to names.
-    """
-    loop = extraction_loop_cy
-    if loop is None:
-        raise RuntimeError("the Cython extension is not available")
-    agent_names = [a.name for a in ecosystem.agents]
-    raw_steps = loop(**_cython_arguments(ecosystem, units_to_extract))
-
-    steps: list = []
-    for raw in raw_steps:
-        (step, _units_extracted, depletion_ratio,
-         effective_damages, agent_annual_costs, marginal_annual_externality,
-         annual_externality, revenue, ecosystem_health,
-         direct_damages, cascade_damages, keystone_triggered_indices,
-         zone, confidence, irreversibility,
-         substrate_erosion, effective_k, k_fraction) = raw
-        steps.append(_make_step(
-            step, depletion_ratio, effective_damages, agent_annual_costs,
-            marginal_annual_externality, annual_externality, revenue,
-            ecosystem_health, direct_damages, cascade_damages,
-            [agent_names[idx] for idx in keystone_triggered_indices],
-            zone, confidence, irreversibility,
-            substrate_erosion, effective_k, k_fraction,
-            [], None,
-        ))
-    return steps
-
-
-# ── Extraction engine 2: the Python loop, phase by phase ─────────────────────
+# ── Extraction: the static function, phase by phase ─────────────────────────
 
 
 def _compute_damage(
@@ -420,21 +184,6 @@ def _annual_costs(effective_damages: list, weights: list, rates: list) -> tuple:
     return costs, total, health
 
 
-def _substrate(
-    state: Optional[SubstrateState],
-    total_units: int,
-    units_extracted: int,
-    years: float,
-) -> tuple:
-    """Phase 3.5 (v0.5): erode the substrate → (erosion, effective K, K fraction)."""
-    if state is None:
-        return 0.0, total_units, 1.0
-    vegetation_cover: float = (total_units - units_extracted) / total_units
-    erosion: float = degrade_substrate(state, vegetation_cover, years=years)
-    k_fraction: float = compute_capacity_fraction(state)
-    return erosion, int(total_units * k_fraction), k_fraction
-
-
 def _resilience(resource, depletion_ratio: float) -> tuple:
     """Phase 4 (v0.4): resilience zone → (zone, confidence, irreversibility)."""
     if resource.resilience is None:
@@ -444,57 +193,284 @@ def _resilience(resource, depletion_ratio: float) -> tuple:
     )
 
 
-def _python_steps(ecosystem: Ecosystem, units_to_extract: int) -> list:
-    """The extraction steps computed by the Python phases (any ecosystem)."""
-    resource = ecosystem.resource
-    agents: list = ecosystem.agents
-    total_units: int = resource.total_units
+def _replay_substrate(profile, erosions) -> Optional[SubstrateState]:
+    """Substrate state after applying the per-step ``erosions`` to a pristine
+    profile (None without a profile)."""
+    if profile is None:
+        return None
+    state: SubstrateState = create_substrate_state(profile)
+    for erosion in erosions:
+        apply_erosion(state, erosion)
+    return state
 
-    damage_functions: list = [a.damage_function for a in agents]
-    trophic_levels: list = [a.trophic_level for a in agents]
-    has_trophic: bool = any(lvl >= 1 for lvl in trophic_levels)
-    weights: list = [a.dependency_weight for a in agents]
-    # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
-    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
-    pricing: Optional[PricingConfig] = ecosystem.pricing
-    network: dict = _interaction_arrays(ecosystem)
 
-    # v0.5: the whole extraction takes one year, spread evenly over the steps
-    substrate_state: Optional[SubstrateState] = None
-    years_per_step: float = 0.0
-    if resource.substrate is not None:
-        substrate_state = create_substrate_state(resource.substrate)
-        years_per_step = 1.0 / units_to_extract
+class ExtractionSteps(Sequence):
+    """The steps of an extraction, evaluated when they are asked for.
 
-    steps: list = []
-    previous_total: float = 0.0
-    for step in range(1, units_to_extract + 1):
-        depletion_ratio: float = step / total_units
-        direct = _compute_damage(damage_functions, trophic_levels, has_trophic, depletion_ratio)
-        effective, cascade, keystone = _propagate(network, direct)
+    ``steps[k - 1]`` is the SimulationStep after k units extracted. Every
+    field but the substrate ones is a function of the depletion k / N alone
+    (the static damage function), so a step is computed directly from k; its
+    marginal cost is its annual externality minus that of step k − 1,
+    evaluated the same way. Iterating evaluates the steps in order and
+    reuses each total as the next step's "previous", with exactly the
+    arithmetic of the former per-unit loop.
 
+    The substrate is the only quantity carried from step to step: the
+    extraction is spread evenly over one year and the erosion of each step
+    applied in turn (a Riemann sum whose value depends on the number of
+    units). That trajectory — one scalar update per unit — is computed once,
+    on construction, and gives each step's ``substrate_erosion``,
+    ``effective_k`` and ``k_fraction``.
+
+    EXPERIMENTAL pricing keeps its contract of stopping at the first step
+    whose price system cannot be certified: with a PricingConfig every step
+    is solved on construction (PricingConvergenceError at the first
+    failure), and the price results are kept for the steps.
+
+    A step is a new SimulationStep each time it is computed; the last few
+    are cached, so repeated ``steps[-1]`` returns the same object.
+    """
+
+    _CACHE_SIZE: int = 8
+
+    def __init__(self, ecosystem: Ecosystem, units_to_extract: int) -> None:
+        resource = ecosystem.resource
+        agents: list = ecosystem.agents
+        self._ecosystem: Ecosystem = ecosystem
+        self._resource = resource
+        self._units: int = units_to_extract
+        self._total_units: int = resource.total_units
+        self._damage_functions: list = [a.damage_function for a in agents]
+        self._trophic_levels: list = [a.trophic_level for a in agents]
+        self._has_trophic: bool = any(lvl >= 1 for lvl in self._trophic_levels)
+        self._weights: list = [a.dependency_weight for a in agents]
+        # Agent annual values (€/yr at full damage) = €/ha/yr × area (decision D2)
+        self._annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
+        self._network: dict = _interaction_arrays(ecosystem)
+        self._pricing: Optional[PricingConfig] = ecosystem.pricing
+        self._cache: Dict[int, SimulationStep] = {}
+
+        # v0.5 substrate: the whole extraction takes one year, spread evenly
+        # over the steps (the Riemann sum of the former loop, kept as is)
+        self._erosion: List[float] = []
+        self._effective_k: List[int] = []
+        self._k_fraction: List[float] = []
+        if resource.substrate is not None and units_to_extract > 0:
+            state: SubstrateState = create_substrate_state(resource.substrate)
+            years_per_step: float = 1.0 / units_to_extract
+            for step in range(1, units_to_extract + 1):
+                cover: float = (self._total_units - step) / self._total_units
+                erosion: float = degrade_substrate(state, cover, years=years_per_step)
+                k_fraction: float = compute_capacity_fraction(state)
+                self._erosion.append(erosion)
+                self._k_fraction.append(k_fraction)
+                self._effective_k.append(int(self._total_units * k_fraction))
+
+        # EXPERIMENTAL pricing: certify every step, in order (see above)
+        self._prices: List[tuple] = []
+        if self._pricing is not None:
+            for step in range(1, units_to_extract + 1):
+                _, effective, _, _ = self._damages(step)
+                self._prices.append(_price(
+                    ecosystem, self._pricing, self._network["agent_names"],
+                    effective, step,
+                ))
+
+    # ── The static function at one step ──────────────────────────────────
+
+    def _damages(self, step: int) -> tuple:
+        """(direct, effective, cascade, keystone names) at ``step`` units."""
+        direct = _compute_damage(
+            self._damage_functions, self._trophic_levels, self._has_trophic,
+            step / self._total_units,
+        )
+        effective, cascade, keystone = _propagate(self._network, direct)
+        return direct, effective, cascade, keystone
+
+    def _rates(self, step: int) -> list:
+        """The €/yr rate of each agent at ``step``: endogenous prices or static values."""
+        if self._pricing is not None:
+            return self._prices[step - 1][1]
+        return self._annual_values
+
+    def _total(self, step: int) -> float:
+        """Annual externality (€/yr) at ``step`` units; 0 before the first."""
+        if step <= 0:
+            return 0.0
+        _, effective, _, _ = self._damages(step)
+        return _annual_costs(effective, self._weights, self._rates(step))[1]
+
+    def _compute(self, step: int, previous_total: float) -> SimulationStep:
+        """The SimulationStep after ``step`` units, given the previous total."""
+        resource = self._resource
+        depletion_ratio: float = step / self._total_units
+        direct, effective, cascade, keystone = self._damages(step)
         price_result = None
         prices: list = []
-        if pricing is not None:
-            price_result, prices = _price(
-                ecosystem, pricing, network["agent_names"], effective, step,
-            )
-        costs, total, health = _annual_costs(
-            effective, weights, prices if pricing is not None else annual_values,
-        )
-        erosion, effective_k, k_fraction = _substrate(
-            substrate_state, total_units, step, years_per_step,
-        )
+        if self._pricing is not None:
+            price_result, prices = self._prices[step - 1]
+        costs, total, health = _annual_costs(effective, self._weights, self._rates(step))
+        if self._erosion:
+            erosion: float = self._erosion[step - 1]
+            effective_k: int = self._effective_k[step - 1]
+            k_fraction: float = self._k_fraction[step - 1]
+        else:
+            erosion, effective_k, k_fraction = 0.0, self._total_units, 1.0
         zone, confidence, irreversible = _resilience(resource, depletion_ratio)
+        return SimulationStep(
+            step=step,
+            units_extracted=step,
+            depletion_ratio=depletion_ratio,
+            agent_damages=effective,
+            agent_annual_costs=costs,
+            marginal_annual_externality=total - previous_total,
+            annual_externality=total,
+            revenue=step * resource.unit_value,
+            ecosystem_health=health,
+            agent_direct_damages=direct,
+            agent_cascade_damages=cascade,
+            keystone_triggered=keystone,
+            resilience_zone=zone,
+            model_confidence=confidence,
+            irreversibility_warning=irreversible,
+            substrate_erosion=erosion,
+            effective_k=effective_k,
+            k_fraction=k_fraction,
+            agent_prices=prices,
+            price_result=price_result,
+        )
 
-        steps.append(_make_step(
-            step, depletion_ratio, effective, costs, total - previous_total,
-            total, step * resource.unit_value, health, direct, cascade, keystone,
-            zone, confidence, irreversible, erosion, effective_k, k_fraction,
-            prices, price_result,
-        ))
-        previous_total = total
-    return steps
+    def _step(self, step: int) -> SimulationStep:
+        cached = self._cache.get(step)
+        if cached is None:
+            cached = self._compute(step, self._total(step - 1))
+            if len(self._cache) >= self._CACHE_SIZE:
+                self._cache.clear()
+            self._cache[step] = cached
+        return cached
+
+    # ── Sequence protocol ────────────────────────────────────────────────
+
+    def __len__(self) -> int:
+        return self._units
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self._step(i + 1) for i in range(*index.indices(self._units))]
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise TypeError(f"step indices must be integers or slices, not {type(index).__name__}")
+        if index < 0:
+            index += self._units
+        if not 0 <= index < self._units:
+            raise IndexError("step index out of range")
+        return self._step(index + 1)
+
+    def __iter__(self) -> Iterator[SimulationStep]:
+        previous_total: float = 0.0
+        for step in range(1, self._units + 1):
+            current = self._compute(step, previous_total)
+            previous_total = current.annual_externality
+            yield current
+
+    def __repr__(self) -> str:
+        return f"<ExtractionSteps: {self._units} steps of {self._ecosystem.name!r}>"
+
+    def agent_damages(self, step: int) -> list:
+        """Effective damage per agent after ``step`` units (1..len), without
+        building the whole step (restoration reads only these)."""
+        cached = self._cache.get(step)
+        if cached is not None:
+            return cached.agent_damages
+        return self._damages(step)[1]
+
+    # ── Scans the report needs, without building every step ─────────────
+
+    def keystone_crossings(self) -> Dict[str, int]:
+        """{keystone agent: first step at which it crossed its threshold}.
+
+        The trigger depends only on the keystone's own direct damage (and
+        needs at least one edge), so only those damages are evaluated.
+        """
+        crossings: Dict[str, int] = {}
+        if not self._network["edge_sources"]:
+            return crossings
+        agents: list = self._ecosystem.agents
+        keystones: list = [i for i, a in enumerate(agents) if a.is_keystone]
+        for step in range(1, self._units + 1):
+            if len(crossings) == len(keystones):
+                break
+            depletion_ratio: float = step / self._total_units
+            for i in keystones:
+                name: str = agents[i].name
+                if name in crossings:
+                    continue
+                raw: float = self._damage_functions[i](depletion_ratio)
+                direct: float = (
+                    compute_trophic_amplification(raw, self._trophic_levels[i])
+                    if self._has_trophic else raw
+                )
+                if 1.0 - direct < agents[i].keystone_threshold:
+                    crossings[name] = step
+        return crossings
+
+    def zone_transitions(self) -> List[tuple]:
+        """[(from zone, to zone, step)] as the depletion rises, starting green."""
+        transitions: List[tuple] = []
+        previous: str = "green"
+        for step in range(1, self._units + 1):
+            zone: str = _resilience(self._resource, step / self._total_units)[0]
+            if zone != previous:
+                transitions.append((previous, zone, step))
+                previous = zone
+        return transitions
+
+    def first_irreversible_step(self) -> Optional[int]:
+        """The first step flagged irreversible, or None."""
+        for step in range(1, self._units + 1):
+            if _resilience(self._resource, step / self._total_units)[2]:
+                return step
+        return None
+
+    def substrate_end_state(self) -> Optional[SubstrateState]:
+        """A fresh copy of the substrate state after the last step (None
+        without a substrate profile), by replaying the per-step erosion."""
+        return _replay_substrate(self._resource.substrate, self._erosion)
+
+
+def keystone_crossings(steps) -> Dict[str, int]:
+    """{keystone agent: first step at which it crossed its threshold}, for
+    the steps of an extraction (ExtractionSteps: only the keystone damages
+    are evaluated; any other sequence of SimulationStep is scanned)."""
+    if isinstance(steps, ExtractionSteps):
+        return steps.keystone_crossings()
+    crossings: Dict[str, int] = {}
+    for s in steps:
+        for name in s.keystone_triggered:
+            crossings.setdefault(name, s.step)
+    return crossings
+
+
+def zone_transitions(steps) -> List[tuple]:
+    """[(from zone, to zone, step)] over the steps of an extraction, from green."""
+    if isinstance(steps, ExtractionSteps):
+        return steps.zone_transitions()
+    transitions: List[tuple] = []
+    previous: str = "green"
+    for s in steps:
+        if s.resilience_zone != previous:
+            transitions.append((previous, s.resilience_zone, s.step))
+            previous = s.resilience_zone
+    return transitions
+
+
+def first_irreversible_step(steps) -> Optional[int]:
+    """The first step of an extraction flagged irreversible, or None."""
+    if isinstance(steps, ExtractionSteps):
+        return steps.first_irreversible_step()
+    for s in steps:
+        if s.irreversibility_warning:
+            return s.step
+    return None
 
 
 # ── Extraction: everything that is not per-step ──────────────────────────────
@@ -557,9 +533,9 @@ def _cost_split(ecosystem: Ecosystem, final_step: SimulationStep) -> tuple:
 
 
 def _extraction_result(
-    ecosystem: Ecosystem, steps: list, units_to_extract: int
+    ecosystem: Ecosystem, steps: ExtractionSteps, units_to_extract: int
 ) -> SimulationResult:
-    """Assemble a SimulationResult from the extraction steps (both engines).
+    """Assemble a SimulationResult from the final step of the extraction.
 
     The annual externality (€/yr) is the final step's flow. Its present value,
     plus the carbon and substrate streams, comes from compute_extraction_npv
@@ -595,7 +571,7 @@ def _extraction_result(
     )
 
     substrate_years: Optional[float] = None
-    end_state: Optional[SubstrateState] = _replay_substrate(resource.substrate, steps)
+    end_state: Optional[SubstrateState] = steps.substrate_end_state()
     if end_state is not None:
         substrate_years = compute_substrate_recovery_years(end_state)
 
@@ -654,9 +630,12 @@ def _pricing_failure(exc, step: int, total_units: int):
 
 def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationResult:
     """
-    Simulate extracting `units_to_extract` units from the ecosystem.
+    Extract `units_to_extract` units from the ecosystem.
 
-    v0.3 algorithm (per step):
+    The static damage function (decision D5, option B) is evaluated at
+    depletion k / N for the final step k = units_to_extract (and k − 1, for
+    the marginal cost); the other steps are evaluated only if asked for
+    (``result.steps``, an ExtractionSteps). At step k:
         Phase 1 — Direct damage with trophic amplification:
             depletion_ratio  = units_extracted / total_units
             raw_damage[i]    = agent[i].damage_function(depletion_ratio)
@@ -681,6 +660,9 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         Phase 4 — Resilience zone tagging:
             If resource.resilience is configured, compute zone/confidence/warning.
 
+    Substrate (v0.5): the one quantity integrated over the steps; see
+    ExtractionSteps.
+
     When ecosystem.interactions is empty and all trophic_levels are -1,
     this reduces to the v0.2 algorithm exactly.
 
@@ -689,7 +671,7 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
         units_to_extract: Number of units to extract (>= 0, <= total_units).
 
     Returns:
-        SimulationResult with all steps recorded.
+        SimulationResult; its ``steps`` evaluate every step on request.
 
     Raises:
         ValueError: If inputs fail validation.
@@ -701,15 +683,9 @@ def run_extraction(ecosystem: Ecosystem, units_to_extract: int) -> SimulationRes
     """
     validate_ecosystem(ecosystem)
     validate_extraction(ecosystem, units_to_extract)
-
-    if units_to_extract == 0:
-        steps: list = []
-    elif _can_use_cython(ecosystem):
-        # v0.8: the compiled loop, when built and compatible
-        steps = _cython_steps(ecosystem, units_to_extract)
-    else:
-        steps = _python_steps(ecosystem, units_to_extract)
-    return _extraction_result(ecosystem, steps, units_to_extract)
+    return _extraction_result(
+        ecosystem, ExtractionSteps(ecosystem, units_to_extract), units_to_extract,
+    )
 
 
 # ── Restoration ───────────────────────────────────────────────────────────────
@@ -765,23 +741,18 @@ def _resolve_starting_state(
     return run_extraction(ecosystem, lost)
 
 
-def _replay_substrate(profile, steps: list) -> Optional[SubstrateState]:
-    """Substrate state after the per-step erosion of ``steps`` (None if no profile)."""
-    if profile is None:
-        return None
-    state: SubstrateState = create_substrate_state(profile)
-    for step in steps:
-        apply_erosion(state, step.substrate_erosion)
-    return state
-
-
 def substrate_after_extraction(extraction: SimulationResult) -> Optional[SubstrateState]:
     """Substrate state at the end of an extraction (None without a substrate).
 
     Replays the extraction's per-step erosion on a pristine substrate, so the
-    state is exactly the one the extraction ended in, whichever engine ran it.
+    state is exactly the one the extraction ended in (a fresh copy each call).
     """
-    return _replay_substrate(extraction.ecosystem.resource.substrate, extraction.steps)
+    steps = extraction.steps
+    if isinstance(steps, ExtractionSteps):
+        return steps.substrate_end_state()
+    return _replay_substrate(
+        extraction.ecosystem.resource.substrate, [s.substrate_erosion for s in steps],
+    )
 
 
 def _recovery_efficiency(recovery_fn, agent_name: str, recovery_ratio: float) -> float:
@@ -802,57 +773,88 @@ def _recovery_efficiency(recovery_fn, agent_name: str, recovery_ratio: float) ->
     return efficiency
 
 
-def _restoration_steps(
-    ecosystem: Ecosystem,
-    start: SimulationResult,
-    units_to_restore: int,
-    recovery_functions: list,
-    substrate_ceiling: float,
-    cost_per_unit: float,
-) -> tuple:
-    """Retrace the starting state's damage path → (steps, reversals, potential).
+def _damages_at(start: SimulationResult, units_extracted: int) -> list:
+    """Effective damages of the starting extraction after ``units_extracted``
+    units (no damage at 0)."""
+    if units_extracted <= 0:
+        return [0.0] * len(start.ecosystem.agents)
+    steps = start.steps
+    if isinstance(steps, ExtractionSteps):
+        return steps.agent_damages(units_extracted)
+    return steps[units_extracted - 1].agent_damages
 
-    ``reversals`` are the final step's per-agent damage reversals and
-    ``potential`` its biological recovery before the substrate cap (€/yr).
-    See run_restoration for the formulas.
+
+class RestorationSteps(Sequence):
+    """The steps of a restoration, evaluated when they are asked for.
+
+    ``steps[j - 1]`` is the RestorationStep after j units replanted. It
+    depends only on j: the starting state's damage at m / N and at
+    (m − j) / N (both from the static damage function) and the recovery
+    efficiencies at j / m (see run_restoration). Its marginal service value
+    is its total minus that of step j − 1. Iterating evaluates the steps in
+    order with exactly the arithmetic of the former per-unit loop.
+
+    The recovery functions are user callables whose efficiency must lie in
+    [0, 1]: every ratio j / m used by the restoration is checked on
+    construction (ValueError at the first violation), as the former loop
+    did, although only the steps asked for are built.
     """
-    agents: list = ecosystem.agents
-    n_agents: int = len(agents)
-    resource = ecosystem.resource
-    total_units: int = resource.total_units
-    annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
-    weights: list = [a.dependency_weight for a in agents]
-    missing: int = start.total_units_extracted
-    damages_before: list = start.steps[missing - 1].agent_damages
-    no_damage: list = [0.0] * n_agents
 
-    steps: list = []
-    previous_total_service: float = 0.0
-    reversals: list = []
-    potential: float = 0.0
-    for step in range(1, units_to_restore + 1):
-        still_missing: int = missing - step
-        recovery_ratio: float = step / missing
-        damages_now: list = (
-            start.steps[still_missing - 1].agent_damages
-            if still_missing > 0 else no_damage
-        )
+    _CACHE_SIZE: int = 8
+
+    def __init__(
+        self,
+        ecosystem: Ecosystem,
+        start: SimulationResult,
+        units_to_restore: int,
+        recovery_functions: list,
+        substrate_ceiling: float,
+        cost_per_unit: float,
+    ) -> None:
+        agents: list = ecosystem.agents
+        resource = ecosystem.resource
+        self._agents: list = agents
+        self._start: SimulationResult = start
+        self._units: int = units_to_restore
+        self._total_units: int = resource.total_units
+        self._missing: int = start.total_units_extracted
+        self._recovery_functions: list = recovery_functions
+        self._substrate_ceiling: float = substrate_ceiling
+        self._cost_per_unit: float = cost_per_unit
+        self._annual_values: list = [a.annual_value(resource.area_ha) for a in agents]
+        self._weights: list = [a.dependency_weight for a in agents]
+        self._damages_before: list = _damages_at(start, self._missing)
+        self._cache: Dict[int, RestorationStep] = {}
+        for step in range(1, units_to_restore + 1):
+            ratio: float = step / self._missing
+            for i in range(len(agents)):
+                _recovery_efficiency(recovery_functions[i], agents[i].name, ratio)
+
+    def _service(self, step: int) -> tuple:
+        """(recoveries, reversals, service values, total, potential, health)
+        after ``step`` units replanted."""
+        agents: list = self._agents
+        weights: list = self._weights
+        annual_values: list = self._annual_values
+        damages_before: list = self._damages_before
+        damages_now: list = _damages_at(self._start, self._missing - step)
+        recovery_ratio: float = step / self._missing
 
         recoveries: list = []
-        reversals = []
+        reversals: list = []
         service_values: list = []
         total_service: float = 0.0
-        potential = 0.0
+        potential: float = 0.0
         health_sum: float = 0.0
-        for i in range(n_agents):
+        for i in range(len(agents)):
             efficiency: float = _recovery_efficiency(
-                recovery_functions[i], agents[i].name, recovery_ratio,
+                self._recovery_functions[i], agents[i].name, recovery_ratio,
             )
             reversal: float = damages_before[i] - damages_now[i]
             if reversal < 0.0:
                 reversal = 0.0
             biological: float = efficiency * reversal
-            recovered: float = biological * substrate_ceiling
+            recovered: float = biological * self._substrate_ceiling
             service_value: float = recovered * weights[i] * annual_values[i]
             potential += biological * weights[i] * annual_values[i]
 
@@ -867,21 +869,67 @@ def _restoration_steps(
             health = 0.0
         elif health > 1.0:
             health = 1.0
+        return recoveries, reversals, service_values, total_service, potential, health
 
-        steps.append(RestorationStep(
+    def _total(self, step: int) -> float:
+        """Annual service value recovered (€/yr) after ``step`` units; 0 at 0."""
+        if step <= 0:
+            return 0.0
+        return self._service(step)[3]
+
+    def _compute(self, step: int, previous_total: float) -> RestorationStep:
+        recoveries, _, service_values, total, _, health = self._service(step)
+        return RestorationStep(
             step=step,
             units_restored=step,
-            recovery_ratio=recovery_ratio,
-            depletion_ratio=still_missing / total_units,
+            recovery_ratio=step / self._missing,
+            depletion_ratio=(self._missing - step) / self._total_units,
             agent_recoveries=recoveries,
             agent_service_values=service_values,
-            marginal_service_value=total_service - previous_total_service,
-            cumulative_service_value=total_service,
-            restoration_cost_so_far=step * cost_per_unit,
+            marginal_service_value=total - previous_total,
+            cumulative_service_value=total,
+            restoration_cost_so_far=step * self._cost_per_unit,
             ecosystem_health=health,
-        ))
-        previous_total_service = total_service
-    return steps, reversals, potential
+        )
+
+    def _step(self, step: int) -> RestorationStep:
+        cached = self._cache.get(step)
+        if cached is None:
+            cached = self._compute(step, self._total(step - 1))
+            if len(self._cache) >= self._CACHE_SIZE:
+                self._cache.clear()
+            self._cache[step] = cached
+        return cached
+
+    def final_reversals_and_potential(self) -> tuple:
+        """The last step's per-agent damage reversals and its biological
+        recovery before the substrate cap (€/yr)."""
+        _, reversals, _, _, potential, _ = self._service(self._units)
+        return reversals, potential
+
+    def __len__(self) -> int:
+        return self._units
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self._step(i + 1) for i in range(*index.indices(self._units))]
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise TypeError(f"step indices must be integers or slices, not {type(index).__name__}")
+        if index < 0:
+            index += self._units
+        if not 0 <= index < self._units:
+            raise IndexError("step index out of range")
+        return self._step(index + 1)
+
+    def __iter__(self) -> Iterator[RestorationStep]:
+        previous_total: float = 0.0
+        for step in range(1, self._units + 1):
+            current = self._compute(step, previous_total)
+            previous_total = current.cumulative_service_value
+            yield current
+
+    def __repr__(self) -> str:
+        return f"<RestorationSteps: {self._units} steps>"
 
 
 def _maturation(
@@ -1074,8 +1122,10 @@ def run_restoration(
         recovered), in € and per € of foregone revenue
         (gaia.discount.compute_destroy_then_restore_penalty).
 
-    Restoration has no Cython loop: it reads the damages from the starting
-    state, which either engine may have produced.
+    Like extraction, restoration evaluates its final step directly; the
+    other steps are computed if asked for (``result.steps``, a
+    RestorationSteps). The damages come from the starting state's static
+    damage function.
 
     Args:
         ecosystem: The Ecosystem to restore.
@@ -1137,10 +1187,11 @@ def run_restoration(
         substrate_ceiling = start_step.k_fraction
         substrate_recovery_yrs = compute_substrate_recovery_years(sub_state)
 
-    steps, reversals, annual_recovered_potential = _restoration_steps(
+    steps = RestorationSteps(
         ecosystem, start, units_to_restore, recovery_functions,
         substrate_ceiling, restoration_cost.total_cost_per_unit,
     )
+    reversals, annual_recovered_potential = steps.final_reversals_and_potential()
     final_step: RestorationStep = steps[-1]
     annual_values: list = [a.annual_value(resource.area_ha) for a in ecosystem.agents]
     annual_damage_reversal: float = 0.0

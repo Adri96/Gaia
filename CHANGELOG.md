@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — static engine, evaluated directly (Step 8a; decisions D5, D7)
+
+The owner's decisions of 2026-10-12: **D5 option B now** (Gaia evaluates a static damage function of depletion and says so), **option A — a path-dependent engine — a firm commitment after v1.0**, and **D7: drop Cython**. **No output number changes**: the golden files are byte-identical, and the new engine reproduces the former pure-Python loop bit for bit on every step and field of the 14 golden scenarios, 25 synthetic configurations and the CLI text/JSON outputs of the four cases.
+
+### Changed
+
+- **Direct evaluation replaces the per-unit loop** (`gaia/simulation.py`). `run_extraction` evaluates the static function at the final depletion (and the step before, for the marginal cost) and returns `result.steps` as a lazy `ExtractionSteps` sequence: a step is computed when it is indexed or iterated, with the same arithmetic as the old loop. `run_restoration` does the same (`RestorationSteps`). The substrate's per-step Riemann sum (the extraction spread over one year) is kept as is, computed once per run, so its numbers do not change. EXPERIMENTAL pricing still certifies every step on construction, so it still stops at the first step that cannot be certified; restoration still checks every recovery ratio it uses against [0, 1].
+- The text report's keystone crossings, zone transitions and irreversibility step come from scans of the quantities involved (`gaia.simulation.keystone_crossings`, `zone_transitions`, `first_irreversible_step`) instead of building every step; `--steps-every N` builds only the steps it prints.
+- Speed (Python 3.10, arm64; `docs/ENGINE_PROFILE.md`, measured alternately against `main`): the default Amazon extraction takes 0.21 s instead of 1.52 s with the old Python loop (0.6 s with Cython), its restoration 0.51 s instead of 2.32 s, a 100,000-unit full-depletion sweep 0.25 s instead of 2.03 s; the smaller cases are 1.4–5× faster.
+- `PROJECT_DEFINITION.md` §13 rewritten ("A Static Damage Function, Evaluated Directly"): what the engine computes, where time enters (discounting, succession, the substrate ceiling), what that gives up, and the committed option A roadmap (A1 time axis and substrate erosion over real time → A2 relaxation and keystone hysteresis → A3 damage-dependent recovery), with the schema-2 `dynamics` block that keeps the format open for it. README, roadmap ("v1.x — Path-dependent engine"), `version_specs/V09_SPEC.md` (status and §4: the owner's decision) and `TOP_PRIORITIES_REPORT.md` (D5, D7 marked decided) updated.
+- `scripts/regen_golden.py` rewrites a golden file only when its snapshot differs beyond the comparison tolerance (rel 1e-9), so last-digit float noise never churns the files. (The stored extraction snapshots were written by the Cython build, whose compiler fused a few multiply-adds: five values differ from the Python engine in their last digit.)
+- `scripts/profile_engine.py` times the one engine, summary only and with every step evaluated.
+- Packaging: the version is read by `pyproject.toml` (`[tool.setuptools.dynamic]`), so `setup.py` is gone.
+
+### Removed
+
+- The Cython extension (`gaia/cy/simulation_cy.pyx`), its build (`setup.py`, the `speedups` extra), the engine switch (`_HAS_CYTHON`, `GAIA_FORCE_PYTHON`), the stale-build guard, the CI matrix entries that built it, the parity tests (`tests/test_engine_parity.py`, replaced by `tests/test_direct_evaluation.py`: lazy direct evaluation vs a sequential per-unit loop, exact equality) and `gaia.damage.evaluate_kernel` (the kernel tags stay; `gaia.ecosystem_io` uses them to write curves to files).
+
 ## Unreleased — data-driven ecosystems (Step 7)
 
 Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number changes**: the golden snapshots are untouched, which proves that the case files reproduce the 0.9.0 code-defined cases exactly; text and JSON output of the 0.9 command lines are byte-identical.

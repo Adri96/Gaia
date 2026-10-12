@@ -31,6 +31,7 @@ Step 5: calibration banner at the top and Parameter Provenance section at
 import textwrap
 
 from gaia.carbon import carbon_price_label
+from gaia.simulation import first_irreversible_step, keystone_crossings, zone_transitions
 from gaia.provenance import CalibrationStatus, Confidence, group_flagged
 from gaia.models import (
     Agent,
@@ -301,16 +302,12 @@ def format_report(result: SimulationResult) -> str:
     # v0.3: Keystone threshold crossings
     if has_cascade_data:
         # Collect all keystone crossings across all steps
-        keystone_crossings: dict = {}  # agent_name -> first step number
-        for s in result.steps:
-            for kname in s.keystone_triggered:
-                if kname not in keystone_crossings:
-                    keystone_crossings[kname] = s.step
-        if keystone_crossings:
+        crossings: dict = keystone_crossings(result.steps)  # name -> first step
+        if crossings:
             lines.append(
                 "  \u2500\u2500 Keystone Threshold Crossings \u2500" + "\u2500" * 31
             )
-            for kname, kstep in sorted(keystone_crossings.items(), key=lambda x: x[1]):
+            for kname, kstep in sorted(crossings.items(), key=lambda x: x[1]):
                 depletion_at_cross: float = kstep / resource.total_units
                 lines.append(
                     f"  \u26a0 {kname}: crossed at step {kstep:,} "
@@ -368,15 +365,12 @@ def format_report(result: SimulationResult) -> str:
 
         # Zone transitions
         transitions: list = []
-        prev_zone: str = "green"
-        for s in result.steps:
-            if s.resilience_zone != prev_zone:
-                depl_pct = s.depletion_ratio * 100
-                transitions.append(
-                    f"{prev_zone.title()} \u2192 {s.resilience_zone.title()} "
-                    f"at step {s.step:,} ({depl_pct:.0f}% depletion)"
-                )
-                prev_zone = s.resilience_zone
+        for prev_zone, zone, zstep in zone_transitions(result.steps):
+            depl_pct = zstep / resource.total_units * 100
+            transitions.append(
+                f"{prev_zone.title()} \u2192 {zone.title()} "
+                f"at step {zstep:,} ({depl_pct:.0f}% depletion)"
+            )
         if transitions:
             lines.append("  Zone transitions:")
             for t in transitions:
@@ -384,11 +378,7 @@ def format_report(result: SimulationResult) -> str:
 
         # Irreversibility warning
         if final_step.irreversibility_warning:
-            irrev_step = None
-            for s in result.steps:
-                if s.irreversibility_warning:
-                    irrev_step = s.step
-                    break
+            irrev_step = first_irreversible_step(result.steps)
             if irrev_step is not None:
                 depl_pct = irrev_step / resource.total_units * 100
                 lines.append("")
