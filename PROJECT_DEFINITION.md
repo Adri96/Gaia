@@ -467,7 +467,7 @@ The version entries below record what each version delivered at the time. The 20
 - [x] Implement succession-based maturation curves (pioneer → intermediate → climax): three-phase model with configurable phase durations and service fractions — `SuccessionCurve` dataclass, `succession.py` module with `succession_service()`, `get_succession_phase()`, `compute_maturation_timeline()`, `compute_maturation_gap()`, `find_years_to_threshold()`
 - [x] Maturation delay: configurable dead period at restoration start where replanted units provide zero ecosystem services (per-ecosystem: 2yr forest, 3yr Mediterranean, 5yr Posidonia)
 - [x] Implement double carbon externality: `carbon.py` module with `compute_carbon_release()` (biomass + soil fraction), `compute_absorption_foregone()`, `compute_carbon_cost()`, `compute_annual_absorption()`, `compute_carbon_payback_period()` — monetized at configurable carbon price per tonne
-- [x] Implement resilience zones: `resilience.py` module with `compute_resilience_zone()` (green/yellow/red classification), confidence interpolation, `compute_confidence_band()`, irreversibility warnings — flags when model confidence degrades past configured thresholds
+- [x] Implement resilience zones: `resilience.py` module with `compute_resilience_zone()` (green/yellow/red classification), confidence interpolation, a heuristic confidence band (retired in Step 8.4 for the Monte Carlo, `gaia/uncertainty.py`), irreversibility warnings — flags when model confidence degrades past configured thresholds
 - [x] Extended `models.py` with 5 new dataclasses: `SuccessionCurve`, `CarbonProfile`, `ResilienceConfig`, `MaturationStep`, `RestorationConfig`
 - [x] Extended `Resource` (carbon_profile, resilience), `Agent` (succession_curve), `SimulationStep` (resilience_zone, model_confidence, irreversibility_warning), `RestorationResult` (maturation_timeline, years_to_pioneer/50pct/90pct, total_maturation_gap)
 - [x] Extended `simulation.py`: Phase 4 resilience zone tagging in `run_extraction`, optional maturation pass in `run_restoration`
@@ -608,7 +608,7 @@ Full specification: `version_specs/V081_SPEC.md`
 - [ ] Owner confirms the user and the question above (proposal in place)
 - [x] Every parameter of the case DOI-backed or explicitly flagged in the provenance (`docs/POSIDONIA_LITERATURE_REVIEW.md`)
 - [x] Per-hectare values cross-checked against independent benchmarks (Campagne et al. 2015, de Groot et al. 2012 / ESVD, Costanza et al. 2014, Stamatiadou et al. 2025)
-- [ ] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95, a sensitivity (tornado) ranking; the heuristic band is retired
+- [x] Uncertainty bounds: a distribution per parameter, Monte Carlo, P5/P50/P95, a sensitivity (tornado) ranking; the heuristic band is retired
 - [ ] A 4–6 page methods note (`docs/POSIDONIA_METHODS_NOTE.md`)
 - [ ] Reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues
 - [x] All property tests pass with no `xfail`

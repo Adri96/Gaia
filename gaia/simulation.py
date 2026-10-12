@@ -67,7 +67,7 @@ from gaia.propagation import (
     trophic_amplification_factor,
 )
 from gaia.provenance import calibration_status
-from gaia.resilience import compute_confidence_band, compute_resilience_zone
+from gaia.resilience import compute_resilience_zone
 from gaia.substrate import (
     apply_erosion,
     compute_capacity_fraction,
@@ -551,7 +551,6 @@ def _extraction_result(
     health: float = 1.0
     substrate_ceiling: float = 1.0
     confidence: float = 1.0
-    band = None
     direct_costs: list = []
     cascade_costs: list = []
     if steps:
@@ -563,8 +562,6 @@ def _extraction_result(
             substrate_ceiling = final_step.k_fraction
         direct_costs, cascade_costs = _cost_split(ecosystem, final_step)
         confidence = final_step.model_confidence
-        if resource.resilience is not None and confidence < 1.0:
-            band = compute_confidence_band(annual_externality, confidence)
 
     extraction_npv, by_horizon = _npv(
         resource, discount, annual_externality, units_to_extract, substrate_ceiling,
@@ -593,7 +590,6 @@ def _extraction_result(
         agent_trophic_amplification=[
             trophic_amplification_factor(a.trophic_level) for a in ecosystem.agents
         ],
-        annual_externality_band=band,
         final_model_confidence=confidence,
         substrate_recovery_years=substrate_years,
         calibration=calibration_status(ecosystem, discount),

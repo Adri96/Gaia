@@ -1016,13 +1016,6 @@
         "Seabirds": 0.0,
         "Water Quality": 264426.19
       },
-      "annual_externality_band": {
-        "heuristic": true,
-        "high_eur_yr": 1879226.22,
-        "low_eur_yr": 668877.13,
-        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
-        "model_confidence": 0.525
-      },
       "annual_externality_eur_yr": 1274051.68,
       "discount_is_default": false,
       "final_ecosystem_health": 0.100511,
@@ -1086,10 +1079,6 @@
       1.0
     ],
     "annual_externality": 1274051.6755483984,
-    "annual_externality_band": [
-      668877.1296629091,
-      1879226.2214338877
-    ],
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,

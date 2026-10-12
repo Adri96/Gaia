@@ -950,13 +950,6 @@
         "Understory & Matorral": 11762.85,
         "Watershed & Water Cycle": 4240.64
       },
-      "annual_externality_band": {
-        "heuristic": true,
-        "high_eur_yr": 507536.83,
-        "low_eur_yr": 207303.77,
-        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
-        "model_confidence": 0.58
-      },
       "annual_externality_eur_yr": 357420.3,
       "discount_is_default": false,
       "final_ecosystem_health": 0.551573,
@@ -1024,10 +1017,6 @@
       1.0
     ],
     "annual_externality": 357420.2999647628,
-    "annual_externality_band": [
-      207303.77397956242,
-      507536.8259499632
-    ],
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,

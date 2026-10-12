@@ -102,11 +102,6 @@ $ gaia run forest --total-units 10000 --units 5000
   Carbon externality (release):                727,762.21€ (one-off)
   Carbon externality (absorption lost):      1,159,533.20€ (PV)
 
-  ── Externality Band (heuristic) ────────────────────────────────
-  Annual Externality:                           95,049.79€/yr
-  Band at 51% confidence:         48,882.75€/yr —   141,216.84€/yr
-    (heuristic: ±(1 − confidence); not a statistical interval)
-
   ── Substrate Impact Assessment ────────────────────────────────
   Substrate type:                          terrestrial_soil
   Pristine soil depth:                           45.0 cm
@@ -368,7 +363,9 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 - `restoration_cost_ratio` = (foregone revenue + restoration cost) / foregone revenue = 1 + restoration cost per unit / unit value. It is a ratio of two input prices, with no ecology in it.
 - `destroy_then_restore_penalty` is the PV cost to society of cutting k units and restoring them, compared with never cutting them: restoration cost + maturation gap (temporary) + substrate loss (permanent) + recovery shortfall (permanent, when replanting is partial) + carbon not recovered. It is reported in € PV and per € of foregone revenue.
 
-**Heuristic band.** The "externality band" is `annual externality × (1 ± (1 − model confidence))`, a heuristic and not a statistical interval; it is labelled as such. Monte Carlo uncertainty is future work.
+**Uncertainty (`--uncertainty [N]`).** A seeded Monte Carlo over the case's own parameter ranges (`gaia/uncertainty.py`, any case file, extraction). A parameter is sampled from its documented `range` / `relative_range`, or from a range set by its confidence (high ±10%, medium ±25%, low ×/÷2, placeholder ×/÷3). The output gives P5/P50/P95 of the annual externality, its present value and the net social cost; a tornado ranking (each parameter at its own P5 and P95); and the normative choices as separate sensitivities (carbon price, discount rate, scarcity, horizon), which are not sampled. It replaced the former heuristic band `cost × (1 ± (1 − model confidence))` (finding S7). Model-wide constants are not varied.
+
+**Benchmarks.** A case file may list published per-hectare values (`run.benchmarks`). An extraction report then shows where Gaia's per-hectare figures fall among them (`gaia/benchmarks.py`).
 
 **Experimental: endogenous pricing (`--with-pricing`).** A Leontief–Hannon price system (v0.7) is **quarantined** and must not be used for estimates. Every output that uses it carries an EXPERIMENTAL banner, and the JSON has `"pricing": {"experimental": true, ...}`. Every agent must be anchored, and agents without a documented anchor get a placeholder one. Convergence is certified at each step. A step that cannot be certified stops the run with `PricingConvergenceError` instead of falling back to static values; in the shipped cases this happens at about 22–35% depletion. The formulation still counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price. Pricing applies to extraction only.
 
@@ -566,7 +563,9 @@ Gaia/
 │   ├── succession.py          # succession curves, maturation timeline and gap
 │   ├── carbon.py              # carbon release and absorption at the social cost of carbon
 │   ├── substrate.py           # soil / matte erosion, capacity, restoration ceiling
-│   ├── resilience.py          # resilience zones and the heuristic band
+│   ├── resilience.py          # resilience zones (model confidence, irreversibility flag)
+│   ├── uncertainty.py         # Monte Carlo, sensitivity ranking, normative scenarios (--uncertainty)
+│   ├── benchmarks.py          # per-hectare comparison with published values (run.benchmarks)
 │   ├── discount.py            # NPV, discount profiles, restoration NPV, destroy-then-restore penalty
 │   ├── pricing.py             # EXPERIMENTAL endogenous pricing (quarantined)
 │   ├── validation.py          # input validation, convergence and in-degree checks, shape properties

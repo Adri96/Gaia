@@ -96,28 +96,6 @@ def _by_agent(agents: list, values: list, digits: int = 2) -> Dict[str, float]:
     return {a.name: round(v, digits) for a, v in zip(agents, values)}
 
 
-CONFIDENCE_BAND_METHOD: str = (
-    "HEURISTIC, not a statistical interval: annual externality x "
-    "(1 +/- (1 - model confidence)), the confidence set by the resilience "
-    "zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval "
-    "is pending (Step 8)."
-)
-
-
-def _confidence_band(result: SimulationResult) -> Optional[Dict[str, Any]]:
-    """The heuristic band on the annual externality (None when not defined)."""
-    if result.annual_externality_band is None:
-        return None
-    low, high = result.annual_externality_band
-    return {
-        "low_eur_yr": round(low, 2),
-        "high_eur_yr": round(high, 2),
-        "model_confidence": round(result.final_model_confidence, 4),
-        "heuristic": True,
-        "method": CONFIDENCE_BAND_METHOD,
-    }
-
-
 def _discount_to_dict(discount, is_default: bool) -> Dict[str, Any]:
     """The DiscountConfig the present values used, as configured."""
     schedule = discount.rate_schedule
@@ -536,7 +514,6 @@ def simulation_result_to_dict(
             "discount_is_default": result.discount_is_default,
             "final_ecosystem_health": round(result.final_ecosystem_health, 6),
             "num_steps": len(result.steps),
-            "annual_externality_band": _confidence_band(result),
         },
     }
     if result.steps:

@@ -78,28 +78,3 @@ def compute_resilience_zone(
     irreversibility: bool = depletion_ratio > config.irreversibility_flag_ratio
 
     return (zone, confidence, irreversibility)
-
-
-def compute_confidence_band(
-    cost: float,
-    confidence: float,
-) -> tuple:
-    """Compute confidence-adjusted cost band.
-
-    band = cost × (1 ± (1 - confidence))
-
-    This is a simple heuristic, not a statistical confidence interval.
-    It widens as confidence drops, indicating that the model's precision
-    degrades in yellow and red zones.
-
-    Args:
-        cost: Point estimate of the externality cost (€).
-        confidence: Model confidence (0.0 to 1.0).
-
-    Returns:
-        Tuple of (lower_bound, upper_bound) in €.
-    """
-    uncertainty: float = 1.0 - confidence
-    lower: float = cost * (1.0 - uncertainty)
-    upper: float = cost * (1.0 + uncertainty)
-    return (lower, upper)

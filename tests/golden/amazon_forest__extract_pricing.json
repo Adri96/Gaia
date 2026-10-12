@@ -1197,13 +1197,6 @@
         "Soil Decomposers": 892.36,
         "Understory": 1382.98
       },
-      "annual_externality_band": {
-        "heuristic": true,
-        "high_eur_yr": 24224.88,
-        "low_eur_yr": 10382.09,
-        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
-        "model_confidence": 0.6
-      },
       "annual_externality_eur_yr": 17303.49,
       "discount_is_default": false,
       "final_ecosystem_health": 0.693522,
@@ -1271,10 +1264,6 @@
       1.0
     ],
     "annual_externality": 17303.486227354388,
-    "annual_externality_band": [
-      10382.091736412633,
-      24224.880718296143
-    ],
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,

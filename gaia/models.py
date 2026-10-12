@@ -27,7 +27,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
@@ -836,11 +836,6 @@ class SimulationResult:
             cascades (€/yr); direct + cascade = agent_annual_costs.
         agent_trophic_amplification: Per agent, the trophic amplification
             factor applied to its direct damage (1.0 below level 1).
-        annual_externality_band: HEURISTIC band (low, high) in €/yr,
-            annual_externality × (1 ± (1 − final model confidence)) — not
-            a statistical interval (gaia.resilience.compute_confidence_band;
-            Monte Carlo pending). None without a ResilienceConfig or at
-            full confidence.
         final_model_confidence: Model confidence at the final step (1.0
             without steps or resilience config).
         substrate_recovery_years: Years for the substrate the extraction
@@ -866,7 +861,6 @@ class SimulationResult:
     agent_direct_annual_costs: list = field(default_factory=list)   # List[float], €/yr
     agent_cascade_annual_costs: list = field(default_factory=list)  # List[float], €/yr
     agent_trophic_amplification: list = field(default_factory=list)  # List[float]
-    annual_externality_band: Optional[Tuple[float, float]] = None
     final_model_confidence: float = 1.0
     substrate_recovery_years: Optional[float] = None
     calibration: Optional[Any] = None  # gaia.provenance.CalibrationStatus

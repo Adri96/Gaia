@@ -373,13 +373,6 @@
         "Vegetation & Flora": 12925.45,
         "Watershed & Local Climate": 30159.39
       },
-      "annual_externality_band": {
-        "heuristic": true,
-        "high_eur_yr": 141216.84,
-        "low_eur_yr": 48882.75,
-        "method": "HEURISTIC, not a statistical interval: annual externality x (1 +/- (1 - model confidence)), the confidence set by the resilience zone (gaia.resilience.compute_confidence_band). A Monte Carlo interval is pending (Step 8).",
-        "model_confidence": 0.5143
-      },
       "annual_externality_eur_yr": 95049.79,
       "discount_is_default": false,
       "final_ecosystem_health": 0.165644,
@@ -419,10 +412,6 @@
       1.0
     ],
     "annual_externality": 95049.79425918576,
-    "annual_externality_band": [
-      48882.75133329553,
-      141216.837185076
-    ],
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
