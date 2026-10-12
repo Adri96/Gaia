@@ -633,7 +633,7 @@ Not done:
 Unreleased (Step 8):
 - The engine evaluates its static function directly; the Cython extension is gone (D5 option B, D7).
 - The Posidonia v1.0 case: every parameter sourced or flagged, benchmarks, Monte Carlo bounds (`--uncertainty`), and a methods note ready for review.
-- The first user and question are a proposal awaiting the owner (`PROJECT_DEFINITION.md`, v1.0).
+- The first user and question, confirmed by the owner: a Catalan coastal authority or marine NGO reviewing the impact assessment of a port or marina expansion that destroys *N* ha of meadow (`PROJECT_DEFINITION.md`, v1.0).
 
 ---
 

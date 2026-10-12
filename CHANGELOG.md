@@ -6,7 +6,7 @@ The Posidonia meadow is the v1.0 case (D6): one case with every parameter source
 
 ### Added
 
-- **Proposed first user and question** (`PROJECT_DEFINITION.md`, v1.0; for the owner to confirm): a Catalan coastal authority or marine NGO assessing a port or marina expansion that destroys *N* ha of meadow.
+- **First user and question** (`PROJECT_DEFINITION.md`, v1.0; confirmed by the owner in Step 8c): a Catalan coastal authority or marine NGO assessing a port or marina expansion that destroys *N* ha of meadow.
 - **`docs/POSIDONIA_LITERATURE_REVIEW.md`**: every parameter of the case with value, range, source and mapping.
   - Every DOI was checked through Crossref and every number read from the source: abstract, full text or official PDF.
   - 25 of 69 parameters are sourced (21 by DOI or arXiv id, 4 by an official URL); 44 are flagged (34 placeholders, the 10 owner-specified weights).
