@@ -187,7 +187,7 @@ The owner asked how much carbon is released per unit time after the meadow and i
 The case default is the "exposed" row, because the fate is unknown until the user enters it; the owner confirmed it (Step 8d.2, no numeric change). Since Step 8d.2 the three rows are a preset, `--matte-fate {exposed,excavated,buried}` (`carbon.release_fates` in the case file), explained in plain words in `--help`:
 - **exposed**: the meadow dies but its matte stays in place, uncovered; open to oxygen, the dead matte erodes and its carbon escapes over years to decades;
 - **excavated**: the matte is dug out or dredged; nearly all its carbon goes in the year of the works;
-- **buried**: the matte is covered by fill and kept without oxygen, which probably preserves most of its carbon. The preset uses 0.125, the midpoint of the inferred 0–0.25 range, with the exposed half-life; both are labelled **inferred** (confidence `placeholder`).
+- **buried**: the matte is covered by fill and kept without oxygen, which probably preserves most of its carbon. The preset uses 0.125, the midpoint of the inferred 0–0.25 range, with the exposed half-life; both are labelled **inferred** (confidence `placeholder`). The owner kept this preset as it is, labelled inferred (Step 8e.1), so it is no longer an open question.
 
 `--carbon-release-fraction` and `--carbon-release-half-life` still override the preset. A fate other than the default is recorded as user-supplied, with its basis.
 

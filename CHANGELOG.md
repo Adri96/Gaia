@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Step 8e — the owner's answers, third round
+
+The owner's answers to the five open questions of #8, one commit each. The version is not bumped (the owner decides).
+
+#### Changed
+
+- **The `buried` matte preset is kept** (Posidonia; Step 8e.1): 0.125 released with a 10-year half-life, labelled *inferred, no source*, as before. It is no longer an open question (literature review §4, methods note §5). No number changes.
+
 ## 0.10.0 — Step 8: the Posidonia v1.0 case (2026-10-12)
 
 Step 8 of `TOP_PRIORITIES_REPORT.md`: one credible case (decision D6), *Posidonia oceanica* meadows on the Catalan coast, for a named user (a Catalan coastal authority or marine NGO reviewing a port or marina expansion), with every parameter sourced or flagged, uncertainty bounds, benchmarks and a methods note ready for external review. It also releases Step 7 (PR #5: cases as JSON files, `gaia run`).

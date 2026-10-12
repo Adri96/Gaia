@@ -131,7 +131,7 @@ On the fraction lost and its timing, which depend on what the project does to th
 |---|---|---|---|---|
 | `exposed` (default) | The meadow dies but its matte stays in place, uncovered (shading, turbidity, anchoring, scour). Open to oxygen, the dead matte erodes and its carbon escapes over years to decades. | 0.63 (range 0.25–1.0) | 10 yr (range 0–27) | Pendleton et al. 2012 (sourced); the 10-yr central half-life is inferred |
 | `excavated` | The matte is dug out or dredged (port basins, channels, docks). The carbon-rich soil is removed and broken up, so nearly all its carbon goes in the year of the works. | 0.96 | 0 (at once) | IPCC (2013) Wetlands Supplement, Tier 1 for port excavation (sourced) |
-| `buried` | The matte is covered by fill (breakwaters, reclaimed land). Kept without oxygen, it probably keeps most of its carbon. | 0.125 | 10 yr | **inferred, no source**: the midpoint of the inferred 0–0.25 range; the half-life is the exposed default |
+| `buried` | The matte is covered by fill (breakwaters, reclaimed land). Kept without oxygen, it probably keeps most of its carbon. | 0.125 | 10 yr | **inferred, no source**: the midpoint of the inferred 0–0.25 range; the half-life is the exposed default. Kept as it is by the owner (Step 8e.1) |
 
 The default stays "exposed" (the owner's decision, Step 8d.2). A fate other than the default is recorded as a user-supplied project input, with its basis, and is held fixed in the Monte Carlo.
 
