@@ -359,16 +359,20 @@ def test_amazon_max_externality_matches_per_hectare_calibration():
     assert amazon_max == pytest.approx(580.0 * AMAZON_AREA_HA, rel=1e-9)
 
 
-def test_amazon_agent_value_equals_pricing_anchors():
-    """The agent value and the documented (carbon-free) pricing anchors
-    agree. The PLACEHOLDER anchors of the other agents (Step 4) are each
-    agent's own annual value and are left out."""
+def test_amazon_pricing_anchors_are_sourced_market_values():
+    """Step 8d.6: three market-based anchors from de Groot et al. (2012)
+    Table 2, tropical forest (Int$/ha/yr × 1,000 ha): food 200 (Canopy
+    Trees), pollination 30 (Pollinators), water 27 (Aquatic System); every
+    other price is derived. The static agent value (€580/ha/yr, the spec's
+    §8 anchors) is not tied to them, and is larger than their sum."""
     eco = build_amazon_ecosystem(with_pricing=True)
-    anchors = sum(p.anchor_value for p in eco.pricing.anchors
-                  if "PLACEHOLDER" not in p.source)
+    anchors = {p.agent_name: p.anchor_value for p in eco.pricing.anchors}
+    assert anchors == {"Canopy Trees": 200_000.0, "Pollinators": 30_000.0,
+                       "Aquatic System": 27_000.0}
+    assert all("doi:10.1016/j.ecoser.2012.07.005" in p.source for p in eco.pricing.anchors)
     agents = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)
-    assert anchors == pytest.approx(agents, rel=1e-12)
+    assert agents == pytest.approx(580.0 * AMAZON_AREA_HA, rel=1e-12)
 
 
 def test_amazon_carbon_density_matches_literature():

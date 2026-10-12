@@ -389,14 +389,21 @@
   },
   "pricing": {
     "reference_area_ha": 100.0,
-    "anchor_every_agent": true,
+    "anchor_every_agent": false,
     "anchors": [
       {
-        "agent_name": "Watershed & Water Cycle",
-        "anchor_value": 25000.0,
-        "source": "Municipal water treatment cost avoided: ~€2.50/m³ × 100 m³/ha/yr × 100 ha",
+        "agent_name": "Mycorrhizal Fungi",
+        "anchor_value": 5200.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$ 52; Table 1: 118 of the database's 133 food estimates are direct market prices",
         "confidence": "low",
-        "description": "Watershed: €2.50/m³ × 10,000 m³/yr recharge"
+        "description": "A market-based value (Step 8d.6): food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$, Int$52/ha/yr x 100 ha, a global woodlands mean, not a site valuation; for scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms (de-Miguel et al. 2014, Forest Ecology and Management 330:218-227, doi:10.1016/j.foreco.2014.07.014)"
+      },
+      {
+        "agent_name": "Pollinators & Insects",
+        "anchor_value": 3100.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, pollination Int$ 31; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices)",
+        "confidence": "low",
+        "description": "A market-based value (Step 8d.6): pollination Int$, Int$31/ha/yr x 100 ha, a global woodlands mean, not a site valuation"
       }
     ],
     "scarcity_functions": {

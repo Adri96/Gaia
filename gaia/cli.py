@@ -96,10 +96,11 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         default=False,
         help=(
             "EXPERIMENTAL, quarantined (C8): v0.7 endogenous pricing, "
-            "extraction only (default: disabled). Every agent must be "
-            "anchored; a step whose price system cannot be certified "
-            "convergent stops the run with an error (no fallback values). "
-            "Not an estimate"
+            "extraction only (default: disabled). A few anchored agents "
+            "determine every price; the others are derived through the "
+            "placeholder edges and add no independent information. A step "
+            "whose price system cannot be certified convergent stops the run "
+            "with an error (no fallback values). Not an estimate"
         ),
     )
     parser.add_argument(

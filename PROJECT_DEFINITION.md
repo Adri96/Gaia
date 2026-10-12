@@ -587,7 +587,7 @@ Full specification: `version_specs/V081_SPEC.md`
 
 - [x] Safety net: golden snapshots of every case and mode, Cython/Python parity (since replaced by a direct-evaluation vs sequential-loop test), property tests
 - [x] Model core: yearly flows vs present values vs one-off amounts (D1); €/ha/yr × `area_ha` (D2); restoration from a real starting state; carbon owned by `carbon.py` at the social cost of carbon (D3); the two 10× errors (Amazon density, erosion); convergent discounting with horizon sensitivity; `restoration_cost_ratio` and `destroy_then_restore_penalty`; in-degree cap, calibration regime and complementary cascade
-- [x] Endogenous pricing quarantined (D4): certified convergence, explicit failure, every agent anchored
+- [x] Endogenous pricing quarantined (D4): certified convergence, explicit failure, every price determined (a few sourced anchors per case, the other prices derived and labelled; Steps 8c.6, 8d.6)
 - [x] Honest outputs: parameter provenance and calibration status in every output; README and this document rewritten around what the model does
 - [x] Engineering: `pyproject.toml`, `gaia` command, CI, strict JSON, damage shape properties checked on every run, text report formats result fields only, dead code removed, ruff and mypy clean
 

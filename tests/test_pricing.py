@@ -870,22 +870,24 @@ class TestAnchoring:
         assert "PLACEHOLDER" in by_agent["B"].source
         assert by_agent["B"].confidence == "low"
 
-    @pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest"])
-    def test_shipped_cases_anchor_every_agent_in_eur_per_year(self, case):
-        """Derived anchors equal the agent's static annual value (€/yr), so
-        anchors and static values share one scale."""
-        import importlib
+    @pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest", "posidonia"])
+    def test_shipped_cases_price_from_a_few_sourced_anchors(self, case):
+        """Step 8d.6: every case prices from two or three sourced anchors
+        (no PLACEHOLDER anchor left); every root agent (no incoming edge) is
+        anchored, every other agent is reached, and its price is derived."""
+        from gaia.cases import load_case
+        from gaia.pricing import unreachable_agents
 
-        module = importlib.import_module(f"gaia.cases.{case}")
-        builder = getattr(module, f"build_{case.replace('_forest', '') if case == 'amazon_forest' else case}_ecosystem")
-        eco = builder(with_pricing=True)
-        area = eco.resource.area_ha
-        anchored = {a.agent_name for a in eco.pricing.anchors}
-        assert anchored == {a.name for a in eco.agents}
-        for anchor in eco.pricing.anchors:
-            agent = next(a for a in eco.agents if a.name == anchor.agent_name)
-            if anchor.source.startswith("PLACEHOLDER: no documented anchor"):
-                assert anchor.anchor_value == pytest.approx(agent.annual_value(area))
+        eco = load_case(case).build_ecosystem(with_pricing=True)
+        assert not load_case(case).pricing.anchor_every_agent
+        anchors = eco.pricing.anchors
+        assert 2 <= len(anchors) <= 3
+        assert all(not a.source.startswith("PLACEHOLDER") and "doi:" in a.source for a in anchors)
+        names = [a.name for a in eco.agents]
+        targets = {e.target for e in eco.interactions if e.strength > 0}
+        roots = {n for n in names if n not in targets}
+        assert roots <= {a.agent_name for a in anchors}
+        assert unreachable_agents(names, eco.interactions, anchors) == []
 
 
 class TestExperimentalLabel:

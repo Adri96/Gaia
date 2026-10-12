@@ -561,28 +561,28 @@
   },
   "pricing": {
     "reference_area_ha": 1000.0,
-    "anchor_every_agent": true,
+    "anchor_every_agent": false,
     "anchors": [
       {
         "agent_name": "Canopy Trees",
-        "anchor_value": 150000.0,
-        "source": "Rainfall recycling service: $15-20/ha/yr × 1,000 ha + downwind agricultural value",
+        "anchor_value": 200000.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, food (provisioning: fruits, nuts, game) Int$ 200; Table 1: 118 of the database's 133 food estimates are direct market prices",
         "confidence": "low",
-        "description": "Water cycling / rainfall: €150k/yr"
-      },
-      {
-        "agent_name": "Aquatic System",
-        "anchor_value": 20000.0,
-        "source": "Fisheries: river fish catch value for 1,000 ha watershed",
-        "confidence": "low",
-        "description": "Fisheries: €20k/yr"
+        "description": "A market-based value (Step 8d.6): food (provisioning: fruits, nuts, game) Int$, Int$200/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
       },
       {
         "agent_name": "Pollinators",
-        "anchor_value": 410000.0,
-        "source": "Biodiversity/habitat: $410/ha/yr meta-analysis (Brouwer et al. 2022) × 1,000 ha",
+        "anchor_value": 30000.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, pollination Int$ 30; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices)",
         "confidence": "low",
-        "description": "Biodiversity/habitat: €410k/yr"
+        "description": "A market-based value (Step 8d.6): pollination Int$, Int$30/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
+      },
+      {
+        "agent_name": "Aquatic System",
+        "anchor_value": 27000.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, water (provisioning) Int$ 27; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
+        "confidence": "low",
+        "description": "A market-based value (Step 8d.6): water (provisioning) Int$, Int$27/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
       }
     ],
     "scarcity_functions": {

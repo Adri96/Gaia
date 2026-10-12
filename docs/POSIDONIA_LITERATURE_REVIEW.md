@@ -252,7 +252,12 @@ The quarantined endogenous pricing (decision D4) solves V = S·W·V + S·A. Here
   - Coastal Protection: damage cost avoided, a market cost;
   - the Posidonia Meadow, which must be anchored because it is the only agent with no incoming edge. Its anchor is a stated-preference value, because the meadow has no market price.
 - **The other seven prices are derived**, and they are labelled as derived in the text, the JSON (`derived_prices`) and the provenance (`pricing.derived[…]`, placeholder). The former PLACEHOLDER anchors are gone.
-- **The other three cases** keep `anchor_every_agent`: their roots have no documented anchor.
+- **The other three cases (Step 8d.6)** also price from a few sourced anchors, market-based values from de Groot et al. (2012), *Ecosystem Services* 1:50–61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full; Int$/ha/yr, 2007 price level, used as € like their agent values), whose Table 1 shows how they were valued: food 118 of 133 estimates at direct market prices, water 32 of 38 market or cost-based, pollination 2 of 3 production-function values:
+  - forest (temperate forest): Watershed & Local Climate, water 191; Vegetation & Flora, food 299. Both roots, both sourced;
+  - costa_brava (woodlands): Mycorrhizal Fungi (the only root), food 52 (wild mushrooms are the fruiting bodies of mycorrhizal fungi); Pollinators & Insects, pollination 31;
+  - amazon_forest (tropical forest, no root): Canopy Trees, food 200; Pollinators, pollination 30; Aquatic System, water 27.
+
+  No placeholder anchor is left anywhere (`anchor_every_agent: false` in all four files): every root has a sourced anchor, so reachability makes the former placeholders unnecessary.
 
 **What derived prices rest on.** They carry no information of their own. Doubling an anchor doubles every price it reaches. Each derived price moves one for one with the placeholder edge strengths and with the hand-set scarcity multipliers. They also add each upstream anchor again into every agent downstream, which is the double counting of C8.4.
 

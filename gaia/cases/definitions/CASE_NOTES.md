@@ -93,6 +93,15 @@ the linear model replaces by the area lost. What remains is what the
 warning pointed at: the post-threshold curve and the 30% threshold are
 still unfitted placeholders.
 
+**EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors, both roots (no
+incoming edge), from de Groot et al. (2012) Table 2, temperate forest
+(Int$/ha/yr × the 40-ha reference): Watershed & Local Climate, water 191
+(the former anchor, typed "from memory", now read); Vegetation & Flora,
+food 299 (wild plants, fungi and game, mostly direct market prices). The
+prices of Animal Populations and Human Communities are derived (labelled
+so): the anchors passed through the placeholder edges, no independent
+information. `anchor_every_agent` is off; no placeholder anchor is left.
+
 ## Costa Brava Holm Oak Forest (`costa_brava`)
 
 ```text
@@ -209,6 +218,16 @@ instead of €121,767, PV €9.13 M instead of €8.80 M. **The
 CalibrationWarning is gone** (the remaining forest's health at the
 threshold is 1.0); what remains is the unfitted post-threshold curves and
 threshold.
+
+**EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors from de Groot et
+al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference):
+Mycorrhizal Fungi, the only root, food 52 (in Mediterranean woodland
+largely wild mushrooms, the fruiting bodies of mycorrhizal fungi; for
+scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms,
+de-Miguel et al. 2014, doi:10.1016/j.foreco.2014.07.014); Pollinators &
+Insects, pollination 31. The other nine prices are derived. The former
+unsourced Watershed anchor (€2.50/m³ × 100 m³/ha/yr) and the eight
+placeholders are dropped: reachability makes them unnecessary.
 
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
@@ -514,3 +533,12 @@ unchanged). **The CalibrationWarning is gone.** What remains: the
 basin-scale 20% tipping point applied to a 1,000-ha patch (S4), now the
 point where the remaining forest starts to degrade, and the unfitted
 post-threshold curve.
+
+**EXPERIMENTAL pricing (Step 8d.6).** Three sourced anchors from de Groot
+et al. (2012) Table 2, tropical forest (Int$/ha/yr × the 1,000-ha
+reference): Canopy Trees, food 200; Pollinators, pollination 30; Aquatic
+System, water 27. The network has no root (every agent is reached from
+Canopy Trees), so the other eight prices are derived. The former spec §8
+anchors (rainfall recycling €150k, fisheries €20k, biodiversity €410k:
+sources unverified, audit S4) and the eight placeholders are dropped; the
+static agent value (€580/ha/yr) still rests on the spec's §8 sum.

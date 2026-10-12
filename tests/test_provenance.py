@@ -159,15 +159,11 @@ def test_pricing_anchors_recorded_only_with_pricing(case):
     # every agent is either anchored or derived (Step 8c.6), never both
     assert len(anchors) + len(derived) == len(eco.agents)
     assert all(p.confidence is Confidence.PLACEHOLDER for p in derived)
-    if case == "posidonia":
-        # three sourced anchors (service ledger), seven derived prices
-        assert len(anchors) == 3 and len(derived) == 7
-        assert all(p.source and "doi:" in p.source for p in anchors)
-        return
-    # the other cases anchor every agent; the Step 4 placeholders remain
-    assert not derived
-    assert all(p.confidence in (Confidence.LOW, Confidence.PLACEHOLDER) for p in anchors)
-    assert any(p.confidence is Confidence.PLACEHOLDER for p in anchors)
+    # a few sourced anchors (Steps 8c.6, 8d.6), every other price derived
+    expected = {"posidonia": (3, 7), "forest": (2, 2), "costa_brava": (2, 9), "amazon_forest": (3, 8)}
+    assert (len(anchors), len(derived)) == expected[case]
+    assert all(p.source and "doi:" in p.source for p in anchors)
+    assert all(p.confidence is not Confidence.PLACEHOLDER for p in anchors)
 
 
 def test_known_flags_are_honest():

@@ -195,14 +195,21 @@
   },
   "pricing": {
     "reference_area_ha": 40.0,
-    "anchor_every_agent": true,
+    "anchor_every_agent": false,
     "anchors": [
       {
         "agent_name": "Watershed & Local Climate",
         "anchor_value": 7640.0,
-        "source": "de Groot et al. 2012, temperate forests, (fresh) water supply Int$191/ha/yr × 40 ha",
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
         "confidence": "low",
-        "description": "Water supply: €191/ha/yr × 40 ha (figure from memory, verify)"
+        "description": "A market-based value (Step 8d.6): water (provisioning) Int$, Int$191/ha/yr x 40 ha, a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')"
+      },
+      {
+        "agent_name": "Vegetation & Flora",
+        "anchor_value": 11960.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices",
+        "confidence": "low",
+        "description": "A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$, Int$299/ha/yr x 40 ha, a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream"
       }
     ],
     "scarcity_functions": {
