@@ -85,7 +85,7 @@ Single-pass cascades cut chains longer than one hop. Under regime B, the cascade
 
 ## 5. Parameters and sources
 
-A Posidonia extraction run records 59 parameters (69 with restoration). The literature review gives every one of them, with value, range, source and mapping. In summary:
+A Posidonia extraction run records 60 parameters (70 with restoration): 26 sourced (22 by DOI or arXiv id, 4 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
 **Service values: the service ledger (Step 8c.2).** Every agent carries euros, and each final service is counted once, owned by one agent. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009). € /ha/yr at full damage:
 
@@ -123,7 +123,7 @@ On the fraction lost and its timing, which depend on what the project does to th
 Re-absorption is not modelled in the extraction view. On the footprint the conversion is permanent. Around it, natural recolonisation over centuries would re-absorb about 8% of the PV of the foregone burial, about 1.5% of the release.
 
 **Unsourced, flagged.**
-- The damage curves, threshold and steepness.
+- The degradation curve, threshold and steepness.
 - The 15 edge strengths. Several links are documented qualitatively, e.g. wave height falls ~50% over ~1 km of meadow (Infantes et al. 2012), but none has a published strength.
 - The keystone threshold.
 - The owner's health weights.
@@ -147,8 +147,7 @@ Each recorded parameter that can change an extraction result is sampled:
 - **Constraints.** Ratios are kept in [0, 1]. A draw that fails the model's validation (e.g. edges above the in-degree cap) is redrawn and counted.
 - **Not sampled:**
   - the health weights: they are fixed, because weight × value is the sourced euro figure;
-  - zero values;
-  - the user's inputs: area, hectares destroyed, private gain;
+  - the user's inputs: the reference area, hectares destroyed and private gain, plus the carbon release fraction and half-life when the user enters them;
   - the model-wide constants;
   - the normative choices: discount schedule, scarcity, horizon, carbon price. These are value judgements, not unknowns with a distribution, and are reported as separate sensitivities.
 - **Mechanics.** Each draw sets the sampled values in a copy of the case file, which is re-parsed with full validation and run. The generator is seeded (default 20261012). 1,000 draws take about 4 s.
@@ -165,55 +164,62 @@ This replaces the former heuristic band, which multiplied the externality by 1 �
 
 | Quantity | Base | P5 | P50 | P95 |
 |---|---|---|---|---|
-| Annual externality (services), €/yr | 6,325 | 1,099 | 7,468 | 25,898 |
-| PV services lost (200 yr) | 0.59 M | 0.10 M | 0.70 M | 2.42 M |
-| PV carbon released (one-off) | 6.28 M | 3.63 M | 6.49 M | 10.01 M |
-| PV carbon burial lost | 0.95 M | 0.59 M | 1.33 M | 2.52 M |
-| **PV of externality** | **7.83 M** | **5.62 M** | **8.78 M** | **12.78 M** |
-| **Net social cost** (− €125,000 private gain) | **7.70 M** | **5.49 M** | **8.66 M** | **12.65 M** |
+| Annual externality (services), €/yr | 40,933 | 37,892 | 52,975 | 77,138 |
+| PV services lost (200 yr) | 3.83 M | 3.55 M | 4.96 M | 7.22 M |
+| PV carbon released (10-yr half-life) | 5.56 M | 3.02 M | 5.59 M | 9.12 M |
+| PV carbon burial lost | 0.95 M | 0.57 M | 1.37 M | 2.57 M |
+| **PV of externality** | **10.35 M** | **8.73 M** | **12.31 M** | **15.98 M** |
+| **Net social cost** (− €125,000 private gain) | **10.22 M** | **8.61 M** | **12.19 M** | **15.85 M** |
 
-*1,000 draws, seed 20261012. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed (burial, release fraction, fisheries).*
+*1,000 draws, seed 20261012. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed: the meadow's diving value, burial, the non-use values, the release fraction. The base annual externality is exactly 50 ha × €818.66/ha/yr, because below the threshold small losses are priced linearly (§4).*
 
 **Drivers** (swing in net social cost between each parameter's P5 and P95):
 
 | Parameter | Swing |
 |---|---|
-| Carbon release fraction | €5.1 M |
-| Matte carbon stock | €4.0 M |
+| Carbon release fraction | €4.5 M |
+| The meadow's diving value | €3.5 M |
+| Matte carbon stock | €3.5 M |
 | Burial rate | €2.0 M |
-| Curve steepness | €1.5 M |
-| Safe threshold | €1.2 M |
-| Coastal-protection value | €0.34 M |
+| Release half-life | €1.0 M |
+| Coastal-protection value | €0.91 M |
+| Water-quality value | €0.29 M |
+| Megafauna, seabird non-use values | €0.26 M each |
 
-The fisheries and water-quality values and the edge strengths each swing it by less than €0.15 M.
+The fisheries, coralligenous and invertebrate values each swing it by less than €0.15 M. The curve steepness and the safe threshold no longer matter for a project below the threshold.
 
 **Normative choices** (net social cost, base parameters):
 
 | Choice | Net social cost |
 |---|---|
-| Market/ETS carbon price (€80/t) | €3.95 M |
-| EPA SC-CO₂ at a 2.5% near-term rate ($120/t) | €5.04 M |
-| EPA SC-CO₂ at a 1.5% near-term rate ($340/t) | €13.41 M |
-| 2.0% constant discount rate | €7.57 M |
-| No relative price change | €7.42 M |
-| 100-year horizon | €7.10 M |
+| Market/ETS carbon price (€80/t) | €6.84 M |
+| EPA SC-CO₂ at a 2.5% near-term rate ($120/t) | €7.82 M |
+| EPA SC-CO₂ at a 1.5% near-term rate ($340/t) | €15.36 M |
+| 2.0% constant discount rate | €10.03 M |
+| No relative price change | €8.41 M |
+| 100-year horizon | €8.50 M |
 
 **Benchmarks** (per hectare per year):
-- Gaia's service value at full damage, €285/ha/yr (€443 with carbon burial at the SCC), sits inside Campagne et al.'s 284–514 €/ha/yr (including carbon), as constructed.
-- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, about 20× higher. It includes recreation and tourism.
-- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014) are about 65× higher, mostly a transferred nutrient-cycling value.
+- Gaia's service value at full damage is €819/ha/yr (€977 with carbon burial at the SCC). That is about 2.9× Campagne et al.'s non-carbon services, because the ledger adds recreation and non-use values to theirs.
+- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, about 11× higher. It includes recreation and tourism.
+- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014) are about 35× higher, mostly a transferred nutrient-cycling value.
 
 **Reading.**
-1. The externality of the default project is dominated by the carbon released from the matte, about €126,000 per hectare destroyed at the SCC. The PV of the valued services is about €11,800 per hectare charged.
-2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 30–110 times the default private gain (ETS carbon price: 32×; P5: 44×; P95: 101×). To break even, a project would need a private gain of about €80,000 (ETS carbon price) to €270,000 per hectare: the PV of the externality per hectare, which is €112,000 at P5 and €256,000 at P95.
-3. That conclusion rests mostly on the carbon terms, and their dominant uncertainty, the fraction of matte carbon released, depends on what the project physically does to the matte: excavation, burial under fill, or later erosion. The user's environmental impact assessment can resolve it far better than the literature can.
+1. Carbon and services now weigh about the same for the default project. Per hectare destroyed:
+   - the release costs about €111,000 in PV (SCC, 10-year half-life);
+   - the services charged cost about €77,000 in PV;
+   - the foregone burial costs about €19,000 in PV.
+2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 55–125 times the default private gain (ETS carbon price: 55×; P5: 69×; P95: 127×). To break even, a project would need a private gain of about €140,000 (ETS carbon price) to €320,000 per hectare: the PV of the externality per hectare, which is €175,000 at P5 and €320,000 at P95.
+3. That conclusion rests on two uncertain terms:
+   - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve: excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
+   - the meadow's diving value, a benefit transfer that a Catalan valuation should replace.
 
 **Restoration** of the same 50 ha (`--mode restore --units 50 --time-horizon 200`, €200,000/ha including maintenance):
-- net restoration value −€7.75 M (PV);
-- only about €0.12 M of benefits within 200 years, because recolonisation is slow;
+- net restoration value −€7.51 M (PV);
+- only about €0.36 M of benefits within 200 years, because recolonisation is slow;
 - the carbon breakeven price is far above any credible carbon price.
 
-Destroying and then restoring is therefore much worse than not destroying: the destroy-then-restore penalty is €15.6 M in PV, about 125 times the foregone gain.
+Destroying and then restoring is therefore much worse than not destroying: the destroy-then-restore penalty is €17.9 M in PV, about 143 times the foregone gain.
 
 ## 8. Limitations
 
@@ -235,6 +241,8 @@ gaia run posidonia                                   # deterministic run, benchm
 gaia run posidonia --uncertainty                     # + Monte Carlo (1,000 draws, seed 20261012)
 gaia run posidonia --uncertainty --format json --summary-only
 gaia run posidonia --units N --unit-value G --uncertainty   # the user's project
+gaia run posidonia --units N --unit-value G --area-ha M --resource-name "…" \
+    --carbon-release-fraction 0.96 --carbon-release-half-life 0   # an excavated footprint in a meadow of M ha
 gaia run posidonia --mode restore --units 50 --time-horizon 200
 ```
 

@@ -1,14 +1,15 @@
 # Posidonia oceanica (Catalan coast): literature review of every parameter
 
-Step 8.2 of `TOP_PRIORITIES_REPORT.md`, for the v1.0 case `gaia/cases/data/posidonia.json` (decision D6). For each parameter of the case this review gives its value, the source, the range, how the source maps to the parameter, and the confidence recorded in the case file's provenance, which every Gaia output prints.
+Step 8.2 of `TOP_PRIORITIES_REPORT.md` (revised in Step 8c with the owner's answers: the service ledger, linear pricing of small losses, the reference resource and the carbon release as inputs), for the v1.0 case `gaia/cases/data/posidonia.json` (decision D6). For each parameter of the case this review gives its value, the source, the range, how the source maps to the parameter, and the confidence recorded in the case file's provenance, which every Gaia output prints.
 
 ## How the sources were checked
 
 - **Metadata.** Every DOI below was resolved through the Crossref API (title, authors, journal, year, volume, pages). One DOI first tried for Campagne et al. (2015), 10.1016/j.ecoser.2015.02.002, turned out to belong to a different paper (Kleisner et al. 2015); the correct one is below. **No DOI here was typed from memory.**
 - **Numbers.** Each number was read from the source itself, never from a secondary summary unless stated:
   - the abstract (Crossref, OpenAlex or the publisher page);
-  - the full text where it was openly available: Campagne et al. 2015, Pendleton et al. 2012, Costanza et al. 2014, the Drupp et al. working paper and arXiv paper, the IPCC Wetlands Supplement chapter 4, the US EPA SC-GHG report;
-  - official documents: the French Label Bas-Carbone Posidonia method, the ECB exchange-rate series.
+  - the full text where it was openly available: Campagne et al. 2015, Pendleton et al. 2012, Costanza et al. 2014, the Drupp et al. working paper and arXiv paper, the IPCC Wetlands Supplement chapter 4, the US EPA SC-GHG report, and in Step 8c Börger et al. 2014, Gobert et al. 2009 and Zunino et al. 2020;
+  - official documents and data: the French Label Bas-Carbone Posidonia method, the ECB exchange-rate series (USD 2020, GBP 2013), Idescat's 2021 household count, the Generalitat's fisheries statistics (open data);
+  - press reports, labelled as such, for the Medes Islands' annual dives (Ràdio Capital 2026, Ara 2015).
 - **What is flagged.** Where a value could not be checked it stays in the case and is flagged (`placeholder`, or `low` with the reason in its note). Secondary figures are labelled as such.
 - **Confidence levels** follow `gaia/provenance.py`:
   - `medium`: a published value for this or a comparable system, citation checked;
@@ -17,16 +18,16 @@ Step 8.2 of `TOP_PRIORITIES_REPORT.md`, for the v1.0 case `gaia/cases/data/posid
 
 ## Summary
 
-69 parameters are recorded for a Posidonia run (with restoration). They split as follows:
+70 parameters are recorded for a Posidonia run with restoration (60 for an extraction). They split as follows:
 
 | Status | Count | Parameters |
 |---|---|---|
-| Sourced, DOI (or arXiv id) checked | 21 | the four final-service values; the six zero-value agents (final-services accounting); absorption, soil stock, release fraction; substrate formation; discount rate and scarcity; planting cost; four succession parameters |
+| Sourced, DOI (or arXiv id) checked | 22 | the ten agent values (the service ledger, §2); absorption, soil stock, release fraction, release half-life; substrate formation; discount rate and scarcity; planting cost; four succession parameters |
 | Sourced, official URL checked | 4 | resource area (Generalitat map, as reported); biomass carbon (Label Bas-Carbone method); carbon price and its growth (US EPA 2023, ECB rate) |
 | Flagged `low`, no source | 10 | the ten dependency weights (owner specification) |
-| Flagged `placeholder` | 34 | private gain per ha; safe threshold; damage steepness; keystone threshold; 15 edge strengths; 4 substrate parameters; the declining discount steps and horizon; maintenance cost and years; recovery steepness; two succession parameters; the three model-wide trophic/keystone constants |
+| Flagged `placeholder` | 34 | private gain per ha; safe threshold; degradation-curve steepness; keystone threshold; 15 edge strengths; 4 substrate parameters; the declining discount steps and horizon; maintenance cost and years; recovery steepness; two succession parameters; the three model-wide trophic/keystone constants |
 
-Of the 25 sourced parameters, 11 are `medium` and 14 `low`. They are `low` either because the source is global or a congener rather than *P. oceanica* in Catalonia, or because it is a modelling choice backed by a methodological reference.
+Of the 26 sourced parameters, 11 are `medium` and 15 `low`. (With EXPERIMENTAL pricing, 3 sourced anchors and 7 derived prices are added, the latter flagged `placeholder`; §8.) They are `low` either because the source is global or a congener rather than *P. oceanica* in Catalonia, or because it is a modelling choice backed by a methodological reference.
 
 The case remains **illustrative** by Gaia's own rule (`CalibrationStatus.status`), because placeholders remain. What changed is that every money figure and every carbon figure now has a checked source and a range. What is still unsourced is the ecological structure: the response curves, the edges and the threshold. That structure can be argued about but not looked up; Track 1 review is for exactly that.
 
