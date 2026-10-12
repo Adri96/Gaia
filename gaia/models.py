@@ -647,6 +647,10 @@ class Agent:
             them.
         sites: What the sites are (e.g. "dive sites"); "" when the value
             applies everywhere.
+        site_intensity: The activity's intensity near the sites at which
+            annual_value_per_ha is stated (Step 8e.2; Posidonia: dives per
+            hectare of meadow near dive sites per year), or None. Not used
+            in the arithmetic (the value already reflects it); reported.
     """
 
     name: str
@@ -663,6 +667,8 @@ class Agent:
     # Step 8d.4: a value that applies only near some sites
     site_share: float = 1.0
     sites: str = ""
+    # Step 8e.2: the intensity near the sites the value is stated at
+    site_intensity: Optional[float] = None
 
     def annual_value(self, area_ha: float) -> float:
         """€/yr of service lost at full damage over ``area_ha`` hectares

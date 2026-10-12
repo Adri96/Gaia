@@ -284,6 +284,24 @@ figure and the owner's weights keep their role in the health index
   dive sites (`site_share`; `--dive-site-share F`, a project input). The
   default share is the regional one, 142.35 / 4,582 = 0.0311, which gives
   back the former regional average, 454.52.
+  Dive-activity intensity (Step 8e.2): the near-site value is stated at
+  the Costa Brava's average intensity, 60,000 / 142.35 = 421.5 dives per
+  hectare of meadow near dive sites a year (`site_intensity`). A project
+  states the intensity at its meadow with `--dive-intensity` (the levels
+  of `site_intensity_levels`), which scales the near-site value by
+  level / 421.5; the share then says what part of the affected meadow is
+  near the dive sites (1 when the intensity is given alone):
+    none   0 dives/ha/yr              €0/ha/yr      (no dive site within reach)
+    low    14,000 / 211.45 = 66.2     €2,298        Banyuls-Cerbère (Lloret 2006
+           slides, grey literature) over Natura 2000 FR9101482's meadow
+    medium 40,000 / 70.61 = 566.5     €19,663       Portofino (Betti et al. 2023,
+           doi:10.1002/aqc.3918) over Natura 2000 IT1332674's meadow
+    high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
+           the park's study) over Natura 2000 ES5120016's meadow
+  'none' zeroes the meadow's diving service, its only ledger entry, so the
+  meadow agent alone costs nothing of its own (its other services belong
+  to other agents, and its carbon is counted); this exception to "every
+  agent costs money" is the user's explicit choice, and flagged.
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
   for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
   Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the

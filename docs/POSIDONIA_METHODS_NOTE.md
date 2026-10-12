@@ -85,7 +85,7 @@ Single-pass cascades cut chains longer than one hop. Under regime B, the cascade
 
 ## 5. Parameters and sources
 
-A Posidonia extraction run records 61 parameters (71 with restoration): 27 sourced (22 by DOI or arXiv id, 5 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
+A Posidonia extraction run records 62 parameters (72 with restoration): 28 sourced (22 by DOI or arXiv id, 6 by an official URL) and 44 flagged (34 placeholders, 10 owner weights). The literature review gives every one of them, with value, range, source and mapping. In summary:
 
 **Service values: the service ledger (Step 8c.2).** Every agent carries euros, and each final service is counted once, owned by one agent. Intermediate agents get a sourced share of a final service moved from another agent, so the total is unchanged (Boyd & Banzhaf 2007; Fisher et al. 2009). € /ha/yr at full damage:
 
@@ -113,7 +113,29 @@ Services of the meadow itself are spread over the meadow area. Services of the w
 | 1 (a project at a dive site) | €749,714 | €76.68 M (58.41 / 100.64 / 173.46) |
 | 0 (far from any dive site) | €18,207 | €8.22 M (6.26 / 9.09 / 12.88) |
 
-At a dive site the meadow's diving value dominates everything else; far from one, carbon does. **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
+At a dive site the meadow's diving value dominates everything else; far from one, carbon does.
+
+**How much the meadow is dived (Step 8e.2).** The value near dive sites is stated at the Costa Brava's average intensity, 421.5 dives per hectare of meadow a year (the Medes dives over the 142.35 ha). A project states the intensity at its meadow with `--dive-intensity`; the intensity sets the value per hectare near the dive sites (€34.71 per dive × dives/ha/yr) and `--dive-site-share` the part of the affected meadow near them (1 when the intensity is given alone). In plain words:
+
+| `--dive-intensity` | What it means | Dives per ha of meadow a year | €/ha/yr near dive sites | Basis |
+|---|---|---|---|---|
+| `none` | No dive site within reach of the meadow | 0 | 0 | by definition |
+| `low` | Light use, like the Banyuls-Cerbère reserve (France): ~14,000 dives a year over 211 ha of meadow | 66 | 2,298 | Lloret 2006, conference slides (grey literature, `low`) |
+| (default) | The Costa Brava average | 421.5 | 14,630 | Medes dives over the Costa Brava's 142.35 ha |
+| `medium` | Busy, like Portofino (Liguria): up to 40,000 dives a year over 71 ha | 566 | 19,663 | Betti et al. 2023 (abstract, `low`) |
+| `high` | Intense, like the Medes Islands: ~60,000 dives a year over 10.75 ha | 5,581 | 193,730 | press report of the park's study (`low`) |
+
+Meadow areas are the *P. oceanica* cover of each site's Natura 2000 form. For the default 50 ha with the intensity alone (share 1; 1,000 draws, seed 20261012):
+
+| `--dive-intensity` | Annual externality | PV of externality, base (P5 / P50 / P95) |
+|---|---|---|
+| `none` | €18,207 | €8.22 M (6.26 / 9.09 / 12.88) |
+| `low` | €133,114 | €18.97 M (16.28 / 23.75 / 35.11) |
+| `medium` | €1,001,354 | €100.24 M (75.37 / 132.04 / 230.20) |
+| `high` | €9,704,719 | €914.82 M (666.88 / 1,216.34 / 2,187.04) |
+| `high`, `--dive-site-share 0.1` (5 of the 50 ha at the site) | €986,858 | €98.88 M (74.42 / 130.23 / 226.93) |
+
+The intensity is a density: `high` fits only a small meadow at a heavily dived site, so a larger project should state the share near the site. `none` zeroes the meadow agent's only ledger service; its other services belong to other agents and its carbon is still counted (the only, explicit, exception to "every agent costs money"; literature review §2). **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 

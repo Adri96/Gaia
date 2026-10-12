@@ -39,7 +39,7 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 101,899 | 10,704,259 | 10.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 127,048 | 9,133,733 | 20.2% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 50 of 61 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 51 of 62 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 116,000 | 34,933,804 | 80.0% | 66 of 71 |
 <!-- END:example -->
 
@@ -322,11 +322,11 @@ The JSON output starts with the calibration status:
   "mode": "extraction",
   "calibration": {
     "status": "illustrative",
-    "statement": "ILLUSTRATIVE: 50 of 61 recorded parameters are placeholders (29) or low-confidence (21). Results are not real-world estimates.",
+    "statement": "ILLUSTRATIVE: 51 of 62 recorded parameters are placeholders (29) or low-confidence (22). Results are not real-world estimates.",
     "calibration_regime": "B",
-    "n_params": 61,
+    "n_params": 62,
     "n_placeholder": 29,
-    "n_low": 21,
+    "n_low": 22,
     "n_medium": 11
   },
   "summary": {
@@ -438,7 +438,8 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 | `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares |
 | `--resource-name NAME` | Name of the reference resource in the outputs |
 | `--carbon-release-fraction F`, `--carbon-release-half-life YEARS` | Project inputs: share of the soil carbon released, and the half-life of its release (0: all at once) |
-| `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share) |
+| `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share, or 1 when `--dive-intensity` is given alone) |
+| `--dive-intensity {none,low,medium,high}` | Posidonia: how much the meadow near the dive sites is dived, in dives per hectare of meadow a year; it sets the meadow's diving value per hectare near the sites (€34.71 a dive). **none**: no dive site within reach, 0. **low**: like Banyuls-Cerbère, 66 dives/ha/yr, €2,298/ha/yr. **medium**: like Portofino, 566, €19,663. **high**: like the Medes Islands, 5,581, €193,730 (only a small meadow at a heavily dived site; give the share near it). Default: the Costa Brava average, 421.5, €14,630 |
 | `--matte-fate {exposed,excavated,buried}` | Posidonia: what the project does to the matte, a preset of the two inputs above (which still override it). **exposed** (default): the meadow dies but the matte stays uncovered and erodes, 0.63 released with a 10-year half-life. **excavated**: dug out or dredged, 0.96 released in the year of the works (IPCC 2013). **buried**: covered by fill and kept without oxygen, 0.125 (inferred, no source) |
 | `--mode {extract,restore}` | Simulation mode |
 | `--units-lost N` | [restore] Units missing at the start (default: `--units`) |
@@ -502,7 +503,7 @@ What the values rest on. The authoritative, per-parameter list is in each output
 - **Posidonia** (the v1.0 case, Step 8):
   - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money without double counting. €819/ha/yr in total:
     - coastal protection, water purification, fisheries and bioindicator/knowledge (Campagne et al. 2015), with fisheries split between fish and invertebrates and the bioindicator use split with the epiphytes;
-    - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
+    - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031, and how much it is dived with `--dive-intensity {none,low,medium,high}`, default the Costa Brava average), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
     - the non-use values of megafauna and seabirds (Börger et al. 2014, a benefit transfer).
 
     Beach tourism and the meadow's own existence value are not valued, so the total is still a lower bound, ~11× below the Mediterranean seagrass meta-regression.

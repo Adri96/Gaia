@@ -90,6 +90,9 @@ def _agent_metadata(
             # sites; the value applies on site_share of the resource
             d["sites"] = a.sites
             d["site_share"] = a.site_share
+            if a.site_intensity is not None:
+                # Step 8e.2: the intensity near the sites (e.g. dives/ha/yr)
+                d["site_intensity"] = a.site_intensity
         if trophic_amplification:
             d["trophic_amplification"] = round(trophic_amplification[i], 6)
         out.append(d)

@@ -664,6 +664,178 @@ def test_ledger_rejects_a_site_mismatch():
         case_from_dict(doc)
 
 
+# ── Step 8e.2: dive-activity intensity presets ───────────────────────────────
+
+WTP_PER_DIVE = 34.71
+LEVELS = {"none": 0.0, "low": 14_000 / 211.45, "medium": 40_000 / 70.61, "high": 60_000 / 10.75}
+
+
+def _meadow_per_ha(eco):
+    a = next(a for a in eco.agents if a.name == "Posidonia Meadow")
+    return a.dependency_weight * a.annual_value(1.0)
+
+
+def test_dive_intensity_levels_are_sourced_and_ordered():
+    """none < low < medium < high dives per hectare of meadow near dive
+    sites per year, each from a site count over its Natura 2000 meadow; the
+    default is the Costa Brava average, between low and medium."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    levels = case.intensity_levels
+    assert list(levels) == list(LEVELS)
+    for name, value in LEVELS.items():
+        assert levels[name]["value"] == pytest.approx(value, rel=1e-12)
+        assert levels[name]["description"] and levels[name]["basis"]
+    assert case.default_site_intensity == pytest.approx(60_000 / 142.35, rel=1e-12)
+    assert LEVELS["low"] < case.default_site_intensity < LEVELS["medium"]
+    assert case.intensity_input == "dive-intensity"
+    assert case.site_intensity_unit == "dives/ha/yr"
+    assert "doi:10.1002/aqc.3918" in levels["medium"]["basis"]
+    assert "FR9101482" in levels["low"]["basis"] and "IT1332674" in levels["medium"]["basis"]
+    assert "ES5120016" in levels["high"]["basis"]
+    assert levels["low"]["confidence"] == "low" and "grey literature" in levels["low"]["basis"]
+
+
+def test_default_run_is_unchanged_by_the_intensity():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    eco = case.build_ecosystem()
+    assert _meadow_per_ha(eco) == pytest.approx(WTP_PER_DIVE * 60_000 / 4582, rel=1e-12)
+    assert run_extraction(eco, 50).annual_externality == pytest.approx(
+        50 * 818.6635785921815, rel=1e-12)
+
+
+@pytest.mark.parametrize("level", list(LEVELS))
+def test_intensity_sets_the_value_near_dive_sites_and_share_the_part_near_them(level):
+    """Value per hectare of the affected meadow = WTP per dive × the level's
+    dives per hectare near dive sites × the share near them (1 when only
+    the intensity is given)."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    near = WTP_PER_DIVE * LEVELS[level]
+    assert _meadow_per_ha(case.build_ecosystem(site_intensity=level)) == pytest.approx(near, rel=1e-12, abs=1e-12)
+    assert _meadow_per_ha(case.build_ecosystem(site_intensity=level, site_share=0.25)) == pytest.approx(
+        0.25 * near, rel=1e-12, abs=1e-12)
+    others = sum(case.ledger_by_agent().values()) - WTP_PER_DIVE * 60_000 / 142.35
+    result = run_extraction(case.build_ecosystem(site_intensity=level), 50)
+    assert result.annual_externality == pytest.approx(50 * (others + near), rel=1e-12)
+
+
+def test_intensity_never_counts_a_service_twice_and_none_zeroes_only_diving():
+    """Only the meadow's diving value moves with the intensity; every other
+    agent keeps its value (> 0). 'none' zeroes the meadow's diving service,
+    its only ledger entry, so the meadow agent alone is at 0 (flagged in
+    the docs: the meadow's other services are owned by other agents)."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    base = case.build_ecosystem()
+    for level in LEVELS:
+        eco = case.build_ecosystem(site_intensity=level)
+        for a, b in zip(base.agents, eco.agents):
+            if a.name in case.site_restricted_agents:
+                assert (b.annual_value(1.0) == 0.0) is (level == "none")
+            else:
+                assert b.annual_value(1.0) == a.annual_value(1.0) > 0.0
+    assert case.ledger_check() == []
+    meadow_entries = [e for e in case.service_ledger if e["agent"] == "Posidonia Meadow"]
+    assert len(meadow_entries) == 1 and meadow_entries[0]["site_restricted"]
+
+
+def test_intensity_is_a_recorded_project_input_not_sampled():
+    from gaia.cases import load_case
+    from gaia.provenance import Confidence
+    from gaia.uncertainty import run_uncertainty
+
+    case = load_case("posidonia")
+    default = {p.name: p for p in case.build_ecosystem().provenance}
+    intensity = default["agent[Posidonia Meadow].site_intensity"]
+    assert intensity.confidence is Confidence.LOW and intensity.distribution == "fixed"
+    assert intensity.unit == "dives/ha/yr"
+    given = {p.name: p for p in case.build_ecosystem(site_intensity="high").provenance}
+    p = given["agent[Posidonia Meadow].site_intensity"]
+    assert p.confidence is Confidence.USER and p.value == pytest.approx(LEVELS["high"])
+    assert "--dive-intensity high" in p.source and "Medes" in p.source
+    share = given["agent[Posidonia Meadow].site_share"]
+    assert share.confidence is Confidence.USER and share.value == 1.0
+    assert "without --dive-site-share" in share.source
+    both = {p.name: p for p in case.build_ecosystem(site_intensity="low", site_share=0.5).provenance}
+    assert both["agent[Posidonia Meadow].site_share"].value == 0.5
+    assert "--dive-site-share" in both["agent[Posidonia Meadow].site_share"].source
+    res = run_uncertainty(case, 50, build_kwargs={"site_intensity": "medium"}, draws=4,
+                          tornado=False, normative=False)
+    names = {s.name for s in res.sampled}
+    assert "agent[Posidonia Meadow].site_intensity" not in names
+    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    with pytest.raises(ValueError, match="unknown dive-intensity level"):
+        case.build_ecosystem(site_intensity="extreme")
+    with pytest.raises(ValueError, match="no site intensity levels"):
+        load_case("forest").build_ecosystem(site_intensity="low")
+
+
+def test_intensity_scales_the_meadow_anchor():
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+
+    def anchor(eco):
+        return next(a.anchor_value for a in eco.pricing.anchors if a.agent_name == "Posidonia Meadow")
+
+    base = anchor(case.build_ecosystem(with_pricing=True))
+    high = anchor(case.build_ecosystem(with_pricing=True, site_intensity="high", site_share=0.1))
+    assert high == pytest.approx(base * 0.1 * 4582 / 142.35 * LEVELS["high"] / (60_000 / 142.35), rel=1e-12)
+    with pytest.raises(ValueError, match="anchor of Posidonia Meadow > 0"):
+        case.build_ecosystem(with_pricing=True, site_intensity="none")
+
+
+def test_dive_intensity_cli(capsys):
+    import json
+
+    from gaia.cli import main
+
+    assert main(["run", "posidonia", "--dive-intensity", "low", "--format", "json",
+                 "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    params = {p["name"]: p for p in out["calibration"]["parameters"]}
+    assert params["agent[Posidonia Meadow].site_intensity"]["confidence"] == "user-supplied"
+    assert main(["run", "posidonia", "--help"]) == 0
+    text = " ".join(capsys.readouterr().out.split())
+    assert "--dive-intensity {none,low,medium,high}" in text
+    assert "dives/ha/yr" in text and "Portofino" in text and "Medes" in text
+    assert main(["run", "posidonia", "--dive-intensity", "extreme"]) == 2
+    assert main(["run", "forest", "--dive-intensity", "low"]) == 2
+
+
+def test_intensity_document_errors():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    def meadow(doc):
+        return next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del meadow(doc)["site_intensity"]
+    with pytest.raises(ValueError, match="needs site_intensity"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    meadow(doc)["site_intensity_levels"]["low"]["value"] = -1.0
+    with pytest.raises(ValueError, match="must be >= 0"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    m = meadow(doc)
+    for key in ("sites", "site_share"):
+        del m[key]
+    for e in doc["service_ledger"]:
+        e.pop("site_restricted", None)
+    with pytest.raises(ValueError, match="needs sites and site_share"):
+        case_from_dict(doc)
+
+
 # ── Step 8d.1: every case prices small losses linearly ──────────────────────
 
 @pytest.mark.parametrize("case", ["forest", "costa_brava", "amazon_forest"])

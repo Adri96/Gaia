@@ -30,8 +30,10 @@ A document (every key below is optional unless marked *required*):
     agents              *required*, a non-empty list: name*, description,
                         dependency_weight*, annual_value_per_ha, damage (a
                         curve name or an inline curve), trophic_level,
-                        is_keystone, keystone_threshold, sites and
-                        site_share (see "Site-restricted values" below)
+                        is_keystone, keystone_threshold, sites,
+                        site_share, site_intensity and
+                        site_intensity_levels (see "Site-restricted
+                        values" below)
     interactions        list: source*, target*, strength*, type, description
     carbon              gaia.models.CarbonProfile fields (the four tonnage
                         and fraction fields required; release_half_life_years
@@ -102,6 +104,19 @@ explicit pricing anchors scale by F / the document's share. Its
 service-ledger entries carry "site_restricted": true and book the value
 per hectare near the sites. Every site-restricted agent of a case names
 the same sites.
+
+Site intensity (Step 8e.2): a site-restricted agent may also give
+"site_intensity", the intensity of the activity near the sites at which
+its value is stated (a parameter with provenance, > 0; for Posidonia the
+regional average, dives per hectare of meadow near dive sites per year),
+and "site_intensity_levels", the named levels a project can choose:
+{"<level>": {"value"* (>= 0, same unit), "description"*, "basis"*,
+"confidence"*}}. ``build_ecosystem(site_intensity="<level>")`` (``gaia run
+... --<activity>-intensity <level>``, e.g. --dive-intensity) multiplies
+the site-restricted value per hectare near the sites by level /
+site_intensity and records the level as user-supplied; the share is then
+1 unless also given (the intensity describes the affected resource as a
+whole). Every site-restricted agent gives the same intensity and levels.
 
 Release fates (Step 8d.2): carbon.release_fates names what a project can do
 to the soil (for Posidonia, the matte) and the release fraction and
@@ -444,6 +459,11 @@ class _AgentSpec:
     # applies (None: everywhere), and what the sites are
     site_share: Optional[float] = None
     sites: str = ""
+    # Step 8e.2: the activity's intensity near the sites at which the value
+    # is stated (e.g. dives per hectare of meadow near dive sites per year),
+    # and the named intensity levels a project can choose from
+    site_intensity: Optional[float] = None
+    intensity_levels: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 @dataclass(frozen=True)
@@ -566,6 +586,7 @@ class Case:
         carbon_release_half_life: Optional[float] = None,
         carbon_fate: Optional[str] = None,
         site_share: Optional[float] = None,
+        site_intensity: Optional[str] = None,
     ) -> Ecosystem:
         """Build the Ecosystem (new objects each call).
 
@@ -600,7 +621,17 @@ class Case:
             site_share: The share (0-1) of the affected resource near the
                 sites of the case's site-restricted agents (Step 8d.4, e.g.
                 the meadow near dive sites); default the documented
-                regional share. Recorded as user-supplied.
+                regional share, or 1 when ``site_intensity`` is given (the
+                intensity then describes the whole affected resource).
+                Recorded as user-supplied.
+            site_intensity: A level of the agents' site_intensity_levels
+                (Step 8e.2, e.g. "high" for --dive-intensity high): the
+                activity's intensity near the sites (dives per hectare of
+                meadow per year). The site-restricted value per hectare
+                near the sites scales with it (value × level /
+                documented intensity; "none" makes it 0). Default: the
+                documented intensity (the regional average). Recorded as
+                user-supplied, with the level's basis.
 
         Raises:
             ValueError: With unit "ha", if area_ha is not a whole number of
@@ -638,19 +669,23 @@ class Case:
                 lab["release_half_life_years"] = label
         carbon, carbon_params = self._carbon(carbon_release_fraction, carbon_release_half_life, lab)
 
-        shares = self._site_shares(site_share)
+        factor, level = self._intensity(site_intensity)
+        implied_share = site_share is None and site_intensity is not None
+        shares = self._site_shares(1.0 if implied_share else site_share)
         agents = [
             Agent(
                 name=a.name,
                 dependency_weight=a.weight,
                 damage_function=_build_curve(a.curve, threshold, _DAMAGE_FACTORIES),
-                annual_value_per_ha=a.value,
+                annual_value_per_ha=a.value * factor if a.site_share is not None else a.value,
                 description=a.description,
                 trophic_level=a.trophic_level,
                 is_keystone=a.is_keystone,
                 keystone_threshold=a.keystone_threshold,
                 site_share=shares.get(a.name, 1.0),
                 sites=a.sites,
+                site_intensity=(level["value"] if level is not None else a.site_intensity)
+                if a.site_intensity is not None else None,
             )
             for a in self.agents
         ]
@@ -672,7 +707,7 @@ class Case:
         if with_pricing:
             if self.pricing is None:
                 raise ValueError(f"{self.name}: the document has no pricing block")
-            pricing = self._pricing(agents, area, shares)
+            pricing = self._pricing(agents, area, shares, factor)
 
         provenance = [p for p in (total_param, a_param, value_param, threshold_param) if p is not None]
         for bucket in _BUCKETS:
@@ -680,10 +715,19 @@ class Case:
                 provenance.extend(carbon_params)
                 continue
             params = list(self.buckets.get(bucket, ()))
-            if bucket == "agent_values" and site_share is not None:
+            if bucket == "agent_values" and (site_share is not None or site_intensity is not None):
+                share_label = (
+                    f"--{self.intensity_input} {site_intensity} without --{self.site_input}: "
+                    f"the intensity describes the whole affected resource"
+                    if implied_share else f"--{self.site_input}"
+                )
+                share_used = 1.0 if implied_share else site_share
                 params = [
-                    user_or_default(p, float(site_share), f"--{self.site_input}")
-                    if p.name.endswith("].site_share") else p
+                    user_or_default(p, float(share_used), share_label)  # type: ignore[arg-type]
+                    if p.name.endswith("].site_share") else
+                    user_or_default(p, level["value"],
+                                    f"--{self.intensity_input} {site_intensity}: {level['basis']}")
+                    if p.name.endswith("].site_intensity") and level is not None else p
                     for p in params
                 ]
             provenance.extend(params)
@@ -781,6 +825,47 @@ class Case:
         """The documented regional share of the site-restricted agents, or None."""
         return next((a.site_share for a in self.agents if a.site_share is not None), None)
 
+    @property
+    def intensity_levels(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """The named intensity levels of the site-restricted agents (Step
+        8e.2, e.g. none / low / medium / high dives per hectare near dive
+        sites per year), or None."""
+        return next((dict(a.intensity_levels) for a in self.agents if a.intensity_levels), None)
+
+    @property
+    def default_site_intensity(self) -> Optional[float]:
+        """The documented intensity near the sites at which the
+        site-restricted values are stated (the regional average), or None."""
+        return next((a.site_intensity for a in self.agents if a.site_intensity is not None), None)
+
+    @property
+    def site_intensity_unit(self) -> str:
+        """The unit of the site intensity (e.g. "dives/ha/yr"), or ""."""
+        names = {f"agent[{a.name}].site_intensity" for a in self.agents if a.site_intensity is not None}
+        return next((p.unit for p in self.buckets.get("agent_values", ()) if p.name in names), "")
+
+    @property
+    def intensity_input(self) -> str:
+        """The flag name of the site intensity ("dive sites" ->
+        "dive-intensity"), or "" without intensity levels."""
+        return intensity_flag(self.sites) if self.intensity_levels else ""
+
+    def _intensity(self, level: Optional[str]) -> Tuple[float, Optional[Dict[str, Any]]]:
+        """(factor on the site-restricted values, the level) of an intensity
+        level (Step 8e.2); (1, None) without one."""
+        if level is None:
+            return 1.0, None
+        levels = self.intensity_levels
+        if levels is None:
+            raise ValueError(f"{self.name}: the case defines no site intensity levels, so an intensity cannot be set")
+        if level not in levels:
+            raise ValueError(
+                f"{self.name}: unknown {self.intensity_input} level {level!r} (defined: {', '.join(levels)})"
+            )
+        default = self.default_site_intensity
+        assert default is not None
+        return levels[level]["value"] / default, dict(levels[level])
+
     def _site_shares(self, given: Optional[float]) -> Dict[str, float]:
         """{site-restricted agent: the share used} (Step 8d.4)."""
         if given is not None:
@@ -821,13 +906,22 @@ class Case:
             if fate[key] != self.carbon.get(key, 0.0)
         ]
 
-    def _pricing(self, agents: list, area: float, shares: Optional[Dict[str, float]] = None) -> PricingConfig:
+    def _pricing(self, agents: list, area: float, shares: Optional[Dict[str, float]] = None,
+                 intensity: float = 1.0) -> PricingConfig:
         assert self.pricing is not None
         spec = self.pricing
         # The anchor of a site-restricted agent is stated at its regional
-        # share; it scales with the share used (Step 8d.4).
+        # share and the documented intensity; it scales with the share and
+        # intensity used (Steps 8d.4, 8e.2).
         defaults = {a.name: a.site_share for a in self.agents if a.site_share is not None}
-        factor = {name: (shares or {}).get(name, share) / share for name, share in defaults.items()}
+        factor = {name: (shares or {}).get(name, share) / share * intensity for name, share in defaults.items()}
+        for anchor in spec.config.anchors:
+            if factor.get(anchor.agent_name, 1.0) == 0.0:
+                raise ValueError(
+                    f"{self.name}: EXPERIMENTAL pricing needs the anchor of {anchor.agent_name} > 0, "
+                    f"but its value is 0 at this {self.sites} share or intensity "
+                    f"(--{self.site_input} 0 or --{self.intensity_input or 'intensity'} none)"
+                )
         config = dataclasses.replace(
             spec.config,
             anchors=[
@@ -1196,6 +1290,48 @@ def site_flag(sites: str) -> str:
     return "-".join(words + ["share"])
 
 
+def intensity_flag(sites: str) -> str:
+    """The CLI flag name of a site intensity: "dive sites" -> "dive-intensity"."""
+    words = sites.split()
+    if len(words) > 1 and words[-1] in ("site", "sites"):
+        words = words[:-1]
+    return "-".join(words + ["intensity"])
+
+
+_INTENSITY_FIELDS = ("value", "description", "basis", "confidence")
+
+
+def _parse_intensity_levels(raw: Any, path: str) -> Dict[str, Dict[str, Any]]:
+    """agent.site_intensity_levels (Step 8e.2): the named intensities of the
+    activity near the sites a project can choose (e.g. none, low, medium,
+    high), each {value (>= 0, in the unit of site_intensity), description,
+    basis, confidence}."""
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path}: expected an object, got {_kind(raw)}")
+    if not raw:
+        raise ValueError(f"{path}: at least one level is required")
+    levels: Dict[str, Dict[str, Any]] = {}
+    for name, entry in raw.items():
+        lpath = _key(path, name)
+        if not re.fullmatch(r"[a-z][a-z-]*", name):
+            raise ValueError(f"{lpath}: a level name is a lower-case word, got {name!r}")
+        f = _object(entry, lpath, _INTENSITY_FIELDS)
+        value = _plain_number(f["value"], _key(lpath, "value"))
+        if not value >= 0.0:
+            raise ValueError(f"{_key(lpath, 'value')}: must be >= 0, got {value}")
+        confidence = _str(f["confidence"], _key(lpath, "confidence"))
+        valid = [c.value for c in Confidence if c != Confidence.USER]
+        if confidence not in valid:
+            raise ValueError(f"{_key(lpath, 'confidence')}: expected one of {valid}, got {confidence!r}")
+        levels[name] = {
+            "value": float(value),
+            "description": _str(f["description"], _key(lpath, "description")),
+            "basis": _str(f["basis"], _key(lpath, "basis")),
+            "confidence": confidence,
+        }
+    return levels
+
+
 def _parse_release_fates(raw: Any, path: str) -> Dict[str, Any]:
     """carbon.release_fates (Step 8d.2): what a project can do to the soil
     and the release fraction and half-life each fate implies. The default
@@ -1432,7 +1568,7 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         obj = _object(
             raw, path, ("name", "dependency_weight"),
             ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone",
-             "keystone_threshold", "sites", "site_share"),
+             "keystone_threshold", "sites", "site_share", "site_intensity", "site_intensity_levels"),
         )
         name = _str(obj["name"], _key(path, "name"))
         if name in seen:
@@ -1468,6 +1604,27 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         sites[name] = (share, label)
     if len({label for _, label in sites.values()}) > 1:
         raise ValueError("$.agents: every agent with sites must name the same sites")
+    intensities: Dict[str, Tuple[float, Optional[Dict[str, Dict[str, Any]]]]] = {}
+    for path, name, obj in objs:
+        if "site_intensity_levels" in obj and "site_intensity" not in obj:
+            raise ValueError(f"{_key(path, 'site_intensity_levels')}: needs site_intensity (the documented intensity)")
+        if "site_intensity" not in obj:
+            continue
+        if name not in sites:
+            raise ValueError(f"{_key(path, 'site_intensity')}: needs sites and site_share (an intensity near the sites)")
+        intensity = reader.number(obj["site_intensity"], _key(path, "site_intensity"),
+                                  f"agent[{name}].site_intensity", buckets["agent_values"])
+        if not (math.isfinite(intensity) and intensity > 0.0):
+            raise ValueError(f"{_key(path, 'site_intensity')}: must be > 0, got {intensity}")
+        levels = (_parse_intensity_levels(obj["site_intensity_levels"], _key(path, "site_intensity_levels"))
+                  if "site_intensity_levels" in obj else None)
+        intensities[name] = (intensity, levels)
+    if intensities and (set(intensities) != set(sites)
+                        or len({repr(levels) for _, levels in intensities.values()}) > 1):
+        raise ValueError(
+            "$.agents: every agent with sites must give the same site_intensity and "
+            "site_intensity_levels, or none"
+        )
     weights = {
         name: reader.number(obj["dependency_weight"], _key(path, "dependency_weight"),
                             f"agent[{name}].dependency_weight", buckets["agent_weights"])
@@ -1507,6 +1664,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             keystone_threshold=keystone[name],
             site_share=sites[name][0] if name in sites else None,
             sites=sites[name][1] if name in sites else "",
+            site_intensity=intensities[name][0] if name in intensities else None,
+            intensity_levels=intensities[name][1] if name in intensities else None,
         )
         for path, name, obj in objs
     ]
@@ -1994,6 +2153,8 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
         if a.sites:
             item["sites"] = a.sites
             item["site_share"] = num(a.site_share, f"agent[{a.name}].site_share")
+            if a.site_intensity is not None:
+                item["site_intensity"] = num(a.site_intensity, f"agent[{a.name}].site_intensity")
         out_agents.append(item)
     doc["agents"] = out_agents
     if ecosystem.interactions:

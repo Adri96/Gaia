@@ -176,6 +176,16 @@ def validate_ecosystem(
                 f"Agent '{agent.name}' has site_share {site_share:g} but no sites: "
                 f"name the sites where its value applies"
             )
+        site_intensity = getattr(agent, "site_intensity", None)
+        has_sites = bool(getattr(agent, "sites", ""))
+        if site_intensity is not None and not (
+            isinstance(site_intensity, (int, float)) and math.isfinite(site_intensity)
+            and site_intensity >= 0.0 and has_sites
+        ):
+            raise ValueError(
+                f"Agent '{agent.name}' site_intensity must be a finite number >= 0 "
+                f"with sites, got {site_intensity!r}"
+            )
         weight_sum += agent.dependency_weight
 
     if abs(weight_sum - 1.0) > _WEIGHT_SUM_TOLERANCE:

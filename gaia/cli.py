@@ -236,7 +236,42 @@ def add_site_argument(parser: argparse.ArgumentParser, case) -> None:
             f"of {case.sites}. The value of {', '.join(agents)} applies only there: "
             f"1 if the project affects only resource at or next to {case.sites}, 0 if it is "
             f"far from any (default {share:.4g}, the regional share, i.e. the expected "
-            f"value for a site of unknown location)"
+            f"value for a site of unknown location; 1 when --{case.intensity_input or 'intensity'} "
+            f"is given alone)"
+        ).replace("%", "%%"),
+    )
+    add_intensity_argument(parser, case)
+
+
+def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<activity>-intensity`` (e.g. ``--dive-intensity``) for a case
+    whose site-restricted agents define intensity levels (Step 8e.2),
+    explained in plain words in the help."""
+    levels = getattr(case, "intensity_levels", None)
+    if not levels:
+        return
+    default = case.default_site_intensity
+    unit = case.site_intensity_unit
+    near = sum(a.weight * a.value for a in case.agents if a.site_share is not None)
+    lines = []
+    for name, level in levels.items():
+        lines.append(
+            f"'{name}': {level['description']} [{level['value']:,.0f} {unit}: about "
+            f"€{near * level['value'] / default:,.0f}/ha/yr near the {case.sites}]"
+        )
+    parser.add_argument(
+        f"--{case.intensity_input}",
+        dest="site_intensity",
+        choices=list(levels),
+        default=None,
+        metavar="{" + ",".join(levels) + "}",
+        help=(
+            f"Project input: how intensely the affected resource near {case.sites} is used, "
+            f"in {unit}. It sets the value per hectare near the {case.sites} (the documented "
+            f"value × level / default); --{case.site_input} sets the share of the affected "
+            f"resource near them (1 when only --{case.intensity_input} is given). Default: "
+            f"the regional average, {default:,.1f} {unit} (about €{near:,.0f}/ha/yr near the "
+            f"{case.sites}). Levels: " + " ".join(lines)
         ).replace("%", "%%"),
     )
 
@@ -291,6 +326,7 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
         "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
         "carbon_fate": getattr(args, "carbon_fate", None),
         "site_share": getattr(args, "site_share", None),
+        "site_intensity": getattr(args, "site_intensity", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -678,6 +714,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
             carbon_fate=getattr(args, "carbon_fate", None),
             site_share=getattr(args, "site_share", None),
+            site_intensity=getattr(args, "site_intensity", None),
         )
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any
