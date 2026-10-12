@@ -1,0 +1,533 @@
+{
+  "gaia_schema": 1,
+  "name": "Costa Brava Posidonia Meadow",
+  "description": "Posidonia oceanica meadow on the Costa Brava: 10 agents, the meadow itself a keystone foundation species; the unit is the hectare. Agent values restate the owner-specified maximum annual impact for 5,000 ha per hectare, x 0.91 since the carbon-only Blue Carbon agent was removed (weights / 0.91), which keeps each agent's weight x value. Illustrative. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "calibration_regime": "B",
+  "resource": {
+    "name": "Costa Brava Posidonia Meadow",
+    "unit": "ha",
+    "total_units": 5000,
+    "area_ha": {
+      "value": 5000.0,
+      "unit": "ha",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Plausible extent for a major Costa Brava stretch; needs GIS verification (EMODnet Posidonia maps)."
+    },
+    "unit_value": {
+      "value": 2500.0,
+      "unit": "€/ha",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Private gain per hectare destroyed (coastal development, marinas, trawling permits), one-off; not the value of Posidonia."
+    },
+    "safe_threshold_ratio": {
+      "value": 0.2,
+      "unit": "ratio",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Safe destruction threshold, lower than forest for slow recovery (stated rationale, no cited source); also the inflection of every damage curve."
+    }
+  },
+  "provenance_defaults": {
+    "agent[*].annual_value_per_ha": {
+      "unit": "€/ha/yr",
+      "source": "owner specification of each agent's maximum annual impact for 5,000 ha (case docstring table), no external source",
+      "confidence": "low",
+      "note": "Global meta-analyses value seagrass and coastal systems ~25× higher (Costanza et al. 2014: $28,916/ha/yr; de Groot et al. 2012: Int$28,917/ha/yr, both incl. climate regulation); a Posidonia-specific valuation is pending (Step 8)."
+    },
+    "agent[*].dependency_weight": {
+      "unit": "share",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Owner-specified weights renormalised by 1/0.91 after the Blue Carbon agent was removed."
+    },
+    "edge[*].strength": {
+      "unit": "fraction of source damage",
+      "confidence": "placeholder"
+    }
+  },
+  "agent_defaults": {
+    "damage": "logistic"
+  },
+  "damage_curves": {
+    "logistic": {
+      "type": "logistic",
+      "steepness": {
+        "value": 12.0,
+        "unit": "dimensionless",
+        "confidence": "placeholder",
+        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Posidonia Meadow",
+      "description": "Posidonia meadow integrity — self-reinforcing fragmentation and turbidity feedback loop",
+      "dependency_weight": 0.10989010989010989,
+      "annual_value_per_ha": 1456.0,
+      "trophic_level": 0,
+      "is_keystone": true,
+      "keystone_threshold": {
+        "value": 0.3,
+        "unit": "health",
+        "confidence": "placeholder"
+      }
+    },
+    {
+      "name": "Coralligenous & Red Coral",
+      "description": "Coralligenous reefs and red coral — centuries-old biogenic habitat, irreplaceable on human timescales",
+      "dependency_weight": 0.10989010989010989,
+      "annual_value_per_ha": 1092.0,
+      "trophic_level": 0
+    },
+    {
+      "name": "Epiphytes & Algae",
+      "description": "Epiphytic algae and plant community — primary productivity, oxygen production, food web base",
+      "dependency_weight": 0.07692307692307693,
+      "annual_value_per_ha": 649.922,
+      "trophic_level": 0
+    },
+    {
+      "name": "Marine Invertebrates",
+      "description": "Sponges, urchins, octopus, lobsters, shellfish — filter feeders, grazers, urchin barren risk",
+      "dependency_weight": 0.0989010989010989,
+      "annual_value_per_ha": 707.798,
+      "trophic_level": 1
+    },
+    {
+      "name": "Fish Populations",
+      "description": "Fish nursery and feeding habitat — artisanal fisheries, grouper apex predator, Medes Islands model",
+      "dependency_weight": 0.15384615384615385,
+      "annual_value_per_ha": 910.0,
+      "trophic_level": 2
+    },
+    {
+      "name": "Marine Megafauna",
+      "description": "Dolphins, sea turtles, cetaceans — apex indicators, ecotourism, extreme K-strategy vulnerability",
+      "dependency_weight": 0.04395604395604395,
+      "annual_value_per_ha": 910.0,
+      "trophic_level": 3
+    },
+    {
+      "name": "Seabirds",
+      "description": "Seabirds and coastal birds — fish-dependent breeders, Audouin's gull, migratory corridor",
+      "dependency_weight": 0.054945054945054944,
+      "annual_value_per_ha": 655.2,
+      "trophic_level": 2
+    },
+    {
+      "name": "Coastal Protection",
+      "description": "Wave attenuation, beach erosion prevention, sediment stabilization — Costa Brava beach economy",
+      "dependency_weight": 0.14285714285714285,
+      "annual_value_per_ha": 1259.9859999999999,
+      "trophic_level": -1
+    },
+    {
+      "name": "Water Quality",
+      "description": "Nutrient filtration, pathogen reduction, bathing water standards — direct tourism dependency",
+      "dependency_weight": 0.12087912087912088,
+      "annual_value_per_ha": 1075.438,
+      "trophic_level": -1
+    },
+    {
+      "name": "Human Communities",
+      "description": "Dive/beach tourism economy, artisanal fishing, coastal property — perception threshold sensitive",
+      "dependency_weight": 0.0879120879120879,
+      "annual_value_per_ha": 1592.5,
+      "trophic_level": -1
+    }
+  ],
+  "interactions": [
+    {
+      "source": "Posidonia Meadow",
+      "target": "Coralligenous & Red Coral",
+      "strength": 0.3,
+      "type": "keystone",
+      "description": "Posidonia loss → sedimentation → coralligenous suffocation"
+    },
+    {
+      "source": "Posidonia Meadow",
+      "target": "Epiphytes & Algae",
+      "strength": 0.35,
+      "type": "keystone",
+      "description": "Substrate loss collapses epiphytic community"
+    },
+    {
+      "source": "Posidonia Meadow",
+      "target": "Coastal Protection",
+      "strength": 0.4,
+      "type": "keystone",
+      "description": "Meadow loss directly removes wave attenuation and beach protection"
+    },
+    {
+      "source": "Posidonia Meadow",
+      "target": "Water Quality",
+      "strength": 0.3,
+      "type": "dependency",
+      "description": "Lost filtration capacity → turbidity and eutrophication"
+    },
+    {
+      "source": "Coralligenous & Red Coral",
+      "target": "Marine Invertebrates",
+      "strength": 0.25,
+      "type": "dependency",
+      "description": "Reef habitat loss displaces invertebrate communities"
+    },
+    {
+      "source": "Coralligenous & Red Coral",
+      "target": "Fish Populations",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Reef nursery loss reduces fish recruitment"
+    },
+    {
+      "source": "Epiphytes & Algae",
+      "target": "Marine Invertebrates",
+      "strength": 0.2,
+      "type": "trophic",
+      "description": "Primary productivity loss reduces grazer food supply"
+    },
+    {
+      "source": "Marine Invertebrates",
+      "target": "Fish Populations",
+      "strength": 0.25,
+      "type": "trophic",
+      "description": "Invertebrate decline reduces fish food supply"
+    },
+    {
+      "source": "Fish Populations",
+      "target": "Marine Megafauna",
+      "strength": 0.35,
+      "type": "trophic",
+      "description": "Fish decline starves apex marine predators"
+    },
+    {
+      "source": "Fish Populations",
+      "target": "Seabirds",
+      "strength": 0.3,
+      "type": "trophic",
+      "description": "Fish decline causes breeding failure in seabird colonies"
+    },
+    {
+      "source": "Marine Invertebrates",
+      "target": "Water Quality",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Filter feeder loss reduces water purification capacity"
+    },
+    {
+      "source": "Water Quality",
+      "target": "Coralligenous & Red Coral",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Degraded water quality stresses sensitive coral formations"
+    },
+    {
+      "source": "Coastal Protection",
+      "target": "Human Communities",
+      "strength": 0.25,
+      "type": "dependency",
+      "description": "Beach erosion destroys tourism infrastructure and economy"
+    },
+    {
+      "source": "Fish Populations",
+      "target": "Human Communities",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Fish decline collapses artisanal fishing economy"
+    },
+    {
+      "source": "Water Quality",
+      "target": "Human Communities",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Degraded water quality triggers beach closures and tourism loss"
+    }
+  ],
+  "carbon": {
+    "stored_carbon_tonnes": {
+      "value": 130.0,
+      "unit": "tCO2/ha",
+      "confidence": "placeholder",
+      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+    },
+    "annual_absorption_tonnes": {
+      "value": 1.5766666666666664,
+      "unit": "tCO2/ha/yr",
+      "source": "IPCC (2013) Wetlands Supplement, Tier 1 seagrass carbon accumulation rate 0.43 t C/ha/yr (Posidonia oceanica cores) × 44/12",
+      "confidence": "medium",
+      "note": "A global Tier 1 default, not a Costa Brava measurement. Alternative: European Posidonia median 0.31 t C/ha/yr (Krause-Jensen et al. 2026, ETC-BE working paper for the EEA), not verified."
+    },
+    "soil_carbon_tonnes": {
+      "value": 2600.0,
+      "unit": "tCO2/ha",
+      "confidence": "placeholder",
+      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+    },
+    "soil_release_fraction": {
+      "value": 0.05,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Stocks pending calibration against IPCC Blue Carbon data."
+    }
+  },
+  "resilience": {
+    "warning_zone_width": 0.15,
+    "confidence_green": 0.9,
+    "confidence_yellow": 0.6,
+    "confidence_red": 0.3,
+    "irreversibility_flag_ratio": 0.4
+  },
+  "substrate": {
+    "substrate_type": "marine_matte",
+    "capacity_function": "logistic",
+    "confidence": "low-medium",
+    "sediment_stability": {
+      "value": 0.85,
+      "unit": "0-1 scale",
+      "confidence": "placeholder",
+      "note": "Pending calibration against EMODnet and IFREMER data."
+    },
+    "erosion_rate_unprotected": {
+      "value": 5.0,
+      "unit": "arbitrary units/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against EMODnet and IFREMER data."
+    },
+    "erosion_rate_protected": {
+      "value": 0.0,
+      "unit": "arbitrary units/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against EMODnet and IFREMER data."
+    },
+    "formation_rate": {
+      "value": 1.0,
+      "unit": "mm/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against EMODnet and IFREMER data."
+    },
+    "erosion_alpha": {
+      "value": 3.0,
+      "unit": "exponent",
+      "confidence": "placeholder",
+      "note": "Pending calibration against EMODnet and IFREMER data."
+    },
+    "critical_minimum": 0.0,
+    "residual_fraction": 0.05
+  },
+  "discount": {
+    "delta": 0.005,
+    "eta": 1.35,
+    "g": 0.013,
+    "rate_schedule": [
+      {
+        "from_year": 0,
+        "rate": {
+          "value": 0.023,
+          "unit": "1/yr",
+          "source": "Ramsey r = δ + ηg with δ 0.5%, η 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+          "confidence": "medium"
+        }
+      },
+      {
+        "from_year": 31,
+        "rate": {
+          "value": 0.018,
+          "unit": "1/yr",
+          "confidence": "placeholder",
+          "note": "Step of the declining schedule; no cited source for the value or the year."
+        }
+      },
+      {
+        "from_year": 101,
+        "rate": {
+          "value": 0.014,
+          "unit": "1/yr",
+          "confidence": "placeholder",
+          "note": "Step of the declining schedule; no cited source for the value or the year."
+        }
+      }
+    ],
+    "scarcity_rate": {
+      "value": 0.01,
+      "unit": "1/yr",
+      "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, §1: Dutch government default relative price change for ecosystem services",
+      "confidence": "medium",
+      "note": "Chosen below the paper's aggregate estimate (1.66%/yr), which exceeds the schedule's long-term 1.4% and would make the PV diverge."
+    },
+    "horizon_years": {
+      "value": 200,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity)."
+    }
+  },
+  "pricing": {
+    "reference_area_ha": 5000.0,
+    "anchor_every_agent": true,
+    "anchors": [
+      {
+        "agent_name": "Human Communities",
+        "anchor_value": 500000.0,
+        "source": "Costa Brava tourism revenue attributable to coastal water quality per ~5 km",
+        "confidence": "low",
+        "description": "Tourism: attributable water quality value for ~5 km coastline"
+      },
+      {
+        "agent_name": "Fish Populations",
+        "anchor_value": 75000.0,
+        "source": "Artisanal catch value: ~15 boats × €5,000/yr/boat",
+        "confidence": "low",
+        "description": "Fishing: 15 artisanal boats × €5,000/yr"
+      }
+    ],
+    "scarcity_functions": {
+      "Posidonia Meadow": {
+        "type": "smooth",
+        "alpha": 2.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Foundation species; millennium-scale recovery"
+      },
+      "Coralligenous & Red Coral": {
+        "type": "smooth",
+        "alpha": 1.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Biogenic habitat; century-scale recovery"
+      },
+      "Epiphytes & Algae": {
+        "type": "smooth",
+        "alpha": 0.8,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Marine Invertebrates": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Fish Populations": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Marine Megafauna": {
+        "type": "smooth",
+        "alpha": 0.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Seabirds": {
+        "type": "smooth",
+        "alpha": 0.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Coastal Protection": {
+        "type": "threshold",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 40.0,
+        "description": "Beach nourishment cost replacement"
+      },
+      "Water Quality": {
+        "type": "threshold",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 30.0,
+        "description": "Turbidity collapse threshold"
+      },
+      "Human Communities": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      }
+    },
+    "default_scarcity": {
+      "type": "smooth",
+      "alpha": 1.0,
+      "threshold": 0.3,
+      "max_multiplier": 50.0
+    }
+  },
+  "restoration": {
+    "planting_cost_per_unit": {
+      "value": 50000.0,
+      "unit": "€/ha",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "annual_maintenance_per_unit": {
+      "value": 5000.0,
+      "unit": "€/ha/yr",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "maintenance_years": {
+      "value": 30,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    }
+  },
+  "recovery": {
+    "type": "logistic",
+    "steepness": {
+      "value": 7.0,
+      "unit": "dimensionless",
+      "confidence": "placeholder",
+      "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted)."
+    }
+  },
+  "succession": {
+    "pioneer_end_year": {
+      "value": 20.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    },
+    "intermediate_end_year": {
+      "value": 50.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    },
+    "climax_approach_year": {
+      "value": 120.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    },
+    "pioneer_service": {
+      "value": 0.02,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    },
+    "intermediate_service": {
+      "value": 0.25,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    },
+    "maturation_delay": {
+      "value": 5.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean seagrass studies."
+    }
+  },
+  "run": {
+    "units": 2000,
+    "report_note": "\n  ⚠  MARINE EXTERNALITY NOTE: the per-agent costs are ANNUAL (€/yr) — they\n     recur every year the damage persists. Posidonia recovers at 1-6 cm/year;\n     damage is effectively permanent on human timescales. The net social\n     cost compares the one-off revenue with the PV of these annual losses.",
+    "json_notes": [
+      "Marine externality costs are ANNUAL (€/yr) — they recur every year the damage persists. Posidonia recovers at 1-6 cm/year; damage is effectively permanent on human timescales. The net social cost compares the one-off revenue with the present value of these annual losses."
+    ]
+  }
+}

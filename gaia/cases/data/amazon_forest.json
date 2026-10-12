@@ -1,0 +1,738 @@
+{
+  "gaia_schema": 1,
+  "name": "Central Amazon Old-Growth Lowland Forest",
+  "description": "Central Amazon old-growth lowland rainforest on Oxisol: 11 agents, mycorrhizal fungi and pollinators keystone, 400 trees/ha on a 1,000 ha reference area; twelve edges into Canopy Trees and Understory are rescaled to the in-degree cap (Step 3.8). Illustrative. Sources: gaia/cases/definitions/AMAZON_FOREST.md; derivations: CASE_NOTES.md there.",
+  "calibration_regime": "B",
+  "resource": {
+    "name": "Central Amazon Old-Growth Lowland Forest",
+    "unit": "trees",
+    "total_units": 400000,
+    "units_per_ha": {
+      "value": 400.0,
+      "unit": "trees/ha",
+      "source": "AMAZON_FOREST.md (case spec) §2",
+      "confidence": "low",
+      "note": "Terra firme, DBH >= 10 cm: ~400-600 stems/ha, stated without a citation; sets the per-tree carbon."
+    },
+    "unit_value": {
+      "value": 1.5,
+      "unit": "€/tree",
+      "source": "case author's choice ('Calibrated' in the docstring)",
+      "confidence": "low",
+      "note": "Selective-logging revenue per tree (one-off); no market source."
+    },
+    "safe_threshold_ratio": {
+      "value": 0.2,
+      "unit": "ratio",
+      "source": "Lovejoy & Nobre (2018): Amazon tipping point at 20-25% deforestation (via AMAZON_FOREST.md §6)",
+      "confidence": "low",
+      "note": "A basin-scale tipping point applied to a 1,000 ha patch, a scale mismatch (audit S4); also the inflection of every damage curve."
+    }
+  },
+  "provenance_defaults": {
+    "agent[*].dependency_weight": {
+      "unit": "share",
+      "source": "AMAZON_FOREST.md (case spec) §3",
+      "confidence": "low",
+      "note": "Rated Medium in the case docstring; an expert judgement with no cited source."
+    },
+    "agent[*].keystone_threshold": {
+      "unit": "health",
+      "confidence": "placeholder"
+    },
+    "edge[*].strength": {
+      "unit": "fraction of source damage",
+      "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+      "confidence": "placeholder"
+    }
+  },
+  "agent_defaults": {
+    "annual_value_per_ha": {
+      "value": 580.0,
+      "unit": "€/ha/yr",
+      "source": "sum of the non-carbon anchors of AMAZON_FOREST.md §8 for 1,000 ha: water cycling €150k, fisheries €20k, biodiversity/habitat €410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+      "confidence": "low",
+      "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044."
+    },
+    "damage": "logistic"
+  },
+  "damage_curves": {
+    "logistic": {
+      "type": "logistic",
+      "steepness": {
+        "value": 12.0,
+        "unit": "dimensionless",
+        "confidence": "placeholder",
+        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Canopy Trees",
+      "description": "Emergent + canopy layer (400+ species/ha) — primary biomass, rainfall recycling",
+      "dependency_weight": 0.15,
+      "trophic_level": 0
+    },
+    {
+      "name": "Understory",
+      "description": "Sub-canopy trees, palms, ferns, epiphytes — shade-tolerant reproduction, microclimate regulation",
+      "dependency_weight": 0.08,
+      "trophic_level": 0
+    },
+    {
+      "name": "Mycorrhizal Fungi",
+      "description": "Arbuscular + ectomycorrhizae — KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
+      "dependency_weight": 0.15,
+      "trophic_level": 0,
+      "is_keystone": true,
+      "keystone_threshold": 0.25
+    },
+    {
+      "name": "Soil Decomposers",
+      "description": "Termites, fungi, bacteria, dung beetles — organic matter breakdown, nutrient return",
+      "dependency_weight": 0.1,
+      "trophic_level": -1
+    },
+    {
+      "name": "Pollinators",
+      "description": "Bees, butterflies, hummingbirds, bats — reproduction for 90%+ of canopy species",
+      "dependency_weight": 0.09,
+      "trophic_level": 1,
+      "is_keystone": true,
+      "keystone_threshold": 0.35
+    },
+    {
+      "name": "Seed Dispersers",
+      "description": "Monkeys, toucans, agoutis, tapirs — forest regeneration, genetic connectivity",
+      "dependency_weight": 0.08,
+      "trophic_level": 1
+    },
+    {
+      "name": "Herbivores",
+      "description": "Capybaras, sloths, leafcutter ants, insects — energy transfer, population dynamics",
+      "dependency_weight": 0.07,
+      "trophic_level": 1
+    },
+    {
+      "name": "Mesopredators",
+      "description": "Snakes (boa, anaconda), caimans, ocelots, anteaters — mid-trophic regulation",
+      "dependency_weight": 0.05,
+      "trophic_level": 2
+    },
+    {
+      "name": "Apex Predators",
+      "description": "Jaguars, harpy eagles — top-down population control, KEYSTONE trophic role",
+      "dependency_weight": 0.03,
+      "trophic_level": 3
+    },
+    {
+      "name": "Aquatic System",
+      "description": "River fish (3,000+ species), river dolphins, aquatic plants — nutrient transport, fisheries",
+      "dependency_weight": 0.1,
+      "trophic_level": -1
+    },
+    {
+      "name": "Epiphytes & Bromeliads",
+      "description": "Orchids, bromeliads, lichens (~25,000 species) — water retention, microhabitat creation",
+      "dependency_weight": 0.1,
+      "trophic_level": 0
+    }
+  ],
+  "interactions": [
+    {
+      "source": "Mycorrhizal Fungi",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.19,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "keystone",
+      "description": "Mycorrhizal collapse cuts phosphorus supply to canopy on P-depleted Oxisol"
+    },
+    {
+      "source": "Mycorrhizal Fungi",
+      "target": "Understory",
+      "strength": {
+        "value": 0.172,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Understory loses mycorrhizal nutrient access"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Understory",
+      "strength": {
+        "value": 0.206,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Canopy loss removes shade → understory heat/drought stress"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Epiphytes & Bromeliads",
+      "strength": 0.35,
+      "type": "dependency",
+      "description": "Epiphytes lose structural substrate when canopy trees fall"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Herbivores",
+      "strength": 0.25,
+      "type": "dependency",
+      "description": "Canopy loss reduces food and habitat for herbivores"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Soil Decomposers",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Less litter input reduces decomposer substrate"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Mycorrhizal Fungi",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Trees provide carbon to mycorrhizal partners"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Pollinators",
+      "strength": 0.3,
+      "type": "dependency",
+      "description": "Canopy flowering loss reduces pollinator food sources"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Seed Dispersers",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Fewer fruiting trees reduce disperser food"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Aquatic System",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Canopy loss reduces riparian shade and leaf litter input to streams"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Mesopredators",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Canopy loss reduces habitat for arboreal mesopredators"
+    },
+    {
+      "source": "Understory",
+      "target": "Herbivores",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Understory vegetation is primary herbivore food source"
+    },
+    {
+      "source": "Understory",
+      "target": "Epiphytes & Bromeliads",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Understory structural support for lower-level epiphytes"
+    },
+    {
+      "source": "Understory",
+      "target": "Pollinators",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Understory flowering provides pollinator resources"
+    },
+    {
+      "source": "Understory",
+      "target": "Mycorrhizal Fungi",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Understory plants contribute to mycorrhizal network"
+    },
+    {
+      "source": "Understory",
+      "target": "Soil Decomposers",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Understory litter feeds decomposer community"
+    },
+    {
+      "source": "Soil Decomposers",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.071,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Decomposer decline reduces nutrient availability for trees"
+    },
+    {
+      "source": "Soil Decomposers",
+      "target": "Understory",
+      "strength": {
+        "value": 0.068,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Reduced decomposition limits understory nutrient access"
+    },
+    {
+      "source": "Soil Decomposers",
+      "target": "Mycorrhizal Fungi",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Decomposers feed mycorrhizal nutrient pool"
+    },
+    {
+      "source": "Pollinators",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.142,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "keystone",
+      "description": "Pollinator loss blocks reproduction for 90%+ of canopy species"
+    },
+    {
+      "source": "Pollinators",
+      "target": "Understory",
+      "strength": {
+        "value": 0.103,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "keystone",
+      "description": "Pollinator loss collapses understory plant reproduction"
+    },
+    {
+      "source": "Pollinators",
+      "target": "Epiphytes & Bromeliads",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Some epiphyte reproduction depends on specialist pollinators"
+    },
+    {
+      "source": "Seed Dispersers",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.095,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Loss of dispersers reduces tree recruitment and genetic connectivity"
+    },
+    {
+      "source": "Seed Dispersers",
+      "target": "Understory",
+      "strength": {
+        "value": 0.068,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Understory seed dispersal decline"
+    },
+    {
+      "source": "Seed Dispersers",
+      "target": "Mesopredators",
+      "strength": 0.1,
+      "type": "trophic",
+      "description": "Seed dispersers are prey for some mesopredators"
+    },
+    {
+      "source": "Herbivores",
+      "target": "Mesopredators",
+      "strength": 0.3,
+      "type": "trophic",
+      "description": "Herbivore decline starves mid-level predators"
+    },
+    {
+      "source": "Herbivores",
+      "target": "Apex Predators",
+      "strength": 0.35,
+      "type": "trophic",
+      "description": "Large herbivore decline starves apex predators (jaguar prey)"
+    },
+    {
+      "source": "Herbivores",
+      "target": "Aquatic System",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Riparian herbivore activity affects aquatic nutrient input"
+    },
+    {
+      "source": "Mesopredators",
+      "target": "Apex Predators",
+      "strength": 0.3,
+      "type": "trophic",
+      "description": "Mesopredator decline reduces prey for harpy eagles and jaguars"
+    },
+    {
+      "source": "Mesopredators",
+      "target": "Aquatic System",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Caiman and aquatic mesopredator population dynamics"
+    },
+    {
+      "source": "Aquatic System",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.071,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Riparian nutrient transport supports floodplain forest"
+    },
+    {
+      "source": "Aquatic System",
+      "target": "Mesopredators",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Aquatic system decline reduces food for aquatic mesopredators"
+    },
+    {
+      "source": "Epiphytes & Bromeliads",
+      "target": "Canopy Trees",
+      "strength": {
+        "value": 0.095,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Epiphytes contribute to canopy water retention and microhabitat"
+    },
+    {
+      "source": "Epiphytes & Bromeliads",
+      "target": "Understory",
+      "strength": {
+        "value": 0.103,
+        "unit": "fraction of source damage",
+        "source": "AMAZON_FOREST.md (case spec) §3 interaction matrix (expert judgement)",
+        "confidence": "placeholder",
+        "note": "Spec §3 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Bromeliad water reservoirs support understory moisture"
+    }
+  ],
+  "carbon": {
+    "stored_carbon_tonnes": {
+      "value": 1.587,
+      "unit": "tCO2/tree",
+      "source": "173 ± 12 Mg C/ha total biomass (AMAZON_FOREST.md §2, citing 'Phil Trans R Soc B, 227 plots', author not given) × 3.67 / 400 trees/ha",
+      "confidence": "medium",
+      "note": "Matches the literature per the audit (S4); full citation pending (Step 8). Per tree at the 400 trees/ha reference density."
+    },
+    "annual_absorption_tonnes": {
+      "value": 0.006,
+      "unit": "tCO2/tree/yr",
+      "source": "0.62 t C/ha/yr old-growth net accumulation (AMAZON_FOREST.md §2, citing Wikipedia, 1975-1996 data) × 3.67 / 400",
+      "confidence": "low",
+      "note": "The literature review calls 0.62 a historic peak and recommends ~0.30-0.40 t C/ha/yr; not yet applied (audit S4)."
+    },
+    "soil_carbon_tonnes": {
+      "value": 0.367,
+      "unit": "tCO2/tree",
+      "confidence": "placeholder",
+      "note": "~40 t C/ha 'in roots' × 3.67 / 400, no cited source; the name is misleading (root, not soil carbon; audit S4)."
+    },
+    "soil_release_fraction": {
+      "value": 0.3,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against eddy covariance data."
+    }
+  },
+  "resilience": {
+    "warning_zone_width": 0.1,
+    "confidence_green": 0.9,
+    "confidence_yellow": 0.6,
+    "confidence_red": 0.3,
+    "irreversibility_flag_ratio": 0.5
+  },
+  "substrate": {
+    "substrate_type": "terrestrial_soil",
+    "capacity_function": "threshold",
+    "confidence": "medium",
+    "soil_depth_cm": {
+      "value": 20.0,
+      "unit": "cm",
+      "confidence": "placeholder",
+      "note": "Pending calibration against RUSLE data for Central Amazon."
+    },
+    "erosion_rate_unprotected": {
+      "value": 90.0,
+      "unit": "t/ha/yr",
+      "source": "cultivated tropical slope, Ivory Coast analog (worldrainforests.com, via AMAZON_FOREST.md §4)",
+      "confidence": "low",
+      "note": "A web source and an analog site; to be replaced by a primary source."
+    },
+    "erosion_rate_protected": {
+      "value": 0.015,
+      "unit": "t/ha/yr",
+      "source": "RUSLE analysis cited as 'ScienceDirect 2023' (no author) in AMAZON_FOREST.md §4",
+      "confidence": "low",
+      "note": "Matches the literature per the audit (S4); full citation pending."
+    },
+    "formation_rate": {
+      "value": 0.4,
+      "unit": "t/ha/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against RUSLE data for Central Amazon."
+    },
+    "erosion_alpha": {
+      "value": 2.5,
+      "unit": "exponent",
+      "confidence": "placeholder",
+      "note": "Pending calibration against RUSLE data for Central Amazon."
+    },
+    "critical_minimum": {
+      "value": 5.0,
+      "unit": "cm",
+      "confidence": "placeholder",
+      "note": "Pending calibration against RUSLE data for Central Amazon."
+    },
+    "residual_fraction": {
+      "value": 0.02,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against RUSLE data for Central Amazon."
+    }
+  },
+  "discount": {
+    "delta": 0.005,
+    "eta": 1.35,
+    "g": 0.013,
+    "rate_schedule": {
+      "value": 0.023,
+      "unit": "1/yr",
+      "source": "Ramsey r = δ + ηg with δ 0.5%, η 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+      "confidence": "medium"
+    },
+    "scarcity_rate": {
+      "value": 0.0128,
+      "unit": "1/yr",
+      "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+      "confidence": "medium"
+    },
+    "horizon_years": {
+      "value": 100,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity)."
+    }
+  },
+  "pricing": {
+    "reference_area_ha": 1000.0,
+    "anchor_every_agent": true,
+    "anchors": [
+      {
+        "agent_name": "Canopy Trees",
+        "anchor_value": 150000.0,
+        "source": "Rainfall recycling service: $15-20/ha/yr × 1,000 ha + downwind agricultural value",
+        "confidence": "low",
+        "description": "Water cycling / rainfall: €150k/yr"
+      },
+      {
+        "agent_name": "Aquatic System",
+        "anchor_value": 20000.0,
+        "source": "Fisheries: river fish catch value for 1,000 ha watershed",
+        "confidence": "low",
+        "description": "Fisheries: €20k/yr"
+      },
+      {
+        "agent_name": "Pollinators",
+        "anchor_value": 410000.0,
+        "source": "Biodiversity/habitat: $410/ha/yr meta-analysis (Brouwer et al. 2022) × 1,000 ha",
+        "confidence": "low",
+        "description": "Biodiversity/habitat: €410k/yr"
+      }
+    ],
+    "scarcity_functions": {
+      "Canopy Trees": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Understory": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Mycorrhizal Fungi": {
+        "type": "smooth",
+        "alpha": 2.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "HIGHEST: non-substitutable nutrient gateway on P-depleted Oxisol"
+      },
+      "Soil Decomposers": {
+        "type": "smooth",
+        "alpha": 2.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Tropical nutrient cycling — termites process ~30% dead wood"
+      },
+      "Pollinators": {
+        "type": "smooth",
+        "alpha": 2.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": ">90% of tropical tree species require animal pollination"
+      },
+      "Seed Dispersers": {
+        "type": "smooth",
+        "alpha": 1.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Herbivores": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Mesopredators": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Apex Predators": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Aquatic System": {
+        "type": "threshold",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Aquatic collapse threshold: below 30% health, spawning fails"
+      },
+      "Epiphytes & Bromeliads": {
+        "type": "smooth",
+        "alpha": 1.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      }
+    },
+    "default_scarcity": {
+      "type": "smooth",
+      "alpha": 1.0,
+      "threshold": 0.3,
+      "max_multiplier": 50.0
+    }
+  },
+  "restoration": {
+    "planting_cost_per_unit": {
+      "value": 5.0,
+      "unit": "€/tree",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "annual_maintenance_per_unit": {
+      "value": 1.0,
+      "unit": "€/tree/yr",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "maintenance_years": {
+      "value": 20,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    }
+  },
+  "recovery": {
+    "type": "logistic",
+    "steepness": {
+      "value": 7.0,
+      "unit": "dimensionless",
+      "confidence": "placeholder",
+      "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted)."
+    }
+  },
+  "succession": {
+    "pioneer_end_year": {
+      "value": 5.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Poorter 2016 and Nature Comms 2021."
+    },
+    "intermediate_end_year": {
+      "value": 20.0,
+      "unit": "years",
+      "source": "Poorter et al. (2016), Biomass resilience of Neotropical secondary forests, via AMAZON_FOREST.md §7",
+      "confidence": "low",
+      "note": "Read as 20 years to 80% biomass; the literature review says ~70% (audit S4)."
+    },
+    "climax_approach_year": {
+      "value": 66.0,
+      "unit": "years",
+      "source": "Poorter et al. (2016), Biomass resilience of Neotropical secondary forests, via AMAZON_FOREST.md §7",
+      "confidence": "low",
+      "note": "Median 66 years to 90% biomass recovery; citation not checked."
+    },
+    "pioneer_service": {
+      "value": 0.05,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Poorter 2016 and Nature Comms 2021."
+    },
+    "intermediate_service": {
+      "value": 0.4,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Poorter 2016 and Nature Comms 2021."
+    },
+    "maturation_delay": {
+      "value": 2.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Poorter 2016 and Nature Comms 2021."
+    }
+  },
+  "run": {
+    "units": 80000
+  }
+}

@@ -45,7 +45,7 @@ gaia = "gaia.cli:main"
 include = ["gaia*"]
 
 [tool.setuptools.package-data]
-gaia = ["cy/*.pyx", "cases/definitions/*.md"]
+gaia = ["cy/*.pyx", "cases/definitions/*.md", "cases/data/*.json"]
 
 # ── Ruff ──────────────────────────────────────────────────────────────────────
 [tool.ruff]

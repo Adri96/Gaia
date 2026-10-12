@@ -1,0 +1,550 @@
+{
+  "gaia_schema": 1,
+  "name": "Costa Brava Holm Oak Forest",
+  "description": "Mediterranean holm oak forest: 11 agents from the mycorrhizal network (keystone) to raptors and the coastal tourism economy; Fire & Microclimate Regulation uses an exponential curve, and three edges into Understory & Matorral are rescaled to the in-degree cap (Step 3.8). Illustrative. Derivations: gaia/cases/definitions/CASE_NOTES.md.",
+  "calibration_regime": "B",
+  "resource": {
+    "name": "Costa Brava Holm Oak Forest",
+    "unit": "trees",
+    "total_units": 10000,
+    "units_per_ha": {
+      "value": 100.0,
+      "unit": "trees/ha",
+      "confidence": "placeholder",
+      "note": "Chosen so the per-tree absorption gives ~1.8 t CO2/ha/yr."
+    },
+    "unit_value": {
+      "value": 60.0,
+      "unit": "€/tree",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Revenue per holm oak felled (one-off). Rated Medium in the case docstring, but no market source is cited."
+    },
+    "safe_threshold_ratio": {
+      "value": 0.25,
+      "unit": "ratio",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Safe extraction threshold, lower than temperate forest for drought and fire (stated rationale, no cited source); also the inflection of every damage curve."
+    }
+  },
+  "provenance_defaults": {
+    "agent[*].dependency_weight": {
+      "unit": "share",
+      "source": "owner specification (case docstring), no external source",
+      "confidence": "low",
+      "note": "Rated Medium in the case docstring; an expert judgement with no cited source."
+    },
+    "agent[*].keystone_threshold": {
+      "unit": "health",
+      "confidence": "placeholder"
+    },
+    "edge[*].strength": {
+      "unit": "fraction of source damage",
+      "confidence": "placeholder"
+    }
+  },
+  "agent_defaults": {
+    "annual_value_per_ha": {
+      "value": 1593.0,
+      "unit": "€/ha/yr",
+      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: woodlands Int$1,588/ha/yr; minus climate regulation Int$7 (SM Table 9.1)",
+      "confidence": "low",
+      "note": "Every agent; the dependency weights split it. Figure partly from memory, to be checked against the paper (Step 8); 2007 Int$ used as € with no currency or price-year conversion; a global woodland mean, not a Mediterranean holm-oak valuation."
+    },
+    "damage": "logistic"
+  },
+  "damage_curves": {
+    "logistic": {
+      "type": "logistic",
+      "steepness": {
+        "value": 12.0,
+        "unit": "dimensionless",
+        "confidence": "placeholder",
+        "note": "The same placeholder curve for every agent, inflection just past the safe threshold; not fitted to field data (hence calibration regime B)."
+      }
+    },
+    "exponential": {
+      "type": "exponential",
+      "base": {
+        "value": 2.0,
+        "unit": "dimensionless",
+        "confidence": "placeholder",
+        "note": "Exponential damage of Fire & Microclimate Regulation (fire feedback, no plateau); not fitted to fire data."
+      }
+    }
+  },
+  "agents": [
+    {
+      "name": "Mycorrhizal Fungi",
+      "description": "Keystone underground network — nutrient/water transport, cascades to all tree regeneration",
+      "dependency_weight": 0.13,
+      "trophic_level": 0,
+      "is_keystone": true,
+      "keystone_threshold": 0.3
+    },
+    {
+      "name": "Soil Microbiome",
+      "description": "Soil microbiome and biocrusts — nitrogen fixation, nutrient cycling, erosion prevention",
+      "dependency_weight": 0.1,
+      "trophic_level": -1
+    },
+    {
+      "name": "Canopy Trees",
+      "description": "Remaining canopy trees — self-reinforcing decline from microclimate loss and network fragmentation",
+      "dependency_weight": 0.12,
+      "trophic_level": 0
+    },
+    {
+      "name": "Understory & Matorral",
+      "description": "Understory shrubs and aromatic plants — microclimate collapse and biodiversity loss",
+      "dependency_weight": 0.08,
+      "trophic_level": 0
+    },
+    {
+      "name": "Pollinators & Insects",
+      "description": "Keystone pollination services — base of animal food web, agricultural crop dependency",
+      "dependency_weight": 0.1,
+      "trophic_level": 1,
+      "is_keystone": true,
+      "keystone_threshold": 0.4
+    },
+    {
+      "name": "Forest Birds",
+      "description": "Nesting and migratory stopover habitat — seed dispersal, insect control, ecotourism",
+      "dependency_weight": 0.08,
+      "trophic_level": 1
+    },
+    {
+      "name": "Forest Mammals",
+      "description": "Habitat displacement — predator-prey disruption, human-wildlife conflict, crop damage",
+      "dependency_weight": 0.07,
+      "trophic_level": 1
+    },
+    {
+      "name": "Raptors & Apex Predators",
+      "description": "Apex trophic control — carrion processing, extreme K-strategy vulnerability, trophic cascade trigger",
+      "dependency_weight": 0.04,
+      "trophic_level": 3
+    },
+    {
+      "name": "Watershed & Water Cycle",
+      "description": "Aquifer recharge, flood control, drought buffering — Costa Brava water and tourism supply",
+      "dependency_weight": 0.12,
+      "trophic_level": -1
+    },
+    {
+      "name": "Fire & Microclimate Regulation",
+      "description": "Fire risk amplification, loss of shade and moisture buffering — self-reinforcing, no plateau",
+      "dependency_weight": 0.1,
+      "damage": "exponential",
+      "trophic_level": -1
+    },
+    {
+      "name": "Human Communities",
+      "description": "Water, fire protection, tourism economy, traditional livelihoods — Costa Brava coastal dependency",
+      "dependency_weight": 0.06,
+      "trophic_level": -1
+    }
+  ],
+  "interactions": [
+    {
+      "source": "Mycorrhizal Fungi",
+      "target": "Canopy Trees",
+      "strength": 0.35,
+      "type": "keystone",
+      "description": "Mycorrhizal collapse cuts nutrient/water supply to remaining trees"
+    },
+    {
+      "source": "Mycorrhizal Fungi",
+      "target": "Understory & Matorral",
+      "strength": {
+        "value": 0.185,
+        "unit": "fraction of source damage",
+        "confidence": "placeholder",
+        "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Understory plants lose mycorrhizal nutrient access"
+    },
+    {
+      "source": "Mycorrhizal Fungi",
+      "target": "Soil Microbiome",
+      "strength": 0.3,
+      "type": "dependency",
+      "description": "Mycorrhizal network supports bacterial communities and nutrient cycling"
+    },
+    {
+      "source": "Pollinators & Insects",
+      "target": "Understory & Matorral",
+      "strength": {
+        "value": 0.222,
+        "unit": "fraction of source damage",
+        "confidence": "placeholder",
+        "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "keystone",
+      "description": "Pollinator loss collapses plant reproduction"
+    },
+    {
+      "source": "Pollinators & Insects",
+      "target": "Forest Birds",
+      "strength": 0.2,
+      "type": "trophic",
+      "description": "Insect decline reduces food for insectivorous birds"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Understory & Matorral",
+      "strength": {
+        "value": 0.185,
+        "unit": "fraction of source damage",
+        "confidence": "placeholder",
+        "note": "Spec value divided by 1.35 to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit."
+      },
+      "type": "dependency",
+      "description": "Canopy loss removes shade → understory heat/drought stress"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Soil Microbiome",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Canopy loss exposes soil to UV and drying → biocrust collapse"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Watershed & Water Cycle",
+      "strength": 0.3,
+      "type": "dependency",
+      "description": "Root loss reduces water infiltration and aquifer recharge"
+    },
+    {
+      "source": "Forest Mammals",
+      "target": "Raptors & Apex Predators",
+      "strength": 0.3,
+      "type": "trophic",
+      "description": "Prey decline starves apex predators"
+    },
+    {
+      "source": "Forest Birds",
+      "target": "Raptors & Apex Predators",
+      "strength": 0.2,
+      "type": "trophic",
+      "description": "Bird decline reduces prey for raptors"
+    },
+    {
+      "source": "Understory & Matorral",
+      "target": "Forest Mammals",
+      "strength": 0.25,
+      "type": "dependency",
+      "description": "Vegetation loss reduces food and cover for herbivores"
+    },
+    {
+      "source": "Understory & Matorral",
+      "target": "Pollinators & Insects",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Understory flowering loss reduces pollinator food sources"
+    },
+    {
+      "source": "Soil Microbiome",
+      "target": "Canopy Trees",
+      "strength": 0.15,
+      "type": "dependency",
+      "description": "Soil health decline reduces tree nutrient availability"
+    },
+    {
+      "source": "Soil Microbiome",
+      "target": "Watershed & Water Cycle",
+      "strength": 0.2,
+      "type": "dependency",
+      "description": "Soil degradation reduces water retention capacity"
+    },
+    {
+      "source": "Canopy Trees",
+      "target": "Fire & Microclimate Regulation",
+      "strength": 0.35,
+      "type": "dependency",
+      "description": "Canopy loss dries and heats the stand, raising fire risk"
+    },
+    {
+      "source": "Watershed & Water Cycle",
+      "target": "Human Communities",
+      "strength": 0.25,
+      "type": "dependency",
+      "description": "Water quality decline affects human health and tourism"
+    },
+    {
+      "source": "Fire & Microclimate Regulation",
+      "target": "Human Communities",
+      "strength": 0.1,
+      "type": "dependency",
+      "description": "Loss of fire and microclimate regulation increases fire risk and heat stress"
+    }
+  ],
+  "carbon": {
+    "stored_carbon_tonnes": {
+      "value": 0.5,
+      "unit": "tCO2/tree",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean carbon data."
+    },
+    "annual_absorption_tonnes": {
+      "value": 0.018,
+      "unit": "tCO2/tree/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean carbon data."
+    },
+    "soil_carbon_tonnes": {
+      "value": 0.35,
+      "unit": "tCO2/tree",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean carbon data."
+    },
+    "soil_release_fraction": {
+      "value": 0.25,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean carbon data."
+    }
+  },
+  "resilience": {
+    "warning_zone_width": 0.12,
+    "confidence_green": 0.9,
+    "confidence_yellow": 0.6,
+    "confidence_red": 0.3,
+    "irreversibility_flag_ratio": 0.5
+  },
+  "substrate": {
+    "substrate_type": "terrestrial_soil",
+    "capacity_function": "threshold",
+    "confidence": "medium",
+    "soil_depth_cm": {
+      "value": 30.0,
+      "unit": "cm",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "erosion_rate_unprotected": {
+      "value": 25.0,
+      "unit": "t/ha/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "erosion_rate_protected": {
+      "value": 1.0,
+      "unit": "t/ha/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "formation_rate": {
+      "value": 0.4,
+      "unit": "t/ha/yr",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "erosion_alpha": {
+      "value": 2.0,
+      "unit": "exponent",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "critical_minimum": {
+      "value": 8.0,
+      "unit": "cm",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    },
+    "residual_fraction": {
+      "value": 0.05,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean soil surveys."
+    }
+  },
+  "discount": {
+    "delta": 0.005,
+    "eta": 1.35,
+    "g": 0.013,
+    "rate_schedule": {
+      "value": 0.023,
+      "unit": "1/yr",
+      "source": "Ramsey r = δ + ηg with δ 0.5%, η 1.35, g 1.3% (Drupp et al. 2018 expert survey, as cited in gaia.discount)",
+      "confidence": "medium"
+    },
+    "scarcity_rate": {
+      "value": 0.0128,
+      "unit": "1/yr",
+      "source": "Drupp, Turk, Groom & Heckenhahn (2024), arXiv:2308.04400v3, Table 10: relative price change of forest ecosystem services, 1.28%/yr (CI 0.85-1.70)",
+      "confidence": "medium"
+    },
+    "horizon_years": {
+      "value": 100,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "A modelling choice; the outputs also report the PV at 50, 100 and 200 years (horizon sensitivity)."
+    }
+  },
+  "pricing": {
+    "reference_area_ha": 100.0,
+    "anchor_every_agent": true,
+    "anchors": [
+      {
+        "agent_name": "Watershed & Water Cycle",
+        "anchor_value": 25000.0,
+        "source": "Municipal water treatment cost avoided: ~€2.50/m³ × 100 m³/ha/yr × 100 ha",
+        "confidence": "low",
+        "description": "Watershed: €2.50/m³ × 10,000 m³/yr recharge"
+      }
+    ],
+    "scarcity_functions": {
+      "Mycorrhizal Fungi": {
+        "type": "smooth",
+        "alpha": 2.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Non-substitutable; no artificial equivalent"
+      },
+      "Soil Microbiome": {
+        "type": "smooth",
+        "alpha": 1.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Partially substitutable (fertilizers)"
+      },
+      "Canopy Trees": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Understory & Matorral": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Pollinators & Insects": {
+        "type": "smooth",
+        "alpha": 2.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0,
+        "description": "Hand pollination ~$5,000/ha/yr replacement cost"
+      },
+      "Forest Birds": {
+        "type": "smooth",
+        "alpha": 0.8,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Forest Mammals": {
+        "type": "smooth",
+        "alpha": 0.8,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Raptors & Apex Predators": {
+        "type": "smooth",
+        "alpha": 0.5,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Watershed & Water Cycle": {
+        "type": "threshold",
+        "alpha": 1.0,
+        "threshold": 0.4,
+        "max_multiplier": 30.0,
+        "description": "Water purification collapses below ~40% forest cover"
+      },
+      "Fire & Microclimate Regulation": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      },
+      "Human Communities": {
+        "type": "smooth",
+        "alpha": 1.0,
+        "threshold": 0.3,
+        "max_multiplier": 50.0
+      }
+    },
+    "default_scarcity": {
+      "type": "smooth",
+      "alpha": 1.0,
+      "threshold": 0.3,
+      "max_multiplier": 50.0
+    }
+  },
+  "restoration": {
+    "planting_cost_per_unit": {
+      "value": 80.0,
+      "unit": "€/tree",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "annual_maintenance_per_unit": {
+      "value": 15.0,
+      "unit": "€/tree/yr",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    },
+    "maintenance_years": {
+      "value": 15,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "No cost survey behind it."
+    }
+  },
+  "recovery": {
+    "type": "logistic",
+    "steepness": {
+      "value": 7.0,
+      "unit": "dimensionless",
+      "confidence": "placeholder",
+      "note": "Logistic recovery-efficiency curve of every agent (gaia.recovery default; inflection at 60% of lost units replanted)."
+    }
+  },
+  "succession": {
+    "pioneer_end_year": {
+      "value": 12.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    },
+    "intermediate_end_year": {
+      "value": 35.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    },
+    "climax_approach_year": {
+      "value": 80.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    },
+    "pioneer_service": {
+      "value": 0.03,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    },
+    "intermediate_service": {
+      "value": 0.3,
+      "unit": "fraction",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    },
+    "maturation_delay": {
+      "value": 3.0,
+      "unit": "years",
+      "confidence": "placeholder",
+      "note": "Pending calibration against Mediterranean oak succession data."
+    }
+  },
+  "run": {
+    "units": 4000
+  }
+}

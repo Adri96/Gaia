@@ -16,10 +16,31 @@ import warnings
 
 import pytest
 
-from gaia.cases.forest import _parse_args as forest_parse
-from gaia.cases.forest import main as forest_main
-from gaia.cases.posidonia import _parse_args as posidonia_parse
-from gaia.cases.posidonia import main as posidonia_main
+from gaia.cases import forest, load_case, posidonia
+from gaia.cli import case_main, parse_case_args
+
+
+def _run(case, argv):
+    """``gaia run <case>``, the 0.9 size flags mapped to --total-units."""
+    case_main(load_case(case), ["--total-units" if a in ("--trees", "--hectares") else a for a in argv])
+
+
+def forest_main(argv):
+    _run("forest", argv)
+
+
+def posidonia_main(argv):
+    _run("posidonia", argv)
+
+
+def forest_parse(argv):
+    """The 0.9 forest command line (compatibility wrapper)."""
+    return parse_case_args(load_case("forest"), argv, legacy=forest._LEGACY)
+
+
+def posidonia_parse(argv):
+    """The 0.9 posidonia command line (compatibility wrapper)."""
+    return parse_case_args(load_case("posidonia"), argv, legacy=posidonia._LEGACY)
 
 
 # ── Forest CLI Argument Parsing ──────────────────────────────────────────────
@@ -28,7 +49,7 @@ from gaia.cases.posidonia import main as posidonia_main
 class TestForestParseArgs:
     def test_defaults(self):
         args = forest_parse([])
-        assert args.trees == 10_000
+        assert args.total_units == 10_000
         assert args.threshold == 0.3
         assert args.units == 5_000
         assert args.unit_value == 100.0
@@ -100,7 +121,7 @@ class TestForestParseArgs:
 class TestPosidoniaParsArgs:
     def test_defaults(self):
         args = posidonia_parse([])
-        assert args.hectares == 5_000
+        assert args.total_units == 5_000
         assert args.threshold == 0.20
         assert args.units == 2_000
         assert args.unit_value == 2_500.0
@@ -175,7 +196,8 @@ class TestForestMainJson:
 
     def test_with_pricing_divergent_run_fails_explicitly(self, capsys):
         """No result and exit code 1 past the convergence limit (C8)."""
-        from gaia.cases.costa_brava import main as costa_brava_main
+        def costa_brava_main(argv):
+            _run("costa_brava", argv)
 
         with pytest.raises(SystemExit) as info:
             costa_brava_main([
@@ -353,7 +375,7 @@ class TestUnitsLost:
     def test_deprecated_cut_alias_sets_units_restored(self, capsys):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", FutureWarning)
-            d = _json_run(forest_main, ["--trees", "100", "--cut", "30",
+            d = _json_run(forest.main, ["--trees", "100", "--cut", "30",
                                         "--units-lost", "60", "--mode", "restore"], capsys)
         assert d["summary"]["total_units_restored"] == 30
         assert d["summary"]["units_lost"] == 60
@@ -372,7 +394,14 @@ class TestGaiaCommand:
     def test_no_arguments_prints_usage(self, capsys):
         from gaia.cli import main
         assert main([]) == 2
-        assert "usage: gaia <case>" in capsys.readouterr().out
+        assert "usage: gaia run <case | file.json>" in capsys.readouterr().out
+
+    def test_help_lists_cases(self, capsys):
+        from gaia.cli import main
+        assert main(["--help"]) == 0
+        out = capsys.readouterr().out
+        assert "forest, costa_brava, posidonia, amazon_forest" in out
+        assert "Deprecated" in out
 
     def test_version(self, capsys):
         import gaia
@@ -380,9 +409,9 @@ class TestGaiaCommand:
         assert main(["--version"]) == 0
         assert capsys.readouterr().out.strip() == f"Gaia {gaia.__version__}"
 
-    def test_dispatches_to_case(self, capsys):
+    def test_run_case(self, capsys):
         from gaia.cli import main
-        assert main(["forest", "--trees", "100", "--units", "30",
+        assert main(["run", "forest", "--total-units", "100", "--units", "30",
                      "--format", "json", "--summary-only"]) == 0
         d = json.loads(capsys.readouterr().out)
         assert d["ecosystem"]["name"] == "Oak Valley Forest"
@@ -391,18 +420,25 @@ class TestGaiaCommand:
     @pytest.mark.parametrize("alias", ["costa-brava", "amazon", "amazon-forest"])
     def test_aliases(self, alias, capsys):
         from gaia.cli import main
-        assert main([alias, "--trees", "1000", "--units", "10",
+        assert main(["run", alias, "--total-units", "1000", "--units", "10",
                      "--format", "json", "--summary-only"]) == 0
         assert json.loads(capsys.readouterr().out)["mode"] == "extraction"
 
     def test_unknown_case(self, capsys):
         from gaia.cli import main
         assert main(["moon"]) == 2
+        assert "unknown command or case 'moon'" in capsys.readouterr().err
+        assert main(["run", "moon"]) == 2
         assert "unknown case 'moon'" in capsys.readouterr().err
+
+    def test_run_without_case(self, capsys):
+        from gaia.cli import main
+        assert main(["run"]) == 2
+        assert "usage: gaia run" in capsys.readouterr().out
 
     def test_case_error_is_exit_status_1(self, capsys):
         from gaia.cli import main
-        assert main(["forest", "--trees", "100", "--units", "500"]) == 1
+        assert main(["run", "forest", "--total-units", "100", "--units", "500"]) == 1
         assert "exceeds" in capsys.readouterr().err
 
     def test_python_dash_m_gaia(self):
@@ -414,6 +450,67 @@ class TestGaiaCommand:
                              capture_output=True, text=True, check=True)
         assert out.stdout.strip() == f"Gaia {gaia.__version__}"
 
+    def test_help_shows_gaia_as_program_name(self):
+        """python -m gaia ... --help said 'usage: __main__.py' (Step 7)."""
+        import subprocess
+        import sys
+
+        for argv, prog in ((["run", "forest"], "gaia run forest"), (["forest"], "gaia forest")):
+            out = subprocess.run([sys.executable, "-m", "gaia", *argv, "--help"],
+                                 capture_output=True, text=True, check=True)
+            assert out.stdout.startswith(f"usage: {prog} "), out.stdout[:80]
+
+
+class TestLegacyWrappers:
+    """gaia <case> and python -m gaia.cases.<case>: the 0.9 command line,
+    deprecated for one release, same output as gaia run (Step 7)."""
+
+    @pytest.mark.parametrize("case", ["forest", "costa_brava", "posidonia", "amazon_forest"])
+    @pytest.mark.parametrize("fmt", ["text", "json"])
+    def test_same_output_as_gaia_run(self, case, fmt, capsys):
+        import importlib
+
+        module = importlib.import_module(f"gaia.cases.{case}")
+        argv = ["--units", "300", "--threshold", "0.22", "--format", fmt, "--summary-only"]
+        with pytest.warns(FutureWarning, match=f"use 'gaia run {case}'"):
+            module.main(argv)
+        legacy = capsys.readouterr().out
+        _run(case, argv)
+        assert capsys.readouterr().out == legacy
+
+    def test_user_supplied_labels_name_the_flag_used(self, capsys):
+        """The one documented difference: a user-supplied value's source
+        names the flag of the command line that set it."""
+        argv = ["--units", "100", "--unit-value", "3000", "--format", "json", "--summary-only"]
+
+        def unit_value_source():
+            params = json.loads(capsys.readouterr().out)["calibration"]["parameters"]
+            return next(p["source"] for p in params if p["name"] == "resource.unit_value")
+
+        with pytest.warns(FutureWarning):
+            posidonia.main(["--hectares", "1000", *argv])
+        assert unit_value_source() == "user-supplied (--unit-value / revenue_per_hectare)"
+        _run("posidonia", ["--total-units", "1000", *argv])
+        assert unit_value_source() == "user-supplied (--unit-value / unit_value)"
+
+    def test_gaia_case_dispatches_to_wrapper(self, capsys):
+        from gaia.cli import main
+        with pytest.warns(FutureWarning, match="deprecated"):
+            assert main(["forest", "--trees", "100", "--units", "30",
+                         "--format", "json", "--summary-only"]) == 0
+        assert json.loads(capsys.readouterr().out)["summary"]["total_units_extracted"] == 30
+
+    def test_wrapper_library_defaults_come_from_the_data_file(self):
+        """run_* used literal defaults that could drift from the case (Step 7)."""
+        from gaia.cases import amazon_forest, costa_brava
+
+        case = load_case("costa_brava")
+        assert costa_brava.build_costa_brava_ecosystem().resource.unit_value == case.unit_value.value
+        assert forest.FOREST_TOTAL_TREES == load_case("forest").total_units.value
+        assert amazon_forest.AMAZON_TREES_PER_HA == 400.0
+        assert posidonia.POSIDONIA_AREA_HA == 5000.0
+        report = posidonia.run_posidonia(total_hectares=1000, hectares_destroyed=100)
+        assert "MARINE EXTERNALITY NOTE" in report
 
 
 # ── CLI UX (Step 6.6, E10) ───────────────────────────────────────────────────
@@ -468,7 +565,7 @@ class TestOutputErrors:
     def test_gaia_command_exit_status_1(self, tmp_path, capsys):
         from gaia.cli import main
         target = tmp_path / "missing_dir" / "out.json"
-        assert main(["forest", "--trees", "100", "--units", "10",
+        assert main(["run", "forest", "--total-units", "100", "--units", "10",
                      "--output", str(target)]) == 1
         assert "cannot write --output" in capsys.readouterr().err
 

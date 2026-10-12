@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased — data-driven ecosystems (Step 7)
+
+Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number changes**: the golden snapshots are untouched, which proves that the case files reproduce the 0.9.0 code-defined cases exactly; text and JSON output of the 0.9 command lines are byte-identical.
+
+### Added
+
+- **Case file format** (`gaia/ecosystem_io.py`, E7): JSON, `"gaia_schema": 1`, stdlib only. `ecosystem_from_dict` / `ecosystem_to_dict`, `load_ecosystem` / `save_ecosystem`, `case_from_dict` / `load_case_file`. It covers everything the four cases use (resource with `area_ha`, a reference density or hectare units; agents, shared or inline damage curves, `annual_value_per_ha`; interactions and keystones; carbon, resilience, substrate, discount schedules or profiles; EXPERIMENTAL pricing; restoration costs, recovery and succession; `calibration_regime`). Every number is bare or `{value, unit, source, confidence, note}`, which becomes a `gaia.provenance.Param`; `provenance_defaults` covers repeated list items. Validation on load names the JSON path and rejects unknown keys, duplicate keys and NaN/Infinity. Round trips (ecosystem → dict → ecosystem, dict → ecosystem → dict) are exact and tested.
+- **`gaia run <case | file.json> [options]`** (E6): one CLI for shipped cases and your own files, with `--total-units` for the resource size and every 0.9 option; `gaia run <case> --help` shows the case's defaults. `gaia.cases.load_case(name_or_path)` returns a `Case` with `build_ecosystem(...)`, `run_extraction(...)`, `run_restoration(...)` and `report(result)`.
+- The four cases as data files, `gaia/cases/data/{forest,costa_brava,posidonia,amazon_forest}.json`, shipped in the wheel and sdist. The derivations from the former module docstrings are in `gaia/cases/definitions/CASE_NOTES.md`.
+- README: *Writing your own case*, with a complete example file that a test runs.
+- `version_specs/V09_SPEC.md`: **proposal, pending owner decision D5** (path dependence). Option A (a path-dependent engine: yearly time steps with extraction rates, relaxation, keystone hysteresis, substrate erosion over real time, recovery that depends on prior damage; a `dynamics` block in schema 2) and option B (drop the claim, evaluate the static function directly), with effects on Cython, golden tests and the format, effort estimates and a recommendation (B now, A staged later). Nothing is implemented.
+- `docs/ENGINE_PROFILE.md` and `scripts/profile_engine.py` (decision D7): pure Python vs Cython on the four cases, extract and restore, with and without pricing, and a 100,000-unit full-depletion sweep. The compiled loop gains 1.2–3.3× on a whole run; pricing never uses it and spends three quarters of its time in n + 1 linear solves per step, where two would do. Recommendation: keep Cython for now, do not extend it, drop it with either D5 option, and optimise the pricing solver before any `.pyx` work. `--smoke` (tiny sizes) is run by a test, with and without the extension.
+
+### Changed
+
+- `python -m gaia ... --help` printed `usage: __main__.py`; the program name is now `gaia run <case>` (or `gaia <case>` for the legacy form).
+- The `run_*` library wrappers took literal defaults (e.g. `tree_value=100.0`) that could drift from the case's `Param` values; every default now comes from the data file.
+- `gaia --help` lists the cases and the deprecated forms; an unknown command or case exits with status 2.
+- EXPERIMENTAL pricing is 1.4–3.3× faster with bit-identical results: `solve_prices` runs one Gaussian elimination for the prices and the columns of `(I − S·W)⁻¹` (`gaia.pricing.solve_linear_systems`) instead of n + 1, and computes `S·W` by row scaling.
+
+### Deprecated (removed in 0.11)
+
+- `gaia <case> [options]` and `python -m gaia.cases.<case> [options]`, with the 0.9 flags (`--trees` / `--hectares`, and the `--cut`, `--destroy`, `--tree-value`, `--revenue` aliases). They run the same code and print the same output, plus a `FutureWarning` on stderr.
+- The case modules `gaia.cases.forest`, `costa_brava`, `posidonia`, `amazon_forest`: `build_<case>_ecosystem`, `run_<case>`, `run_<case>_restoration`, the reference-size constants and `main` remain as thin wrappers over the case files.
+
+### Removed
+
+- The duplicated per-case plumbing (four copies of `run_X`, `run_X_restoration`, `_parse_args` and `main`) and the private module constants (`_FOREST_SUCCESSION`, `_OAK_VALLEY_SUBSTRATE`, ...): use `load_case(name)` and the built ecosystem. `gaia.cli.CASES` (now `gaia.cases.CASE_NAMES` / `CASE_ALIASES`). The provenance helpers only the case modules used: `weight_params`, `keystone_params`, `edge_params`, `restoration_params`, `IDENTICAL_CURVES_NOTE`.
+
+### Migration
+
+| 0.9 | Now |
+|---|---|
+| `gaia forest --trees 10000 --units 5000` | `gaia run forest --total-units 10000 --units 5000` |
+| `gaia posidonia --hectares 5000` | `gaia run posidonia --total-units 5000` |
+| `--cut N`, `--destroy N` / `--tree-value E`, `--revenue E` | `--units N` / `--unit-value E` |
+| `build_forest_ecosystem(total_trees=N, tree_value=V)` | `load_case("forest").build_ecosystem(total_units=N, unit_value=V)` |
+| `run_forest(...)` (text) | `case.report(case.run_extraction(units, ...))` |
+| `gaia.cases.forest._FOREST_SUCCESSION` | `load_case("forest").succession_curve` |
+| An ecosystem in Python | still works; `save_ecosystem(eco, "case.json")` writes it as a file |
+
+One difference between the two command lines: the `source` of a user-supplied value names the flag that set it, `user-supplied (--unit-value / unit_value)` with `gaia run` where the legacy form says `(--unit-value / tree_value)`; for Posidonia `(--total-units / total_units)` instead of `(--hectares / total_hectares)`.
+
 ## 0.9.0 — audit fixes (2026-10-12)
 
 The fixes from the 2026-10 audit (`TOP_PRIORITIES_REPORT.md`, Steps 0–6), on branch `audit-fixes` after tag `v0.8.1-pre-audit`. The commit messages record every changed number and the reason for it. The changes break the API, CLI and JSON (see *Migration* below), hence the minor-version bump.

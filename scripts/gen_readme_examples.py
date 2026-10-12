@@ -5,12 +5,12 @@ drift (audit finding D1).
 
 Every generated block sits between markers:
 
-    <!-- BEGIN:example name="forest-extract" cmd="gaia forest" -->
+    <!-- BEGIN:example name="forest-extract" cmd="gaia run forest" -->
     ...generated...
     <!-- END:example -->
 
 Attributes of the BEGIN marker:
-    cmd    — a ``gaia <case> [args]`` command; its stdout is the block
+    cmd    — a ``gaia run <case> [args]`` command; its stdout is the block
              (warnings, printed on stderr, are not part of it).
     json   — with a ``--format json`` cmd: comma-separated dotted paths;
              only those keys are shown (e.g. "calibration.statement,summary").
@@ -54,7 +54,7 @@ TABLE_CASES = [
 
 
 def run_gaia(command: str) -> str:
-    """stdout of ``gaia <case> [args]``, run in-process."""
+    """stdout of ``gaia run <case> [args]``, run in-process."""
     from gaia.cli import main
 
     args = shlex.split(command)
@@ -90,13 +90,13 @@ def _cases_table() -> str:
         "|---|---|---|---|---|---|---|",
     ]
     for case, label in TABLE_CASES:
-        d = json.loads(run_gaia(f"gaia {case} --format json --summary-only"))
+        d = json.loads(run_gaia(f"gaia run {case} --format json --summary-only"))
         s = d["summary"]
         res = d["ecosystem"]["resource"]
         cal = d["calibration"]
         depletion = s["total_units_extracted"] / res["total_units"]
         rows.append(
-            f"| {label}: `gaia {case}` "
+            f"| {label}: `gaia run {case}` "
             f"| {s['total_units_extracted']:,} of {res['total_units']:,} ({depletion:.0%}) "
             f"| {s['revenue_eur']:,.0f} "
             f"| {s['annual_externality_eur_yr']:,.0f} "

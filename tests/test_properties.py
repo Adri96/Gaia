@@ -24,8 +24,8 @@ import pytest
 
 from gaia.cases.amazon_forest import AMAZON_TREES_PER_HA, build_amazon_ecosystem
 from gaia.cases.costa_brava import COSTA_BRAVA_TREES_PER_HA, build_costa_brava_ecosystem
+from gaia.cases import load_case
 from gaia.cases.forest import (
-    _FOREST_SUCCESSION,
     FOREST_TREES_PER_HA,
     build_forest_ecosystem,
 )
@@ -45,6 +45,8 @@ from gaia.report import format_report, format_restoration_report
 from gaia.serialization import to_json
 from gaia.simulation import run_extraction, run_restoration
 from gaia.validation import validate_discount_config
+
+_FOREST_SUCCESSION = load_case("forest").succession_curve
 
 
 # ── Helpers (update these as the API gains area_ha / starting states) ────────

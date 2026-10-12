@@ -37,17 +37,17 @@ Default run of each case (extraction):
 <!-- BEGIN:example name="cases" table="cases" -->
 | Case (default run) | Extracted | Revenue (€, one-off) | Annual externality (€/yr) | PV of externality (€ PV) | Health after | Placeholder or low-confidence parameters |
 |---|---|---|---|---|---|---|
-| Oak Valley Forest (temperate): `gaia forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
-| Costa Brava Holm Oak Forest (Mediterranean): `gaia costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
-| Costa Brava Posidonia Meadow (marine): `gaia posidonia` | 2,000 of 5,000 (40%) | 5,000,000 | 4,703,404 | 589,689,885 | 10.1% | 54 of 59 |
-| Central Amazon (tropical): `gaia amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
+| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 95,050 | 10,111,613 | 16.6% | 24 of 27 |
+| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 121,767 | 8,801,892 | 23.6% | 51 of 55 |
+| Costa Brava Posidonia Meadow (marine): `gaia run posidonia` | 2,000 of 5,000 (40%) | 5,000,000 | 4,703,404 | 589,689,885 | 10.1% | 54 of 59 |
+| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 177,757 | 38,814,713 | 69.4% | 66 of 71 |
 <!-- END:example -->
 
 The forest case in full (the same run as the first row):
 
-<!-- BEGIN:example name="forest-extract" cmd="gaia forest --trees 10000 --units 5000" -->
+<!-- BEGIN:example name="forest-extract" cmd="gaia run forest --total-units 10000 --units 5000" -->
 ```text
-$ gaia forest --trees 10000 --units 5000
+$ gaia run forest --total-units 10000 --units 5000
 ===============================================================
   ILLUSTRATIVE: 24 of 27 recorded parameters are placeholders
   (22) or low-confidence (2). Results are not real-world
@@ -203,9 +203,9 @@ $ gaia forest --trees 10000 --units 5000
 
 Restoring half of a clear-cut forest (500 of 1,000 lost trees), with a 60-year maturation timeline; the Parameter Provenance section is cut from this excerpt:
 
-<!-- BEGIN:example name="forest-restore" cmd="gaia forest --trees 1000 --units 500 --units-lost 1000 --mode restore --time-horizon 60" until="── Parameter Provenance" -->
+<!-- BEGIN:example name="forest-restore" cmd="gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restore --time-horizon 60" until="── Parameter Provenance" -->
 ```text
-$ gaia forest --trees 1000 --units 500 --units-lost 1000 --mode restore --time-horizon 60
+$ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restore --time-horizon 60
 ===============================================================
   ILLUSTRATIVE: 34 of 37 recorded parameters are placeholders
   (32) or low-confidence (2). Results are not real-world
@@ -309,8 +309,8 @@ $ gaia forest --trees 1000 --units 500 --units-lost 1000 --mode restore --time-h
 
 The JSON output starts with the calibration status:
 
-<!-- BEGIN:example name="posidonia-json" cmd="gaia posidonia --format json --summary-only" json="mode,calibration.status,calibration.statement,calibration.calibration_regime,calibration.n_params,calibration.n_placeholder,calibration.n_low,calibration.n_medium,summary.annual_externality_eur_yr,summary.pv_externality_eur_pv,summary.net_social_cost_eur_pv" -->
-`$ gaia posidonia --format json --summary-only` (excerpt):
+<!-- BEGIN:example name="posidonia-json" cmd="gaia run posidonia --format json --summary-only" json="mode,calibration.status,calibration.statement,calibration.calibration_regime,calibration.n_params,calibration.n_placeholder,calibration.n_low,calibration.n_medium,summary.annual_externality_eur_yr,summary.pv_externality_eur_pv,summary.net_social_cost_eur_pv" -->
+`$ gaia run posidonia --format json --summary-only` (excerpt):
 
 ```json
 {
@@ -348,13 +348,13 @@ The JSON output starts with the calibration status:
 
 A yearly flow is never added to, or compared with, a one-off amount. Revenue is compared only with the present value of the yearly externality: `net_social_cost = pv_externality − revenue` (positive: society loses more than the extractor gains).
 
-**Agent values are €/ha/yr × area.** Each agent has an `annual_value_per_ha`, the service it would lose per hectare and per year at full damage, and the resource has a required `area_ha`. The yearly cost of an agent is `effective damage × dependency weight × annual_value_per_ha × area_ha`. Results therefore do not depend on how finely the resource is divided into units (`--area-ha` holds the area fixed while `--trees` changes).
+**Agent values are €/ha/yr × area.** Each agent has an `annual_value_per_ha`, the service it would lose per hectare and per year at full damage, and the resource has a required `area_ha`. The yearly cost of an agent is `effective damage × dependency weight × annual_value_per_ha × area_ha`. Results therefore do not depend on how finely the resource is divided into units (`--area-ha` holds the area fixed while `--total-units` changes).
 
 **Damage and cascades.** Each agent's direct damage is a curve of the depletion ratio (logistic, exponential or piecewise), amplified for consumers by a trophic factor of 1.6×, 2.6× and 4.1× at levels 1–3 (placeholder constants). Interaction edges then add cascade damage in a single pass: `effective = direct + (1 − direct) × pressure`, where `pressure` is the sum of `strength × source direct damage` over incoming edges. That is, the cascade acts only on the service still standing, so damage stays in [0, 1] without clamping. Incoming strengths are capped at 1.0 per agent (keystone boosts included). Validation rejects anything above the cap; it never rescales. Keystone agents whose health falls below their threshold double their outgoing strengths.
 
 **Calibration regime.** Every ecosystem with edges must declare what its damage curves represent (`calibration_regime`): **A**, curves fitted to field data on total impact, in which case only keystone edges may be added; or **B**, curves that describe each agent's direct dependency only, with the edges adding the indirect part. All four cases are **B**: their curves are identical placeholder logistics, so A cannot be claimed. Under B, the single-pass cascade is a structural lower bound for chains longer than one hop. Every case also triggers a `CalibrationWarning`: health at the "safe" threshold is below 0.8, which says the placeholder curves put heavy damage inside the safe zone. Calibrating the curves fixes that warning; tuning parameters to silence it does not.
 
-**The engine is path-independent.** Each step's damage depends only on the current depletion ratio, so the step loop evaluates a static function at successive points. Nothing carries over between steps: no hysteresis and no accumulated cascade. Substrate erosion assumes the whole extraction happens within one year. Whether Gaia should become genuinely path-dependent is an open decision (D5 in `TOP_PRIORITIES_REPORT.md`).
+**The engine is path-independent.** Each step's damage depends only on the current depletion ratio, so the step loop evaluates a static function at successive points. Nothing carries over between steps: no hysteresis and no accumulated cascade. Substrate erosion assumes the whole extraction happens within one year. Whether Gaia should become genuinely path-dependent is an open decision (D5 in `TOP_PRIORITIES_REPORT.md`); `version_specs/V09_SPEC.md` sets out both options for it.
 
 **Carbon** is valued only by `gaia/carbon.py`: no agent value and no pricing anchor contains carbon. The release of stored biomass and soil carbon is a one-off at year 0. The lost absorption is a yearly flow, discounted to a present value. Both are priced at the **social cost of carbon**: US EPA (2023), $190/t CO₂ for 2020 emissions (2020 USD, 2% near-term rate), converted at the ECB 2020 average rate to **€166.35/t**, growing at 1.3%/yr. The 2020 value is used as the year-0 price; EPA's path gives about $215 for 2026 emissions. `--carbon-price ets` switches to a labelled market/ETS view at €80/t, a private price that understates the damage.
 
@@ -372,7 +372,7 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 
 **Experimental: endogenous pricing (`--with-pricing`).** A Leontief–Hannon price system (v0.7) is **quarantined** and must not be used for estimates. Every output that uses it carries an EXPERIMENTAL banner, and the JSON has `"pricing": {"experimental": true, ...}`. Every agent must be anchored, and agents without a documented anchor get a placeholder one. Convergence is certified at each step. A step that cannot be certified stops the run with `PricingConvergenceError` instead of falling back to static values; in the shipped cases this happens at about 22–35% depletion. The formulation still counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price. Pricing applies to extraction only.
 
-**Provenance.** Each case builds its parameters from `gaia.provenance.Param(value, unit, source, confidence, note)` objects. Confidence is `high`, `medium`, `low`, `placeholder`, or `user-supplied` for values given on the command line. The engines see only plain floats. Every result carries a `calibration` status that the text and JSON outputs print. The banner counts the recorded parameters at `placeholder` and `low` confidence; user-supplied values are counted separately and not assessed.
+**Provenance.** Each case file records its parameters as `{value, unit, source, confidence, note}` objects, which become `gaia.provenance.Param`s. Confidence is `high`, `medium`, `low`, `placeholder`, or `user-supplied` for values given on the command line. The engines see only plain floats. Every result carries a `calibration` status that the text and JSON outputs print. The banner counts the recorded parameters at `placeholder` and `low` confidence; user-supplied values are counted separately and not assessed.
 
 ---
 
@@ -399,33 +399,35 @@ pip install "Cython>=3.0" && pip install --no-build-isolation -e .   # with the 
 pip install pytest                                                   # to run the tests
 ```
 
-This installs the `gaia` command. `gaia <case> [options]` is the same as `python -m gaia <case>` and `python -m gaia.cases.<case>`. The cases are `forest`, `costa_brava` (alias `costa-brava`), `posidonia` and `amazon_forest` (aliases `amazon`, `amazon-forest`).
+This installs the `gaia` command. `gaia run <case> [options]` runs a shipped case, `gaia run my_case.json [options]` a case file of your own (see *Writing your own case*); `python -m gaia run ...` is the same. The shipped cases are `forest`, `costa_brava` (alias `costa-brava`), `posidonia` and `amazon_forest` (aliases `amazon`, `amazon-forest`), stored as JSON in `gaia/cases/data/`. `gaia run <case> --help` lists every option with the case's defaults.
 
 ```bash
-gaia forest                                        # extraction, case defaults
-gaia forest --trees 10000 --threshold 0.3 --units 5000 --unit-value 100
-gaia forest --trees 10000 --units 5000 --area-ha 40
-gaia costa_brava --units 2500                      # at the 25% safe threshold
-gaia posidonia --hectares 5000 --units 2000
-gaia amazon --trees 4000 --units 800               # a 10 ha patch at 400 trees/ha
+gaia run forest                                        # extraction, case defaults
+gaia run forest --total-units 10000 --threshold 0.3 --units 5000 --unit-value 100
+gaia run forest --total-units 10000 --units 5000 --area-ha 40
+gaia run costa_brava --units 2500                      # at the 25% safe threshold
+gaia run posidonia --total-units 5000 --units 2000     # Posidonia's unit is the hectare
+gaia run amazon --total-units 4000 --units 800         # a 10 ha patch at 400 trees/ha
 
-gaia forest --units 5000 --mode restore            # replant the 5,000 trees cut
-gaia forest --units 5000 --units-lost 8000 --mode restore --time-horizon 60
-gaia posidonia --units 2000 --mode restore --planting-cost 60000
+gaia run forest --units 5000 --mode restore            # replant the 5,000 trees cut
+gaia run forest --units 5000 --units-lost 8000 --mode restore --time-horizon 60
+gaia run posidonia --units 2000 --mode restore --planting-cost 60000
 
-gaia forest --carbon-price ets                     # market/ETS carbon view
-gaia forest --format json --summary-only --output forest.json
-gaia amazon --format json --steps-every 1000       # every 1,000th step
-gaia costa_brava --units 600 --trees 2000 --with-pricing   # EXPERIMENTAL
+gaia run forest --carbon-price ets                     # market/ETS carbon view
+gaia run forest --format json --summary-only --output forest.json
+gaia run amazon --format json --steps-every 1000       # every 1,000th step
+gaia run costa_brava --units 600 --total-units 2000 --with-pricing   # EXPERIMENTAL
 ```
+
+The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with `--trees` / `--hectares` and the `--cut`, `--destroy`, `--tree-value`, `--revenue` aliases — still work for this release with a deprecation warning, and give the same output. They will be removed in 0.11.
 
 | Option | Meaning |
 |---|---|
-| `--trees N` / `--hectares N` (Posidonia) | Size of the resource in units |
+| `--total-units N` | Size of the resource in units (trees; hectares for Posidonia) |
 | `--units N` | Units to extract (extract mode) or to replant (restore mode) |
 | `--threshold RATIO` | Safe extraction threshold, also the inflection of every damage curve |
 | `--unit-value EUROS` | One-off revenue per unit extracted |
-| `--area-ha HA` | Area of the resource (default: units / the case's reference density; for Posidonia it must equal `--hectares`) |
+| `--area-ha HA` | Area of the resource (default: units / the case's reference density; for Posidonia it must equal `--total-units`) |
 | `--mode {extract,restore}` | Simulation mode |
 | `--units-lost N` | [restore] Units missing at the start (default: `--units`) |
 | `--planting-cost`, `--maintenance-cost`, `--maintenance-years` | [restore] Restoration costs per unit |
@@ -435,20 +437,16 @@ gaia costa_brava --units 600 --trees 2000 --with-pricing   # EXPERIMENTAL
 | `--format {text,json}`, `--output FILE` | Output format and destination |
 | `--summary-only`, `--steps-every N` | JSON per-step data: none, or every Nth step. Above 10,000 steps the JSON is summary-only by default, with a warning |
 
-JSON output is strict: a non-finite number is written as `null` with a sibling `<key>_null_reason`. Warnings, such as `CalibrationWarning`, print as one line on stderr. User-supplied values replace the case defaults and are listed as `user-supplied` in the calibration status.
+JSON output is strict: a non-finite number is written as `null` with a sibling `<key>_null_reason`. Warnings, such as `CalibrationWarning`, print as one line on stderr. User-supplied values replace the case defaults and are listed as `user-supplied` in the calibration status, with the flag that set them.
 
 ### Python API
 
 ```python
-from gaia.cases.forest import build_forest_ecosystem
-from gaia.models import RestorationCost
-from gaia.recovery import logistic_recovery
-from gaia.report import format_report, format_restoration_report
+from gaia.cases import load_case
 from gaia.serialization import to_json
-from gaia.simulation import run_extraction, run_restoration
 
-ecosystem = build_forest_ecosystem(total_trees=10_000, safe_threshold_ratio=0.3)
-result = run_extraction(ecosystem, units_to_extract=5_000)
+forest = load_case("forest")                 # or load_case("my_case.json")
+result = forest.run_extraction(5_000, total_units=10_000, safe_threshold_ratio=0.3)
 
 print(result.calibration.headline)                  # ILLUSTRATIVE: ...
 print(f"Revenue:     €{result.revenue:,.0f} (one-off)")
@@ -456,23 +454,24 @@ print(f"Externality: €{result.annual_externality:,.0f}/yr")
 print(f"PV:          €{result.pv_externality:,.0f} (PV)")
 print(f"Net cost:    €{result.net_social_cost:,.0f} (PV − revenue)")
 print(result.pv_externality_by_horizon)             # {50: ..., 100: ..., 200: ...}
-print(format_report(result))
+print(forest.report(result))                        # the text report
 json_text = to_json(result, include_steps=False)
 
-# Restoration: 500 of 1,000 lost trees replanted
-small = build_forest_ecosystem(total_trees=1_000)
-cost = RestorationCost(planting_cost_per_unit=50.0,
-                       annual_maintenance_per_unit=10.0, maintenance_years=10)
-recovery = [logistic_recovery(threshold=0.3) for _ in small.agents]
-restored = run_restoration(small, units_to_restore=500, restoration_cost=cost,
-                           recovery_functions=recovery, units_lost=1_000)
+# Restoration: 500 of 1,000 lost trees replanted, with the case's
+# restoration costs, recovery and succession curves
+restored = forest.run_restoration(500, units_lost=1_000, time_horizon_years=60,
+                                  total_units=1_000)
 print(f"Recovered: €{restored.annual_recovered_value:,.0f}/yr")
 print(f"Net value: €{restored.net_restoration_pv:,.0f} (PV)")
 print(f"Penalty:   €{restored.destroy_then_restore_penalty.total:,.0f} (PV)")
-print(format_restoration_report(restored))
+
+# The engine itself takes an Ecosystem
+from gaia.simulation import run_extraction
+ecosystem = forest.build_ecosystem(total_units=2_000, area_ha=10.0)
+result = run_extraction(ecosystem, units_to_extract=500)
 ```
 
-`run_restoration` also accepts `starting_state=` (a `SimulationResult` of the same ecosystem), `succession_curve=` and `time_horizon_years=`.
+`gaia.ecosystem_io` reads and writes ecosystems: `ecosystem_from_dict` / `ecosystem_to_dict`, `load_ecosystem` / `save_ecosystem` (an ecosystem built in code can be saved as a file). `gaia.simulation.run_restoration` also accepts `starting_state=` (a `SimulationResult` of the same ecosystem), `succession_curve=` and `time_horizon_years=`. The 0.9 builders (`gaia.cases.forest.build_forest_ecosystem`, `run_forest`, ...) remain for this release as thin wrappers over the case files.
 
 ---
 
@@ -494,42 +493,52 @@ What the values rest on. The authoritative, per-parameter list is in each output
 
 ---
 
-## Adding a case
+## Writing your own case
 
-A case is an `Ecosystem`: a `Resource`, a list of `Agent`s, optional `InteractionEdge`s, and a calibration regime.
+A case is a JSON file (schema 1, stdlib `json`, no other dependency). This one is complete and runs with `gaia run valley.json`:
 
-```python
-from gaia.damage import logistic_damage
-from gaia.models import Agent, CalibrationRegime, Ecosystem, InteractionEdge, Resource
-from gaia.provenance import Confidence, Param
-from gaia.simulation import run_extraction
-
-value = Param(450.0, "€/ha/yr", "Author et al. (2020), Table 3", Confidence.MEDIUM,
-              note="Site valuation, 2019 euros", name="agents.annual_value_per_ha")
-
-resource = Resource(name="Valley", total_units=50_000, safe_threshold_ratio=0.15,
-                    unit_value=2_000.0, area_ha=50_000.0)
-agents = [
-    Agent(name="Watershed", dependency_weight=0.6,
-          damage_function=logistic_damage(threshold=0.15, steepness=10.0),
-          annual_value_per_ha=value.value, description="Freshwater supply"),
-    Agent(name="Fisheries", dependency_weight=0.4,
-          damage_function=logistic_damage(threshold=0.15, steepness=10.0),
-          annual_value_per_ha=value.value, description="River fisheries"),
-]
-ecosystem = Ecosystem(
-    name="Valley", resource=resource, agents=agents,
-    interactions=[InteractionEdge("Watershed", "Fisheries", 0.3, "dependency", "Flow loss")],
-    calibration_regime=CalibrationRegime.DIRECT_ONLY,   # required when there are edges
-    provenance=[value],
-)
-result = run_extraction(ecosystem, units_to_extract=10_000)
+<!-- case-file-example -->
+```json
+{
+  "gaia_schema": 1,
+  "name": "Valley Watershed",
+  "calibration_regime": "B",
+  "resource": {
+    "unit": "ha",
+    "total_units": 500,
+    "unit_value": {"value": 2000, "unit": "€/ha", "confidence": "placeholder",
+                   "note": "One-off revenue per hectare cleared"},
+    "safe_threshold_ratio": 0.15
+  },
+  "agent_defaults": {
+    "annual_value_per_ha": {"value": 450, "unit": "€/ha/yr", "confidence": "medium",
+                            "source": "Author et al. (2020), Table 3",
+                            "note": "Site valuation, 2019 euros"},
+    "damage": "logistic"
+  },
+  "damage_curves": {"logistic": {"type": "logistic", "steepness": 10}},
+  "agents": [
+    {"name": "Watershed", "description": "Freshwater supply", "dependency_weight": 0.6},
+    {"name": "Fisheries", "description": "River fisheries", "dependency_weight": 0.4,
+     "trophic_level": 2}
+  ],
+  "interactions": [
+    {"source": "Watershed", "target": "Fisheries", "strength": 0.3, "type": "dependency",
+     "description": "Flow loss reduces spawning habitat"}
+  ],
+  "run": {"units": 100}
+}
 ```
 
+- **Every number** is either bare or `{value, unit, source, confidence, note}`. The second form is recorded as the parameter's provenance and listed in every output; bare numbers are not, unless a `provenance_defaults` entry covers them (e.g. `"agent[*].dependency_weight": {"unit": "share", "confidence": "low", "source": "..."}`). A `medium` or `high` confidence needs a source.
+- **The resource area**: `"unit": "ha"` makes each unit a hectare; otherwise give `area_ha` (a fixed area) or `units_per_ha` (a reference density, so the area follows `--total-units`). Agent values are €/ha/yr and are scaled by the area.
+- **Curves**: `damage_curves` holds named curves shared by agents (`logistic` with `steepness`, `exponential` with `base`, `piecewise` with `pre_slope_ratio`); an agent can also give an inline curve. A curve without its own `threshold` uses the resource's safe threshold.
+- **Optional blocks**: `carbon`, `resilience`, `substrate`, `discount` (or `{"profile": "central"}`), `restoration`, `recovery`, `succession`, the EXPERIMENTAL `pricing`, and `run` (default `--units`, notes). Without a `discount` block the default profile is used and flagged. The full key list is in the docstring of `gaia/ecosystem_io.py`, and the four files in `gaia/cases/data/` use every block.
+- **Errors name the JSON path**, e.g. `$.agents[1].damage: unknown damage curve 'logistc' (defined: logistic)`. Unknown keys are rejected.
 - Dependency weights must sum to 1.0. Each agent's incoming edge strengths must sum to at most 1.0, keystone boosts included.
 - **Choose the calibration regime before writing damage curves.** Under A (curves fitted to field data on total impact), the data already embed indirect effects, so only keystone edges from keystone agents are allowed. Under B (direct dependency only), edges add the indirect part and the result is a lower bound for chains longer than one hop. Mixing the two double counts. See `PROJECT_DEFINITION.md`, "Critical Modelling Assumption".
-- Record every meaningful number as a `Param` in `provenance`. An ecosystem without provenance runs, but its outputs say that none of its values are sourced.
-- To package a case, follow `gaia/cases/forest.py`: a `build_<case>_ecosystem()` builder, `run_<case>()` wrappers and a `main(argv)` CLI registered in `gaia.cli.CASES`.
+
+An ecosystem built in Python (`gaia.models.Ecosystem` with `gaia.damage` curves) runs directly with `gaia.simulation.run_extraction`; `gaia.ecosystem_io.save_ecosystem(ecosystem, "valley.json")` writes it as a case file. To ship a case with Gaia, add its file to `gaia/cases/data/` and its name to `gaia.cases.CASE_NAMES`.
 
 | Damage function | Shape | Use for |
 |---|---|---|
@@ -546,7 +555,8 @@ Gaia/
 ├── gaia/
 │   ├── __init__.py            # __version__ (single source)
 │   ├── __main__.py            # python -m gaia → gaia.cli.main
-│   ├── cli.py                 # gaia <case> dispatcher, shared CLI options, output routing
+│   ├── cli.py                 # gaia run, shared CLI options, output routing
+│   ├── ecosystem_io.py        # the case file format: JSON schema 1, load / save, validation
 │   ├── models.py              # Resource, Agent, Ecosystem, InteractionEdge, CalibrationRegime,
 │   │                          #   results, DiscountConfig, profiles, pricing types
 │   ├── provenance.py          # Param, Confidence, CalibrationStatus (parameter provenance)
@@ -566,14 +576,18 @@ Gaia/
 │   ├── serialization.py       # strict JSON output
 │   ├── cy/simulation_cy.pyx   # optional Cython extraction loop (parity-tested)
 │   └── cases/
-│       ├── forest.py, costa_brava.py, posidonia.py, amazon_forest.py
-│       └── definitions/       # AMAZON_FOREST.md (spec), AMAZON_LITERATURE_REVIEW.md
+│       ├── __init__.py        # load_case, the shipped case names
+│       ├── data/              # forest.json, costa_brava.json, posidonia.json, amazon_forest.json
+│       ├── forest.py, ...     # 0.9 compatibility wrappers (deprecated, removed in 0.11)
+│       └── definitions/       # CASE_NOTES.md (derivations), AMAZON_FOREST.md (spec), AMAZON_LITERATURE_REVIEW.md
 ├── tests/                     # unit, case, golden, parity, property, provenance and README tests
 │   └── golden/                # snapshot of every case × mode (scripts/regen_golden.py)
 ├── scripts/
 │   ├── regen_golden.py        # regenerate / --check the golden snapshots
-│   └── gen_readme_examples.py # regenerate / --check the README examples
-├── version_specs/             # V01–V081 specs (historical; see the notes at their top)
+│   ├── gen_readme_examples.py # regenerate / --check the README examples
+│   └── profile_engine.py      # time the engine, Python vs Cython (docs/ENGINE_PROFILE.md)
+├── version_specs/             # V01–V081 specs (historical; see the notes at their top); V09_SPEC.md (proposal, D5)
+├── docs/                      # ENGINE_PROFILE.md (Python vs Cython timings, decision D7)
 ├── .github/workflows/ci.yml   # pytest on 3.9–3.12 with and without Cython, golden, README, ruff, mypy
 ├── PROJECT_DEFINITION.md      # vision, foundations, roadmap
 ├── TOP_PRIORITIES_REPORT.md   # the 2026-10 audit and its fix plan
@@ -610,11 +624,12 @@ What works: extraction and restoration for four cases with unit-consistent flows
 
 Experimental: endogenous pricing (`--with-pricing`), quarantined.
 
+Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with a documented, validated format.
+
 Not done:
 - Calibrated parameters.
 - Uncertainty bounds: the band is heuristic, and Monte Carlo is planned.
-- A path-dependent engine (open decision D5).
-- A data-driven ecosystem format.
+- A path-dependent engine (open decision D5; proposal in `version_specs/V09_SPEC.md`).
 - External expert review.
 
 The proposed next milestone (pending owner decision D6) is **one credible, fully sourced case with uncertainty bounds, reviewed by an ecologist and an environmental economist**. See `PROJECT_DEFINITION.md`.

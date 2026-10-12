@@ -151,7 +151,7 @@ Gaia's credibility depends entirely on the quality of its inputs. A perfectly en
 
 **Every parameter must be traceable to a source.** Where does the safe threshold come from? What study? What dataset? What's the confidence interval? If a number cannot be justified, it must be explicitly marked as a placeholder and flagged in the output.
 
-*Implementation (Step 5):* each case builds its parameters from `gaia.provenance.Param(value, unit, source, confidence, note)` objects. Confidence is `high`, `medium`, `low`, `placeholder`, or `user-supplied` for command-line values. The engines receive plain floats. Every result carries a calibration status, which the text report prints as an opening banner and a closing Parameter Provenance section, and the JSON as a top-level `calibration` block. No external review (Track 1 or Track 2) has taken place yet.
+*Implementation (Step 5):* each case records its parameters as `{value, unit, source, confidence, note}` objects in its JSON file (Step 7), which become `gaia.provenance.Param`s. Confidence is `high`, `medium`, `low`, `placeholder`, or `user-supplied` for command-line values. The engines receive plain floats. Every result carries a calibration status, which the text report prints as an opening banner and a closing Parameter Provenance section, and the JSON as a top-level `calibration` block. No external review (Track 1 or Track 2) has taken place yet.
 
 ### Two-Track Validation
 
@@ -246,7 +246,7 @@ This is a methodological choice about how to compute quantities that depend on s
 
 **What the current engine actually does (audit finding S1).** The engine is **path-independent**. Each step's damage, cascade and cost depend only on the current depletion ratio, so the step loop evaluates a static function at successive points (finite differences). Nothing carries over between steps: no hysteresis after a keystone collapse, no accumulated cascade, no time. Substrate erosion assumes the whole extraction happens within one year, and restoration retraces the same static damage path in reverse. The per-step trajectory is still useful (marginal costs, zone transitions, "what if we stop at tree 2,000?"), but it is not a simulation of path dependence.
 
-Whether Gaia should become path-dependent is **open decision D5**, to be taken in Step 7 before any engine redesign. The options are to add state that carries over between steps (hysteresis, substrate erosion over real time with an extraction rate in units/year, recovery that depends on prior damage), or to drop the claim and evaluate the static function directly. Until then this section describes an aim, not the implementation.
+Whether Gaia should become path-dependent is **open decision D5**; `version_specs/V09_SPEC.md` sets out both options for the owner's decision (Step 7), and no engine redesign happens before it. The options are to add state that carries over between steps (hysteresis, substrate erosion over real time with an extraction rate in units/year, recovery that depends on prior damage), or to drop the claim and evaluate the static function directly. Until then this section describes an aim, not the implementation.
 
 ---
 
@@ -364,7 +364,8 @@ format_report / format_restoration_report / to_json — text and strict-JSON out
 ```
 gaia/
 ├── __init__.py, __main__.py   # version; python -m gaia
-├── cli.py                     # gaia <case> dispatcher, shared CLI options, output routing
+├── cli.py                     # gaia run, shared CLI options, output routing
+├── ecosystem_io.py            # the case file format (JSON schema 1): load, save, validate
 ├── models.py                  # dataclasses: Resource, Agent, Ecosystem, results, profiles, pricing types
 ├── provenance.py              # Param, Confidence, CalibrationStatus
 ├── constants.py               # trophic / keystone constants, edge limits (sourced or PLACEHOLDER)
@@ -377,8 +378,10 @@ gaia/
 ├── report.py, serialization.py
 ├── cy/simulation_cy.pyx       # optional Cython extraction loop, parity-tested against Python
 └── cases/
-    ├── forest.py, costa_brava.py, posidonia.py, amazon_forest.py
-    └── definitions/           # AMAZON_FOREST.md, AMAZON_LITERATURE_REVIEW.md
+    ├── __init__.py            # load_case
+    ├── data/                  # forest.json, costa_brava.json, posidonia.json, amazon_forest.json
+    ├── forest.py, ...         # 0.9 compatibility wrappers (deprecated)
+    └── definitions/           # CASE_NOTES.md, AMAZON_FOREST.md, AMAZON_LITERATURE_REVIEW.md
 tests/                         # incl. golden snapshots, engine parity, properties, provenance, README check
 scripts/                       # regen_golden.py, gen_readme_examples.py
 version_specs/                 # historical version specs
@@ -551,7 +554,7 @@ Full specification: `version_specs/V07_SPEC.md`
 - [x] Cython-optimized extraction loop (`gaia/cy/simulation_cy.pyx`), optional, same API. Since the audit it sits behind a parity test (every step and field at rel 1e-12), a stale-build guard and `GAIA_FORCE_PYTHON=1`. Restoration and pricing run in Python. Whether to keep it is decision D7, to be re-evaluated in Step 7.
 - [ ] Generalize framework for additional resource types (water bodies, fisheries, agricultural soil, air quality)
 - [ ] Keystone species uncertainty bounds — criticality weights with confidence intervals, Monte Carlo propagation of uncertainty into externality estimates (now part of the proposed v1.0)
-- [ ] Pluggable case template system — structured template for adding new ecosystems without writing Python (Step 7: data-driven ecosystem format)
+- [x] Pluggable case template system — ecosystems as JSON files, `gaia run <case | file.json>` (Step 7: data-driven ecosystem format)
 
 ### ✅ v0.8.1 — I/O Flexibility (complete)
 
@@ -592,7 +595,7 @@ v1.0 = **one case that could be put in front of an ecologist and an environmenta
 - [ ] A 4–6 page methods note, reviewed by at least one ecologist and one environmental economist (Tracks 1 and 2 above), with their comments tracked as issues
 - [ ] All property tests pass with no `xfail`
 
-Prerequisites from Step 7: the data-driven ecosystem format, and decisions D5 (path dependence) and D7 (Cython).
+Prerequisites from Step 7: decisions D5 (path dependence) and D7 (Cython); the data-driven ecosystem format is done.
 
 ### 🔲 v1.x — UI (very big effort; was v1.0)
 
