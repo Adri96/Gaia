@@ -235,7 +235,8 @@ def add_site_argument(parser: argparse.ArgumentParser, case) -> None:
         metavar="F",
         help=(
             f"Project input: the share (0-1) of the affected resource within reach "
-            f"of {case.sites}. The value of {', '.join(agents)} applies only there: "
+            f"of {case.sites}. The site-restricted value of {', '.join(agents)} applies only "
+            f"there (its other services apply everywhere, so the agent never falls to €0): "
             f"1 if the project affects only resource at or next to {case.sites}, 0 if it is "
             f"far from any (default {share:.4g}, the regional share, i.e. the expected "
             f"value for a site of unknown location; 1 when --{case.intensity_input or 'intensity'} "
@@ -254,7 +255,7 @@ def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
         return
     default = case.default_site_intensity
     unit = case.site_intensity_unit
-    near = sum(a.weight * a.value for a in case.agents if a.site_share is not None)
+    near = sum(a.weight * a.site_value for a in case.agents if a.site_share is not None)
     lines = []
     for name, level in levels.items():
         lines.append(
@@ -270,7 +271,8 @@ def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
         help=(
             f"Project input: how intensely the affected resource near {case.sites} is used, "
             f"in {unit}. It sets the value per hectare near the {case.sites} (the documented "
-            f"value × level / default); --{case.site_input} sets the share of the affected "
+            f"value × level / default; 'none' zeroes that service only, never an agent); "
+            f"--{case.site_input} sets the share of the affected "
             f"resource near them (1 when only --{case.intensity_input} is given). Default: "
             f"the regional average, {default:,.1f} {unit} (about €{near:,.0f}/ha/yr near the "
             f"{case.sites}). Levels: " + " ".join(lines)
@@ -774,6 +776,8 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
         uncertainty = _uncertainty(case, args, labels)
         text_report = case.report(result, appendix=format_uncertainty(uncertainty))
         extra = {
+            # Step 8e.6: the primary production → food → € chains
+            "production_functions": case.production_functions() or None,
             "benchmarks": case.benchmark_block(result),
             "uncertainty": uncertainty_to_dict(uncertainty),
         }

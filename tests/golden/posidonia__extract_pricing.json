@@ -13,25 +13,25 @@
   ],
   "cli_summary_json": {
     "benchmarks": {
-      "annual_externality_eur_yr": 109892586.61,
+      "annual_externality_eur_yr": 169267408.55,
       "benchmarks": [
         {
-          "benchmark_central_over_gaia": 0.34,
+          "benchmark_central_over_gaia": 0.26,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 818.66,
+          "gaia_value_eur_per_ha_yr": 1068.4,
           "high": 284.83,
           "includes_carbon": false,
           "low": 276.83,
           "name": "Campagne et al. 2015, P. oceanica, carbon excluded",
-          "note": "The primary valuation behind four of the ledger's services (coastal protection, water purification, fisheries, bioindicator and knowledge). Gaia is above it because the ledger adds recreational diving and non-use values (Step 8c.2).",
+          "note": "The primary valuation behind four of the ledger's services (coastal protection, water purification, fisheries, bioindicator and knowledge). Gaia is above it because the ledger adds recreational diving and non-use values (Step 8c.2) and the food the meadow's primary production supports beyond the commercial catch (Step 8e.6).",
           "position": "above",
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2",
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 0.41,
+          "benchmark_central_over_gaia": 0.33,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 977.25,
+          "gaia_value_eur_per_ha_yr": 1226.99,
           "high": 514.0,
           "includes_carbon": true,
           "low": 284.0,
@@ -42,9 +42,9 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 8.91,
+          "benchmark_central_over_gaia": 7.1,
           "central": 8712.0,
-          "gaia_value_eur_per_ha_yr": 977.25,
+          "gaia_value_eur_per_ha_yr": 1226.99,
           "high": 95767.0,
           "includes_carbon": true,
           "low": 1588.0,
@@ -55,9 +55,9 @@
           "unit": "Int$2020/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 29.59,
+          "benchmark_central_over_gaia": 23.57,
           "central": 28917.0,
-          "gaia_value_eur_per_ha_yr": 977.25,
+          "gaia_value_eur_per_ha_yr": 1226.99,
           "high": 42063.0,
           "includes_carbon": true,
           "low": 26167.0,
@@ -68,9 +68,9 @@
           "unit": "Int$2007/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 29.59,
+          "benchmark_central_over_gaia": 23.57,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 977.25,
+          "gaia_value_eur_per_ha_yr": 1226.99,
           "high": 28916.0,
           "includes_carbon": true,
           "low": 28916.0,
@@ -82,21 +82,21 @@
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
-      "full_damage_eur_per_ha_yr": 818.66,
-      "full_damage_with_burial_eur_per_ha_yr": 977.25,
+      "full_damage_eur_per_ha_yr": 1068.4,
+      "full_damage_with_burial_eur_per_ha_yr": 1226.99,
       "hectares_lost": 300.0,
-      "linear_transfer_eur_yr": 245599.07,
+      "linear_transfer_eur_yr": 320520.92,
       "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
-      "realised_loss_eur_per_ha_yr": 366308.62
+      "realised_loss_eur_per_ha_yr": 564224.7
     },
     "calibration": {
       "calibration_regime": "B",
       "calibration_regime_meaning": "B (direct effects only): damage curves are read as each agent's direct dependency, interaction edges add the indirect part",
       "ecosystem_provenance_recorded": true,
       "n_high": 0,
-      "n_low": 23,
+      "n_low": 24,
       "n_medium": 12,
-      "n_params": 73,
+      "n_params": 74,
       "n_placeholder": 37,
       "n_user_supplied": 1,
       "parameters": [
@@ -172,14 +172,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES: 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). The value is stated at the Costa Brava's average diving intensity, 60,000 / 142.35 = 421.5 dives per hectare of meadow near dive sites per year (site_intensity); a project can state the intensity at its meadow (--dive-intensity none/low/medium/high, Step 8e.2), which scales it by level / 421.5. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
+          "note": "Service ledger (Step 8e.6; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 284.74 EUR/ha/yr gross (NPP 476 g DW = 160 g C/m2/yr \u2192 74% into the food web \u2192 11.8% transfer per trophic level to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 249.74 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (0.10-731.98 EUR/ha/yr), divided by the weight.",
           "range": [
-            62551.232876712325,
-            379022.8310502283
+            0.9255068460192185,
+            6660.983728112955
           ],
-          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
+          "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); see production_function",
           "unit": "\u20ac/ha/yr",
-          "value": 133134.24657534246
+          "value": 2272.6292413276424
         },
         {
           "confidence": "low",
@@ -288,6 +288,18 @@
           "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): bioindicator use 1.5 + knowledge contribution 0.33 EUR/ha/yr; the epiphyte share of the bioindicator (0.5/3.5 of the PREI, Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012) moved to Epiphytes & Algae",
           "unit": "\u20ac/ha/yr",
           "value": 18.378750000000004
+        },
+        {
+          "confidence": "low",
+          "name": "agent[Posidonia Meadow].site_value_per_ha",
+          "note": "Service ledger (Step 8c.2; restricted to dive sites in Step 8d.4; site_value_per_ha since Step 8e.6; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): recreational diving amenity of the meadow, PER HECTARE OF MEADOW WITHIN REACH OF DIVE SITES, on top of the meadow's value on every hectare (annual_value_per_ha): 14,630.14 EUR/ha/yr = EUR 34.71 per dive x 60,000 Medes dives a year / 142.35 ha of meadow near Costa Brava dive sites. A run multiplies it by site_share, the share of the affected meadow near dive sites: the regional default 142.35 / 4,582 = 0.0311 gives the regional average, 454.52 EUR/ha/yr (the former value); a project states its own (--dive-site-share: 1 at a dive site, 0 far from any). The value is stated at the Costa Brava's average diving intensity, 60,000 / 142.35 = 421.5 dives per hectare of meadow near dive sites per year (site_intensity); a project can state the intensity at its meadow (--dive-intensity none/low/medium/high, Step 8e.2), which scales it by level / 421.5. Unit-value benefit transfer of a per-dive WTP from Italian to Catalan divers (no income adjustment); it assumes every Medes dive includes meadow (an upper bias) and counts no dives at the other Costa Brava sites, whose numbers were not found (a lower bias). Range 6,874-41,651 EUR/ha/yr near dive sites (214-1,294 at the regional share): EUR 18.12/dive (the 50%-loss value, i.e. half the dives over meadow) x 54,000 dives to EUR 77/dive (latent class 1, total loss) x 77,000 dives (the plan's cap), over 142.35 ha; the uncertainty of the 142.35 ha is not sampled (at the regional share it cancels out). Weight x value = the service near dive sites.",
+          "range": [
+            62551.232876712325,
+            379022.8310502283
+          ],
+          "source": "Zunino, Melaku Canu, Marangon & Troiano (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823: choice experiment with 221 Italian scuba divers (2016-17); a total loss of P. oceanica cover lowers the willingness to pay for a dive by about EUR 34 (MNL, Table 3: -34.71); about 60,000 dives a year at the Medes Islands: R\u00e0dio Capital de l'Empord\u00e0 (26 May 2026, reporting the Parc Natural del Montgr\u00ed, les Illes Medes i el Baix Ter / SUBMON study: 'prop de 60.000 immersions anuals'); the former annual cap was 60,000 and the 2015 plan raised it to almost 77,000 (Ara, 19 June 2015); meadow within reach of dive sites: 142.35 ha, the P. oceanica cover of the Costa Brava's coastal Natura 2000 sites (EEA Natura 2000 Standard Data Forms, see site_restricted.share)",
+          "unit": "\u20ac/ha/yr",
+          "value": 133134.24657534246
         },
         {
           "confidence": "low",
@@ -742,10 +754,10 @@
         {
           "confidence": "low",
           "name": "pricing.anchor[Posidonia Meadow]",
-          "note": "EXPERIMENTAL pricing (quarantined). Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A stated-preference value, not a market price: no market price exists for the meadow itself",
-          "source": "Service ledger (Step 8c.2, 8d.4): the meadow's recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; scaled with --dive-site-share and --dive-intensity",
+          "note": "EXPERIMENTAL pricing (quarantined). Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A production-function value (market prices of the food supported) plus a stated-preference value: no market price exists for the meadow itself",
+          "source": "Service ledger (Steps 8c.2, 8d.4, 8e.6): the meadow's food production supported by its primary production (production function, net of the commercial catch counted under fish and invertebrates) on every hectare, plus its recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; the diving part scaled with --dive-site-share and --dive-intensity",
           "unit": "\u20ac/yr",
-          "value": 4136110.8686163253
+          "value": 6408740.109943966
         },
         {
           "confidence": "medium",
@@ -828,24 +840,29 @@
           "value": 50.0
         }
       ],
-      "statement": "ILLUSTRATIVE: 60 of 73 recorded parameters are placeholders (37) or low-confidence (23); 1 user-supplied, not assessed. Results are not real-world estimates.",
+      "statement": "ILLUSTRATIVE: 61 of 74 recorded parameters are placeholders (37) or low-confidence (24); 1 user-supplied, not assessed. Results are not real-world estimates.",
       "status": "illustrative"
     },
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 133134.24657534246,
-          "annual_value_eur_yr": 4136110.8686163244,
+          "annual_value_eur_per_ha_yr": 2272.6292413276424,
+          "annual_value_eur_yr": 6408740.109943966,
           "dependency_weight": 0.10989010989010989,
-          "description": "The meadow itself, keystone foundation species; its own final service: the underwater amenity divers enjoy (recreational diving, Zunino et al. 2020), only where the meadow is within reach of dive sites",
+          "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
           "site_intensity": 421.4963119072708,
           "site_share": 0.03106721955477957,
+          "site_value_eur_per_ha_yr": 133134.24657534246,
           "sites": "dive sites",
           "trophic_amplification": 1.0,
-          "trophic_level": 0
+          "trophic_level": 0,
+          "value_notes": [
+            "Primary production \u2192 food: NPP 160 g C/m\u00b2/yr (476 g dry weight) \u2192 1,184 kg C/ha/yr into the food web \u2192 120 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 55.7 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac285/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac250/ha/yr",
+            "Carbon: 1,199 tCO2/ha held in the matte and 0.95 tCO2/ha/yr buried: valued once, in the carbon accounting, and not added to this line"
+          ]
         },
         {
           "annual_value_eur_per_ha_yr": 172.42105263157893,
@@ -1084,7 +1101,7 @@
     "gaia_version": "<gaia_version>",
     "mode": "extraction",
     "notes": [
-      "Marine externality costs are ANNUAL (\u20ac/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. Every agent's euro value is a final ecosystem service booked once in the case's service ledger (Step 8c.2); beach tourism and the meadow's own non-use value are still not valued, so the services total remains a lower bound."
+      "Marine externality costs are ANNUAL (\u20ac/yr): they recur every year the meadow is gone. P. oceanica rhizomes grow only centimetres a year and a model of natural recolonisation leaves limited cover after a century (Kendrick et al. 2005), so loss is effectively permanent on human timescales. The net social cost compares the one-off private gain with the present value of these annual losses and of the carbon released. Every agent's euro value is a final ecosystem service booked once in the case's service ledger (Step 8c.2), and no input brings an agent to \u20ac0: the meadow's own value is the food its primary production supports (a production function, Step 8e.6), on every hectare; beach tourism and the meadow's own non-use value are still not valued, so the services total remains a lower bound."
     ],
     "npv_analysis": {
       "carbon_absorption_lost_tco2_yr": 286.0,
@@ -1117,9 +1134,9 @@
         "scarcity_rate": 0.01
       },
       "horizon_years": 200,
-      "services_eur_pv": 10285302669.6,
-      "substrate_unrecoverable_eur_pv": 277566.04,
-      "total_eur_pv": 10324388768.68
+      "services_eur_pv": 15842438355.59,
+      "substrate_unrecoverable_eur_pv": 427534.61,
+      "total_eur_pv": 15881524454.67
     },
     "pricing": {
       "convergence_check": "direct_iteration",
@@ -1149,16 +1166,16 @@
       "iterations": 7,
       "note": "EXPERIMENTAL (decision D4, C8): endogenous pricing is quarantined. Every price is certified convergent (a run that cannot be certified fails instead of falling back to static values), but the formulation counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price, and most shipped anchors are placeholders. Do not use these figures as estimates.",
       "prices_eur_yr": {
-        "Coastal Protection": 8362478.39,
-        "Coralligenous & Red Coral": 24897830.98,
-        "Epiphytes & Algae": 12058932.74,
-        "Fish Populations": 104715759.96,
-        "Human Communities": 70322571.28,
-        "Marine Invertebrates": 28333919.75,
-        "Marine Megafauna": 1832525799.38,
-        "Posidonia Meadow": 17616195.97,
-        "Seabirds": 94955844.67,
-        "Water Quality": 9534946.75
+        "Coastal Protection": 12234239.41,
+        "Coralligenous & Red Coral": 38578203.81,
+        "Epiphytes & Algae": 18684839.07,
+        "Fish Populations": 161318870.41,
+        "Human Communities": 107905410.69,
+        "Marine Invertebrates": 43902287.38,
+        "Marine Megafauna": 2823080232.15,
+        "Posidonia Meadow": 27295598.51,
+        "Seabirds": 146283325.51,
+        "Water Quality": 14774022.66
       },
       "scarcity_multipliers": {
         "Coastal Protection": 1.0,
@@ -1175,6 +1192,211 @@
       "spectral_radius_bound": 0.843283,
       "status": "converged"
     },
+    "production_functions": {
+      "Posidonia Meadow": {
+        "already_counted_eur_per_ha_yr": 35.0,
+        "chain": [
+          {
+            "step": "net primary production",
+            "unit": "g DW/m\u00b2/yr",
+            "value": 476.0
+          },
+          {
+            "step": "net primary production, carbon",
+            "unit": "g C/m\u00b2/yr",
+            "value": 159.936
+          },
+          {
+            "step": "entering the food web",
+            "unit": "kg C/ha/yr",
+            "value": 1183.5264
+          },
+          {
+            "step": "consumer production at trophic level 3.1",
+            "unit": "kg C/ha/yr",
+            "value": 13.308532367668068
+          },
+          {
+            "step": "fish and invertebrates produced",
+            "unit": "kg/ha/yr",
+            "value": 119.77679130901261
+          },
+          {
+            "step": "sustainable catch",
+            "unit": "kg/ha/yr",
+            "value": 55.725031250717095
+          },
+          {
+            "step": "food value at first-sale prices",
+            "unit": "\u20ac/ha/yr",
+            "value": 284.73947706897167
+          }
+        ],
+        "comparison": {
+          "metric": "gross primary production",
+          "note": "Gross production of whole communities, the comparable measure across these sources. The chain above starts from the plant's net production alone (160 g C/m\u00b2/yr: no roots, no epiphytes, no other algae), which is not comparable with these figures. Per hectare, seagrass meadows fix carbon on the scale of coral reefs and intensively farmed land; the Corsican P. oceanica meadow, measured over 12 years, fixes about half the seagrass average and 15 times the bare sediment around it.",
+          "rows": [
+            {
+              "ecosystem": "Posidonia oceanica meadow, Corsica, 12-year mean",
+              "high": 996.9129999999999,
+              "low": 996.9129999999999,
+              "note": "",
+              "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (abstract): GPP 83 \u00b1 16 mol O2/m2/yr, Bay of Revellata, 2006-2018; \u00d7 12.011 g C/mol at a photosynthetic quotient of 1, as Koopmans et al. (2020), Frontiers in Marine Science 7:118, doi:10.3389/fmars.2020.00118"
+            },
+            {
+              "ecosystem": "Seagrass meadows, global average",
+              "high": 1903.0,
+              "low": 1903.0,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
+            },
+            {
+              "ecosystem": "Coral reefs",
+              "high": 1720.0,
+              "low": 1720.0,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3 (from Gattuso et al. 1998)"
+            },
+            {
+              "ecosystem": "Mangroves",
+              "high": 2087.0,
+              "low": 2087.0,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
+            },
+            {
+              "ecosystem": "Salt marshes",
+              "high": 3595.0,
+              "low": 3595.0,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
+            },
+            {
+              "ecosystem": "Macroalgal beds",
+              "high": 3702.0,
+              "low": 3702.0,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
+            },
+            {
+              "ecosystem": "Lowland moist tropical forest",
+              "high": 4000.0,
+              "low": 3000.0,
+              "note": "",
+              "source": "Malhi (2012), Journal of Ecology 100:65-75, doi:10.1111/j.1365-2745.2011.01916.x (abstract): GPP 30-40 Mg C/ha/yr"
+            },
+            {
+              "ecosystem": "Intensive cropland (irrigated wheat-maize, 2 crops a year)",
+              "high": 2181.5,
+              "low": 2181.5,
+              "note": "",
+              "source": "Zhang, Lei, Yang, Xiong, Liu & Fang (2020), Biogeosciences 17:2245-2262, doi:10.5194/bg-17-2245-2020 (abstract): North China Plain, 2005-2016, GPP 1,173.9 (wheat) + 1,007.6 (maize) g C/m2"
+            },
+            {
+              "ecosystem": "Unvegetated coastal sediments",
+              "high": 67.9,
+              "low": 67.9,
+              "note": "",
+              "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
+            }
+          ],
+          "unit": "g C/m\u00b2/yr"
+        },
+        "gross_eur_per_ha_yr": 284.73947706897167,
+        "gross_range_eur_per_ha_yr": [
+          35.1017040490131,
+          766.9762338585665
+        ],
+        "model": "trophic_transfer",
+        "net_eur_per_ha_yr": 249.73947706897167,
+        "net_of": [
+          "Commercial fisheries: meadow-associated fish",
+          "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
+        ],
+        "parameters": {
+          "carbon_fraction": {
+            "label": "carbon content of seagrass dry weight",
+            "range": null,
+            "source": "Duarte (1990), Marine Ecology Progress Series 67:201-207, doi:10.3354/meps067201 (abstract): mean carbon content of seagrass leaves 33.6 \u00b1 0.31% of dry weight (27 species, 30 locations); applied to sheaths and rhizomes as well",
+            "status": "verified",
+            "unit": "g C/g DW",
+            "value": 0.336
+          },
+          "catch_trophic_level": {
+            "label": "mean trophic level of the catch",
+            "range": [
+              3.1,
+              3.5
+            ],
+            "source": "Francour (1997), Marine Ecology 18:157-173, doi:10.1111/j.1439-0485.1997.tb00434.x (abstract): P. oceanica fish assemblages at Port-Cros dominated by Symphodus ocellatus, S. tinca, Diplodus annularis and Sarpa salpa; FishBase trophic levels from diet studies (fishbase.se, queried 13 October 2026) 3.5, 3.3, 3.6, 2.0: mean 3.1. Upper end 3.5: the median over 13 meadow species with the main targets (D. vulgaris 3.5, D. sargus 3.4, Mullus surmuletus 3.5, Scorpaena porcus 3.9, S. scrofa 4.3, Spondyliosoma cantharus 3.3, Labrus merula 3.6, Serranus scriba 3.8, Oblada melanura 3.4). The choice of species is a judgement",
+            "status": "derived",
+            "unit": "trophic level",
+            "value": 3.1
+          },
+          "first_sale_price": {
+            "label": "first-sale price of bony white fish, Catalonia, 2014",
+            "range": null,
+            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
+            "status": "verified",
+            "unit": "\u20ac/kg",
+            "value": 5.109723057630542
+          },
+          "food_web_share": {
+            "label": "share of the production eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
+            "range": [
+              0.71,
+              0.832
+            ],
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (abstract): about 26% of the carbon the plant produces in a year is buried below ground, Medes Islands (Catalonia), so 74% is not. Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract: 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract: 16.8% of P. oceanica production neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
+            "status": "verified",
+            "unit": "fraction",
+            "value": 0.74
+          },
+          "npp_dry_weight": {
+            "label": "net primary production of the plant: leaf blades, sheaths and rhizomes (roots and epiphytes not included)",
+            "range": [
+              238.0,
+              714.0
+            ],
+            "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (abstract): blades 167-530, sheaths 51-142, rhizomes 20-42 g dry weight/m2/yr at 3 sites in Lacco Ameno Bay (Ischia, Italy); value = the sum of the midpoints (348.5 + 96.5 + 31), range = the sums of the minima and of the maxima. Not Catalan: the Cala Jonquet (Cap de Creus) production of Cebri\u00e1n et al. (1997) was not readable (full text behind a bot check)",
+            "status": "verified",
+            "unit": "g DW/m\u00b2/yr",
+            "value": 476.0
+          },
+          "sustainable_catch_share": {
+            "label": "share of the production that can be caught sustainably (exploitation rate at maximum sustainable yield)",
+            "range": [
+              0.42512216154067256,
+              0.5
+            ],
+            "source": "Zhou, Yin, Thorson, Smith & Fuller (2012), Canadian Journal of Fisheries and Aquatic Sciences 69:1292-1301, doi:10.1139/f2012-060 (abstract): F_MSY = 0.87 M for teleosts (245 species); F proxy about 15% smaller; the rule of thumb F_MSY = M. Exploitation rate E = F/(F + M): 0.87/1.87 = 0.465 (0.74/1.74 = 0.425 to 0.5). That the sustainable catch is E \u00d7 production is the steady-state relation (production = Z \u00d7 biomass, catch = F \u00d7 biomass), inferred here",
+            "status": "derived",
+            "unit": "fraction",
+            "value": 0.4652406417112299
+          },
+          "transfer_efficiency": {
+            "label": "trophic transfer efficiency per level",
+            "range": [
+              0.1,
+              0.1425
+            ],
+            "source": "Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read): transfer efficiencies of a compilation of ecosystem models, median 11.8% (mean 11.92%, 91 models); temperate and high-latitude models mean 14.25% (39 models); 10% the nominal value of Pauly & Christensen (1995). No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
+            "status": "verified",
+            "unit": "fraction per trophic level",
+            "value": 0.118
+          },
+          "wet_weight_per_carbon": {
+            "label": "wet weight of fish per unit of carbon",
+            "range": null,
+            "source": "Pauly & Christensen (1995), Nature 374:255-257, doi:10.1038/374255a0, as cited by Chen et al. (2022), Frontiers in Marine Science 9:863611, doi:10.3389/fmars.2022.863611 ('A CR of 9:1 and TE of 10% were used for this study (Pauly and Christensen, 1995)'); the primary paper was not read",
+            "status": "secondary",
+            "unit": "kg wet weight/kg C",
+            "value": 9.0
+          }
+        },
+        "service": "Food from primary production: fish and invertebrates the meadow's production supports, net of the commercial catch already counted"
+      }
+    },
     "substrate": {
       "capacity_lost_units": 1,
       "effective_k": 999,
@@ -1183,90 +1405,90 @@
     },
     "summary": {
       "agent_cascade_externality_eur_yr": {
-        "Coastal Protection": 71265.98,
-        "Coralligenous & Red Coral": 183619.13,
-        "Epiphytes & Algae": 48419.34,
-        "Fish Populations": 428780.55,
-        "Human Communities": 844914.27,
-        "Marine Invertebrates": 137318.74,
+        "Coastal Protection": 104261.56,
+        "Coralligenous & Red Coral": 284510.57,
+        "Epiphytes & Algae": 75023.85,
+        "Fish Populations": 660553.8,
+        "Human Communities": 1296465.98,
+        "Marine Invertebrates": 212769.96,
         "Marine Megafauna": 0.0,
         "Posidonia Meadow": 0.0,
-        "Seabirds": 178760.7,
-        "Water Quality": 92998.3
+        "Seabirds": 275388.1,
+        "Water Quality": 144097.19
       },
       "agent_direct_externality_eur_yr": {
-        "Coastal Protection": 615775.17,
-        "Coralligenous & Red Coral": 1410279.94,
-        "Epiphytes & Algae": 478135.21,
-        "Fish Populations": 13794858.12,
-        "Human Communities": 3186607.28,
-        "Marine Invertebrates": 1810803.01,
-        "Marine Megafauna": 80550584.59,
-        "Posidonia Meadow": 997828.6,
-        "Seabirds": 4467544.21,
-        "Water Quality": 594093.46
+        "Coastal Protection": 900874.19,
+        "Coralligenous & Red Coral": 2185172.96,
+        "Epiphytes & Algae": 740851.59,
+        "Fish Populations": 21251537.78,
+        "Human Communities": 4889641.57,
+        "Marine Invertebrates": 2805767.6,
+        "Marine Megafauna": 124091438.78,
+        "Posidonia Meadow": 1546095.93,
+        "Seabirds": 6882432.85,
+        "Water Quality": 920524.31
       },
       "agent_externality_eur_yr": {
-        "Coastal Protection": 687041.15,
-        "Coralligenous & Red Coral": 1593899.07,
-        "Epiphytes & Algae": 526554.55,
-        "Fish Populations": 14223638.67,
-        "Human Communities": 4031521.55,
-        "Marine Invertebrates": 1948121.75,
-        "Marine Megafauna": 80550584.59,
-        "Posidonia Meadow": 997828.6,
-        "Seabirds": 4646304.92,
-        "Water Quality": 687091.76
+        "Coastal Protection": 1005135.74,
+        "Coralligenous & Red Coral": 2469683.53,
+        "Epiphytes & Algae": 815875.44,
+        "Fish Populations": 21912091.58,
+        "Human Communities": 6186107.55,
+        "Marine Invertebrates": 3018537.56,
+        "Marine Megafauna": 124091438.78,
+        "Posidonia Meadow": 1546095.93,
+        "Seabirds": 7157820.95,
+        "Water Quality": 1064621.49
       },
-      "annual_externality_eur_yr": 109892586.61,
+      "annual_externality_eur_yr": 169267408.55,
       "discount_is_default": false,
       "final_ecosystem_health": 0.326654,
-      "net_social_cost_eur_pv": 10323638768.68,
+      "net_social_cost_eur_pv": 15880774454.67,
       "num_steps": 300,
-      "pv_externality_eur_pv": 10324388768.68,
-      "pv_externality_h100_eur_pv": 6768711810.97,
-      "pv_externality_h200_eur_pv": 10324388768.68,
-      "pv_externality_h50_eur_pv": 4134963295.65,
+      "pv_externality_eur_pv": 15881524454.67,
+      "pv_externality_h100_eur_pv": 10406021052.78,
+      "pv_externality_h200_eur_pv": 15881524454.67,
+      "pv_externality_h50_eur_pv": 6350420860.9,
       "revenue_eur": 750000.0,
       "total_units_extracted": 300
     }
   },
   "per_agent": {
-    "Coastal Protection": 687041.1511836373,
-    "Coralligenous & Red Coral": 1593899.0709191826,
-    "Epiphytes & Algae": 526554.5500713709,
-    "Fish Populations": 14223638.666041885,
-    "Human Communities": 4031521.553767282,
-    "Marine Invertebrates": 1948121.7487042472,
-    "Marine Megafauna": 80550584.58815786,
-    "Posidonia Meadow": 997828.6015181346,
-    "Seabirds": 4646304.915205459,
-    "Water Quality": 687091.7616145359
+    "Coastal Protection": 1005135.7428088437,
+    "Coralligenous & Red Coral": 2469683.5339956507,
+    "Epiphytes & Algae": 815875.4376535369,
+    "Fish Populations": 21912091.584660657,
+    "Human Communities": 6186107.54793278,
+    "Marine Invertebrates": 3018537.555341634,
+    "Marine Megafauna": 124091438.77561949,
+    "Posidonia Meadow": 1546095.930338989,
+    "Seabirds": 7157820.950226126,
+    "Water Quality": 1064621.4938972911
   },
   "result": {
     "agent_cascade_annual_costs": [
       0.0,
-      183619.12640355184,
-      48419.33784476462,
-      137318.74194968786,
-      428780.5450664645,
+      284510.5698844537,
+      75023.84786084799,
+      212769.95644810022,
+      660553.800178308,
       0.0,
-      178760.7017269968,
-      71265.97654468332,
-      92998.29999512821,
-      844914.2711673703
+      275388.10285808385,
+      104261.55718304505,
+      144097.18556088017,
+      1296465.9820162538
     ],
     "agent_direct_annual_costs": [
-      997828.6015181346,
-      1410279.944515631,
-      478135.2122266063,
-      1810803.0067545592,
-      13794858.120975422,
-      80550584.58815786,
-      4467544.213478463,
-      615775.174638954,
-      594093.4616194078,
-      3186607.2825999125
+      1546095.930338989,
+      2185172.9641111973,
+      740851.589792689,
+      2805767.598893534,
+      21251537.784482352,
+      124091438.77561949,
+      6882432.847368044,
+      900874.1856257987,
+      920524.3083364109,
+      4889641.565916527
     ],
     "agent_trophic_amplification": [
       1.0,
@@ -1280,7 +1502,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 109892586.60718359,
+    "annual_externality": 169267408.552475,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -1311,19 +1533,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 33374045.71086178,
       "carbon_released_t": 226611.0,
-      "direct": 10285302669.598888,
+      "direct": 15842438355.59196,
       "horizon": 200,
-      "substrate_unrecoverable": 277566.0372247658,
-      "total": 10324388768.681675
+      "substrate_unrecoverable": 427534.6069626928,
+      "total": 15881524454.674747
     },
     "final_ecosystem_health": 0.32665367453954763,
     "final_model_confidence": 0.5625,
-    "net_social_cost": 10323638768.681675,
-    "pv_externality": 10324388768.681675,
+    "net_social_cost": 15880774454.674747,
+    "pv_externality": 15881524454.674747,
     "pv_externality_by_horizon": {
-      "100": 6768711810.965028,
-      "200": 10324388768.681675,
-      "50": 4134963295.6537676
+      "100": 10406021052.783615,
+      "200": 15881524454.674747,
+      "50": 6350420860.898513
     },
     "revenue": 750000.0,
     "substrate_recovery_years": 0.0339753749998839,
@@ -1342,16 +1564,16 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      56862304.928496435,
-      53253235.52113207,
-      22781123.165756807,
-      47436167.26794912,
-      204533536.4215157,
-      878518192.6524577,
-      52342680.90062035,
-      43016328.48903806,
-      28413046.092863064,
-      63594658.50752184
+      88105891.23812088,
+      82513781.01543587,
+      35298448.81329325,
+      73500463.95971423,
+      313268797.2791914,
+      1350784003.6238616,
+      80306875.28554814,
+      60553964.799577706,
+      44024890.51313422,
+      96095387.13142645
     ],
     "agent_cascade_damages": [
       0.0,
@@ -1390,23 +1612,23 @@
       55.65990342064963
     ],
     "agent_prices": [
-      2096372507.5488605,
-      1383683509.946913,
-      982818460.3346406,
-      1022116927.4851422,
-      1921452670.6005201,
-      20139492923.151077,
-      1248491490.5675461,
-      1233349003.0195446,
-      782229291.3874298,
-      1533351419.1061661
+      3248246239.348685,
+      2143962841.2647905,
+      1522838310.5811424,
+      1583729730.247315,
+      2920690933.12953,
+      30956209889.199783,
+      1907752571.277628,
+      1694098495.7394738,
+      1212033331.3417025,
+      2282552838.882007
     ],
-    "annual_externality": 1450751273.9473512,
+    "annual_externality": 2224452503.659304,
     "depletion_ratio": 45.15,
     "ecosystem_health": 235.39616520841616,
     "effective_k": 299700.0,
     "k_fraction": 299.99836600507984,
-    "marginal_annual_externality": 109892586.60718359,
+    "marginal_annual_externality": 169267408.552475,
     "model_confidence": 215.4562499999998,
     "revenue": 112875000.0,
     "step": 45150.0,
@@ -1416,16 +1638,16 @@
   "steps": [
     {
       "agent_annual_costs": [
-        455.42807859904536,
-        158.9748103153935,
-        111.66922357273758,
-        64.54882434973152,
-        100.3406080768382,
-        10.039081603998852,
-        10.756158861427343,
-        424.8226008715036,
-        162.12521706846908,
-        94.60581440789308
+        705.6677848407942,
+        246.3251773712319,
+        173.02704276791226,
+        100.01584889774523,
+        138.6297317448129,
+        13.86990986401944,
+        14.860617711449404,
+        554.9472481172129,
+        251.20660796204876,
+        128.75300786412097
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1464,32 +1686,32 @@
         0.001
       ],
       "agent_prices": [
-        4144395.515251313,
-        1446670.773870081,
-        1451699.9064455885,
-        652660.3350917299,
-        652213.9524994482,
-        228389.10649097388,
-        195762.09127797766,
-        2973758.2061005253,
-        1341217.7048391532,
-        1076141.1388897838
+        6421576.842051228,
+        2241559.11407821,
+        2249351.5559828593,
+        1011271.3610772018,
+        901093.2563412838,
+        315540.4494064423,
+        270463.24234837916,
+        3884630.736820491,
+        2078163.7567769487,
+        1464565.4644543761
       ],
-      "annual_externality": 1593.3104177270382,
+      "annual_externality": 2327.302977141348,
       "depletion_ratio": 0.001,
       "ecosystem_health": 0.999,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999866,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1593.3104177270382,
+      "marginal_annual_externality": 2327.302977141348,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.44253766069490375,
+          "Coastal Protection": 0.3387709383870873,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.3055159445733114,
+          "Fish Populations": 0.22113334037236712,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -1512,16 +1734,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 2973758.2061005253,
-          "Coralligenous & Red Coral": 1446670.773870081,
-          "Epiphytes & Algae": 1451699.9064455885,
-          "Fish Populations": 652213.9524994482,
-          "Human Communities": 1076141.1388897838,
-          "Marine Invertebrates": 652660.3350917299,
-          "Marine Megafauna": 228389.10649097388,
-          "Posidonia Meadow": 4144395.515251313,
-          "Seabirds": 195762.09127797766,
-          "Water Quality": 1341217.7048391532
+          "Coastal Protection": 3884630.736820491,
+          "Coralligenous & Red Coral": 2241559.11407821,
+          "Epiphytes & Algae": 2249351.5559828593,
+          "Fish Populations": 901093.2563412838,
+          "Human Communities": 1464565.4644543761,
+          "Marine Invertebrates": 1011271.3610772018,
+          "Marine Megafauna": 315540.4494064423,
+          "Posidonia Meadow": 6421576.842051228,
+          "Seabirds": 270463.24234837916,
+          "Water Quality": 2078163.7567769487
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -1545,16 +1767,16 @@
     },
     {
       "agent_annual_costs": [
-        15005.99919908037,
-        5487.097156928648,
-        3770.2659132305807,
-        2274.6066144740776,
-        3478.154223841241,
-        353.33523382121246,
-        378.5734648084419,
-        13631.119583521793,
-        5368.990948350103,
-        3178.8511495002676
+        23251.201916912225,
+        8502.039900234147,
+        5841.877829391599,
+        3524.4129346562972,
+        4850.930033240122,
+        492.79140234681984,
+        527.9907882287355,
+        17918.62499679436,
+        8319.03900393469,
+        4353.596562919711
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1593,32 +1815,32 @@
         0.031
       ],
       "agent_prices": [
-        4404986.861665528,
-        1610728.5202596998,
-        1581079.2539354048,
-        741896.7810650218,
-        729290.4017731635,
-        259302.46998169625,
-        222259.25998431107,
-        3077994.7446662113,
-        1432780.5756594117,
-        1166433.2846956628
+        6825352.820771009,
+        2495760.099746153,
+        2449819.734906154,
+        1149539.7027015164,
+        1017130.4908406705,
+        361645.3033351662,
+        309981.68857299956,
+        4046141.128308404,
+        2220036.80163653,
+        1597489.0613939264
       ],
-      "annual_externality": 52926.993487556734,
+      "annual_externality": 77582.5053686587,
       "depletion_ratio": 0.031,
       "ecosystem_health": 0.969,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999967495714,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1828.1298539426934,
+      "marginal_annual_externality": 2688.5074613122124,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.4275510873696153,
+          "Coastal Protection": 0.32524817060698735,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.2816859457544928,
+          "Fish Populations": 0.2019709942854594,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -1641,16 +1863,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3077994.7446662113,
-          "Coralligenous & Red Coral": 1610728.5202596998,
-          "Epiphytes & Algae": 1581079.2539354048,
-          "Fish Populations": 729290.4017731635,
-          "Human Communities": 1166433.2846956628,
-          "Marine Invertebrates": 741896.7810650218,
-          "Marine Megafauna": 259302.46998169625,
-          "Posidonia Meadow": 4404986.861665528,
-          "Seabirds": 222259.25998431107,
-          "Water Quality": 1432780.5756594117
+          "Coastal Protection": 4046141.128308404,
+          "Coralligenous & Red Coral": 2495760.099746153,
+          "Epiphytes & Algae": 2449819.734906154,
+          "Fish Populations": 1017130.4908406705,
+          "Human Communities": 1597489.0613939264,
+          "Marine Invertebrates": 1149539.7027015164,
+          "Marine Megafauna": 361645.3033351662,
+          "Posidonia Meadow": 6825352.820771009,
+          "Seabirds": 309981.68857299956,
+          "Water Quality": 2220036.80163653
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -1674,16 +1896,16 @@
     },
     {
       "agent_annual_costs": [
-        31444.84292657822,
-        12062.95216545953,
-        8101.828396633446,
-        5109.149669030726,
-        7702.495361325946,
-        794.8746546636806,
-        851.6514157110867,
-        27819.318321820676,
-        11313.475605093112,
-        6809.773854444001
+        48722.53972772877,
+        18691.067005410878,
+        12553.462481714781,
+        7916.425224495471,
+        10841.569298233295,
+        1118.8177658911386,
+        1198.7333205976486,
+        36803.72065841896,
+        17529.782734641332,
+        9386.035459468372
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1722,32 +1944,32 @@
         0.061
       ],
       "agent_prices": [
-        4690951.977571505,
-        1799555.1591095366,
-        1726619.1664956522,
-        846871.8030633808,
-        820757.7024363712,
-        296449.15399342193,
-        254099.27485150454,
-        3192380.791028602,
-        1534316.3637309587,
-        1269855.3703983692
+        7268444.451185768,
+        2788339.5040858854,
+        2675328.0698736417,
+        1312194.345043876,
+        1155249.1875166625,
+        417264.00285284274,
+        357654.8595881509,
+        4223377.780474307,
+        2377362.487112312,
+        1750264.8090402088
       ],
-      "annual_externality": 112010.36237076041,
+      "annual_externality": 164762.15367660066,
       "depletion_ratio": 0.061,
       "ecosystem_health": 0.939,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999527543648,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2110.097005828182,
+      "marginal_annual_externality": 3122.487453274691,
       "model_confidence": 0.878,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.41223152441534955,
+          "Coastal Protection": 0.31159893061998506,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.25829077458026056,
+          "Fish Populations": 0.1835051216618559,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -1770,16 +1992,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3192380.791028602,
-          "Coralligenous & Red Coral": 1799555.1591095366,
-          "Epiphytes & Algae": 1726619.1664956522,
-          "Fish Populations": 820757.7024363712,
-          "Human Communities": 1269855.3703983692,
-          "Marine Invertebrates": 846871.8030633808,
-          "Marine Megafauna": 296449.15399342193,
-          "Posidonia Meadow": 4690951.977571505,
-          "Seabirds": 254099.27485150454,
-          "Water Quality": 1534316.3637309587
+          "Coastal Protection": 4223377.780474307,
+          "Coralligenous & Red Coral": 2788339.5040858854,
+          "Epiphytes & Algae": 2675328.0698736417,
+          "Fish Populations": 1155249.1875166625,
+          "Human Communities": 1750264.8090402088,
+          "Marine Invertebrates": 1312194.345043876,
+          "Marine Megafauna": 417264.00285284274,
+          "Posidonia Meadow": 7268444.451185768,
+          "Seabirds": 357654.8595881509,
+          "Water Quality": 2377362.487112312
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -1803,16 +2025,16 @@
     },
     {
       "agent_annual_costs": [
-        50056.95240016804,
-        20178.902431709328,
-        13236.68954149675,
-        8739.244460888942,
-        13020.421066008901,
-        1365.661566878623,
-        1463.2088216556679,
-        43137.61524808738,
-        18120.989109885093,
-        11112.694707884333
+        77561.26680807093,
+        31266.410765242363,
+        20509.726620516056,
+        13541.113448402579,
+        18490.05344063315,
+        1939.3501350985637,
+        2077.8751447484615,
+        57439.85874019688,
+        28077.755512203876,
+        15415.92759444232
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1851,32 +2073,32 @@
         0.091
       ],
       "agent_prices": [
-        5005695.240016804,
-        2017890.2431709329,
-        1890955.6487852498,
-        971027.1623209936,
-        930030.076143493,
-        341415.39171965583,
-        292641.76433113357,
-        3318278.0960067217,
-        1647362.6463531903,
-        1389086.838485542
+        7756126.680807093,
+        3126641.0765242362,
+        2929960.9457880077,
+        1504568.16093362,
+        1320718.102902368,
+        484837.533774641,
+        415575.0289496923,
+        4418450.672322838,
+        2552523.2283821707,
+        1926990.9493052904
       ],
-      "annual_externality": 180432.37935466305,
+      "annual_externality": 266319.33820955514,
       "depletion_ratio": 0.091,
       "ecosystem_health": 0.909,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999997684829709,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2450.963584929763,
+      "marginal_annual_externality": 3647.411752196611,
       "model_confidence": 0.818,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.39659123253825507,
+          "Coastal Protection": 0.29784195809708147,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.2354662012361832,
+          "Fish Populations": 0.16581180236998314,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -1899,16 +2121,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3318278.0960067217,
-          "Coralligenous & Red Coral": 2017890.2431709329,
-          "Epiphytes & Algae": 1890955.6487852498,
-          "Fish Populations": 930030.076143493,
-          "Human Communities": 1389086.838485542,
-          "Marine Invertebrates": 971027.1623209936,
-          "Marine Megafauna": 341415.39171965583,
-          "Posidonia Meadow": 5005695.240016804,
-          "Seabirds": 292641.76433113357,
-          "Water Quality": 1647362.6463531903
+          "Coastal Protection": 4418450.672322838,
+          "Coralligenous & Red Coral": 3126641.0765242362,
+          "Epiphytes & Algae": 2929960.9457880077,
+          "Fish Populations": 1320718.102902368,
+          "Human Communities": 1926990.9493052904,
+          "Marine Invertebrates": 1504568.16093362,
+          "Marine Megafauna": 484837.533774641,
+          "Posidonia Meadow": 7756126.680807093,
+          "Seabirds": 415575.0289496923,
+          "Water Quality": 2552523.2283821707
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -1932,16 +2154,16 @@
     },
     {
       "agent_annual_costs": [
-        71180.0681328858,
-        30204.611985870783,
-        19334.519508287438,
-        13387.680642396208,
-        19760.223669925563,
-        2107.644786734146,
-        2258.190842929442,
-        59761.635429100614,
-        25943.83060162495,
-        16248.743004002166
+        110290.69871726529,
+        46800.85096555971,
+        29958.072840708937,
+        20743.681356091765,
+        28301.30883321093,
+        3018.6452854202316,
+        3234.262805807391,
+        80099.16333297794,
+        40198.93882531437,
+        22687.966190262825
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1980,32 +2202,32 @@
         0.121
       ],
       "agent_prices": [
-        5353211.735613726,
-        2271586.521251439,
-        2077262.4265102204,
-        1118713.4421102433,
-        1061499.6186323648,
-        396272.05700993247,
-        339661.7631513707,
-        3457284.6942454907,
-        1773770.537000654,
-        1527516.1295084683
+        8294589.738240614,
+        3519733.419723912,
+        3218635.9250348443,
+        1733402.2069828748,
+        1520318.2431063722,
+        567555.208622399,
+        486475.8931049134,
+        4633835.895296246,
+        2748387.252519615,
+        2132856.325737518
       ],
-      "annual_externality": 260187.1486037571,
+      "annual_externality": 385333.58915261936,
       "depletion_ratio": 0.121,
       "ecosystem_health": 0.879,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999992801691949,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2866.048080982233,
+      "marginal_annual_externality": 4286.9683328734245,
       "model_confidence": 0.7579999999999999,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.38064554018083274,
+          "Coastal Protection": 0.28399797268087473,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.21334414885849554,
+          "Fish Populations": 0.14895876812476977,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2028,16 +2250,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3457284.6942454907,
-          "Coralligenous & Red Coral": 2271586.521251439,
-          "Epiphytes & Algae": 2077262.4265102204,
-          "Fish Populations": 1061499.6186323648,
-          "Human Communities": 1527516.1295084683,
-          "Marine Invertebrates": 1118713.4421102433,
-          "Marine Megafauna": 396272.05700993247,
-          "Posidonia Meadow": 5353211.735613726,
-          "Seabirds": 339661.7631513707,
-          "Water Quality": 1773770.537000654
+          "Coastal Protection": 4633835.895296246,
+          "Coralligenous & Red Coral": 3519733.419723912,
+          "Epiphytes & Algae": 3218635.9250348443,
+          "Fish Populations": 1520318.2431063722,
+          "Human Communities": 2132856.325737518,
+          "Marine Invertebrates": 1733402.2069828748,
+          "Marine Megafauna": 567555.208622399,
+          "Posidonia Meadow": 8294589.738240614,
+          "Seabirds": 486475.8931049134,
+          "Water Quality": 2748387.252519615
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2061,16 +2283,16 @@
     },
     {
       "agent_annual_costs": [
-        95216.5290535929,
-        42610.60378630796,
-        26592.07813445881,
-        19346.700589847027,
-        28361.6736822354,
-        3078.06658845126,
-        3297.92848762635,
-        77900.5951078683,
-        34968.349695824276,
-        22427.29108658533
+        147534.2437035652,
+        66023.44431004023,
+        41203.372723923654,
+        29976.946944535743,
+        40952.4628932308,
+        4444.53346296693,
+        4762.000138893139,
+        105105.80672585392,
+        54182.07402867474,
+        31520.82131613779
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2109,32 +2331,32 @@
         0.151
       ],
       "agent_prices": [
-        5738214.664819174,
-        2567923.804340414,
-        2289384.2102514207,
-        1295474.4324327298,
-        1220866.7479107953,
-        463748.4429620276,
-        397498.66539602366,
-        3611285.8659276697,
-        1915785.5643106617,
-        1689473.0868205838
+        8891136.541075785,
+        3978896.312724279,
+        3547310.2345099836,
+        2007286.36641115,
+        1762854.3629536435,
+        669623.4190893885,
+        573962.9306480472,
+        4872454.616430314,
+        2968433.9172844077,
+        2374498.956762036
       ],
-      "annual_externality": 353799.81621279754,
+      "annual_externality": 525705.7062478221,
       "depletion_ratio": 0.151,
       "ecosystem_health": 0.849,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999982597424127,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3375.526953133056,
+      "marginal_annual_externality": 5072.363298383774,
       "model_confidence": 0.6979999999999997,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.36441313395220376,
+          "Coastal Protection": 0.27008973989461915,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.19204964049089562,
+          "Fish Populations": 0.13300419192355184,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2157,16 +2379,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3611285.8659276697,
-          "Coralligenous & Red Coral": 2567923.804340414,
-          "Epiphytes & Algae": 2289384.2102514207,
-          "Fish Populations": 1220866.7479107953,
-          "Human Communities": 1689473.0868205838,
-          "Marine Invertebrates": 1295474.4324327298,
-          "Marine Megafauna": 463748.4429620276,
-          "Posidonia Meadow": 5738214.664819174,
-          "Seabirds": 397498.66539602366,
-          "Water Quality": 1915785.5643106617
+          "Coastal Protection": 4872454.616430314,
+          "Coralligenous & Red Coral": 3978896.312724279,
+          "Epiphytes & Algae": 3547310.2345099836,
+          "Fish Populations": 1762854.3629536435,
+          "Human Communities": 2374498.956762036,
+          "Marine Invertebrates": 2007286.36641115,
+          "Marine Megafauna": 669623.4190893885,
+          "Posidonia Meadow": 8891136.541075785,
+          "Seabirds": 573962.9306480472,
+          "Water Quality": 2968433.9172844077
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2190,16 +2412,16 @@
     },
     {
       "agent_annual_costs": [
-        121673.38194019429,
-        57431.388694759815,
-        34939.00894989985,
-        26715.096394436656,
-        39003.040229176564,
-        4307.165254066599,
-        4614.819915071357,
-        97110.15860890102,
-        45049.9837125775,
-        29648.851696354886
+        188528.0902572896,
+        88987.66401322788,
+        54136.61170398507,
+        41393.984649478574,
+        56739.88612283323,
+        6265.87221385748,
+        6713.434514847301,
+        131874.60693379055,
+        69803.1669706433,
+        41936.402954911086
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2238,32 +2460,32 @@
         0.18
       ],
       "agent_prices": [
-        6151265.420309823,
-        2903475.761790635,
-        2523372.868603878,
-        1500662.8221566272,
-        1408443.1193869314,
-        544377.8307223064,
-        466609.5691905483,
-        3776506.1681239293,
-        2070479.0494164408,
-        1873642.7113668716
+        9531142.340785196,
+        4498820.791779854,
+        3909866.400843366,
+        2325217.6562361424,
+        2048940.3322134223,
+        791936.6270292095,
+        678802.8231678938,
+        5128456.936314078,
+        3208125.35067098,
+        2650147.686733965
       ],
-      "annual_externality": 460492.8953954385,
+      "annual_externality": 686379.7203348641,
       "depletion_ratio": 0.18,
       "ecosystem_health": 0.8200000000000001,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.99999649304027,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3982.943828444637,
+      "marginal_annual_externality": 6009.1786835095845,
       "model_confidence": 0.6399999999999999,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.34847023714878633,
+          "Coastal Protection": 0.2566073999142976,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.17235992210117215,
+          "Fish Populations": 0.11848033958080975,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2286,16 +2508,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 3776506.1681239293,
-          "Coralligenous & Red Coral": 2903475.761790635,
-          "Epiphytes & Algae": 2523372.868603878,
-          "Fish Populations": 1408443.1193869314,
-          "Human Communities": 1873642.7113668716,
-          "Marine Invertebrates": 1500662.8221566272,
-          "Marine Megafauna": 544377.8307223064,
-          "Posidonia Meadow": 6151265.420309823,
-          "Seabirds": 466609.5691905483,
-          "Water Quality": 2070479.0494164408
+          "Coastal Protection": 5128456.936314078,
+          "Coralligenous & Red Coral": 4498820.791779854,
+          "Epiphytes & Algae": 3909866.400843366,
+          "Fish Populations": 2048940.3322134223,
+          "Human Communities": 2650147.686733965,
+          "Marine Invertebrates": 2325217.6562361424,
+          "Marine Megafauna": 791936.6270292095,
+          "Posidonia Meadow": 9531142.340785196,
+          "Seabirds": 678802.8231678938,
+          "Water Quality": 3208125.35067098
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2319,16 +2541,16 @@
     },
     {
       "agent_annual_costs": [
-        174901.163989004,
-        95612.48993690088,
-        54601.178189433995,
-        49714.25406602674,
-        81572.41398709366,
-        11016.459822638342,
-        10361.998189415062,
-        138277.0004382295,
-        68987.62223440479,
-        50878.6094202811
+        271002.4321246486,
+        148147.7694226361,
+        84602.36483696711,
+        77030.26930114068,
+        120192.11289751132,
+        16232.100020270853,
+        15267.789628280885,
+        189856.05288967065,
+        106893.59056064136,
+        72800.7995381174
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2367,32 +2589,32 @@
         0.2288396596740518
       ],
       "agent_prices": [
-        6955090.7153372625,
-        3669411.2514196225,
-        3016943.657377114,
-        2023407.8909979323,
-        1969017.4139495166,
-        825768.7089463526,
-        692478.1476397979,
-        4098036.286134905,
-        2390038.3982508685,
-        2355562.4962169575
+        10776637.825134544,
+        5685607.522101952,
+        4674634.805653053,
+        3135190.4534787433,
+        2901230.3516239002,
+        1216721.2056347334,
+        1020325.4707326766,
+        5626655.130053817,
+        3703269.9155621747,
+        3370509.4349186462
       ],
-      "annual_externality": 735923.1902734282,
+      "annual_externality": 1102025.281219885,
       "depletion_ratio": 0.21,
       "ecosystem_health": 0.7521896772125128,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999935117608454,
       "keystone_triggered": [],
-      "marginal_annual_externality": 21491.335912276176,
+      "marginal_annual_externality": 32472.70349218091,
       "model_confidence": 0.59625,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.32112941616756535,
+          "Coastal Protection": 0.2338867354728764,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.13835345661638537,
+          "Fish Populations": 0.0938982198381078,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2415,16 +2637,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 4098036.286134905,
-          "Coralligenous & Red Coral": 3669411.2514196225,
-          "Epiphytes & Algae": 3016943.657377114,
-          "Fish Populations": 1969017.4139495166,
-          "Human Communities": 2355562.4962169575,
-          "Marine Invertebrates": 2023407.8909979323,
-          "Marine Megafauna": 825768.7089463526,
-          "Posidonia Meadow": 6955090.7153372625,
-          "Seabirds": 692478.1476397979,
-          "Water Quality": 2390038.3982508685
+          "Coastal Protection": 5626655.130053817,
+          "Coralligenous & Red Coral": 5685607.522101952,
+          "Epiphytes & Algae": 4674634.805653053,
+          "Fish Populations": 2901230.3516239002,
+          "Human Communities": 3370509.4349186462,
+          "Marine Invertebrates": 3135190.4534787433,
+          "Marine Megafauna": 1216721.2056347334,
+          "Posidonia Meadow": 10776637.825134544,
+          "Seabirds": 1020325.4707326766,
+          "Water Quality": 3703269.9155621747
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2448,16 +2670,16 @@
     },
     {
       "agent_annual_costs": [
-        315016.3159994333,
-        236343.9767927072,
-        116814.81444342082,
-        157835.95879300177,
-        346773.0300120697,
-        70988.29163888823,
-        53240.74861612812,
-        244097.36681064495,
-        142606.50256501389,
-        146560.17596251878
+        488105.3152977329,
+        366205.6390480167,
+        180999.93219225714,
+        244560.57200579,
+        521633.36507342674,
+        106784.14479672255,
+        80087.40142995743,
+        342172.52881110046,
+        220963.13226559438,
+        214761.96393987734
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2496,32 +2718,32 @@
         0.32024679686010554
       ],
       "agent_prices": [
-        8951372.827772858,
-        6100584.046516775,
-        4397032.648723233,
-        4000449.458058636,
-        4673316.368896467,
-        2631616.006125285,
-        1967838.740860565,
-        4896549.131109143,
-        3285479.267040652,
-        4318744.448186328
+        13869797.958196837,
+        9452613.557739489,
+        6813028.082594109,
+        6198538.122901126,
+        7029836.615250453,
+        3958608.640379111,
+        2960121.622726035,
+        6863919.183278736,
+        5090720.105894219,
+        6328472.474570012
       ],
-      "annual_externality": 1830277.1816338268,
+      "annual_externality": 2766273.994860476,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999889407648052,
       "keystone_triggered": [],
-      "marginal_annual_externality": 58305.21098409267,
+      "marginal_annual_externality": 89009.89918392012,
       "model_confidence": 0.585,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.26876070570579697,
+          "Coastal Protection": 0.19172719912057257,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.08228131488000734,
+          "Fish Populations": 0.05469922513545688,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2544,16 +2766,16 @@
         },
         "iterations": 0,
         "prices": {
-          "Coastal Protection": 4896549.131109143,
-          "Coralligenous & Red Coral": 6100584.046516775,
-          "Epiphytes & Algae": 4397032.648723233,
-          "Fish Populations": 4673316.368896467,
-          "Human Communities": 4318744.448186328,
-          "Marine Invertebrates": 4000449.458058636,
-          "Marine Megafauna": 2631616.006125285,
-          "Posidonia Meadow": 8951372.827772858,
-          "Seabirds": 1967838.740860565,
-          "Water Quality": 3285479.267040652
+          "Coastal Protection": 6863919.183278736,
+          "Coralligenous & Red Coral": 9452613.557739489,
+          "Epiphytes & Algae": 6813028.082594109,
+          "Fish Populations": 7029836.615250453,
+          "Human Communities": 6328472.474570012,
+          "Marine Invertebrates": 6198538.122901126,
+          "Marine Megafauna": 3958608.640379111,
+          "Posidonia Meadow": 13869797.958196837,
+          "Seabirds": 2960121.622726035,
+          "Water Quality": 5090720.105894219
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2577,16 +2799,16 @@
     },
     {
       "agent_annual_costs": [
-        557803.4246559312,
-        590271.2605354844,
-        245112.36279464848,
-        515766.1302542353,
-        1678018.9145841314,
-        698228.9751452461,
-        336478.85080854705,
-        409962.9722819511,
-        294583.1086332271,
-        529659.9705596605
+        864294.3321904896,
+        914601.9590152947,
+        379791.9061610428,
+        799159.2080839647,
+        2562191.0273287892,
+        1066135.786426161,
+        513774.3591175338,
+        587288.4127933495,
+        456444.86910026043,
+        796250.719683439
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2625,32 +2847,32 @@
         0.41705192974931005
       ],
       "agent_prices": [
-        12171172.94582515,
-        11431203.56630588,
-        6955024.967327856,
-        9463774.53539042,
-        15758369.791905634,
-        17611943.944236528,
-        8694447.547325531,
-        6184469.17833006,
-        5070918.064056109,
-        11483311.127688196
+        18858750.82189682,
+        17712197.551616143,
+        10776535.951195857,
+        14663744.126547739,
+        24061679.719597295,
+        26891928.544752996,
+        13275676.036619179,
+        8859500.328758728,
+        7857186.865551207,
+        17263140.99234094
       ],
-      "annual_externality": 5855885.970253062,
+      "annual_externality": 8939932.579900326,
       "depletion_ratio": 0.27,
       "ecosystem_health": 0.4574557859654953,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999822929739662,
       "keystone_triggered": [],
-      "marginal_annual_externality": 281049.0178030487,
+      "marginal_annual_externality": 431861.74335830845,
       "model_confidence": 0.57375,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.21279110010139113,
+          "Coastal Protection": 0.14854110854628524,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.04103326552402423,
+          "Fish Populations": 0.02687332636093489,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
@@ -2673,16 +2895,16 @@
         },
         "iterations": 5,
         "prices": {
-          "Coastal Protection": 6184469.17833006,
-          "Coralligenous & Red Coral": 11431203.56630588,
-          "Epiphytes & Algae": 6955024.967327856,
-          "Fish Populations": 15758369.791905634,
-          "Human Communities": 11483311.127688196,
-          "Marine Invertebrates": 9463774.53539042,
-          "Marine Megafauna": 17611943.944236528,
-          "Posidonia Meadow": 12171172.94582515,
-          "Seabirds": 8694447.547325531,
-          "Water Quality": 5070918.064056109
+          "Coastal Protection": 8859500.328758728,
+          "Coralligenous & Red Coral": 17712197.551616143,
+          "Epiphytes & Algae": 10776535.951195857,
+          "Fish Populations": 24061679.719597295,
+          "Human Communities": 17263140.99234094,
+          "Marine Invertebrates": 14663744.126547739,
+          "Marine Megafauna": 26891928.544752996,
+          "Posidonia Meadow": 18858750.82189682,
+          "Seabirds": 13275676.036619179,
+          "Water Quality": 7857186.865551207
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,
@@ -2706,16 +2928,16 @@
     },
     {
       "agent_annual_costs": [
-        997828.6015181346,
-        1593899.0709191826,
-        526554.5500713709,
-        1948121.7487042472,
-        14223638.666041885,
-        80550584.58815786,
-        4646304.915205459,
-        687041.1511836373,
-        687091.7616145359,
-        4031521.553767282
+        1546095.930338989,
+        2469683.5339956507,
+        815875.4376535369,
+        3018537.555341634,
+        21912091.584660657,
+        124091438.77561949,
+        7157820.950226126,
+        1005135.7428088437,
+        1064621.4938972911,
+        6186107.54793278
       ],
       "agent_cascade_damages": [
         0.0,
@@ -2754,36 +2976,36 @@
         0.5154484140932122
       ],
       "agent_prices": [
-        17616195.967523105,
-        24897830.98405549,
-        12058932.74476511,
-        28333919.75408762,
-        104715759.96460524,
-        1832525799.3805916,
-        94955844.66939189,
-        8362478.3870092435,
-        9534946.753370075,
-        70322571.27678171
+        27295598.514617834,
+        38578203.81190646,
+        18684839.072108004,
+        43902287.382519186,
+        161318870.40830535,
+        2823080232.145344,
+        146283325.5081228,
+        12234239.40584714,
+        14774022.661763232,
+        107905410.69012272
       ],
-      "annual_externality": 109892586.60718359,
+      "annual_externality": 169267408.552475,
       "depletion_ratio": 0.3,
       "ecosystem_health": 0.32665367453954763,
       "effective_k": 999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999730133330889,
       "keystone_triggered": [],
-      "marginal_annual_externality": 8855266.137409166,
+      "marginal_annual_externality": 13673516.111384124,
       "model_confidence": 0.5625,
       "price_result": {
         "anchor_contributions": {
-          "Coastal Protection": 0.15736961449662462,
+          "Coastal Protection": 0.10756696483894544,
           "Coralligenous & Red Coral": 0.0,
           "Epiphytes & Algae": 0.0,
-          "Fish Populations": 0.016233953385994777,
+          "Fish Populations": 0.010537829590188471,
           "Human Communities": 0.0,
           "Marine Invertebrates": 0.0,
           "Marine Megafauna": 0.0,
-          "Posidonia Meadow": 1.0,
+          "Posidonia Meadow": 1.0000000000000002,
           "Seabirds": 0.0,
           "Water Quality": 0.0
         },
@@ -2802,16 +3024,16 @@
         },
         "iterations": 7,
         "prices": {
-          "Coastal Protection": 8362478.3870092435,
-          "Coralligenous & Red Coral": 24897830.98405549,
-          "Epiphytes & Algae": 12058932.74476511,
-          "Fish Populations": 104715759.96460524,
-          "Human Communities": 70322571.27678171,
-          "Marine Invertebrates": 28333919.75408762,
-          "Marine Megafauna": 1832525799.3805916,
-          "Posidonia Meadow": 17616195.967523105,
-          "Seabirds": 94955844.66939189,
-          "Water Quality": 9534946.753370075
+          "Coastal Protection": 12234239.40584714,
+          "Coralligenous & Red Coral": 38578203.81190646,
+          "Epiphytes & Algae": 18684839.072108004,
+          "Fish Populations": 161318870.40830535,
+          "Human Communities": 107905410.69012272,
+          "Marine Invertebrates": 43902287.382519186,
+          "Marine Megafauna": 2823080232.145344,
+          "Posidonia Meadow": 27295598.514617834,
+          "Seabirds": 146283325.5081228,
+          "Water Quality": 14774022.661763232
         },
         "scarcity_multipliers": {
           "Coastal Protection": 1.0,

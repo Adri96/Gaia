@@ -279,6 +279,11 @@ def format_report(result: SimulationResult) -> str:
             f"  {agent.name + ':':<40} {cost:>14,.2f}\u20ac/yr"
         )
         lines.append(f"    \u2192 {agent.description}")
+        # Step 8e.6: how the agent's value is derived (e.g. the primary
+        # production → € chain), and what is shown but valued elsewhere
+        for note in getattr(agent, "value_notes", ()):
+            lines.extend(textwrap.wrap(f"\u2192 {note}", width=_WIDTH + 2,
+                                       initial_indent="    ", subsequent_indent="      "))
 
         # v0.3: Cascade breakdown (only when cascade data is present)
         if has_cascade_data and i < len(final_cascade_damages):
@@ -698,6 +703,9 @@ def format_restoration_report(result: RestorationResult) -> str:
             f"  {agent.name + ':':<40} {svc:>14,.2f}\u20ac/yr"
         )
         lines.append(f"    \u2192 {agent.description}")
+        for note in getattr(agent, "value_notes", ()):
+            lines.extend(textwrap.wrap(f"\u2192 {note}", width=_WIDTH + 2,
+                                       initial_indent="    ", subsequent_indent="      "))
 
     lines.append("")
 

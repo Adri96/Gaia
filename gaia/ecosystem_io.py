@@ -31,9 +31,12 @@ A document (every key below is optional unless marked *required*):
                         dependency_weight*, annual_value_per_ha, damage (a
                         curve name or an inline curve), trophic_level,
                         is_keystone, keystone_threshold, sites,
-                        site_share, site_intensity and
-                        site_intensity_levels (see "Site-restricted
-                        values" below)
+                        site_share, site_value_per_ha, site_intensity
+                        and site_intensity_levels (see "Site-restricted
+                        values" below), carbon_attribution (the text
+                        report shows the case's carbon stock and burial
+                        under the agent: an attribution, never added),
+                        value_notes (report lines under the agent)
     interactions        list: source*, target*, strength*, type, description
     carbon              gaia.models.CarbonProfile fields (the four tonnage
                         and fraction fields required; release_half_life_years
@@ -80,24 +83,33 @@ Service ledger (Step 8c.2): a list of final services, each counted once
 and owned by one agent: {service*, agent*, value* (€/ha/yr at full
 damage), section* ("provisioning" | "regulation and maintenance" |
 "cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
-split_of, share, share_source, site_restricted}. An entry of a
-site-restricted agent says "site_restricted": true and books the value per
-hectare near the sites, like the agent's annual_value_per_ha (a run
-multiplies both by the agent's site_share). A service that is a share of another
-(split_of, with its share and the share's source) is the part of a final
-service moved to the agent that is its best owner. Parsing rejects a
-service listed twice, an unknown agent and a value <= 0; ``Case.
-ledger_check()`` lists the agents whose weight × annual_value_per_ha
-differs from the sum of their ledger values (the shipped files have none;
-it is not enforced on parse, so the Monte Carlo can perturb agent values).
+split_of, share, share_source, site_restricted, gross, net_of,
+production_function}. A site-restricted entry ("site_restricted": true)
+books the value per hectare near the sites, like the agent's
+site_value_per_ha (a run multiplies both by the agent's site_share); the
+other entries book the value on every hectare, like annual_value_per_ha.
+A service that is a share of another (split_of, with its share and the
+share's source) is the part of a final service moved to the agent that is
+its best owner. A service net of others (Step 8e.6: gross, net_of, the
+names of the entries it would otherwise count again) books value = gross −
+their values; a production_function (gaia.production) derives the gross
+from primary production. Parsing rejects a service listed twice, an
+unknown agent, a value <= 0, a net value that is not gross − the services
+it is net of, and a chain that does not give its gross. ``Case.ledger_check()`` lists the
+agents whose weight × annual_value_per_ha (and weight ×
+site_value_per_ha) differs from the sum of their ledger values (the
+shipped files have none; it is not enforced on parse, so the Monte Carlo
+can perturb agent values).
 
-Site-restricted values (Step 8d.4): an agent whose service is enjoyed only
-near some sites (for Posidonia, the meadow's diving amenity near dive sites)
-names them, "sites": "dive sites", and gives "site_share": the share of the
-reference resource near them (a parameter with provenance, in (0, 1]; for
-a regional stock, the actual regional share). Its annual_value_per_ha is
-then the value per hectare NEAR the sites, and a run uses
-annual_value_per_ha × site_share (gaia.models.Agent.site_share). A project
+Site-restricted values (Step 8d.4, 8e.6): an agent with a service enjoyed
+only near some sites (for Posidonia, the meadow's diving amenity near dive
+sites) names them, "sites": "dive sites", and gives "site_share": the
+share of the reference resource near them (a parameter with provenance, in
+(0, 1]; for a regional stock, the actual regional share), and
+"site_value_per_ha", the value per hectare NEAR the sites (> 0). A run
+uses annual_value_per_ha + site_value_per_ha × site_share
+(gaia.models.Agent.value_per_ha): its annual_value_per_ha, the value on
+every hectare, is never scaled. A project
 states its own share (``build_ecosystem(site_share=F)``; ``gaia run ...
 --<site>-share F``, e.g. --dive-site-share, recorded as user-supplied);
 explicit pricing anchors scale by F / the document's share. Its
@@ -107,14 +119,14 @@ the same sites.
 
 Site intensity (Step 8e.2): a site-restricted agent may also give
 "site_intensity", the intensity of the activity near the sites at which
-its value is stated (a parameter with provenance, > 0; for Posidonia the
+its site_value_per_ha is stated (a parameter with provenance, > 0; for Posidonia the
 regional average, dives per hectare of meadow near dive sites per year),
 and "site_intensity_levels", the named levels a project can choose:
 {"<level>": {"value"* (>= 0, same unit), "description"*, "basis"*,
 "confidence"*}}. ``build_ecosystem(site_intensity="<level>")`` (``gaia run
 ... --<activity>-intensity <level>``, e.g. --dive-intensity) multiplies
-the site-restricted value per hectare near the sites by level /
-site_intensity and records the level as user-supplied; the share is then
+site_value_per_ha by level / site_intensity (a level of 0 zeroes that
+service only, never the agent) and records the level as user-supplied; the share is then
 1 unless also given (the intensity describes the affected resource as a
 whole). Every site-restricted agent gives the same intensity and levels.
 
@@ -168,6 +180,7 @@ import dataclasses
 import json
 import math
 import re
+import textwrap
 import warnings
 from collections import Counter
 from dataclasses import dataclass, field
@@ -464,6 +477,14 @@ class _AgentSpec:
     # and the named intensity levels a project can choose from
     site_intensity: Optional[float] = None
     intensity_levels: Optional[Dict[str, Dict[str, Any]]] = None
+    # Step 8e.6: the value per hectare near the sites (site_value_per_ha);
+    # ``value`` is then the value on every hectare. Whether the report
+    # shows the case's carbon under this agent (an attribution, not a sum)
+    site_value: float = 0.0
+    carbon_attribution: bool = False
+    # report lines written in the document (value_notes), before the
+    # derived ones (Step 8e.6)
+    notes: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -627,9 +648,10 @@ class Case:
             site_intensity: A level of the agents' site_intensity_levels
                 (Step 8e.2, e.g. "high" for --dive-intensity high): the
                 activity's intensity near the sites (dives per hectare of
-                meadow per year). The site-restricted value per hectare
-                near the sites scales with it (value × level /
-                documented intensity; "none" makes it 0). Default: the
+                meadow per year). site_value_per_ha scales with it
+                (× level / documented intensity; "none" zeroes that
+                service only: annual_value_per_ha, the value on every
+                hectare, never scales, so no agent reaches €0). Default: the
                 documented intensity (the regional average). Recorded as
                 user-supplied, with the level's basis.
 
@@ -677,7 +699,7 @@ class Case:
                 name=a.name,
                 dependency_weight=a.weight,
                 damage_function=_build_curve(a.curve, threshold, _DAMAGE_FACTORIES),
-                annual_value_per_ha=a.value * factor if a.site_share is not None else a.value,
+                annual_value_per_ha=a.value,
                 description=a.description,
                 trophic_level=a.trophic_level,
                 is_keystone=a.is_keystone,
@@ -686,6 +708,8 @@ class Case:
                 sites=a.sites,
                 site_intensity=(level["value"] if level is not None else a.site_intensity)
                 if a.site_intensity is not None else None,
+                site_value_per_ha=a.site_value * factor,
+                value_notes=self._value_notes(a, carbon),
             )
             for a in self.agents
         ]
@@ -911,10 +935,13 @@ class Case:
         assert self.pricing is not None
         spec = self.pricing
         # The anchor of a site-restricted agent is stated at its regional
-        # share and the documented intensity; it scales with the share and
-        # intensity used (Steps 8d.4, 8e.2).
-        defaults = {a.name: a.site_share for a in self.agents if a.site_share is not None}
-        factor = {name: (shares or {}).get(name, share) / share * intensity for name, share in defaults.items()}
+        # share and the documented intensity; its site-restricted part
+        # scales with the share and intensity used (Steps 8d.4, 8e.2, 8e.6).
+        factor = {
+            a.name: (a.value + a.site_value * (shares or {}).get(a.name, a.site_share) * intensity)
+            / (a.value + a.site_value * a.site_share)
+            for a in self.agents if a.site_share is not None
+        }
         for anchor in spec.config.anchors:
             if factor.get(anchor.agent_name, 1.0) == 0.0:
                 raise ValueError(
@@ -985,13 +1012,18 @@ class Case:
 
     # ── Service ledger ────────────────────────────────────────────────────────
 
-    def ledger_by_agent(self, regional: bool = False) -> Dict[str, float]:
-        """{agent: sum of its service_ledger values (€/ha/yr; a
-        site-restricted entry per hectare near its sites, or, with
-        ``regional``, × the agent's documented site_share)}."""
+    def ledger_by_agent(self, regional: bool = False, part: Optional[str] = None) -> Dict[str, float]:
+        """{agent: sum of its service_ledger values (€/ha/yr)}.
+
+        A site-restricted entry is per hectare near its sites, or, with
+        ``regional``, × the agent's documented site_share. ``part``
+        "everywhere" or "site" keeps only the entries that apply on every
+        hectare, or only the site-restricted ones (Step 8e.6)."""
         shares = {a.name: a.site_share for a in self.agents if a.site_share is not None}
         out: Dict[str, float] = {}
         for entry in self.service_ledger:
+            if part is not None and entry["site_restricted"] != (part == "site"):
+                continue
             value = entry["value"]
             if regional and entry["site_restricted"]:
                 value *= shares[entry["agent"]]
@@ -999,22 +1031,71 @@ class Case:
         return out
 
     def ledger_check(self, rel_tol: float = 1e-9) -> List[str]:
-        """Agents whose euro value at full damage (dependency_weight ×
-        annual_value_per_ha) is not the sum of their ledger services; empty
-        when the ledger accounts for every euro (or there is no ledger)."""
+        """Agents whose euro value at full damage is not the sum of their
+        ledger services: dependency_weight × annual_value_per_ha against
+        the entries that apply on every hectare, and dependency_weight ×
+        site_value_per_ha against the site-restricted ones; empty when the
+        ledger accounts for every euro (or there is no ledger)."""
         if not self.service_ledger:
             return []
-        ledger = self.ledger_by_agent()
+        everywhere = self.ledger_by_agent(part="everywhere")
+        site = self.ledger_by_agent(part="site")
         problems: List[str] = []
         for a in self.agents:
-            value = a.weight * a.value
-            booked = ledger.get(a.name, 0.0)
-            if not math.isclose(value, booked, rel_tol=rel_tol, abs_tol=1e-12):
-                problems.append(
-                    f"{a.name}: weight × annual_value_per_ha = {value:.6g} €/ha/yr, "
-                    f"ledger = {booked:.6g}"
-                )
+            for label, value, booked in (
+                ("annual_value_per_ha", a.weight * a.value, everywhere.get(a.name, 0.0)),
+                ("site_value_per_ha", a.weight * a.site_value, site.get(a.name, 0.0)),
+            ):
+                if not math.isclose(value, booked, rel_tol=rel_tol, abs_tol=1e-12):
+                    problems.append(
+                        f"{a.name}: weight × {label} = {value:.6g} €/ha/yr, "
+                        f"ledger = {booked:.6g}"
+                    )
         return problems
+
+    def production_functions(self) -> Dict[str, Dict[str, Any]]:
+        """{agent: the JSON form of its ledger production function} (Step
+        8e.6; gaia.production), for the agents whose value is derived from
+        primary production."""
+        from gaia.production import production_block
+
+        values = {e["service"]: e["value"] for e in self.service_ledger}
+        out: Dict[str, Dict[str, Any]] = {}
+        for entry in self.service_ledger:
+            if entry["production_function"] is None:
+                continue
+            counted = sum(values[s] for s in entry["net_of"])
+            out[entry["agent"]] = dict(
+                production_block(entry["production_function"], entry["gross"], counted,
+                                 entry["value"], entry["net_of"]),
+                service=entry["service"],
+            )
+        return out
+
+    def _value_notes(self, agent: "_AgentSpec", carbon: Optional[Dict[str, float]]) -> Tuple[str, ...]:
+        """Report lines under an agent (Step 8e.6): the primary production
+        → € chain of its production-function ledger entry, and, when the
+        document asks for it, the carbon it holds (valued once, by
+        gaia.carbon, decision D3: shown, never added)."""
+        from gaia.production import chain_text
+
+        notes: List[str] = list(agent.notes)
+        values = {e["service"]: e for e in self.service_ledger}
+        for entry in self.service_ledger:
+            if entry["agent"] != agent.name or entry["production_function"] is None:
+                continue
+            counted = sum(values[s]["value"] for s in entry["net_of"])
+            owners = ", ".join(dict.fromkeys(values[s]["agent"] for s in entry["net_of"]))
+            notes.append(chain_text(entry["production_function"], entry["gross"], counted,
+                                    entry["value"], f"commercial catch, under {owners}" if owners else "nothing"))
+        if agent.carbon_attribution and carbon is not None:
+            notes.append(
+                f"Carbon: {carbon['soil_carbon_tonnes']:,.0f} tCO2/ha held in the "
+                f"{self.release_fates['subject'] if self.release_fates else 'soil'} "
+                f"and {carbon['annual_absorption_tonnes']:,.2f} tCO2/ha/yr buried: valued once, "
+                f"in the carbon accounting, and not added to this line"
+            )
+        return tuple(notes)
 
     # ── Running ───────────────────────────────────────────────────────────────
 
@@ -1063,8 +1144,43 @@ class Case:
 
         if isinstance(result, RestorationResult):
             return format_restoration_report(result) + appendix + self.report_note
-        return (format_report(result) + format_benchmarks(self.benchmark_block(result))
+        return (format_report(result) + self._production_text()
+                + format_benchmarks(self.benchmark_block(result))
                 + appendix + self.report_note)
+
+    def _production_text(self) -> str:
+        """The "Primary Production" section of an extraction report (Step
+        8e.6): each production-function chain with its sources' status, and
+        the productivity comparison; "" without one."""
+        from gaia.production import format_comparison
+
+        blocks = self.production_functions()
+        if not blocks:
+            return ""
+        lines = ["", "  \u2500\u2500 Primary Production \u2192 Food \u2192 \u20ac (per hectare) "
+                 + "\u2500" * 23]
+        for agent, block in blocks.items():
+            lines.append(f"  {agent}: {block['service']}")
+            for step in block["chain"]:
+                lines.append(f"    {step['step'] + ':':<52} {step['value']:>12,.2f} {step['unit']}")
+            lines.append(f"    {'minus the catch already counted (net_of):':<52} "
+                         f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
+            lines.append(f"    {'= value of this agent:':<52} {block['net_eur_per_ha_yr']:>12,.2f} €/ha/yr")
+            low, high = block["gross_range_eur_per_ha_yr"]
+            lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr.")
+            unverified = [p["label"] for p in block["parameters"].values() if p["status"] != "verified"]
+            if unverified:
+                lines.extend(textwrap.wrap(
+                    "Links not read directly at a source (derived from read figures, cited second-hand, "
+                    "or inferred; see the case file): " + "; ".join(unverified) + ".",
+                    width=74, initial_indent="    ", subsequent_indent="    "))
+            if block["comparison"] is not None:
+                lines.append("")
+                lines.extend(format_comparison(block["comparison"]))
+                if block["comparison"]["note"]:
+                    lines.extend(textwrap.wrap(block["comparison"]["note"], width=74,
+                                               initial_indent="    ", subsequent_indent="    "))
+        return "\n".join(lines) + "\n"
 
     def benchmark_block(self, result: Any) -> Optional[Dict[str, Any]]:
         """run.benchmarks compared with an extraction result (gaia.benchmarks),
@@ -1202,12 +1318,39 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
         seen[entry["service"]] = i
     restricted = {a.name for a in agents if a.site_share is not None}
     for i, entry in enumerate(ledger):
-        if entry["site_restricted"] != (entry["agent"] in restricted):
+        if entry["site_restricted"] and entry["agent"] not in restricted:
             raise ValueError(
-                f"$.service_ledger[{i}].site_restricted: must be "
-                f"{str(entry['agent'] in restricted).lower()}, as agent {entry['agent']!r} "
-                f"{'has' if entry['agent'] in restricted else 'has no'} sites "
+                f"$.service_ledger[{i}].site_restricted: agent {entry['agent']!r} has no sites "
                 f"(a site-restricted value is booked per hectare near the sites)"
+            )
+    for a in agents:
+        if a.name in restricted and ledger and not any(
+                e["site_restricted"] for e in ledger if e["agent"] == a.name):
+            raise ValueError(
+                f"$.service_ledger: agent {a.name!r} has sites but no site-restricted service "
+                f"(\"site_restricted\": true, booked per hectare near the sites, like its site_value_per_ha)"
+            )
+    for i, entry in enumerate(ledger):
+        # Step 8e.6: a value net of services counted elsewhere (e.g. the
+        # meadow's food production net of the commercial catch booked to
+        # Fish Populations and Marine Invertebrates): value = gross − Σ them
+        if not entry["net_of"]:
+            continue
+        counted = 0.0
+        for service in entry["net_of"]:
+            if service not in seen:
+                raise ValueError(f"$.service_ledger[{i}].net_of: unknown service {service!r}")
+            other = ledger[seen[service]]
+            if other is entry or other["net_of"]:
+                raise ValueError(
+                    f"$.service_ledger[{i}].net_of: {service!r} must be another entry, itself not net of others"
+                )
+            counted += other["value"]
+        if not math.isclose(entry["value"], entry["gross"] - counted, rel_tol=1e-9, abs_tol=1e-9):
+            raise ValueError(
+                f"$.service_ledger[{i}].value: must be gross − the services it is net of = "
+                f"{entry['gross']:.6g} − {counted:.6g} = {entry['gross'] - counted:.6g}, got {entry['value']:.6g} "
+                f"(otherwise the subtracted services would be counted twice)"
             )
     shares: Dict[str, float] = {}
     for i, entry in enumerate(ledger):
@@ -1383,7 +1526,8 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
     """One service_ledger entry: a final service, its owner and its value."""
     obj = _object(
         raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
-        ("transfer", "note", "split_of", "share", "share_source", "site_restricted"),
+        ("transfer", "note", "split_of", "share", "share_source", "site_restricted",
+         "gross", "net_of", "production_function"),
     )
     agent = _str(obj["agent"], _key(path, "agent"))
     if agent not in agents:
@@ -1411,7 +1555,36 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
         "share": None,
         "share_source": "",
         "site_restricted": _bool(obj.get("site_restricted", False), _key(path, "site_restricted")),
+        "gross": None,
+        "net_of": (),
+        "production_function": None,
     }
+    if "gross" in obj:
+        gross = _plain_number(obj["gross"], _key(path, "gross"))
+        if not gross > 0.0:
+            raise ValueError(f"{_key(path, 'gross')}: must be > 0, got {gross}")
+        out["gross"] = float(gross)
+    if "net_of" in obj:
+        if out["gross"] is None:
+            raise ValueError(f"{_key(path, 'net_of')}: needs gross (the value before the subtraction)")
+        names = _list(obj["net_of"], _key(path, "net_of"))
+        if not names:
+            raise ValueError(f"{_key(path, 'net_of')}: name at least one service")
+        out["net_of"] = tuple(_str(n, f"{_key(path, 'net_of')}[{j}]") for j, n in enumerate(names))
+    elif out["gross"] is not None and not math.isclose(out["gross"], out["value"], rel_tol=1e-9):
+        raise ValueError(f"{_key(path, 'gross')}: differs from value ({out['value']}) with nothing subtracted (net_of)")
+    if "production_function" in obj:
+        from gaia.production import gross_value, central, parse_production_function
+
+        spec = parse_production_function(obj["production_function"], _key(path, "production_function"))
+        result = gross_value(central(spec))
+        stated = out["gross"] if out["gross"] is not None else out["value"]
+        if not math.isclose(result, stated, rel_tol=1e-9):
+            raise ValueError(
+                f"{_key(path, 'production_function')}: the chain gives {result:.6g} €/ha/yr, but the "
+                f"entry states {stated:.6g} ({'gross' if out['gross'] is not None else 'value'})"
+            )
+        out["production_function"] = spec
     if ("split_of" in obj) != ("share" in obj):
         raise ValueError(f"{path}: give both split_of and share, or neither")
     if "split_of" in obj:
@@ -1568,7 +1741,8 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
         obj = _object(
             raw, path, ("name", "dependency_weight"),
             ("description", "annual_value_per_ha", "damage", "trophic_level", "is_keystone",
-             "keystone_threshold", "sites", "site_share", "site_intensity", "site_intensity_levels"),
+             "keystone_threshold", "sites", "site_share", "site_value_per_ha", "site_intensity",
+             "site_intensity_levels", "carbon_attribution", "value_notes"),
         )
         name = _str(obj["name"], _key(path, "name"))
         if name in seen:
@@ -1588,6 +1762,18 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             values[name] = default_value
         else:
             raise ValueError(f"{_key(path, 'annual_value_per_ha')}: required (no agent_defaults value)")
+    site_values: Dict[str, float] = {}
+    for path, name, obj in objs:
+        if "site_value_per_ha" not in obj:
+            continue
+        if "sites" not in obj:
+            raise ValueError(f"{_key(path, 'site_value_per_ha')}: needs sites and site_share (a value near the sites)")
+        site_values[name] = reader.number(
+            obj["site_value_per_ha"], _key(path, "site_value_per_ha"),
+            f"agent[{name}].site_value_per_ha", buckets["agent_values"],
+        )
+        if not (math.isfinite(site_values[name]) and site_values[name] > 0.0):
+            raise ValueError(f"{_key(path, 'site_value_per_ha')}: must be > 0, got {site_values[name]}")
     sites: Dict[str, Tuple[float, str]] = {}
     for path, name, obj in objs:
         if ("sites" in obj) != ("site_share" in obj):
@@ -1601,6 +1787,11 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
                               buckets["agent_values"])
         if not 0.0 < share <= 1.0:
             raise ValueError(f"{_key(path, 'site_share')}: must be in (0, 1], got {share}")
+        if name not in site_values:
+            raise ValueError(
+                f"{_key(path, 'site_value_per_ha')}: required with sites (the value per hectare "
+                f"near the {label}; annual_value_per_ha is the value on every hectare)"
+            )
         sites[name] = (share, label)
     if len({label for _, label in sites.values()}) > 1:
         raise ValueError("$.agents: every agent with sites must name the same sites")
@@ -1666,6 +1857,12 @@ def _parse_agents(doc: dict, reader: _Reader, curves: Dict[str, _Curve], buckets
             sites=sites[name][1] if name in sites else "",
             site_intensity=intensities[name][0] if name in intensities else None,
             intensity_levels=intensities[name][1] if name in intensities else None,
+            site_value=site_values.get(name, 0.0),
+            carbon_attribution=_bool(obj.get("carbon_attribution", False), _key(path, "carbon_attribution")),
+            notes=tuple(
+                _str(n, f"{_key(path, 'value_notes')}[{j}]")
+                for j, n in enumerate(_list(obj.get("value_notes", []), _key(path, "value_notes")))
+            ),
         )
         for path, name, obj in objs
     ]
@@ -2153,8 +2350,11 @@ def ecosystem_to_dict(ecosystem: Ecosystem) -> Dict[str, Any]:
         if a.sites:
             item["sites"] = a.sites
             item["site_share"] = num(a.site_share, f"agent[{a.name}].site_share")
+            item["site_value_per_ha"] = listed(a.site_value_per_ha, f"agent[{a.name}].site_value_per_ha")
             if a.site_intensity is not None:
                 item["site_intensity"] = num(a.site_intensity, f"agent[{a.name}].site_intensity")
+        if a.value_notes:
+            item["value_notes"] = list(a.value_notes)
         out_agents.append(item)
     doc["agents"] = out_agents
     if ecosystem.interactions:

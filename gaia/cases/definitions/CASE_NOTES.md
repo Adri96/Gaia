@@ -284,14 +284,19 @@ destroyed.
 revenue is one-off (€2,500/ha, a project-specific placeholder the user
 replaces with `--unit-value`), and they meet only through present values.
 
-**Agent values: the service ledger (Step 8c.2).** The owner's rule:
-every agent costs money, and no service is counted twice. The case file's
+**Agent values: the service ledger (Step 8c.2).** The owner's rule
+(PROJECT_DEFINITION.md, Core Valuation Principles): every agent costs
+money, under any input, and no service is counted twice. The case file's
 `service_ledger` books each final ecosystem service once, to the one
 agent that is its best owner, with its €/ha/yr, method, source and
 benefit-transfer method; each agent's `annual_value_per_ha` is its
-ledger total / dependency_weight, so weight × value is the sourced
-figure and the owner's weights keep their role in the health index
-(`Case.ledger_check()` and a test hold the two together). € 2014-2017/ha/yr:
+ledger total on every hectare / dependency_weight, and the meadow's
+`site_value_per_ha` its diving value near dive sites / dependency_weight
+(Step 8e.6), so weight × value is the sourced figure and the owner's
+weights keep their role in the health index (`Case.ledger_check()` and a
+test hold the two together). A value that overlaps services counted
+elsewhere is booked net of them (`gross`, `net_of`; parsing enforces
+value = gross − their values). € 2014-2017/ha/yr:
 
 - Coastal Protection: protection from coastal erosion 188 (Campagne et
   al. 2015).
@@ -303,7 +308,29 @@ figure and the owner's weights keep their role in the health index
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
-- Posidonia Meadow: the meadow's diving amenity, only near dive sites
+- Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
+  production supports, a production function (gaia/production.py):
+    net primary production (blades, sheaths, rhizomes)   476 g DW/m²/yr
+                                                          (Pergent et al. 1994)
+    × 33.6% carbon (Duarte 1990)                          = 159.9 g C/m²/yr
+    × 10 kg/ha per g/m² × 74% not buried in the matte     = 1,183.5 kg C/ha/yr
+      (Mateo & Romero 1997, Medes Islands)
+    × 0.118^(3.1 − 1): transfer efficiency 11.8% per      = 13.31 kg C/ha/yr
+      level (Coll et al. 2008) to the catch's trophic
+      level 3.1 (Francour 1997's dominant species, FishBase)
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 119.8 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 55.7 kg/ha/yr
+      (Zhou et al. 2012)
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €284.74 gross
+    − 35.00, the commercial catch booked to Fish          = €249.74 net
+      Populations and Marine Invertebrates (net_of)
+  Range over the links' ends: €0.10–731.98 net (€35.10–766.98 gross).
+  Carbon is not counted twice: the chain uses the production that is not
+  buried, gaia.carbon values the buried part. The report shows the chain
+  and the matte's carbon on the meadow's line (the carbon as an
+  attribution, not added). No willingness-to-pay value for the meadow's
+  existence was found, so none is added.
+- Posidonia Meadow, near dive sites only: the meadow's diving amenity
   (Step 8d.4): €34.71 per dive for a total loss of cover (Zunino et al.
   2020) × ~60,000 Medes Islands dives a year ÷ 142.35 ha of meadow within
   reach of dive sites (the P. oceanica cover of the five coastal Natura
@@ -320,17 +347,18 @@ figure and the owner's weights keep their role in the health index
   of `site_intensity_levels`), which scales the near-site value by
   level / 421.5; the share then says what part of the affected meadow is
   near the dive sites (1 when the intensity is given alone):
-    none   0 dives/ha/yr              €0/ha/yr      (no dive site within reach)
+    none   0 dives/ha/yr              €0/ha/yr      (no dive site within reach;
+                                                     the diving service only)
     low    14,000 / 211.45 = 66.2     €2,298        Banyuls-Cerbère (Lloret 2006
            slides, grey literature) over Natura 2000 FR9101482's meadow
     medium 40,000 / 70.61 = 566.5     €19,663       Portofino (Betti et al. 2023,
            doi:10.1002/aqc.3918) over Natura 2000 IT1332674's meadow
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
-  'none' zeroes the meadow's diving service, its only ledger entry, so the
-  meadow agent alone costs nothing of its own (its other services belong
-  to other agents, and its carbon is counted); this exception to "every
-  agent costs money" is the user's explicit choice, and flagged.
+  'none' zeroes the diving service, never an agent: the meadow keeps its
+  own €249.74/ha/yr on every hectare (above), and every other agent keeps
+  its value. (Before Step 8e.6 the diving service was the meadow's only
+  entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
   for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
   Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the
@@ -347,8 +375,8 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €818.66/ha/yr (€284.83 before). Splits move value between agents
-and leave totals unchanged. The diving and non-use entries are benefit
+Total €1,068.40/ha/yr (€818.66 before Step 8e.6, €284.83 before Step
+8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total
 remains a lower bound. Full table and caveats:

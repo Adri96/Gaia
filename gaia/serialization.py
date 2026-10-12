@@ -86,13 +86,19 @@ def _agent_metadata(
             "keystone_threshold": a.keystone_threshold if a.is_keystone else None,
         }
         if a.sites:
-            # Step 8d.4: annual_value_eur_per_ha_yr is per hectare near the
-            # sites; the value applies on site_share of the resource
+            # Step 8d.4, 8e.6: annual_value_eur_per_ha_yr applies on every
+            # hectare; site_value_eur_per_ha_yr per hectare near the sites,
+            # on site_share of the resource
             d["sites"] = a.sites
             d["site_share"] = a.site_share
+            d["site_value_eur_per_ha_yr"] = a.site_value_per_ha
             if a.site_intensity is not None:
                 # Step 8e.2: the intensity near the sites (e.g. dives/ha/yr)
                 d["site_intensity"] = a.site_intensity
+        if a.value_notes:
+            # Step 8e.6: how the value is derived (e.g. the primary
+            # production → € chain) and what is shown but valued elsewhere
+            d["value_notes"] = list(a.value_notes)
         if trophic_amplification:
             d["trophic_amplification"] = round(trophic_amplification[i], 6)
         out.append(d)

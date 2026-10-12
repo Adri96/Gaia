@@ -26,6 +26,11 @@ THRESHOLD = 0.20             # 1,000 ha safe destruction limit
 THRESHOLD_UNITS = 1_000      # 20% of 5,000 ha
 REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 
+# Step 8e.6: the meadow's own value on every hectare, the food its primary
+# production supports net of the commercial catch already counted (35)
+MEADOW_FOOD_NET = 249.73947706897167
+LEDGER_TOTAL = 1068.403055661153    # €/ha/yr of the reference meadow
+
 
 # ── Structure invariants ───────────────────────────────────────────────────────
 
@@ -51,11 +56,11 @@ def test_posidonia_values_are_the_sourced_final_services():
     # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
     assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83, rel=1e-12)
     assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5, rel=1e-12)
-    assert per_ha["Posidonia Meadow"] == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
+    assert per_ha["Posidonia Meadow"] == pytest.approx(MEADOW_FOOD_NET + 34.71 * 60_000 / 4582, rel=1e-12)
     assert per_ha["Coralligenous & Red Coral"] == pytest.approx(60.0 * 60_000 / 190_000, rel=1e-12)
     assert per_ha["Marine Megafauna"] == pytest.approx(per_ha["Seabirds"], rel=1e-12)
     assert all(v > 0.0 for v in per_ha.values())
-    assert sum(per_ha.values()) == pytest.approx(818.6635785921815, rel=1e-12)
+    assert sum(per_ha.values()) == pytest.approx(LEDGER_TOTAL, rel=1e-12)
 
 
 def test_posidonia_agent_weights_sum_to_one():
@@ -499,21 +504,24 @@ def test_service_ledger_counts_each_service_once_and_prices_every_agent():
     assert not parents & set(services)
     for parent in parents:
         assert sum(e["share"] for e in ledger if e["split_of"] == parent) == pytest.approx(1.0)
-    by_agent = case.ledger_by_agent()
+    everywhere = case.ledger_by_agent(part="everywhere")
+    site = case.ledger_by_agent(part="site")
     regional = case.ledger_by_agent(regional=True)
     eco = case.build_ecosystem()
-    assert set(by_agent) == {a.name for a in eco.agents}
+    # every agent owns a service that applies on every hectare (Step 8e.6)
+    assert set(everywhere) == {a.name for a in eco.agents}
     for a in eco.agents:
         assert a.annual_value_per_ha > 0.0 and a.annual_value(1.0) > 0.0
-        # per hectare near the sites for a site-restricted agent (Step 8d.4)
-        assert a.dependency_weight * a.annual_value_per_ha == pytest.approx(by_agent[a.name], rel=1e-12)
+        assert a.dependency_weight * a.annual_value_per_ha == pytest.approx(everywhere[a.name], rel=1e-12)
+        # per hectare near the sites for a site-restricted value (Step 8d.4)
+        assert a.dependency_weight * a.site_value_per_ha == pytest.approx(site.get(a.name, 0.0), rel=1e-12)
         # per hectare of the reference resource, as the run uses it
         assert a.dependency_weight * a.annual_value(1.0) == pytest.approx(regional[a.name], rel=1e-12)
-    assert sum(regional.values()) == pytest.approx(818.6635785921815, rel=1e-12)
+    assert sum(regional.values()) == pytest.approx(LEDGER_TOTAL, rel=1e-12)
     assert case.ledger_check() == []
-    # every agent stays > 0 at any project share above 0, and only the
-    # site-restricted agent depends on it
-    for share in (1.0, 0.5, 1e-3):
+    # every agent stays > 0 at any project share, 0 included, and only the
+    # site-restricted value depends on it
+    for share in (1.0, 0.5, 1e-3, 0.0):
         eco_s = case.build_ecosystem(site_share=share)
         for a, b in zip(eco.agents, eco_s.agents):
             assert b.annual_value(1.0) > 0.0
@@ -574,17 +582,18 @@ def test_diving_value_applies_only_near_dive_sites():
     assert case.sites == "dive sites" and case.site_input == "dive-site-share"
     near = 34.71 * 60_000 / 142.35
     assert case.default_site_share == pytest.approx(142.35 / 4582, rel=1e-12)
-    entry = next(e for e in case.service_ledger if e["agent"] == "Posidonia Meadow")
-    assert entry["site_restricted"] and entry["value"] == pytest.approx(near, rel=1e-12)
+    entry = next(e for e in case.service_ledger if e["site_restricted"])
+    assert entry["agent"] == "Posidonia Meadow" and entry["value"] == pytest.approx(near, rel=1e-12)
     assert not any(e["site_restricted"] for e in case.service_ledger if e is not entry)
 
     def meadow(eco):
         a = next(a for a in eco.agents if a.name == "Posidonia Meadow")
         return a.dependency_weight * a.annual_value(1.0)
 
-    assert meadow(case.build_ecosystem()) == pytest.approx(34.71 * 60_000 / 4582, rel=1e-12)
-    assert meadow(case.build_ecosystem(site_share=1.0)) == pytest.approx(near, rel=1e-12)
-    assert meadow(case.build_ecosystem(site_share=0.0)) == 0.0
+    assert meadow(case.build_ecosystem()) == pytest.approx(MEADOW_FOOD_NET + 34.71 * 60_000 / 4582, rel=1e-12)
+    assert meadow(case.build_ecosystem(site_share=1.0)) == pytest.approx(MEADOW_FOOD_NET + near, rel=1e-12)
+    # far from any dive site the meadow keeps its own value (Step 8e.6)
+    assert meadow(case.build_ecosystem(site_share=0.0)) == pytest.approx(MEADOW_FOOD_NET, rel=1e-12)
     # a project at a dive site: 50 ha below the threshold cost 50 × the
     # ledger total with the meadow's near-site value
     others = sum(case.ledger_by_agent().values()) - near
@@ -628,7 +637,10 @@ def test_site_share_scales_the_meadow_anchor():
 
     base = anchor(case.build_ecosystem(with_pricing=True))
     near = anchor(case.build_ecosystem(with_pricing=True, site_share=1.0))
-    assert near == pytest.approx(base * 4582 / 142.35, rel=1e-12)
+    # only the diving part scales: the anchor is the meadow's whole value
+    diving = 34.71 * 60_000 / 142.35
+    assert near / base == pytest.approx(
+        (MEADOW_FOOD_NET + diving) / (MEADOW_FOOD_NET + diving * 142.35 / 4582), rel=1e-12)
 
 
 def test_dive_site_share_cli(capsys):
@@ -654,13 +666,22 @@ def test_ledger_rejects_a_site_mismatch():
     from gaia.ecosystem_io import case_from_dict
 
     doc = copy.deepcopy(load_case("posidonia").document)
-    entry = next(e for e in doc["service_ledger"] if e["agent"] == "Posidonia Meadow")
+    entry = next(e for e in doc["service_ledger"] if e.get("site_restricted"))
     entry["site_restricted"] = False
-    with pytest.raises(ValueError, match="site_restricted: must be true"):
+    with pytest.raises(ValueError, match="has sites but no site-restricted service"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    entry = next(e for e in doc["service_ledger"] if e["agent"] == "Fish Populations")
+    entry["site_restricted"] = True
+    with pytest.raises(ValueError, match="has no sites"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
     del next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")["sites"]
-    with pytest.raises(ValueError, match="give both sites and site_share"):
+    with pytest.raises(ValueError, match="site_value_per_ha: needs sites and site_share"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del next(a for a in doc["agents"] if a["name"] == "Posidonia Meadow")["site_value_per_ha"]
+    with pytest.raises(ValueError, match="site_value_per_ha: required with sites"):
         case_from_dict(doc)
 
 
@@ -702,23 +723,23 @@ def test_default_run_is_unchanged_by_the_intensity():
 
     case = load_case("posidonia")
     eco = case.build_ecosystem()
-    assert _meadow_per_ha(eco) == pytest.approx(WTP_PER_DIVE * 60_000 / 4582, rel=1e-12)
-    assert run_extraction(eco, 50).annual_externality == pytest.approx(
-        50 * 818.6635785921815, rel=1e-12)
+    assert _meadow_per_ha(eco) == pytest.approx(MEADOW_FOOD_NET + WTP_PER_DIVE * 60_000 / 4582, rel=1e-12)
+    assert run_extraction(eco, 50).annual_externality == pytest.approx(50 * LEDGER_TOTAL, rel=1e-12)
 
 
 @pytest.mark.parametrize("level", list(LEVELS))
 def test_intensity_sets_the_value_near_dive_sites_and_share_the_part_near_them(level):
-    """Value per hectare of the affected meadow = WTP per dive × the level's
-    dives per hectare near dive sites × the share near them (1 when only
-    the intensity is given)."""
+    """Value per hectare of the affected meadow = its own value on every
+    hectare + WTP per dive × the level's dives per hectare near dive sites ×
+    the share near them (1 when only the intensity is given)."""
     from gaia.cases import load_case
 
     case = load_case("posidonia")
     near = WTP_PER_DIVE * LEVELS[level]
-    assert _meadow_per_ha(case.build_ecosystem(site_intensity=level)) == pytest.approx(near, rel=1e-12, abs=1e-12)
+    assert _meadow_per_ha(case.build_ecosystem(site_intensity=level)) == pytest.approx(
+        MEADOW_FOOD_NET + near, rel=1e-12)
     assert _meadow_per_ha(case.build_ecosystem(site_intensity=level, site_share=0.25)) == pytest.approx(
-        0.25 * near, rel=1e-12, abs=1e-12)
+        MEADOW_FOOD_NET + 0.25 * near, rel=1e-12)
     others = sum(case.ledger_by_agent().values()) - WTP_PER_DIVE * 60_000 / 142.35
     result = run_extraction(case.build_ecosystem(site_intensity=level), 50)
     assert result.annual_externality == pytest.approx(50 * (others + near), rel=1e-12)
@@ -726,9 +747,9 @@ def test_intensity_sets_the_value_near_dive_sites_and_share_the_part_near_them(l
 
 def test_intensity_never_counts_a_service_twice_and_none_zeroes_only_diving():
     """Only the meadow's diving value moves with the intensity; every other
-    agent keeps its value (> 0). 'none' zeroes the meadow's diving service,
-    its only ledger entry, so the meadow agent alone is at 0 (flagged in
-    the docs: the meadow's other services are owned by other agents)."""
+    agent keeps its value (> 0). 'none' zeroes the diving SERVICE, never an
+    agent: the meadow keeps its own value on every hectare, the food its
+    primary production supports (Step 8e.6)."""
     from gaia.cases import load_case
 
     case = load_case("posidonia")
@@ -736,13 +757,17 @@ def test_intensity_never_counts_a_service_twice_and_none_zeroes_only_diving():
     for level in LEVELS:
         eco = case.build_ecosystem(site_intensity=level)
         for a, b in zip(base.agents, eco.agents):
+            assert b.annual_value(1.0) > 0.0
             if a.name in case.site_restricted_agents:
-                assert (b.annual_value(1.0) == 0.0) is (level == "none")
+                assert b.annual_value_per_ha == a.annual_value_per_ha
+                assert (b.site_value_per_ha == 0.0) is (level == "none")
+                if level == "none":
+                    assert b.dependency_weight * b.annual_value(1.0) == pytest.approx(MEADOW_FOOD_NET, rel=1e-12)
             else:
-                assert b.annual_value(1.0) == a.annual_value(1.0) > 0.0
+                assert b.annual_value(1.0) == a.annual_value(1.0)
     assert case.ledger_check() == []
     meadow_entries = [e for e in case.service_ledger if e["agent"] == "Posidonia Meadow"]
-    assert len(meadow_entries) == 1 and meadow_entries[0]["site_restricted"]
+    assert [e["site_restricted"] for e in meadow_entries] == [False, True]
 
 
 def test_intensity_is_a_recorded_project_input_not_sampled():
@@ -786,9 +811,13 @@ def test_intensity_scales_the_meadow_anchor():
 
     base = anchor(case.build_ecosystem(with_pricing=True))
     high = anchor(case.build_ecosystem(with_pricing=True, site_intensity="high", site_share=0.1))
-    assert high == pytest.approx(base * 0.1 * 4582 / 142.35 * LEVELS["high"] / (60_000 / 142.35), rel=1e-12)
-    with pytest.raises(ValueError, match="anchor of Posidonia Meadow > 0"):
-        case.build_ecosystem(with_pricing=True, site_intensity="none")
+    diving = WTP_PER_DIVE * 60_000 / 142.35
+    regional = MEADOW_FOOD_NET + diving * 142.35 / 4582
+    assert high / base == pytest.approx(
+        (MEADOW_FOOD_NET + 0.1 * WTP_PER_DIVE * LEVELS["high"]) / regional, rel=1e-12)
+    # with no diving the anchor is the meadow's own value: pricing still runs
+    none = anchor(case.build_ecosystem(with_pricing=True, site_intensity="none"))
+    assert none / base == pytest.approx(MEADOW_FOOD_NET / regional, rel=1e-12)
 
 
 def test_dive_intensity_cli(capsys):
@@ -899,3 +928,116 @@ def test_other_cases_price_small_losses_linearly(case):
     assert result.steps[-1].marginal_annual_externality == pytest.approx(full / n, rel=1e-9)
     past = run_extraction(eco, int((eco.resource.safe_threshold_ratio + 0.1) * n))
     assert past.annual_externality > full * past.steps[-1].units_extracted / n
+
+
+# ── Step 8e.6: the meadow's own value, from its primary production ──────────
+
+def test_meadow_food_value_is_the_primary_production_chain():
+    """NPP → food web → trophic transfer → sustainable catch → first-sale
+    price, each link from the case file; the meadow books it net of the
+    commercial catch already counted under Fish and Invertebrates."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    entry = next(e for e in case.service_ledger if e["production_function"] is not None)
+    assert entry["agent"] == "Posidonia Meadow" and not entry["site_restricted"]
+    gross = (476.0 * 0.336 * 10 * 0.74 * 0.118 ** (3.1 - 1) * 9
+             * (0.87 / 1.87) * (41_056_589 / 8_034_993))
+    assert entry["gross"] == pytest.approx(gross, rel=1e-12)
+    counted = {e["service"]: e["value"] for e in case.service_ledger if e["service"] in entry["net_of"]}
+    assert set(counted) == {e["service"] for e in case.service_ledger
+                            if e["agent"] in ("Fish Populations", "Marine Invertebrates")}
+    assert sum(counted.values()) == pytest.approx(35.0, rel=1e-12)
+    assert entry["value"] == pytest.approx(gross - 35.0, rel=1e-12) == pytest.approx(MEADOW_FOOD_NET, rel=1e-12)
+    # the fish and invertebrate agents keep their own entries (> 0)
+    eco = case.build_ecosystem(site_intensity="none")
+    per_ha = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
+    assert per_ha["Fish Populations"] == pytest.approx(30.625) and per_ha["Marine Invertebrates"] == pytest.approx(4.375)
+    # every link is sourced and says whether it was read at the source
+    params = entry["production_function"]["parameters"]
+    assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
+    assert params["wet_weight_per_carbon"]["status"] == "secondary"
+    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "transfer_efficiency", "first_sale_price"):
+        assert params[name]["status"] == "verified"
+    for p in params.values():
+        assert "doi:" in p["source"] or "ge3m-4jgm" in p["source"]
+
+
+def test_meadow_range_is_the_chain_at_its_ends():
+    from gaia.cases import load_case
+    from gaia.production import gross_range
+
+    case = load_case("posidonia")
+    entry = next(e for e in case.service_ledger if e["production_function"] is not None)
+    low, high = gross_range(entry["production_function"])
+    assert low < entry["gross"] < high
+    weight = next(a.weight for a in case.agents if a.name == "Posidonia Meadow")
+    param = {p.name: p for p in case.buckets["agent_values"]}["agent[Posidonia Meadow].annual_value_per_ha"]
+    lo, hi = param.bounds
+    assert lo == pytest.approx((low - 35.0) / weight, rel=1e-12) and lo > 0.0
+    assert hi == pytest.approx((high - 35.0) / weight, rel=1e-12)
+
+
+def test_ledger_enforces_the_subtraction():
+    import copy
+
+    from gaia.cases import load_case
+    from gaia.ecosystem_io import case_from_dict
+
+    def food(doc):
+        return next(e for e in doc["service_ledger"] if "net_of" in e)
+
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["value"] += 35.0          # the commercial catch counted twice
+    with pytest.raises(ValueError, match="must be gross − the services it is net of"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["net_of"] = ["Commercial fisheries: everything"]
+    with pytest.raises(ValueError, match="unknown service"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del food(doc)["gross"]
+    with pytest.raises(ValueError, match="needs gross"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["production_function"]["parameters"]["first_sale_price"]["value"] = 9.0
+    with pytest.raises(ValueError, match="the chain gives"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["production_function"]["parameters"]["transfer_efficiency"]["status"] = "guessed"
+    with pytest.raises(ValueError, match="status"):
+        case_from_dict(doc)
+
+
+def test_productivity_is_visible_in_text_and_json(capsys):
+    """The meadow line shows the NPP → € chain and the carbon it holds
+    (valued once, by gaia.carbon, and not added); the report and the JSON
+    carry the chain and the sourced productivity comparison."""
+    import json
+
+    from gaia.cases import load_case
+    from gaia.cli import main
+
+    case = load_case("posidonia")
+    result = case.run_extraction(50)
+    text = case.report(result)
+    meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
+    flat = " ".join(meadow_line.split())
+    assert "NPP 160 g C/m²/yr" in flat and "€285/ha/yr" in flat and "= €250/ha/yr" in flat
+    assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
+    assert "Primary Production → Food → €" in text and "Coral reefs" in text
+    # the carbon is shown, not added: the run's annual externality is the ledger's
+    assert result.annual_externality == pytest.approx(50 * LEDGER_TOTAL, rel=1e-12)
+
+    assert main(["run", "posidonia", "--format", "json", "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    block = out["production_functions"]["Posidonia Meadow"]
+    assert block["net_eur_per_ha_yr"] == pytest.approx(MEADOW_FOOD_NET)
+    assert block["already_counted_eur_per_ha_yr"] == pytest.approx(35.0)
+    assert [s["unit"] for s in block["chain"]][-1] == "€/ha/yr"
+    rows = {r["ecosystem"]: r for r in block["comparison"]["rows"]}
+    assert rows["Coral reefs"]["low"] == 1720.0 and "doi:10.5194/bg-2-1-2005" in rows["Coral reefs"]["source"]
+    assert all("doi:" in r["source"] for r in rows.values())
+    meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
+    assert meadow["value_notes"][0].startswith("Primary production → food: NPP 160")
+    assert meadow["annual_value_eur_per_ha_yr"] * meadow["dependency_weight"] == pytest.approx(MEADOW_FOOD_NET)

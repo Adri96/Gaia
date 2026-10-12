@@ -27,7 +27,7 @@ Step 6.4: dead fields removed (never set or never read): RestorationConfig,
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from gaia.constants import DEFAULT_KEYSTONE_THRESHOLD
 
@@ -627,7 +627,8 @@ class Agent:
 
     Annual service value lost at depletion level d (a yearly FLOW, €/yr):
         annual_cost = damage_function(d) * dependency_weight
-                      * annual_value_per_ha * site_share * resource.area_ha
+                      * (annual_value_per_ha + site_value_per_ha * site_share)
+                      * resource.area_ha
 
     Attributes:
         name: Human-readable name, e.g. "Animal Populations"
@@ -635,22 +636,28 @@ class Agent:
                            All agents in an ecosystem must sum to 1.0.
         damage_function: Callable (depletion_ratio: float) -> damage_ratio: float
         annual_value_per_ha: € per hectare per year of service lost at full
-            damage (damage_ratio = 1.0) — decisions D1 (a yearly flow, never a
-            one-off total) and D2 (scaled by Resource.area_ha, so results do
-            not depend on how finely the resource is divided into units).
+            damage (damage_ratio = 1.0) on EVERY hectare of the resource —
+            decisions D1 (a yearly flow, never a one-off total) and D2
+            (scaled by Resource.area_ha, so results do not depend on how
+            finely the resource is divided into units).
         description: Short description of what damage means for this agent.
-        site_share: Share of the resource where the value applies (Step
-            8d.4), in [0, 1]; 1.0 (default) = everywhere. For a value
-            enjoyed only near some sites (Posidonia: the meadow's diving
-            amenity near dive sites) annual_value_per_ha is the value per
-            hectare NEAR them and site_share the share of the resource near
-            them.
-        sites: What the sites are (e.g. "dive sites"); "" when the value
-            applies everywhere.
+        site_share: Share of the resource near the sites where
+            site_value_per_ha applies (Step 8d.4), in [0, 1]; 1.0 (default).
+        sites: What the sites are (e.g. "dive sites"); "" when the agent has
+            no site-restricted value.
         site_intensity: The activity's intensity near the sites at which
-            annual_value_per_ha is stated (Step 8e.2; Posidonia: dives per
+            site_value_per_ha is stated (Step 8e.2; Posidonia: dives per
             hectare of meadow near dive sites per year), or None. Not used
             in the arithmetic (the value already reflects it); reported.
+        site_value_per_ha: € per hectare per year, at full damage, of a
+            service enjoyed only near some sites (Step 8e.6; Posidonia: the
+            meadow's diving amenity near dive sites), per hectare NEAR them;
+            it applies on site_share of the resource, on top of
+            annual_value_per_ha. 0.0 (default) without sites.
+        value_notes: Lines the text report prints under the agent (Step
+            8e.6), e.g. how its value is derived (the Posidonia meadow's
+            primary production → fish → € chain). Not used in the
+            arithmetic.
     """
 
     name: str
@@ -669,13 +676,23 @@ class Agent:
     sites: str = ""
     # Step 8e.2: the intensity near the sites the value is stated at
     site_intensity: Optional[float] = None
+    # Step 8e.6: the value near the sites (× site_share), on top of the
+    # value on every hectare; and report lines on how the value is derived
+    site_value_per_ha: float = 0.0
+    value_notes: Tuple[str, ...] = ()
+
+    @property
+    def value_per_ha(self) -> float:
+        """€ per hectare of the resource per year at full damage: the value
+        on every hectare plus the site-restricted value × site_share."""
+        if self.site_value_per_ha == 0.0:
+            return self.annual_value_per_ha
+        return self.annual_value_per_ha + self.site_value_per_ha * self.site_share
 
     def annual_value(self, area_ha: float) -> float:
         """€/yr of service lost at full damage over ``area_ha`` hectares
-        (× site_share: the value applies only on that share)."""
-        if self.site_share == 1.0:
-            return self.annual_value_per_ha * area_ha
-        return self.annual_value_per_ha * self.site_share * area_ha
+        (the site-restricted value only on site_share of them)."""
+        return self.value_per_ha * area_ha
 
     @property
     def monetary_rate(self) -> float:
