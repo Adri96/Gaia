@@ -10,6 +10,7 @@ Step 7 of `TOP_PRIORITIES_REPORT.md` (findings E6, E7). **No output number chang
 - **`gaia run <case | file.json> [options]`** (E6): one CLI for shipped cases and your own files, with `--total-units` for the resource size and every 0.9 option; `gaia run <case> --help` shows the case's defaults. `gaia.cases.load_case(name_or_path)` returns a `Case` with `build_ecosystem(...)`, `run_extraction(...)`, `run_restoration(...)` and `report(result)`.
 - The four cases as data files, `gaia/cases/data/{forest,costa_brava,posidonia,amazon_forest}.json`, shipped in the wheel and sdist. The derivations from the former module docstrings are in `gaia/cases/definitions/CASE_NOTES.md`.
 - README: *Writing your own case*, with a complete example file that a test runs.
+- `version_specs/V09_SPEC.md`: **proposal, pending owner decision D5** (path dependence). Option A (a path-dependent engine: yearly time steps with extraction rates, relaxation, keystone hysteresis, substrate erosion over real time, recovery that depends on prior damage; a `dynamics` block in schema 2) and option B (drop the claim, evaluate the static function directly), with effects on Cython, golden tests and the format, effort estimates and a recommendation (B now, A staged later). Nothing is implemented.
 
 ### Changed
 

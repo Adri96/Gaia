@@ -246,7 +246,7 @@ This is a methodological choice about how to compute quantities that depend on s
 
 **What the current engine actually does (audit finding S1).** The engine is **path-independent**. Each step's damage, cascade and cost depend only on the current depletion ratio, so the step loop evaluates a static function at successive points (finite differences). Nothing carries over between steps: no hysteresis after a keystone collapse, no accumulated cascade, no time. Substrate erosion assumes the whole extraction happens within one year, and restoration retraces the same static damage path in reverse. The per-step trajectory is still useful (marginal costs, zone transitions, "what if we stop at tree 2,000?"), but it is not a simulation of path dependence.
 
-Whether Gaia should become path-dependent is **open decision D5**, to be taken in Step 7 before any engine redesign. The options are to add state that carries over between steps (hysteresis, substrate erosion over real time with an extraction rate in units/year, recovery that depends on prior damage), or to drop the claim and evaluate the static function directly. Until then this section describes an aim, not the implementation.
+Whether Gaia should become path-dependent is **open decision D5**; `version_specs/V09_SPEC.md` sets out both options for the owner's decision (Step 7), and no engine redesign happens before it. The options are to add state that carries over between steps (hysteresis, substrate erosion over real time with an extraction rate in units/year, recovery that depends on prior damage), or to drop the claim and evaluate the static function directly. Until then this section describes an aim, not the implementation.
 
 ---
 

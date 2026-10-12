@@ -354,7 +354,7 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 
 **Calibration regime.** Every ecosystem with edges must declare what its damage curves represent (`calibration_regime`): **A**, curves fitted to field data on total impact, in which case only keystone edges may be added; or **B**, curves that describe each agent's direct dependency only, with the edges adding the indirect part. All four cases are **B**: their curves are identical placeholder logistics, so A cannot be claimed. Under B, the single-pass cascade is a structural lower bound for chains longer than one hop. Every case also triggers a `CalibrationWarning`: health at the "safe" threshold is below 0.8, which says the placeholder curves put heavy damage inside the safe zone. Calibrating the curves fixes that warning; tuning parameters to silence it does not.
 
-**The engine is path-independent.** Each step's damage depends only on the current depletion ratio, so the step loop evaluates a static function at successive points. Nothing carries over between steps: no hysteresis and no accumulated cascade. Substrate erosion assumes the whole extraction happens within one year. Whether Gaia should become genuinely path-dependent is an open decision (D5 in `TOP_PRIORITIES_REPORT.md`).
+**The engine is path-independent.** Each step's damage depends only on the current depletion ratio, so the step loop evaluates a static function at successive points. Nothing carries over between steps: no hysteresis and no accumulated cascade. Substrate erosion assumes the whole extraction happens within one year. Whether Gaia should become genuinely path-dependent is an open decision (D5 in `TOP_PRIORITIES_REPORT.md`); `version_specs/V09_SPEC.md` sets out both options for it.
 
 **Carbon** is valued only by `gaia/carbon.py`: no agent value and no pricing anchor contains carbon. The release of stored biomass and soil carbon is a one-off at year 0. The lost absorption is a yearly flow, discounted to a present value. Both are priced at the **social cost of carbon**: US EPA (2023), $190/t CO₂ for 2020 emissions (2020 USD, 2% near-term rate), converted at the ECB 2020 average rate to **€166.35/t**, growing at 1.3%/yr. The 2020 value is used as the year-0 price; EPA's path gives about $215 for 2026 emissions. `--carbon-price ets` switches to a labelled market/ETS view at €80/t, a private price that understates the damage.
 
@@ -585,7 +585,7 @@ Gaia/
 ├── scripts/
 │   ├── regen_golden.py        # regenerate / --check the golden snapshots
 │   └── gen_readme_examples.py # regenerate / --check the README examples
-├── version_specs/             # V01–V081 specs (historical; see the notes at their top)
+├── version_specs/             # V01–V081 specs (historical; see the notes at their top); V09_SPEC.md (proposal, D5)
 ├── .github/workflows/ci.yml   # pytest on 3.9–3.12 with and without Cython, golden, README, ruff, mypy
 ├── PROJECT_DEFINITION.md      # vision, foundations, roadmap
 ├── TOP_PRIORITIES_REPORT.md   # the 2026-10 audit and its fix plan
@@ -627,7 +627,7 @@ Unreleased (Step 7): cases are JSON files (`gaia run <case | file.json>`), with 
 Not done:
 - Calibrated parameters.
 - Uncertainty bounds: the band is heuristic, and Monte Carlo is planned.
-- A path-dependent engine (open decision D5).
+- A path-dependent engine (open decision D5; proposal in `version_specs/V09_SPEC.md`).
 - External expert review.
 
 The proposed next milestone (pending owner decision D6) is **one credible, fully sourced case with uncertainty bounds, reviewed by an ecologist and an environmental economist**. See `PROJECT_DEFINITION.md`.
