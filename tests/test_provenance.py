@@ -43,9 +43,15 @@ def _run_cli(case, argv):
     """``gaia run <case>``, the 0.9 size flags mapped to --total-units."""
     from gaia.cli import case_main
 
+    argv = ["--total-units" if a in ("--trees", "--hectares") else a for a in argv]
+    if case == "posidonia" and "--total-units" in argv:
+        # Step 8g.5: a size needs the diving input; the regional one, exactly
+        from tests.golden_support import POSIDONIA_REGIONAL_SHARE
+
+        argv += ["--dive-site-share", POSIDONIA_REGIONAL_SHARE]
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        case_main(load_case(case), ["--total-units" if a in ("--trees", "--hectares") else a for a in argv])
+        case_main(load_case(case), argv)
     return buf.getvalue()
 
 

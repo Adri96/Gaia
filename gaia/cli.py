@@ -47,8 +47,11 @@ class _RecordFlag(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
         flags = list(getattr(namespace, "explicit_flags", []))
-        flags.append(self.option_strings[0])
+        flags.append(option_string or self.option_strings[0])
         namespace.explicit_flags = flags
+        dests = list(getattr(namespace, "explicit_dests", []))
+        dests.append(self.dest)
+        namespace.explicit_dests = dests
 
 
 def _positive_int(text: str) -> int:
@@ -116,7 +119,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "specific meadow a project affects instead of the regional stock — "
             "and sets the number of units (a case with site-restricted values, "
             "e.g. posidonia's diving value, then requires their inputs: "
-            "--dive-intensity and/or --dive-site-share). Agent values are €/ha/yr, so holding "
+            "--dive-intensity and/or --dive-site-share, as with --total-units). Agent values are €/ha/yr, so holding "
             "the area fixed while changing the number of units changes per-unit "
             "figures but not the per-ha externality"
         ),
@@ -339,19 +342,32 @@ def apply_depth(case, args: argparse.Namespace):
     return case.with_project_depth(*depth)
 
 
-def require_site_input(case, args: argparse.Namespace) -> None:
-    """A project run must state the diving input (Step 8e.3).
+SIZE_DESTS: tuple = ("area_ha", "total_units")
+"""The options that set the size of the reference resource: --area-ha,
+--total-units and a legacy case's own flag for it (Posidonia's
+--hectares)."""
 
-    With --area-ha the user names a specific project resource (e.g. the
-    meadow a project affects), whose site share and intensity the regional
-    averages do not describe; a case with site-restricted values (Posidonia:
-    the meadow's diving value) then needs --<site>-share and/or
-    --<activity>-intensity. The default regional run keeps its defaults.
+
+def require_site_input(case, args: argparse.Namespace) -> None:
+    """A project run must state the diving input (Steps 8e.3, 8g.5).
+
+    With --area-ha, --total-units or (the legacy) --hectares the user sets
+    the size of a specific project resource (e.g. the meadow a project
+    affects), whose site share and intensity the regional averages do not
+    describe; a case with site-restricted values (Posidonia: the meadow's
+    diving value) then needs --<site>-share and/or --<activity>-intensity.
+    The default regional run keeps its defaults.
 
     Raises:
         ValueError: With a plain message, when neither is given.
     """
-    if getattr(args, "area_ha", None) is None or not getattr(case, "site_restricted_agents", []):
+    if not getattr(case, "site_restricted_agents", []):
+        return
+    given = [f for f, d in zip(getattr(args, "explicit_flags", []), getattr(args, "explicit_dests", []))
+             if d in SIZE_DESTS]
+    if getattr(args, "area_ha", None) is not None:
+        given.insert(0, "--area-ha")
+    if not given:
         return
     if getattr(args, "site_share", None) is not None or getattr(args, "site_intensity", None) is not None:
         return
@@ -363,11 +379,12 @@ def require_site_input(case, args: argparse.Namespace) -> None:
         f"{case.sites} is used) and/or " if intensity else ""
     )
     nothing = f"--{intensity} none" if "none" in levels else f"--{case.site_input} 0"
+    flag = given[0]
     raise ValueError(
-        f"with --area-ha (a specific project site), the {case.sites} input is required: "
+        f"with {flag} (a specific project site), the {case.sites} input is required: "
         f"{options}--{case.site_input} F (the share, 0 to 1, of the affected resource "
         f"within reach of {case.sites}). If no {site} is within reach, give {nothing}. "
-        f"Without --area-ha the run uses the regional averages."
+        f"Without {flag} the run uses the regional averages."
     )
 
 
@@ -725,16 +742,20 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     total = case.total_units.value
     if legacy is None:
         parser.add_argument(
-            "--total-units", type=int, default=total, metavar="N",
+            "--total-units", action=_RecordFlag, type=int, default=total, metavar="N",
             help=(
                 f"Total number of units ({case.unit}) in the reference resource "
                 f"(default: {total})"
+                + (f"; a project's own size, so it then requires --{case.intensity_input or case.site_input} "
+                   f"and/or --{case.site_input} (the {case.sites} input)" if case.site_restricted_agents else "")
             ),
         )
     else:
         parser.add_argument(
-            legacy.total_units_flag, dest="total_units", type=int, default=total, metavar="N",
-            help=f"{legacy.total_units_help} (default: {total})",
+            legacy.total_units_flag, dest="total_units", action=_RecordFlag, type=int, default=total, metavar="N",
+            help=f"{legacy.total_units_help} (default: {total})"
+            + (f"; it then requires --{case.intensity_input or case.site_input} and/or --{case.site_input}"
+               if case.site_restricted_agents else ""),
         )
     parser.add_argument(
         "--threshold", type=float, default=case.safe_threshold_ratio.value, metavar="RATIO",

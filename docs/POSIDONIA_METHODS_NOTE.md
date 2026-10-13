@@ -238,7 +238,7 @@ Each recorded parameter that can change an extraction result is sampled:
   - the user's inputs: the reference area, hectares destroyed and private gain, plus the carbon release fraction and half-life when the user enters them;
   - the model-wide constants;
   - the normative choices: discount schedule, scarcity, horizon, carbon price. These are value judgements, not unknowns with a distribution, and are reported as separate sensitivities.
-- **A project meadow must state its diving (Step 8e.3).** With `--area-ha` (a specific meadow) the run requires `--dive-intensity` and/or `--dive-site-share` and stops with a plain error otherwise; the regional averages are the default only for the regional run.
+- **A project meadow must state its diving (Steps 8e.3, 8g.5).** With `--area-ha`, `--total-units` or the deprecated `--hectares` (the size of a specific meadow) the run requires `--dive-intensity` and/or `--dive-site-share` and stops with a plain error otherwise; the regional averages are the default only for the regional run.
 - **Mechanics.** Each draw sets the sampled values in a copy of the case file, which is re-parsed with full validation and run. The generator is seeded (default 20261012). 1,000 draws take about 4 s.
 - **Sensitivity ranking.** One parameter at a time is set to its own P5 and P95 while the others stay at their documented values; the swing in net social cost is reported.
 

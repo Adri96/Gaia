@@ -273,7 +273,9 @@ an input: the user replaces it with the specific meadow the project
 affects, `gaia run posidonia --area-ha 300 --resource-name "…"
 --dive-intensity low` (or `resource.total_units`/`area_ha` and
 `resource.name` in a copy of the file), recorded as user-supplied. Since
-Step 8e.3 a run with `--area-ha` must also state the diving input,
+Step 8e.3 a run with `--area-ha` (and since Step 8g.5 with
+`--total-units` or the deprecated `--hectares`, which also set the size
+of a specific meadow) must also state the diving input,
 `--dive-intensity` and/or `--dive-site-share` (`--dive-intensity none`
 when no dive site is within reach): the regional averages describe a
 meadow of unknown location, not a named one, so the run stops with a

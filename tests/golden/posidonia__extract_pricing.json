@@ -1931,7 +1931,9 @@
       "1000",
       "--units",
       "300",
-      "--with-pricing"
+      "--with-pricing",
+      "--dive-site-share",
+      "0.03106721955477957"
     ],
     "case": "posidonia",
     "name": "posidonia__extract_pricing"

@@ -902,6 +902,51 @@ def test_project_meadow_requires_the_dive_input(mode, capsys):
     capsys.readouterr()
 
 
+@pytest.mark.parametrize("size", [["run", "posidonia", "--total-units", "300"],
+                                  ["run", "posidonia", "--total-units", "4582"],
+                                  ["posidonia", "--hectares", "300"]])
+def test_a_meadow_size_also_requires_the_dive_input(size, capsys):
+    """Step 8g.5: --total-units, and the legacy --hectares, set the size of
+    a specific project meadow just as --area-ha does: the same plain error
+    without --dive-intensity or --dive-site-share (even at the regional
+    size, once it is given), and a normal run with either."""
+    import json
+    import warnings
+
+    from gaia.cli import main
+
+    flag = size[2] if size[0] == "run" else size[1]
+    base = size + ["--units", "30"]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        assert main(base) == 1
+        err = " ".join(capsys.readouterr().err.split())
+        assert err.startswith(f"Error: with {flag} (a specific project site), the dive sites input is required")
+        assert "give --dive-intensity none" in err and f"Without {flag} the run uses the regional averages" in err
+        for given in (["--dive-intensity", "none"], ["--dive-site-share", "0.5"]):
+            assert main(base + given + ["--format", "json", "--summary-only"]) == 0
+            json.loads(capsys.readouterr().out)
+    # the other cases are not affected
+    assert main(["run", "forest", "--total-units", "1000", "--units", "100", "--format", "json", "--summary-only"]) == 0
+    capsys.readouterr()
+
+
+def test_the_regional_dive_input_reproduces_the_default_run(capsys):
+    """The golden scenarios give the regional share explicitly (Step 8g.5):
+    the numbers are those of the run without it."""
+    import json
+
+    from gaia.cli import main
+    from tests.golden_support import POSIDONIA_REGIONAL_SHARE
+
+    assert main(["run", "posidonia", "--format", "json", "--summary-only"]) == 0
+    default = json.loads(capsys.readouterr().out)
+    assert main(["run", "posidonia", "--total-units", "4582", "--dive-site-share", POSIDONIA_REGIONAL_SHARE,
+                 "--format", "json", "--summary-only"]) == 0
+    explicit = json.loads(capsys.readouterr().out)
+    assert explicit["summary"] == default["summary"] and explicit["calibration"] == default["calibration"]
+
+
 def test_project_meadow_with_intensity_alone_is_the_whole_meadow(capsys):
     """--area-ha with --dive-intensity alone: the whole affected meadow is
     dived at that intensity (share 1)."""

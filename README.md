@@ -431,7 +431,7 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 
 | Option | Meaning |
 |---|---|
-| `--total-units N` | Size of the resource in units (trees; hectares for Posidonia) |
+| `--total-units N` | Size of the resource in units (trees; hectares for Posidonia). For Posidonia a size is a specific project meadow, so it then requires `--dive-intensity` and/or `--dive-site-share`, as `--area-ha` does (Step 8g.5; also the deprecated `--hectares`) |
 | `--units N` | Units to extract (extract mode) or to replant (restore mode) |
 | `--threshold RATIO` | Safe extraction threshold, which also places the inflection of every damage curve (for Posidonia, where the remaining meadow starts to degrade) |
 | `--unit-value EUROS` | One-off revenue per unit extracted |
