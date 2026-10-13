@@ -31,8 +31,10 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8f.1: at the Western Mediterranean transfer efficiency, 14.3%;
 # Step 8f.2: with the production of the roots and of the leaf epiphytes;
 # Step 8g.1: the plant's NPP from its depth function at the regional mean
-# depth, 15 m (318 g DW/m²/yr; it was a fixed 476)
-MEADOW_FOOD_NET = 332.59096864832713
+# depth, 15 m (318 g DW/m²/yr; it was a fixed 476); Step 8g.2: the leaf
+# epiphytes' food moved to the Epiphytes & Algae agent (total unchanged)
+MEADOW_FOOD_NET = 250.39396913319848
+EPIPHYTE_FOOD = 82.19699951512872
 LEDGER_TOTAL = 1151.2545472405084    # €/ha/yr of the reference meadow
 
 
@@ -58,8 +60,8 @@ def test_posidonia_values_are_the_sourced_final_services():
     assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(35.0, rel=1e-12)
     assert per_ha["Marine Invertebrates"] == pytest.approx(35.0 * 2 / 16, rel=1e-12)
     # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
-    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83, rel=1e-12)
-    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5, rel=1e-12)
+    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83 + EPIPHYTE_FOOD, rel=1e-12)
+    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5 + EPIPHYTE_FOOD, rel=1e-12)
     assert per_ha["Posidonia Meadow"] == pytest.approx(MEADOW_FOOD_NET + 34.71 * 60_000 / 4582, rel=1e-12)
     assert per_ha["Coralligenous & Red Coral"] == pytest.approx(60.0 * 60_000 / 190_000, rel=1e-12)
     assert per_ha["Marine Megafauna"] == pytest.approx(per_ha["Seabirds"], rel=1e-12)
@@ -947,9 +949,9 @@ def test_meadow_food_value_is_the_primary_production_chain():
     case = load_case("posidonia")
     entry = next(e for e in case.service_ledger if e["production_function"] is not None)
     assert entry["agent"] == "Posidonia Meadow" and not entry["site_restricted"]
-    # g C/m²/yr entering the food web: the plant (74% not buried), its
-    # roots (4% decomposed within a year, the rest buried) and the leaf
-    # epiphytes (1.9 mol C/m²/yr, none buried)
+    # g C/m²/yr entering the food web: the plant (74% not buried) and its
+    # roots (4% decomposed within a year, the rest buried); the leaf
+    # epiphytes' food is the Epiphytes & Algae agent's since Step 8g.2
     # Step 8g.1: the plant's NPP at the regional mean depth (15 m) from its
     # depth function, P_ref at 10 m, decline k, zero at the depth limit (40 m)
     import math
@@ -959,7 +961,7 @@ def test_meadow_food_value_is_the_primary_production_chain():
     assert hyper["depth.depth_limit"]["value"] == 40.0
     npp = p_ref * (math.exp(-k * 15) - math.exp(-k * 40)) / (math.exp(-k * 10) - math.exp(-k * 40))
     assert npp == pytest.approx(317.56, abs=0.01)
-    web = npp * 0.336 * 0.74 + 17.0 * 0.409 * 0.04 + 1.9 * 12.011 * 1.0
+    web = npp * 0.336 * 0.74 + 17.0 * 0.409 * 0.04
     gross = (web * 10 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
@@ -985,14 +987,23 @@ def test_meadow_food_value_is_the_primary_production_chain():
     assert "doi:10.3389/fmars.2023.1166674" in te["source"] and "14.25%" in te["source"]
     for p in params.values():
         assert "doi:" in p["source"] or "ge3m-4jgm" in p["source"]
-    # Step 8f.2: two more producers, each link sourced and flagged
+    # Step 8f.2: the roots, each link sourced and flagged
     pf = entry["production_function"]
-    assert [p["name"] for p in pf["producers"]] == ["roots", "epiphytes"]
+    assert [p["name"] for p in pf["producers"]] == ["roots"]
     assert (params["roots.npp_dry_weight"]["value"], params["roots.npp_dry_weight"]["range"]) == (17.0, (11.0, 23.0))
     assert params["roots.carbon_fraction"]["status"] == "verified"
     assert params["roots.food_web_share"]["status"] == "secondary"
-    assert params["epiphytes.npp_carbon"]["status"] == "secondary"
-    assert params["epiphytes.food_web_share"]["status"] == "inferred"
+    # Step 8g.2: the leaf epiphytes' food, on the same chain to the catch
+    epi = next(e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae" and e["production_function"])
+    epi_params = epi["production_function"]["parameters"]
+    assert epi_params["npp_carbon"]["status"] == "secondary"
+    assert epi_params["food_web_share"]["status"] == "inferred"
+    epi_gross = (1.9 * 12.011 * 1.0 * 10 * 0.143 ** (3.1 - 1) * 9 * (0.87 / 1.87) * (41_056_589 / 8_034_993))
+    assert epi["value"] == pytest.approx(epi_gross, rel=1e-12) == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
+    assert not epi["net_of"]
+    for link in ("transfer_efficiency", "catch_trophic_level", "wet_weight_per_carbon",
+                 "sustainable_catch_share", "first_sale_price"):
+        assert epi_params[link] == params[link]
     # Step 8g.1: the depth function's hyperparameters are sampled links
     for name in ("npp_at_reference_depth", "decline_rate", "depth_limit"):
         assert params[f"depth.{name}"]["range"] is not None
@@ -1009,28 +1020,38 @@ def test_roots_feed_the_food_web_only_through_what_is_not_buried():
 
     entry = next(e for e in load_case("posidonia").service_ledger if e["production_function"] is not None)
     shares = {name or "plant": share for name, _, share in producer_carbon(central(entry["production_function"]))}
-    assert shares["roots"] < 0.06 < shares["plant"] < shares["epiphytes"] == 1.0
+    assert shares["roots"] < 0.06 < shares["plant"] < 1.0
     low, high = entry["production_function"]["parameters"]["roots.food_web_share"]["range"]
     assert low > 0.0 and high < 0.06
 
 
 def test_epiphyte_production_is_not_counted_twice():
-    """The Epiphytes & Algae agent owns the epiphyte metric of the
-    bioindicator service (monitoring, a cultural service); the food the
-    epiphytes' production supports is a provisioning service, booked once,
-    in the meadow's production function. No other entry values food."""
+    """Step 8g.2 (PR #10, question 2): the Epiphytes & Algae agent owns the
+    food its own production supports (a provisioning service) and the
+    epiphyte metric of the bioindicator service (monitoring, a cultural
+    service); the meadow's chain no longer counts the epiphytes. The two
+    food chains together are the former one (total unchanged), the
+    commercial catch is netted out once, from the meadow's chain, and its
+    lowest value still exceeds it."""
     from gaia.cases import load_case
+    from gaia.production import net_range
 
     case = load_case("posidonia")
     epiphyte_entries = [e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae"]
-    assert [(e["section"], e["split_of"]) for e in epiphyte_entries] == [("cultural", "Use as bioindicator (1.5 EUR/ha/yr)")]
+    assert [(e["section"], e["split_of"]) for e in epiphyte_entries] == [
+        ("cultural", "Use as bioindicator (1.5 EUR/ha/yr)"), ("provisioning", None)]
     food = [e for e in case.service_ledger if e["section"] == "provisioning"]
-    with_epiphytes = [e for e in food if e["production_function"] is not None
-                      and any(p["name"] == "epiphytes" for p in e["production_function"]["producers"])]
-    assert len(with_epiphytes) == 1
-    # every other provisioning entry is commercial catch, which the food entry is net of
-    others = {e["service"] for e in food} - {with_epiphytes[0]["service"]}
-    assert others == set(with_epiphytes[0]["net_of"])
+    chains = [e for e in food if e["production_function"] is not None]
+    assert [e["agent"] for e in chains] == ["Posidonia Meadow", "Epiphytes & Algae"]
+    meadow, epiphytes = chains
+    assert all(p["name"] != "epiphytes" for p in meadow["production_function"]["producers"])
+    # the former single chain (Step 8g.1): 367.59 gross, 332.59 net
+    assert meadow["gross"] + epiphytes["value"] == pytest.approx(367.59096864832713, rel=1e-12)
+    assert meadow["value"] + epiphytes["value"] == pytest.approx(332.59096864832713, rel=1e-12)
+    # every other provisioning entry is commercial catch, netted out once
+    others = {e["service"] for e in food} - {e["service"] for e in chains}
+    assert others == set(meadow["net_of"]) and not epiphytes["net_of"]
+    assert net_range(meadow["production_function"], 35.0)[0] > 0.0
 
 
 def test_meadow_range_is_the_chain_at_its_ends():
@@ -1084,15 +1105,20 @@ def test_ledger_enforces_the_subtraction():
     with pytest.raises(ValueError, match="producers\\[0\\].parameters: give npp_dry_weight"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["name"] = "roots"
+    roots = food(doc)["production_function"]["producers"][0]
+    food(doc)["production_function"]["producers"].append(copy.deepcopy(roots))
     with pytest.raises(ValueError, match="listed twice"):
         case_from_dict(doc)
+
+    def epiphytes(doc):
+        return next(e for e in doc["service_ledger"] if e["agent"] == "Epiphytes & Algae" and "production_function" in e)
+
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["parameters"]["food_web_share"]["range"] = [0.74, 1.2]
+    epiphytes(doc)["production_function"]["parameters"]["food_web_share"]["range"] = [0.74, 1.2]
     with pytest.raises(ValueError, match="a share"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["parameters"]["npp_carbon"]["value"] = 40.0
+    epiphytes(doc)["production_function"]["parameters"]["npp_carbon"]["value"] = 40.0
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
 
@@ -1112,8 +1138,11 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
     flat = " ".join(meadow_line.split())
     assert "NPP 107 g C/m²/yr (318 g dry weight) at 15 m (the regional mean depth)" in flat
-    assert "+ roots 6.95 + epiphytes 22.8 = 136 g C/m²/yr" in flat
-    assert "€368/ha/yr" in flat and "= €333/ha/yr" in flat
+    assert "+ roots 6.95 = 114 g C/m²/yr" in flat and "epiphytes" not in flat
+    assert "€285/ha/yr" in flat and "= €250/ha/yr" in flat
+    # Step 8g.2: the epiphytes' own chain, on their own line
+    epi_line = " ".join(text[text.index("Epiphytes & Algae:"):text.index("Marine Invertebrates:")].split())
+    assert "Primary production → food: NPP 22.8 g C/m²/yr" in epi_line and "= €82.2/ha/yr" in epi_line
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's

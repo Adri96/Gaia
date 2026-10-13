@@ -41,7 +41,10 @@ their booked values) and the agent's value (its documented value + the
 change of the net value / its documented weight). Parsing guarantees that
 the chain's lowest value exceeds what it is net of, so no draw can bring
 the agent to €0; a draw that did would stop the run (``InvariantError``),
-never be clipped or redrawn. The draws of each production function are
+never be clipped or redrawn. A link from the food web to the catch that two
+production functions of the case document identically (Posidonia: the
+meadow's and the epiphytes', Step 8g.2) is one quantity of one food web: it
+is drawn once and both chains take that draw (``Sampled.same_as``). The draws of each production function are
 summarised (P5 / P50 / P95 of the gross and net €/ha/yr).
 
 Each draw sets every sampled parameter at its JSON path in a copy of the
@@ -129,6 +132,10 @@ class Sampled:
         documented: True when the range comes from the document, False
             when it was set by the confidence (DEFAULT_RELATIVE_SPREAD).
         confidence: The parameter's confidence.
+        same_as: The name of another sampled parameter whose draw this one
+            takes (Step 8g.2: a link from the food web to the catch that
+            two production functions document identically is one
+            quantity, drawn once); "" when drawn on its own.
     """
 
     name: str
@@ -139,6 +146,7 @@ class Sampled:
     kind: str
     documented: bool
     confidence: str
+    same_as: str = ""
 
     def quantile(self, q: float) -> float:
         """The q-quantile (0..1) of this parameter's distribution."""
@@ -259,20 +267,51 @@ def production_entries(case) -> List[_ProductionEntry]:
 
 def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sampled]:
     """Each sampled link of each production function, with its own range
-    and distribution (named "production[<agent>].<link>")."""
+    and distribution (named "production[<agent>].<link>"). A link from the
+    food web to the catch (gaia.production.CHAIN_PARAMETERS) that an
+    earlier production function of the case documents identically (value,
+    range, distribution) is the same quantity of the same food web: it
+    takes that link's draw (``same_as``, Step 8g.2)."""
+    from gaia.production import CHAIN_PARAMETERS
+
     out: List[Sampled] = []
+    first: Dict[Tuple[str, float, float, float, str], str] = {}
     for e in entries:
         spec = case.service_ledger[e.index]["production_function"]
         for name, p in spec["parameters"].items():
             if p["distribution"] == "fixed" or not p.get("range"):
                 continue
             low, high = p["range"]
+            full = f"production[{e.agent}].{name}"
+            same_as = ""
+            if name in CHAIN_PARAMETERS:
+                key = (name, p["value"], low, high, p["distribution"])
+                same_as = first.setdefault(key, full)
+                same_as = "" if same_as == full else same_as
             out.append(Sampled(
-                name=f"production[{e.agent}].{name}",
+                name=full,
                 path=f"$.service_ledger[{e.index}].production_function.{spec['paths'][name]}",
                 value=p["value"], low=low, high=high, kind=p["distribution"],
-                documented=True, confidence=p["status"],
+                documented=True, confidence=p["status"], same_as=same_as,
             ))
+    return out
+
+
+def _draw_all(sampled: Sequence[Sampled], rng: random.Random) -> Dict[str, float]:
+    """One draw of every sampled parameter (a ``same_as`` one takes the
+    draw of the parameter it names)."""
+    values: Dict[str, float] = {}
+    for s in sampled:
+        values[s.name] = values[s.same_as] if s.same_as else s.draw(rng)
+    return values
+
+
+def _with_aliases(values: Dict[str, float], sampled: Sequence[Sampled]) -> Dict[str, float]:
+    """``values`` with each ``same_as`` parameter set like the one it names."""
+    out = dict(values)
+    for s in sampled:
+        if s.same_as and s.same_as in out:
+            out[s.name] = out[s.same_as]
     return out
 
 
@@ -551,7 +590,7 @@ def run_uncertainty(
         warnings.simplefilter("ignore", CalibrationWarning)
         base = evaluate(case)
         while len(samples["net_social_cost"]) < draws:
-            values = {s.name: s.draw(rng) for s in sampled}
+            values = _draw_all(sampled, rng)
             try:
                 drawn, produced = build_case(values)
                 row = evaluate(drawn)
@@ -578,10 +617,12 @@ def run_uncertainty(
         rows: List[Dict[str, Any]] = []
         if tornado:
             for s in sampled:
+                if s.same_as:
+                    continue
                 lo_v, hi_v = s.quantile(0.05), s.quantile(0.95)
                 try:
-                    lo = evaluate(build_case({s.name: lo_v})[0])
-                    hi = evaluate(build_case({s.name: hi_v})[0])
+                    lo = evaluate(build_case(_with_aliases({s.name: lo_v}, sampled))[0])
+                    hi = evaluate(build_case(_with_aliases({s.name: hi_v}, sampled))[0])
                 except ValueError:
                     continue
                 rows.append({
@@ -680,8 +721,10 @@ def uncertainty_to_dict(u: Optional[UncertaintyResult], top: int = 15) -> Option
             for key in u.summary
         },
         "sampled_parameters": [
-            {"name": s.name, "value": s.value, "low": s.low, "high": s.high,
-             "distribution": s.kind, "range_from": "document" if s.documented else f"confidence ({s.confidence})"}
+            dict({"name": s.name, "value": s.value, "low": s.low, "high": s.high,
+                  "distribution": s.kind,
+                  "range_from": "document" if s.documented else f"confidence ({s.confidence})"},
+                 **({"same_draw_as": s.same_as} if s.same_as else {}))
             for s in u.sampled
         ],
         "tornado_net_social_cost": [
@@ -724,7 +767,7 @@ def format_uncertainty(u: Optional[UncertaintyResult], top: int = 10) -> str:
     lines: List[str] = [
         "",
         "  ── Uncertainty (Monte Carlo, Step 8.4) ─" + "─" * 23,
-        f"  {u.draws:,} draws, seed {u.seed}, {len(u.sampled)} parameters sampled"
+        f"  {u.draws:,} draws, seed {u.seed}, {sum(1 for s in u.sampled if not s.same_as)} parameters sampled"
         f" ({u.redraws} redraws rejected by validation)",
         f"  {'':<28} {'P5':>11} {'P50':>11} {'P95':>11} {'base':>11}",
     ]
@@ -738,7 +781,7 @@ def format_uncertainty(u: Optional[UncertaintyResult], top: int = 10) -> str:
         lines.append("")
         lines.extend(textwrap.wrap(
             f"{agent}, {block['service'].split(':')[0].lower()} (€/ha/yr; each of its "
-            f"{len(block['links'])} uncertain links sampled on its own, the chain recomputed):",
+            f"{len(block['links'])} uncertain links sampled from its own distribution, the chain recomputed):",
             width=65, initial_indent="  ", subsequent_indent="  "))
         lines.append(f"  {'':<28} {'P5':>11} {'P50':>11} {'P95':>11} {'base':>11}")
         for key, label in (("gross", "  gross"), ("net", "  net (the agent's value)")):

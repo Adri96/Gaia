@@ -72,17 +72,17 @@
   "agents": [
     {
       "name": "Posidonia Meadow",
-      "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production (with its roots and leaf epiphytes) supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
+      "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production (with its roots) supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
       "dependency_weight": 0.10989010989010989,
       "annual_value_per_ha": {
-        "value": 3026.577814699777,
+        "value": 2278.5851191121064,
         "unit": "€/ha/yr",
-        "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; epiphytes: Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
+        "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
         "confidence": "low",
-        "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 367.59 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,021 kg C/ha/yr into the food web → 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 332.59 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (12.41-1,953.76 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 151 / 320 / 622 EUR/ha/yr, 1,000 draws, seed 20261012).",
+        "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 285.39 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried: 793 kg C/ha/yr into the food web → 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 250.39 EUR/ha/yr. The leaf epiphytes' food (82.20 EUR/ha/yr) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (3.83-1,525.48 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 151 / 320 / 622 EUR/ha/yr, 1,000 draws, seed 20261012).",
         "range": [
-          112.95050718764433,
-          17779.25996940433
+          34.85445543853452,
+          13881.880718908227
         ]
       },
       "trophic_level": 0,
@@ -173,17 +173,17 @@
     },
     {
       "name": "Epiphytes & Algae",
-      "description": "Epiphytic algae and plant community: primary production, food web base; owns the epiphyte share of the bioindicator service (PREI E/L metric); the food its production supports is valued once, in the meadow's production function (Step 8f.2), not here",
+      "description": "Epiphytic algae and plant community: primary production, food web base; owns the food its own production supports (production function, Step 8g.2) and the epiphyte share of the bioindicator service (PREI E/L metric)",
       "dependency_weight": 0.07692307692307693,
       "annual_value_per_ha": {
-        "value": 2.7857142857142856,
+        "value": 1071.3467079823874,
         "unit": "€/ha/yr",
-        "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
+        "source": "Service ledger: production function (Step 8g.2): Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3, with the meadow's chain to the catch (see the ledger); bioindicator: Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
         "confidence": "low",
-        "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2): an intermediate agent with no final service of its own: it owns the epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica. Its production (22.8 g C/m2/yr) enters the meadow's production function as a producer (Step 8f.2): that is food, a provisioning service, booked once to the meadow; this entry is monitoring information, a cultural service, so the two do not overlap. Range x0.5-x2 (judgement).",
-        "relative_range": [
-          0.5,
-          2.0
+        "note": "Service ledger (Step 8c.2, 8g.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2, §2b): two final services. (1) Since Step 8g.2, the food its own primary production supports (the owner's answer to PR #10 question 2: moved from the meadow's production function, where the epiphytes were a producer since Step 8f.2): 22.8 g C/m2/yr, none buried → the meadow's chain to the catch (14.3% transfer per level to trophic level 3.1, x9, 46.5% sustainable catch, EUR 5.11/kg) = 82.20 EUR/ha/yr, not net of anything (the commercial catch stays netted out of the meadow's chain). (2) The epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica; monitoring information, a cultural service, so it does not overlap the food. Weight x value = 82.41 EUR/ha/yr. Range: the food chain at every link's least and most favourable end (8.58-428.28) plus the bioindicator share, divided by the weight; the Monte Carlo does not sample this value as one aggregate: it samples the production function's links (the links shared with the meadow's chain drawn once for both) and recomputes it in every draw.",
+        "range": [
+          114.35150249872838,
+          5570.470357851579
         ]
       },
       "trophic_level": 0
@@ -594,7 +594,7 @@
     "anchors": [
       {
         "agent_name": "Posidonia Meadow",
-        "anchor_value": 32819439.546954375,
+        "anchor_value": 29392137.01577167,
         "source": "Service ledger (Steps 8c.2, 8d.4, 8e.6): the meadow's food production supported by its primary production (production function, net of the commercial catch counted under fish and invertebrates) on every hectare, plus its recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; the diving part scaled with --dive-site-share and --dive-intensity",
         "confidence": "low",
         "description": "Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A production-function value (market prices of the food supported) plus a stated-preference value: no market price exists for the meadow itself"
@@ -846,18 +846,18 @@
     {
       "service": "Food from primary production: fish and invertebrates the meadow's production supports, net of the commercial catch already counted",
       "agent": "Posidonia Meadow",
-      "value": 332.59096864832713,
-      "gross": 367.59096864832713,
+      "value": 250.39396913319848,
+      "gross": 285.3939691331985,
       "net_of": [
         "Commercial fisheries: meadow-associated fish",
         "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
       ],
       "section": "provisioning",
       "kind": "use",
-      "method": "production function: net primary production of the plant (from its depth function), its roots and its leaf epiphytes → food web (not buried) → trophic transfer to the catch's trophic level → sustainable catch → first-sale price",
-      "source": "Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; epiphytes: Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
+      "method": "production function: net primary production of the plant (from its depth function), and its roots → food web (not buried) → trophic transfer to the catch's trophic level → sustainable catch → first-sale price",
+      "source": "Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
       "transfer": "Mediterranean (Ischia, Medes Islands, Port-Cros) and global trophic parameters to Catalonia; Catalan first-sale prices, EUR 2014",
-      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Producers (Step 8f.2): the plant (leaf blades, sheaths, rhizomes), its roots and the epiphytes on its leaves; each feeds the food web only with the production that is not buried (roots: 4%, the rest goes to the matte). The epiphytes' food is not counted twice: the Epiphytes & Algae agent owns the epiphyte metric of the bioindicator service (monitoring, a cultural service), not food; no other entry values the epiphytes' production. Depth (Step 8g.1): the plant's production falls with depth as light fades (depth_production: 770 g DW/m2/yr at 5 m, 318 at 15 m, 115 at 25 m, zero at the depth limit, 40 m); it is taken at the regional mean depth, 15 m (an inferred mean: no area-by-depth source could be read; conservative, the function being convex), or at the project's depth (--depth-m), where the commercial catch subtracted scales with the plant's production (NPP at the project's depth / NPP at 15 m: the part of the regional catch that hectare's production supports). Range over the links' ranges, every link at its least or most favourable end at once and the depth function's shape searched over its ranges: gross 47.41-1,988.76, net 12.41-1,953.76 EUR/ha/yr. In the Monte Carlo each link (and each depth hyperparameter) is sampled on its own, from its own distribution (distribution, distribution_basis), and every draw recomputes gross - net_of (Step 8f.3): net P5 / P50 / P95 151 / 320 / 622 EUR/ha/yr; parsing requires the lowest value to exceed what it is net of, so no draw reaches EUR 0. Transfer efficiency since Step 8f.1: 14.3%, the median of five Western Mediterranean food-web models (11.8%, the global median, before). Conservative: no microphytobenthos or other algae, first-sale (not retail) prices, only the sustainable share of production.",
+      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Producers (Step 8f.2): the plant (leaf blades, sheaths, rhizomes) and its roots; each feeds the food web only with the production that is not buried (roots: 4%, the rest goes to the matte). The epiphytes on its leaves were a third producer until Step 8g.2, which moved their food (EUR 82.20/ha/yr gross) to the Epiphytes & Algae agent's own production function (the owner's answer to PR #10 question 2); the commercial catch stays netted out of this chain, whose lowest value still exceeds it. Depth (Step 8g.1): the plant's production falls with depth as light fades (depth_production: 770 g DW/m2/yr at 5 m, 318 at 15 m, 115 at 25 m, zero at the depth limit, 40 m); it is taken at the regional mean depth, 15 m (an inferred mean: no area-by-depth source could be read; conservative, the function being convex), or at the project's depth (--depth-m), where the commercial catch subtracted scales with the plant's production (NPP at the project's depth / NPP at 15 m: the part of the regional catch that hectare's production supports). Range over the links' ranges, every link at its least or most favourable end at once and the depth function's shape searched over its ranges: gross 47.41-1,988.76, net 12.41-1,953.76 EUR/ha/yr. In the Monte Carlo each link (and each depth hyperparameter) is sampled on its own, from its own distribution (distribution, distribution_basis), and every draw recomputes gross - net_of (Step 8f.3): net P5 / P50 / P95 151 / 320 / 622 EUR/ha/yr; parsing requires the lowest value to exceed what it is net of, so no draw reaches EUR 0. Transfer efficiency since Step 8f.1: 14.3%, the median of five Western Mediterranean food-web models (11.8%, the global median, before). Conservative: no microphytobenthos or other algae, first-sale (not retail) prices, only the sustainable share of production.",
       "production_function": {
         "model": "trophic_transfer",
         "producer": "plant",
@@ -1087,38 +1087,6 @@
                 "distribution_basis": "Between the two bounding assumptions on when the roots are produced (evenly over the year, or at its start): uniform"
               }
             }
-          },
-          {
-            "name": "epiphytes",
-            "description": "the algae growing on the leaves (encrusting red algae, brown erect algae): grazed by sea urchins and fish, not buried",
-            "parameters": {
-              "npp_carbon": {
-                "value": 22.820899999999998,
-                "range": [
-                  11.410449999999999,
-                  45.641799999999996
-                ],
-                "unit": "g C/m²/yr",
-                "label": "net primary production of the leaf epiphytes",
-                "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/÷2, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marbà et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
-                "status": "secondary",
-                "distribution": "lognormal",
-                "distribution_basis": "One site, a range of x/÷2 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends"
-              },
-              "food_web_share": {
-                "value": 1.0,
-                "range": [
-                  0.74,
-                  1.0
-                ],
-                "unit": "fraction",
-                "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
-                "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the plant's production (74% not buried, the food_web_share above)",
-                "status": "inferred",
-                "distribution": "triangular",
-                "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular"
-              }
-            }
           }
         ],
         "comparison": {
@@ -1173,6 +1141,106 @@
               "source": "Duarte, Middelburg & Caraco (2005), Biogeosciences 2:1-8, doi:10.5194/bg-2-1-2005, Table 3"
             }
           ]
+        }
+      }
+    },
+    {
+      "service": "Food from the leaf epiphytes' primary production: fish and invertebrates it supports",
+      "agent": "Epiphytes & Algae",
+      "value": 82.19699951512872,
+      "section": "provisioning",
+      "kind": "use",
+      "method": "production function: net primary production of the leaf epiphytes → food web (none buried) → trophic transfer to the catch's trophic level → sustainable catch → first-sale price",
+      "source": "Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3 (production); Tomas, Turon & Romero (2005), doi:10.3354/meps287115, and Mateo & Romero (1997), doi:10.3354/meps151043 (not buried); the meadow's chain from the food web to the catch: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); see production_function",
+      "transfer": "Corsican epiphyte production and Mediterranean and global trophic parameters to Catalonia; Catalan first-sale prices, EUR 2014",
+      "note": "Step 8g.2 (the owner's answer to PR #10 question 2): the food the epiphytes' production supports, moved from the Posidonia Meadow's production function (where it was a producer, Step 8f.2) to the agent that is the epiphytes, through the ledger: same producer, same links, the same EUR 82.20/ha/yr gross, so the total is unchanged and nothing is counted twice. The links from the food web to the catch are the meadow's (one food web): the Monte Carlo draws each of them once for both chains. Not net of anything: the commercial catch (35 EUR/ha/yr) stays netted out of the meadow's chain, whose lowest value still exceeds it (parsing checks it). Not counted twice with the bioindicator entry of the same agent (monitoring information, a cultural service). Range over the links' ends: EUR 8.58-428.28/ha/yr. Conservative: no other algae or microphytobenthos, first-sale prices, the sustainable share only.",
+      "production_function": {
+        "model": "trophic_transfer",
+        "producer": "leaf epiphytes",
+        "parameters": {
+          "npp_carbon": {
+            "value": 22.820899999999998,
+            "range": [
+              11.410449999999999,
+              45.641799999999996
+            ],
+            "unit": "g C/m²/yr",
+            "label": "net primary production of the leaf epiphytes",
+            "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/÷2, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marbà et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
+            "status": "secondary",
+            "distribution": "lognormal",
+            "distribution_basis": "One site, a range of x/÷2 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends"
+          },
+          "food_web_share": {
+            "value": 1.0,
+            "range": [
+              0.74,
+              1.0
+            ],
+            "unit": "fraction",
+            "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
+            "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the plant's production (74% not buried, the meadow's food_web_share)",
+            "status": "inferred",
+            "distribution": "triangular",
+            "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular"
+          },
+          "transfer_efficiency": {
+            "value": 0.143,
+            "range": [
+              0.122,
+              0.218
+            ],
+            "unit": "fraction per trophic level",
+            "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
+            "source": "Sánchez-Zulueta, Valls, Guijarro, Ángeles Torres, Ángeles Zapata, Coll, Corrales, Andonegi, Díaz-Valdés, Massutí & Ordines (2023), Frontiers in Marine Science 10:1166674, doi:10.3389/fmars.2023.1166674 (full text read), Table 3, mean transfer efficiency of five Western Mediterranean Ecopath models: Balearic Islands 21.80%, Gulf of Alicante 13.9% (García-Rodríguez et al. 2021), South Catalan Sea 12.2% (Coll et al. 2006, doi:10.1016/j.jmarsys.2005.09.001), north-western Mediterranean 14.3% (Corrales et al. 2015, doi:10.1016/j.jmarsys.2015.03.006, the model that covers the Catalan coast), Gulf of Lions 19.7% (Banaru et al. 2013); value = their median, 14.3% (= the north-western Mediterranean model), range = their minimum and maximum (12.2-21.8%). The original model papers were not read (closed access); their values are as tabulated in the 2023 comparison. Cross-check: Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read), Methods (e) 'Data sources': temperate and high-latitude ecosystem models mean 14.25% (sd 5.95, median 13.7, n = 39); all 91 models median 11.8%. No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%"
+          },
+          "catch_trophic_level": {
+            "value": 3.1,
+            "range": [
+              3.1,
+              3.5
+            ],
+            "unit": "trophic level",
+            "label": "mean trophic level of the catch",
+            "source": "Francour (1997), Marine Ecology 18:157-173, doi:10.1111/j.1439-0485.1997.tb00434.x (abstract): P. oceanica fish assemblages at Port-Cros dominated by Symphodus ocellatus, S. tinca, Diplodus annularis and Sarpa salpa; FishBase trophic levels from diet studies (fishbase.se, queried 13 October 2026) 3.5, 3.3, 3.6, 2.0: mean 3.1. Upper end 3.5: the median over 13 meadow species with the main targets (D. vulgaris 3.5, D. sargus 3.4, Mullus surmuletus 3.5, Scorpaena porcus 3.9, S. scrofa 4.3, Spondyliosoma cantharus 3.3, Labrus merula 3.6, Serranus scriba 3.8, Oblada melanura 3.4). The choice of species is a judgement",
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "The documented assemblage (3.1) is the value; 3.5 an alternative choice of species (the main targets): triangular with its mode at 3.1, the low end"
+          },
+          "wet_weight_per_carbon": {
+            "value": 9.0,
+            "unit": "kg wet weight/kg C",
+            "label": "wet weight of fish per unit of carbon",
+            "source": "Pauly & Christensen (1995), Nature 374:255-257, doi:10.1038/374255a0, as cited by Chen et al. (2022), Frontiers in Marine Science 9:863611, doi:10.3389/fmars.2022.863611 ('A CR of 9:1 and TE of 10% were used for this study (Pauly and Christensen, 1995)'); the primary paper was not read",
+            "status": "secondary",
+            "distribution": "fixed",
+            "distribution_basis": "A conventional conversion with no range in the source read: not sampled (flagged secondary)"
+          },
+          "sustainable_catch_share": {
+            "value": 0.4652406417112299,
+            "range": [
+              0.42512216154067256,
+              0.5
+            ],
+            "unit": "fraction",
+            "label": "share of the production that can be caught sustainably (exploitation rate at maximum sustainable yield)",
+            "source": "Zhou, Yin, Thorson, Smith & Fuller (2012), Canadian Journal of Fisheries and Aquatic Sciences 69:1292-1301, doi:10.1139/f2012-060 (abstract): F_MSY = 0.87 M for teleosts (245 species); F proxy about 15% smaller; the rule of thumb F_MSY = M. Exploitation rate E = F/(F + M): 0.87/1.87 = 0.465 (0.74/1.74 = 0.425 to 0.5). That the sustainable catch is E × production is the steady-state relation (production = Z × biomass, catch = F × biomass), inferred here",
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)"
+          },
+          "first_sale_price": {
+            "value": 5.109723057630542,
+            "unit": "€/kg",
+            "label": "first-sale price of bony white fish, Catalonia, 2014",
+            "source": "Generalitat de Catalunya, Estadístiques de pesca: dades per grups biològics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
+            "status": "verified",
+            "distribution": "fixed",
+            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled"
+          }
         }
       }
     },

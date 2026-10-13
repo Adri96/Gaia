@@ -97,7 +97,8 @@ A Posidonia extraction run records 63 parameters (73 with restoration; one more 
 | Marine Invertebrates | fisheries, sea urchin and cuttlefish (2/16 of 35) | 4.38 | Campagne et al. 2015 (moved from fish; share by species count) |
 | Human Communities | bioindicator use (3/3.5 of 1.5) and knowledge (0.33) | 1.62 | Campagne et al. 2015; PREI weights, Gobert et al. 2009 |
 | Epiphytes & Algae | bioindicator use, epiphyte metric (0.5/3.5 of 1.5) | 0.21 | Gobert et al. 2009 (moved from Human Communities) |
-| Posidonia Meadow | **food from primary production**, on every hectare: the fish and invertebrates its production supports, net of the commercial catch above | 332.59 (367.59 − 35) | production function (below): NPP of the plant 107 (its depth function at the regional mean depth, 15 m), its roots 7 and its leaf epiphytes 23 g C/m²/yr → the part not buried into the food web → 14.3% transfer per level (Western Mediterranean food-web models) to trophic level 3.1 → ×9 wet weight → 46.5% sustainable catch → €5.11/kg (literature review §2b) |
+| Epiphytes & Algae | **food from the leaf epiphytes' primary production** (Step 8g.2), on every hectare | 82.20 | production function: 22.8 g C/m²/yr (Bay 1984, Corsica, via Champenois & Borges 2021), none buried, on the meadow's chain to the catch (moved from the meadow's chain, total unchanged) |
+| Posidonia Meadow | **food from primary production**, on every hectare: the fish and invertebrates its production supports, net of the commercial catch above | 250.39 (285.39 − 35) | production function (below): NPP of the plant 107 (its depth function at the regional mean depth, 15 m) and its roots 7 g C/m²/yr → the part not buried into the food web → 14.3% transfer per level (Western Mediterranean food-web models) to trophic level 3.1 → ×9 wet weight → 46.5% sustainable catch → €5.11/kg (literature review §2b) |
 | Posidonia Meadow | recreational diving: the meadow's amenity, **only near dive sites** | 454.52 at the regional share | Zunino et al. 2020, −€34.71 per dive for total loss × ~60,000 Medes dives/yr ÷ 142.35 ha of meadow within reach of dive sites (EEA Natura 2000 forms) = €14,630/ha/yr near dive sites, × the share of the affected meadow near dive sites (default 0.0311, the regional share; `--dive-site-share`) |
 | Coralligenous & Red Coral | recreational diving: coralligenous | 18.95 | Rodrigues et al. 2016, −€60 per dive for gorgonian extinction (Medes) × 60,000 ÷ 190,000 ha of mapped seabed |
 | Marine Megafauna | non-use: protecting marine mammals | 30.18 | Börger et al. 2014 (UK choice experiment, £30.32/household/yr for 5 years), annualised, × Catalan households ÷ 190,000 ha, half of a bundled attribute |
@@ -112,13 +113,14 @@ A Posidonia extraction run records 63 parameters (73 with restoration; one more 
 | × carbon content (Duarte 1990) | 33.6% | 107 g C/m² | verified |
 | × share eaten, decomposed or exported, not buried (Mateo & Romero 1997, Medes) | 74% | 79.0 g C/m² into the food web | verified |
 | + roots (Step 8f.2): 17 g DW/m²/yr (Mateo & Romero 1997, Medes) × 40.9% C, × 4% decomposed within the year (the rest is buried in the matte; 0.00015/d, Mateo 1995 via Cebrián et al. 1997) | 6.95 g C/m² | 0.28 g C/m² into the food web | derived / verified / secondary |
-| + leaf epiphytes (Step 8f.2): 1.9 mol C/m²/yr (Bay 1984, Corsica, via Champenois & Borges 2021), none buried | 22.8 g C/m² | 22.8 g C/m² into the food web | secondary / inferred |
-| = all producers, × 10 kg/ha per g/m² | 136 g C/m² | 1,021 kg C into the food web | |
-| × transfer efficiency^(3.1 − 1) (median of five Western Mediterranean Ecopath models, Sánchez-Zulueta et al. 2023, = the north-western Mediterranean model; temperate models average 14.25%, Coll et al. 2008; Francour 1997 with FishBase) | 14.3% per level (12.2–21.8%) | 17.2 kg C of consumers | derived; trophic level derived |
-| × wet weight per carbon (Pauly & Christensen 1995, cited by Chen et al. 2022) | 9 | 155 kg of fish and invertebrates | secondary |
-| × sustainable share (Zhou et al. 2012: F_MSY = 0.87 M) | 46.5% | 71.9 kg caught | derived / inferred |
-| × first-sale price, Catalan white fish 2014 (Generalitat) | €5.11/kg | **€367.59 gross** | verified |
-| − commercial catch already booked to fish and invertebrates (Campagne et al. 2015) | −€35.00 | **€332.59 net** | — |
+| = both producers, × 10 kg/ha per g/m² | 114 g C/m² | 793 kg C into the food web | |
+| × transfer efficiency^(3.1 − 1) (median of five Western Mediterranean Ecopath models, Sánchez-Zulueta et al. 2023, = the north-western Mediterranean model; temperate models average 14.25%, Coll et al. 2008; Francour 1997 with FishBase) | 14.3% per level (12.2–21.8%) | 13.3 kg C of consumers | derived; trophic level derived |
+| × wet weight per carbon (Pauly & Christensen 1995, cited by Chen et al. 2022) | 9 | 120 kg of fish and invertebrates | secondary |
+| × sustainable share (Zhou et al. 2012: F_MSY = 0.87 M) | 46.5% | 55.9 kg caught | derived / inferred |
+| × first-sale price, Catalan white fish 2014 (Generalitat) | €5.11/kg | **€285.39 gross** | verified |
+| − commercial catch already booked to fish and invertebrates (Campagne et al. 2015) | −€35.00 | **€250.39 net** | — |
+
+**The leaf epiphytes' food (Step 8g.2, the owner's answer to PR #10 question 2).** The epiphytes on the leaves were a third producer of the meadow's chain (Step 8f.2). Their food now belongs to the Epiphytes & Algae agent, through its own ledger entry: 1.9 mol C/m²/yr (22.8 g C/m²/yr; Bay 1984, Corsica, via Champenois & Borges 2021; `secondary`), none buried (`inferred`), on the meadow's chain to the catch (the same five links: one food web, so the Monte Carlo draws each of them once for both chains) = **€82.20/ha/yr**, not net of anything. The total is unchanged (€285.39 + €82.20 = the former €367.59 gross) and nothing is counted twice: the €35 of commercial catch is netted out once, from the meadow's chain, whose lowest value (every link at its least favourable end) is €38.83 gross, still above the €35 (net €3.83; parsing checks it), so no rebalancing of `net_of` was needed. The agent's other entry, the epiphyte metric of the bioindicator service (€0.21), is monitoring information, a cultural service, and does not overlap the food. Epiphytes & Algae: €0.21 → **€82.41/ha/yr**.
 
 **The plant's production by depth (Step 8g.1).** A seagrass lives on light, and light falls exponentially with depth (Beer–Lambert, I(z) = I0·e^(−Kd·z)). Below light saturation net production is gross photosynthesis, proportional to the light, minus a respiration that does not depend on it, so it falls exponentially and reaches zero at the compensation depth. One shape, shared by any marine primary producer (seagrass or macroalga), with three hyperparameters per species in the case file (`gaia/production.py`, `depth_production`):
 
@@ -130,9 +132,9 @@ A Posidonia extraction run records 63 parameters (73 with restoration; one more 
 | k, decline rate | 0.0803/m (standard error 0.0191) | 0.0428–0.1178 (triangular, ±1.96 SE) | the same fit; correlation with P_ref −0.12; residual sd of ln(production) 0.218 | derived |
 | z_max, depth limit (production zero) | 40 m | 30–44 m (triangular) | Generalitat (2004): Catalan meadows' lower limit ~30 m, 40 m in very clear waters; Gobert et al. (2009): meadows to 44 m in the clearest waters | inferred |
 
-The fitted function gives 770 g DW/m²/yr at 5 m, 499 at 10 m, 318 at 15 m, 196 at 20 m, 115 at 25 m and 61 at 30 m. The data are reproduced by `scripts/fit_depth_production.py` (`--check` compares them with the case file). The case is valued at the **regional mean depth, 15 m** (inferred: the Generalitat's teaching guide places the average Catalan meadow at 15 m, its meadows between the surface and about 30 m; 15 m is also the PREI monitoring depth); no source giving the Catalan meadow's area by depth could be read, so the production is taken at the mean depth, not averaged over a distribution. The function is convex and declining, so f(15 m) = 318 is below the mean of f over meadows spread around 15 m (413 averaged evenly over 0–30 m): **conservative**. A project states its own depth with `--depth-m` (one depth, or a range over which the meadow is spread evenly); depths at or below 30 m, the shallowest depth limit, are rejected, never valued at €0. At a project depth the €35 of commercial catch subtracted scales with the plant's production there (NPP at that depth / NPP at 15 m), the part of the regional catch that hectare's production supports; the regional run subtracts exactly €35 (the owner's decision, PR #10 question 3). The meadow's food value, net, by depth: €688 at 5 m, €475 at 10 m, €333 at 15 m, €237 at 20 m, €174 at 25 m.
+The fitted function gives 770 g DW/m²/yr at 5 m, 499 at 10 m, 318 at 15 m, 196 at 20 m, 115 at 25 m and 61 at 30 m. The data are reproduced by `scripts/fit_depth_production.py` (`--check` compares them with the case file). The case is valued at the **regional mean depth, 15 m** (inferred: the Generalitat's teaching guide places the average Catalan meadow at 15 m, its meadows between the surface and about 30 m; 15 m is also the PREI monitoring depth); no source giving the Catalan meadow's area by depth could be read, so the production is taken at the mean depth, not averaged over a distribution. The function is convex and declining, so f(15 m) = 318 is below the mean of f over meadows spread around 15 m (413 averaged evenly over 0–30 m): **conservative**. A project states its own depth with `--depth-m` (one depth, or a range over which the meadow is spread evenly); depths at or below 30 m, the shallowest depth limit, are rejected, never valued at €0. At a project depth the €35 of commercial catch subtracted scales with the plant's production there (NPP at that depth / NPP at 15 m), the part of the regional catch that hectare's production supports; the regional run subtracts exactly €35 (the owner's decision, PR #10 question 3). The meadow's food value, net, by depth (since Step 8g.2 without the epiphytes, whose production is held at its single-site value): €605 at 5 m, €393 at 10 m, €250 at 15 m, €155 at 20 m, €91 at 25 m.
 
-The gross value counts every fish and invertebrate the meadow's own production can sustain at a sustainable catch, by any fisher, wherever it is caught (the nursery spillover included); the prey in between are trophic steps, not valued again. The ledger books it net of the commercial catch, and parsing enforces the subtraction. Carbon is not counted twice: the chain uses only the production that is not buried, producer by producer (roots: 4%; the rest goes to the matte), and `gaia.carbon` values the buried part (D3). The epiphytes' food is not counted twice either: the Epiphytes & Algae agent owns the epiphyte metric of the bioindicator service (monitoring, a cultural service), not food. The report shows the chain, and the matte's carbon (an attribution, not added), on the meadow's line, and compares the productivity figures in a "Primary Production" section. Over the ends of every link's range (and the depth function's shape over its ranges) the net value runs from €12.41 to €1,954/ha/yr. The transfer efficiency is the median of five Western Mediterranean Ecopath models since Step 8f.1 (the global median, 11.8%, before: €249.74 net); the roots and leaf epiphytes are producers since Step 8f.2 (€391.29 net before; of the €367.59 gross, the roots give €1.00 and the epiphytes €82.20); the plant's production comes from its depth function since Step 8g.1 (a fixed 476 g DW/m²/yr, the Ischia mid-range, before: €474.48 net). That corner range is the hard bound of any draw; the Monte Carlo samples each link on its own (§6, Step 8f.3), which gives the meadow's food value, net, **P5 / P50 / P95 €151 / €320 / €622 per hectare a year** (base €333; lowest of 1,000 draws €89, none at or below €0). No willingness-to-pay value for the meadow's existence was found (literature review §2), so none is added.
+The gross value counts every fish and invertebrate the meadow's own production can sustain at a sustainable catch, by any fisher, wherever it is caught (the nursery spillover included); the prey in between are trophic steps, not valued again. The ledger books it net of the commercial catch, and parsing enforces the subtraction. Carbon is not counted twice: the chain uses only the production that is not buried, producer by producer (roots: 4%; the rest goes to the matte), and `gaia.carbon` values the buried part (D3). The epiphytes' food is counted once, in the Epiphytes & Algae agent's own chain (Step 8g.2), and that agent's bioindicator entry is monitoring information, not food. The report shows the chain, and the matte's carbon (an attribution, not added), on the meadow's line, and compares the productivity figures in a "Primary Production" section. Over the ends of every link's range (and the depth function's shape over its ranges) the net value runs from €3.83 to €1,525/ha/yr. The transfer efficiency is the median of five Western Mediterranean Ecopath models since Step 8f.1 (the global median, 11.8%, before: €249.74 net); the roots and leaf epiphytes became producers in Step 8f.2 (€391.29 net before); the plant's production comes from its depth function since Step 8g.1 (a fixed 476 g DW/m²/yr, the Ischia mid-range, before: €474.48 net); the epiphytes' €82.20 moved to their own agent in Step 8g.2 (€332.59 net before). That corner range is the hard bound of any draw; the Monte Carlo samples each link on its own (§6, Step 8f.3), which gives the meadow's food value, net, **P5 / P50 / P95 €114 / €245 / €511 per hectare a year** (base €250; lowest of 1,000 draws €46, none at or below €0), and the epiphytes' **€32 / €72 / €151** (base €82; lowest €20). No willingness-to-pay value for the meadow's existence was found (literature review §2), so none is added.
 
 Services of the meadow itself are spread over the meadow area. Services of the wider seascape (coralligenous diving, the non-use values of mobile species) are spread evenly over the mapped Catalan seabed to 50 m (~190,000 ha), an attribution assumption that the owner accepted as **provisional** (Step 8d.3; labelled so in the provenance). The recreation and non-use entries are low-confidence benefit transfers with wide ranges (literature review §2).
 
@@ -140,17 +142,17 @@ Services of the meadow itself are spread over the meadow area. Services of the w
 
 | `--dive-site-share` | Annual externality | PV of externality (P5 / P50 / P95) |
 |---|---|---|
-| 0.0311 (default, location unknown) | €57,563 | €11.90 M (10.45 / 13.79 / 17.58) |
-| 1 (a project at a dive site) | €766,344 | €78.24 M (61.83 / 103.88 / 169.70) |
-| 0 (far from any dive site) | €34,837 | €9.77 M (7.76 / 10.60 / 14.41) |
+| 0.0311 (default, location unknown) | €57,563 | €11.90 M (10.50 / 14.11 / 18.12) |
+| 1 (a project at a dive site) | €766,344 | €78.24 M (61.38 / 104.28 / 176.15) |
+| 0 (far from any dive site) | €34,837 | €9.77 M (7.62 / 10.88 / 14.77) |
 
-At a dive site the meadow's diving value dominates everything else; far from one, carbon does, and the meadow still carries its own €332.59/ha/yr.
+At a dive site the meadow's diving value dominates everything else; far from one, carbon does, and the meadow still carries its own €250.39/ha/yr.
 
 **How much the meadow is dived (Step 8e.2).** The value near dive sites is stated at the Costa Brava's average intensity, 421.5 dives per hectare of meadow a year (the Medes dives over the 142.35 ha). A project states the intensity at its meadow with `--dive-intensity`; the intensity sets the value per hectare near the dive sites (€34.71 per dive × dives/ha/yr) and `--dive-site-share` the part of the affected meadow near them (1 when the intensity is given alone). In plain words:
 
 | `--dive-intensity` | What it means | Dives per ha of meadow a year | €/ha/yr near dive sites | Basis |
 |---|---|---|---|---|
-| `none` | No dive site within reach of the meadow | 0 | 0 (the diving service only; the meadow keeps its €332.59 on every hectare) | by definition |
+| `none` | No dive site within reach of the meadow | 0 | 0 (the diving service only; the meadow keeps its €250.39 on every hectare) | by definition |
 | `low` | Light use, like the Banyuls-Cerbère reserve (France): ~14,000 dives a year over 211 ha of meadow | 66 | 2,298 | Lloret 2006, conference slides (grey literature, `low`) |
 | (default) | The Costa Brava average | 421.5 | 14,630 | Medes dives over the Costa Brava's 142.35 ha |
 | `medium` | Busy, like Portofino (Liguria): up to 40,000 dives a year over 71 ha | 566 | 19,663 | Betti et al. 2023 (abstract, `low`) |
@@ -160,13 +162,13 @@ Meadow areas are the *P. oceanica* cover of each site's Natura 2000 form. For th
 
 | `--dive-intensity` | Annual externality | PV of externality, base (P5 / P50 / P95) |
 |---|---|---|
-| `none` | €34,837 | €9.77 M (7.76 / 10.60 / 14.41) |
-| `low` | €149,743 | €20.53 M (18.43 / 25.41 / 35.94) |
-| `medium` | €1,017,984 | €101.79 M (79.82 / 135.90 / 224.05) |
-| `high` | €9,721,348 | €916.38 M (701.83 / 1,248.53 / 2,114.77) |
-| `high`, `--dive-site-share 0.1` (5 of the 50 ha at the site) | €1,003,488 | €100.43 M (78.79 / 134.06 / 220.92) |
+| `none` | €34,837 | €9.77 M (7.62 / 10.88 / 14.77) |
+| `low` | €149,743 | €20.53 M (18.26 / 25.85 / 37.47) |
+| `medium` | €1,017,984 | €101.79 M (78.51 / 136.31 / 232.73) |
+| `high` | €9,721,348 | €916.38 M (669.57 / 1,242.04 / 2,189.25) |
+| `high`, `--dive-site-share 0.1` (5 of the 50 ha at the site) | €1,003,488 | €100.43 M (77.56 / 134.44 / 229.50) |
 
-The intensity is a density: `high` fits only a small meadow at a heavily dived site, so a larger project should state the share near the site. `none` zeroes the diving service, never an agent: the meadow keeps its own value on every hectare (€332.59/ha/yr, the food its production supports; Step 8e.6), and every other agent keeps its value. **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
+The intensity is a density: `high` fits only a small meadow at a heavily dived site, so a larger project should state the share near the site. `none` zeroes the diving service, never an agent: the meadow keeps its own value on every hectare (€250.39/ha/yr, the food its production supports; Step 8e.6), and every other agent keeps its value. **Beach tourism and the meadow's own existence value are still not valued, so the total is a lower bound.**
 
 **Carbon.**
 
@@ -224,10 +226,10 @@ Each recorded parameter that can change an extraction result is sampled:
   | trophic level of the catch, 3.1 (3.1–3.5) | triangular, mode 3.1 | 3.5 is an alternative choice of species |
   | sustainable catch share, 46.5% (42.5–50%) | triangular, mode 46.5% | F_MSY = 0.87 M between its proxy and F = M |
   | roots: NPP 17 (11–23) g DW; share decomposed 4% (2.7–5.3%) | uniform, uniform | two depths; two bounding assumptions |
-  | epiphytes: NPP 22.8 (11.4–45.6) g C; share not buried 100% (74–100%) | lognormal (×/÷2 as central 95%, truncated); triangular, mode 100% | one site; probably none buried |
+  | epiphytes (their own chain since Step 8g.2): NPP 22.8 (11.4–45.6) g C; share not buried 100% (74–100%) | lognormal (×/÷2 as central 95%, truncated); triangular, mode 100% | one site; probably none buried |
   | carbon contents, ×9 wet weight, €5.11/kg | fixed | no range in the sources read |
 
-  The plant's NPP is not a link of its own since Step 8g.1: every draw recomputes it from the three hyperparameters of its depth function, at the regional mean depth (or the project's `--depth-m`). Every distribution stays inside its documented range, so the chain with every link at its least favourable end, €12.41/ha/yr net, is a hard floor; parsing requires it to be above €0 (Core Valuation Principles (b)), and a draw at or below €0 would stop the run, never be clipped or drawn again. The links are sampled independently.
+  The epiphytes' chain shares the meadow's five links to the catch: each is drawn once and both chains take that draw (Step 8g.2). The plant's NPP is not a link of its own since Step 8g.1: every draw recomputes it from the three hyperparameters of its depth function, at the regional mean depth (or the project's `--depth-m`). Every distribution stays inside its documented range, so the chain with every link at its least favourable end, €3.83/ha/yr net, is a hard floor (€8.58 for the epiphytes' chain); parsing requires it to be above €0 (Core Valuation Principles (b)), and a draw at or below €0 would stop the run, never be clipped or drawn again. The links are sampled independently.
 - **Constraints.** Ratios are kept in [0, 1]. A draw that fails the model's validation (e.g. edges above the in-degree cap) is redrawn and counted.
 - **Not sampled:**
   - the health weights: they are fixed, because weight × value is the sourced euro figure;
@@ -249,14 +251,14 @@ This replaces the former heuristic band, which multiplied the externality by 1 �
 
 | Quantity | Base | P5 | P50 | P95 |
 |---|---|---|---|---|
-| Annual externality (services), €/yr | 57,563 | 52,539 | 71,534 | 96,059 |
-| PV services lost (200 yr) | 5.39 M | 4.92 M | 6.70 M | 8.99 M |
-| PV carbon released (10-yr half-life) | 5.56 M | 2.91 M | 5.61 M | 8.81 M |
-| PV carbon burial lost | 0.95 M | 0.59 M | 1.36 M | 2.49 M |
-| **PV of externality** | **11.90 M** | **10.45 M** | **13.79 M** | **17.58 M** |
-| **Net social cost** (− €125,000 private gain) | **11.78 M** | **10.33 M** | **13.66 M** | **17.46 M** |
+| Annual externality (services), €/yr | 57,563 | 52,606 | 71,501 | 96,999 |
+| PV services lost (200 yr) | 5.39 M | 4.92 M | 6.69 M | 9.08 M |
+| PV carbon released (10-yr half-life) | 5.56 M | 3.04 M | 5.69 M | 9.09 M |
+| PV carbon burial lost | 0.95 M | 0.58 M | 1.35 M | 2.46 M |
+| **PV of externality** | **11.90 M** | **10.50 M** | **14.11 M** | **18.12 M** |
+| **Net social cost** (− €125,000 private gain) | **11.78 M** | **10.38 M** | **13.98 M** | **18.00 M** |
 
-*1,000 draws, seed 20261012 (Step 8g.1, the plant's production from its depth function at 15 m; Step 8f.3 with a fixed 476 g DW/m²/yr: 12.57 M, P5–P95 11.06–18.97 M; Step 8f.3, the meadow's production function sampled link by link; with its value sampled as one aggregate between the ends of its range, Step 8f.2, it was 12.57 M, P5–P95 12.09–23.94 M; Step 8f.1 12.18 M, 11.46–20.60 M; before Step 8f.1 11.51 M, 10.30–17.67 M; before Step 8e.6 10.35 M, 8.73–15.98 M). The meadow's food value alone, net, €/ha/yr: base 333, P5 151, P50 320, P95 622. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed: the meadow's diving and food values, burial, the non-use values, the release fraction. The base annual externality is exactly 50 ha × €1,151.25/ha/yr, because below the threshold small losses are priced linearly (§4).*
+*1,000 draws, seed 20261012 (Step 8g.2, the epiphytes' food in their own chain; Step 8g.1, the plant's production from its depth function at 15 m: 11.90 M, P5–P95 10.45–17.58 M; Step 8f.3 with a fixed 476 g DW/m²/yr: 12.57 M, P5–P95 11.06–18.97 M; Step 8f.3, the meadow's production function sampled link by link; with its value sampled as one aggregate between the ends of its range, Step 8f.2, it was 12.57 M, P5–P95 12.09–23.94 M; Step 8f.1 12.18 M, 11.46–20.60 M; before Step 8f.1 11.51 M, 10.30–17.67 M; before Step 8e.6 10.35 M, 8.73–15.98 M). The meadow's food value alone, net, €/ha/yr: base 250, P5 114, P50 245, P95 511; the epiphytes' food: base 82, P5 32, P50 72, P95 151. Base is the run at the documented values. P50 lies above base because several ranges are right-skewed: the meadow's diving and food values, burial, the non-use values, the release fraction. The base annual externality is exactly 50 ha × €1,151.25/ha/yr, because below the threshold small losses are priced linearly (§4).*
 
 **Drivers** (swing in net social cost between each parameter's P5 and P95):
 
@@ -271,7 +273,7 @@ This replaces the former heuristic band, which multiplied the externality by 1 �
 | The meadow's food value: the plant's production at 10 m (depth function) | €0.93 M |
 | Coastal-protection value | €0.91 M |
 | The meadow's food value: trophic level of the catch | €0.75 M |
-| The meadow's food value: epiphyte production | €0.41 M |
+| The epiphytes' food value: their production | €0.41 M |
 | Water-quality value | €0.29 M |
 | The meadow's food value: decline rate with depth | €0.28 M |
 | Megafauna, seabird non-use values | €0.26 M each |
@@ -300,7 +302,7 @@ The fisheries, coralligenous and invertebrate values each swing it by less than 
    - the release costs about €111,000 in PV (SCC, 10-year half-life);
    - the services charged cost about €108,000 in PV;
    - the foregone burial costs about €19,000 in PV.
-2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 67–140 times the default private gain (ETS carbon price: 67×; P5: 83×; P95: 140×). To break even, a project would need a private gain of about €170,000 (ETS carbon price) to €352,000 per hectare: the PV of the externality per hectare, which is €209,000 at P5 and €352,000 at P95.
+2. The net social cost is positive across the P5–P95 range and under every normative choice tested. It is about 67–144 times the default private gain (ETS carbon price: 67×; P5: 83×; P95: 144×). To break even, a project would need a private gain of about €170,000 (ETS carbon price) to €362,000 per hectare: the PV of the externality per hectare, which is €210,000 at P5 and €362,000 at P95.
 3. That conclusion rests on two uncertain terms:
    - the fraction and timing of the matte carbon release, which the user's environmental impact assessment can resolve (`--matte-fate`): excavated matte (0.96, at once) raises the release to about €191,000 per hectare;
    - the meadow's diving value, a benefit transfer that a Catalan valuation should replace, and which since Step 8d.4 applies only near dive sites: the user's `--dive-site-share` and `--dive-intensity` decide whether the diving service is €0 or the largest term (the meadow agent itself never falls to €0: it keeps its food value).

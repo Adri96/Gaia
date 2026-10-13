@@ -311,10 +311,22 @@ value = gross − their values). € 2014-2017/ha/yr:
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
+- Epiphytes & Algae, on every hectare (Step 8g.2, the owner's answer to
+  PR #10 question 2): the food its own production supports, moved from
+  the meadow's production function (where the epiphytes were a producer
+  since Step 8f.2) to a ledger entry of its own: 1.9 mol C/m²/yr (Bay
+  1984, Corsica, as reported by Champenois & Borges 2021, Fig. 6) = 22.8
+  g C/m²/yr, range ×/÷2, × 100% not buried (inferred: grazed, absent from
+  the litter; lower end 74%), on the meadow's chain to the catch below
+  (the same five links, drawn once for both chains in the Monte Carlo) =
+  €82.20 gross, net of nothing (range €8.58–428.28). Total unchanged:
+  the meadow's chain loses the same €82.20. With the bioindicator share,
+  the agent carries €82.41/ha/yr (€0.21 before).
 - Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
   production supports, a production function (gaia/production.py), over
-  three producers (Step 8f.2), each feeding the food web only with the
-  production that is not buried (decision D3):
+  two producers (Step 8f.2; the leaf epiphytes, a third one, have their
+  own chain since Step 8g.2, above), each feeding the food web only with
+  the production that is not buried (decision D3):
     plant: blades, sheaths, rhizomes 318 g DW/m²/yr at the regional mean
       depth, 15 m, from its depth function (Step 8g.1, below)
       × 33.6% carbon (Duarte 1990) = 106.7 g C/m²/yr
@@ -324,12 +336,8 @@ value = gross − their values). € 2014-2017/ha/yr:
       × 4% decomposed within the year, the rest buried in the matte
         (0.00015/d, Mateo 1995 as cited by Cebrián et al. 1997: 2.7–5.3%)
                                    = 0.28 g C/m²/yr
-    leaf epiphytes: 1.9 mol C/m²/yr (Bay 1984, Corsica, as reported by
-      Champenois & Borges 2021, Fig. 6) = 22.8 g C/m²/yr, range ×/÷2
-      × 100% not buried (inferred: grazed, absent from the litter;
-        lower end 74%)             = 22.8 g C/m²/yr
-    × 10 kg/ha per g/m²: into the food web                = 1,020.6 kg C/ha/yr
-    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 17.18 kg C/ha/yr
+    × 10 kg/ha per g/m²: into the food web                = 792.4 kg C/ha/yr
+    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 13.34 kg C/ha/yr
       level (Step 8f.1: the median of five Western
       Mediterranean Ecopath models, 12.2–21.8%, tabulated by
       Sánchez-Zulueta et al. 2023; the north-western
@@ -337,24 +345,25 @@ value = gross − their values). € 2014-2017/ha/yr:
       average 14.25%, Coll et al. 2008) to the catch's
       trophic level 3.1 (Francour 1997's dominant species,
       FishBase)
-    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 154.6 kg/ha/yr
-    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 71.9 kg/ha/yr
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 120.1 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 55.9 kg/ha/yr
       (Zhou et al. 2012)
-    × €5.11/kg, Catalan white-fish first-sale price 2014  = €367.59 gross
-    − 35.00, the commercial catch booked to Fish          = €332.59 net
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €285.39 gross
+    − 35.00, the commercial catch booked to Fish          = €250.39 net
       Populations and Marine Invertebrates (net_of)
-  Of the gross, the plant gives €284.39, the roots €1.00, the epiphytes
-  €82.20. Range over the links' ends (and the depth function's shape over
-  its ranges): €12.41–1,953.76 net (€47.41–1,988.76 gross). Before Step
-  8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
+  Of the gross, the plant gives €284.39, the roots €1.00. Range over the
+  links' ends (and the depth function's shape over its ranges):
+  €3.83–1,525.48 net (€38.83–1,560.48 gross): the lowest value still
+  exceeds the €35 it is net of, so moving the epiphytes needed no
+  rebalancing of net_of. Before Step 8g.2 the epiphytes' €82.20 were in
+  this chain (€367.59 gross, €332.59 net). Before Step 8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
   €509.48 gross, €474.48 net). Before Step 8f.2 roots and epiphytes were left out
   (€426.29 gross, €391.29 net); before Step 8f.1 the transfer efficiency
   was 11.8%, the median of a global compilation (Coll et al. 2008):
   €284.74 gross, €249.74 net.
-  The epiphytes' food is not counted twice: the Epiphytes & Algae agent
-  owns the epiphyte metric of the bioindicator service (monitoring, a
-  cultural service), not food, and no other entry values their
-  production.
+  The epiphytes' food is counted once, in their own chain (Step 8g.2);
+  their bioindicator entry is monitoring information, a cultural service,
+  not food.
   The plant's production by depth (Step 8g.1): a light-limited
   exponential shared by marine primary producers, NPP(z) = P_ref ·
   (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max)), with the
@@ -382,8 +391,9 @@ value = gross − their values). € 2014-2017/ha/yr:
   roots; the carbon contents, ×9 and the price fixed) and every draw
   recomputes gross − net_of; the meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
-  P5 151, P50 320, P95 622 (base 333, lowest draw 89). The €12.41 floor
-  above bounds every draw; parsing requires it to be > 0.
+  P5 114, P50 245, P95 511 (base 250, lowest draw 46); the epiphytes'
+  chain P5 32, P50 72, P95 151 (base 82). The €3.83 floor above bounds
+  every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
   and the matte's carbon on the meadow's line (the carbon as an
@@ -415,7 +425,7 @@ value = gross − their values). € 2014-2017/ha/yr:
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
   'none' zeroes the diving service, never an agent: the meadow keeps its
-  own €332.59/ha/yr on every hectare (above), and every other agent keeps
+  own €250.39/ha/yr on every hectare (above), and every other agent keeps
   its value. (Before Step 8e.6 the diving service was the meadow's only
   entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive

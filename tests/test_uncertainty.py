@@ -65,12 +65,15 @@ def test_what_is_sampled(posidonia_mc):
     assert not names & {"resource.unit_value", "resource.area_ha"}
     assert not any(n.endswith("dependency_weight") for n in names)  # fixed in the file
     # every agent carries a ledger value (Step 8c.2), so every one is sampled,
-    # the meadow's through the links of its production function (Step 8f.3)
+    # the meadow's through the links of its production function (Step 8f.3),
+    # the epiphytes' through theirs (Step 8g.2)
     assert {f"agent[{n}].annual_value_per_ha" for n in (
-        "Coralligenous & Red Coral", "Epiphytes & Algae",
+        "Coralligenous & Red Coral",
         "Marine Invertebrates", "Marine Megafauna", "Seabirds")} <= names
     assert "agent[Posidonia Meadow].annual_value_per_ha" not in names
+    assert "agent[Epiphytes & Algae].annual_value_per_ha" not in names
     assert "production[Posidonia Meadow].transfer_efficiency" in names
+    assert "production[Epiphytes & Algae].npp_carbon" in names
     release = next(s for s in posidonia_mc.sampled if s.name == "carbon.soil_release_fraction")
     assert (release.low, release.value, release.high, release.documented) == (0.25, 0.63, 1.0, True)
     reasons = posidonia_mc.not_sampled

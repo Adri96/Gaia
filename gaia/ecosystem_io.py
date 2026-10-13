@@ -1109,9 +1109,9 @@ class Case:
             if entry["production_function"] is None:
                 continue
             counted = net_of_scale(entry["production_function"]) * sum(values[s] for s in entry["net_of"])
+            gross = entry["gross"] if entry["gross"] is not None else entry["value"]
             out[entry["agent"]] = dict(
-                production_block(entry["production_function"], entry["gross"], counted,
-                                 entry["value"], entry["net_of"]),
+                production_block(entry["production_function"], gross, counted, entry["value"], entry["net_of"]),
                 service=entry["service"],
             )
         return out
@@ -1130,7 +1130,8 @@ class Case:
                 continue
             counted = net_of_scale(entry["production_function"]) * sum(values[s]["value"] for s in entry["net_of"])
             owners = ", ".join(dict.fromkeys(values[s]["agent"] for s in entry["net_of"]))
-            notes.append(chain_text(entry["production_function"], entry["gross"], counted,
+            gross = entry["gross"] if entry["gross"] is not None else entry["value"]
+            notes.append(chain_text(entry["production_function"], gross, counted,
                                     entry["value"], f"commercial catch, under {owners}" if owners else "nothing"))
         if agent.carbon_attribution and carbon is not None:
             notes.append(
