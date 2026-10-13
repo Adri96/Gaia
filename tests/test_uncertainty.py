@@ -64,25 +64,31 @@ def test_what_is_sampled(posidonia_mc):
         assert not any(n.startswith(prefix) for n in names)
     assert not names & {"resource.unit_value", "resource.area_ha"}
     assert not any(n.endswith("dependency_weight") for n in names)  # fixed in the file
-    # every agent carries a ledger value (Step 8c.2), so every one is sampled
+    # every agent carries a ledger value (Step 8c.2), so every one is sampled,
+    # the meadow's through the links of its production function (Step 8f.3)
     assert {f"agent[{n}].annual_value_per_ha" for n in (
-        "Posidonia Meadow", "Coralligenous & Red Coral", "Epiphytes & Algae",
+        "Coralligenous & Red Coral", "Epiphytes & Algae",
         "Marine Invertebrates", "Marine Megafauna", "Seabirds")} <= names
+    assert "agent[Posidonia Meadow].annual_value_per_ha" not in names
+    assert "production[Posidonia Meadow].transfer_efficiency" in names
     release = next(s for s in posidonia_mc.sampled if s.name == "carbon.soil_release_fraction")
     assert (release.low, release.value, release.high, release.documented) == (0.25, 0.63, 1.0, True)
     reasons = posidonia_mc.not_sampled
     assert "discount.rate_schedule[year 0]" in reasons["normative (reported as a sensitivity)"]
 
 
-# Step 8f.1: the meadow's food value, sampled as one aggregate between the
-# ends of every link of its production function at once, now spans the
-# widest range and leads the ranking, ahead of the carbon release
-TOP_DRIVER = "agent[Posidonia Meadow].annual_value_per_ha"
+# Step 8f.3: the meadow's food value is sampled link by link, so no single
+# aggregate between the ends of every link at once leads the ranking
+TOP_DRIVER = "carbon.soil_release_fraction"
 
 
 def test_tornado_ranks_the_top_driver_first(posidonia_mc):
     assert posidonia_mc.tornado[0]["name"] == TOP_DRIVER
-    assert "carbon.soil_release_fraction" in [r["name"] for r in posidonia_mc.tornado[:3]]
+    names = [r["name"] for r in posidonia_mc.tornado]
+    assert "agent[Posidonia Meadow].annual_value_per_ha" not in names
+    # the transfer efficiency is the production function's largest driver
+    links = [n for n in names if n.startswith("production[Posidonia Meadow].")]
+    assert links[0] == "production[Posidonia Meadow].transfer_efficiency"
     swings = [r["swing"] for r in posidonia_mc.tornado]
     assert swings == sorted(swings, reverse=True)
 

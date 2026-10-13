@@ -172,7 +172,7 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 509.48 EUR/ha/yr gross (net primary production of the plant, 476 g DW = 160 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,415 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 474.48 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (31.41-2,993.09 EUR/ha/yr), divided by the weight.",
+          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 509.48 EUR/ha/yr gross (net primary production of the plant, 476 g DW = 160 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,415 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 474.48 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end at once (31.41-2,993.09 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function from its own distribution and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 215 / 490 / 1,085 EUR/ha/yr, 1,000 draws, seed 20261012).",
           "range": [
             285.85238395997214,
             27237.13590881536
@@ -1188,6 +1188,8 @@
         ],
         "parameters": {
           "carbon_fraction": {
+            "distribution": "fixed",
+            "distribution_basis": "Duarte (1990): 33.6 \u00b1 0.31% (SE) over 27 species; an uncertainty of under 1% is not sampled",
             "label": "carbon content of seagrass dry weight",
             "range": null,
             "source": "Duarte (1990), Marine Ecology Progress Series 67:201-207, doi:10.3354/meps067201 (abstract): mean carbon content of seagrass leaves 33.6 \u00b1 0.31% of dry weight (27 species, 30 locations); applied to sheaths and rhizomes as well",
@@ -1196,6 +1198,8 @@
             "value": 0.336
           },
           "catch_trophic_level": {
+            "distribution": "triangular",
+            "distribution_basis": "The documented assemblage (3.1) is the value; 3.5 an alternative choice of species (the main targets): triangular with its mode at 3.1, the low end",
             "label": "mean trophic level of the catch",
             "range": [
               3.1,
@@ -1207,6 +1211,8 @@
             "value": 3.1
           },
           "epiphytes.food_web_share": {
+            "distribution": "triangular",
+            "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular",
             "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
             "range": [
               0.74,
@@ -1218,6 +1224,8 @@
             "value": 1.0
           },
           "epiphytes.npp_carbon": {
+            "distribution": "lognormal",
+            "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
             "label": "net primary production of the leaf epiphytes",
             "range": [
               11.410449999999999,
@@ -1229,6 +1237,8 @@
             "value": 22.820899999999998
           },
           "first_sale_price": {
+            "distribution": "fixed",
+            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled",
             "label": "first-sale price of bony white fish, Catalonia, 2014",
             "range": null,
             "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
@@ -1237,6 +1247,8 @@
             "value": 5.109723057630542
           },
           "food_web_share": {
+            "distribution": "triangular",
+            "distribution_basis": "Three point estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 74%; Cebri\u00e1n et al. 1997, 83.2%): triangular with its mode at the Medes Islands value",
             "label": "share of the production eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
             "range": [
               0.71,
@@ -1248,6 +1260,8 @@
             "value": 0.74
           },
           "npp_dry_weight": {
+            "distribution": "lognormal",
+            "distribution_basis": "Site-to-site production is right-skewed (Ischia 238-714, Catalan sites 257-989 g DW/m2/yr): lognormal with its median at 476 and the range read as its central 95%, truncated at the range ends",
             "label": "net primary production of the plant: leaf blades, sheaths and rhizomes (its roots and the leaf epiphytes are separate producers, below)",
             "range": [
               238.0,
@@ -1259,6 +1273,8 @@
             "value": 476.0
           },
           "roots.carbon_fraction": {
+            "distribution": "fixed",
+            "distribution_basis": "The same 40.9% at both depths: not sampled",
             "label": "carbon content of living roots",
             "range": null,
             "source": "Mateo & Romero (1997), doi:10.3354/meps151043 (full text, Table 4): living roots 40.9% carbon of dry weight at both 5 and 13 m, Medes Islands",
@@ -1267,6 +1283,8 @@
             "value": 0.409
           },
           "roots.food_web_share": {
+            "distribution": "uniform",
+            "distribution_basis": "Between the two bounding assumptions on when the roots are produced (evenly over the year, or at its start): uniform",
             "label": "share of root production decomposed within its first year rather than buried in the matte",
             "range": [
               0.027,
@@ -1278,6 +1296,8 @@
             "value": 0.04
           },
           "roots.npp_dry_weight": {
+            "distribution": "uniform",
+            "distribution_basis": "Two depths, no reason to prefer either: uniform between them",
             "label": "root production of the plant",
             "range": [
               11.0,
@@ -1289,6 +1309,8 @@
             "value": 17.0
           },
           "sustainable_catch_share": {
+            "distribution": "triangular",
+            "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)",
             "label": "share of the production that can be caught sustainably (exploitation rate at maximum sustainable yield)",
             "range": [
               0.42512216154067256,
@@ -1300,6 +1322,8 @@
             "value": 0.4652406417112299
           },
           "transfer_efficiency": {
+            "distribution": "triangular",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%",
             "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "range": [
               0.122,
@@ -1311,6 +1335,8 @@
             "value": 0.143
           },
           "wet_weight_per_carbon": {
+            "distribution": "fixed",
+            "distribution_basis": "A conventional conversion with no range in the source read: not sampled (flagged secondary)",
             "label": "wet weight of fish per unit of carbon",
             "range": null,
             "source": "Pauly & Christensen (1995), Nature 374:255-257, doi:10.1038/374255a0, as cited by Chen et al. (2022), Frontiers in Marine Science 9:863611, doi:10.3389/fmars.2022.863611 ('A CR of 9:1 and TE of 10% were used for this study (Pauly and Christensen, 1995)'); the primary paper was not read",

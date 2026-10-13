@@ -27,7 +27,8 @@ A ledger entry carries the model as ``production_function``:
 {"model": "trophic_transfer", "producer": "<the main producer, e.g. the
 plant's leaves and rhizomes>", "parameters": {<name>: {"value"*, "unit"*,
 "label"*, "source"*, "status"* ("verified" | "derived" | "secondary" |
-"inferred"), "range": [low, high]}}, "producers": [{"name"*, "description"*,
+"inferred"), "range": [low, high], "distribution", "distribution_basis"}},
+"producers": [{"name"*, "description"*,
 "parameters"*: {...}}], "comparison": {"metric"*, "unit"*, "rows"*:
 [{"ecosystem"*, "value" | "low" and "high", "source"*, "note"}]}}.
 
@@ -38,7 +39,18 @@ food web (for Posidonia: the roots, and the epiphytes on the leaves), each
 with ``npp_dry_weight`` and ``carbon_fraction``, or ``npp_carbon``, and its
 own ``food_web_share``. Their parameters are named ``<name>.<parameter>``
 (e.g. "roots.npp_dry_weight") in the parsed form. Parsing checks that the
-entry's ``gross`` is the chain's result. No third-party dependencies.
+entry's ``gross`` is the chain's result.
+
+Uncertainty (Step 8f.3): each link has its own distribution for the Monte
+Carlo (gaia.uncertainty), which samples the links one by one and recomputes
+the chain, the gross and the net value in every draw: "triangular" (the
+default with a range; mode at the value), "uniform", "lognormal" (median at
+the value, the range read as its central 95% and truncated at the range
+ends) or "fixed" (the default without a range: not sampled), with an
+optional "distribution_basis" saying why. Every distribution stays inside
+the documented range, so the chain's lowest value is ``gross_range``'s low
+end, and parsing of the ledger requires it to exceed what the entry is net
+of (no draw can bring the agent to €0). No third-party dependencies.
 """
 
 import math
@@ -66,6 +78,9 @@ PRODUCER_PARAMETERS: Tuple[Tuple[str, ...], ...] = (
 )
 
 STATUSES: Tuple[str, ...] = ("verified", "derived", "secondary", "inferred")
+
+DISTRIBUTIONS: Tuple[str, ...] = ("triangular", "uniform", "lognormal", "fixed")
+"""How the Monte Carlo samples a link (Step 8f.3; see the module docstring)."""
 
 # parameters that must lie in (0, 1]
 _FRACTIONS = ("carbon_fraction", "food_web_share", "transfer_efficiency", "sustainable_catch_share")
@@ -225,7 +240,8 @@ def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str) ->
         p = raw[name]
         if not isinstance(p, dict):
             raise ValueError(f"{ppath}: expected an object")
-        bad = set(p) - {"value", "unit", "label", "source", "status", "range"}
+        bad = set(p) - {"value", "unit", "label", "source", "status", "range", "distribution",
+                        "distribution_basis"}
         if bad:
             raise ValueError(f"{ppath}: unknown key {sorted(bad)[0]!r}")
         for key in ("unit", "label", "source", "status"):
@@ -252,6 +268,16 @@ def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str) ->
             if name == "catch_trophic_level" and low < 1.0:
                 raise ValueError(f"{ppath}.range: a trophic level is >= 1")
             out["range"] = (low, high)
+        distribution = p.get("distribution", "triangular" if "range" in out else "fixed")
+        if distribution not in DISTRIBUTIONS:
+            raise ValueError(f"{ppath}.distribution: expected one of {list(DISTRIBUTIONS)}, got {distribution!r}")
+        if distribution != "fixed" and ("range" not in out or out["range"][0] == out["range"][1]):
+            raise ValueError(f"{ppath}.distribution: {distribution!r} needs a range [low, high] with low < high")
+        out["distribution"] = distribution
+        basis = p.get("distribution_basis", "")
+        if not isinstance(basis, str):
+            raise ValueError(f"{ppath}.distribution_basis: a string")
+        out["distribution_basis"] = basis
         params[name] = out
     return params
 

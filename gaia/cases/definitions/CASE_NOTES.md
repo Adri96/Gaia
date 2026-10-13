@@ -353,6 +353,15 @@ value = gross − their values). € 2014-2017/ha/yr:
   owns the epiphyte metric of the bioindicator service (monitoring, a
   cultural service), not food, and no other entry values their
   production.
+  Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
+  (its `distribution` and `distribution_basis` in the case file:
+  lognormal for the plant's and the epiphytes' NPP, triangular for the
+  shares, the transfer efficiency and the trophic level, uniform for the
+  roots; the carbon contents, ×9 and the price fixed) and every draw
+  recomputes gross − net_of; the meadow's agent value is derived, not
+  sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
+  P5 215, P50 490, P95 1,085 (base 474, lowest draw 79). The €31.41 floor
+  above bounds every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
   and the matte's carbon on the meadow's line (the carbon as an

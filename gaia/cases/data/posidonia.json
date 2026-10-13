@@ -79,7 +79,7 @@
         "unit": "€/ha/yr",
         "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; epiphytes: Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; see production_function",
         "confidence": "low",
-        "note": "Service ledger (Step 8e.6, 8f.1, 8f.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 509.48 EUR/ha/yr gross (net primary production of the plant, 476 g DW = 160 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,415 kg C/ha/yr into the food web → 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 474.48 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (31.41-2,993.09 EUR/ha/yr), divided by the weight.",
+        "note": "Service ledger (Step 8e.6, 8f.1, 8f.2; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 509.48 EUR/ha/yr gross (net primary production of the plant, 476 g DW = 160 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,415 kg C/ha/yr into the food web → 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 474.48 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end at once (31.41-2,993.09 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function from its own distribution and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 215 / 490 / 1,085 EUR/ha/yr, 1,000 draws, seed 20261012).",
         "range": [
           285.85238395997214,
           27237.13590881536
@@ -857,7 +857,7 @@
       "method": "production function: net primary production of the plant, its roots and its leaf epiphytes → food web (not buried) → trophic transfer to the catch's trophic level → sustainable catch → first-sale price",
       "source": "Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebrián et al. (1997), doi:10.3354/meps155029; epiphytes: Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3; transfer efficiency: Sánchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; see production_function",
       "transfer": "Mediterranean (Ischia, Medes Islands, Port-Cros) and global trophic parameters to Catalonia; Catalan first-sale prices, EUR 2014",
-      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Producers (Step 8f.2): the plant (leaf blades, sheaths, rhizomes), its roots and the epiphytes on its leaves; each feeds the food web only with the production that is not buried (roots: 4%, the rest goes to the matte). The epiphytes' food is not counted twice: the Epiphytes & Algae agent owns the epiphyte metric of the bioindicator service (monitoring, a cultural service), not food; no other entry values the epiphytes' production. Range over the links' ranges: gross 66.41-3,028.09, net 31.41-2,993.09 EUR/ha/yr. Transfer efficiency since Step 8f.1: 14.3%, the median of five Western Mediterranean food-web models (11.8%, the global median, before). Conservative: no microphytobenthos or other algae, first-sale (not retail) prices, only the sustainable share of production.",
+      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Producers (Step 8f.2): the plant (leaf blades, sheaths, rhizomes), its roots and the epiphytes on its leaves; each feeds the food web only with the production that is not buried (roots: 4%, the rest goes to the matte). The epiphytes' food is not counted twice: the Epiphytes & Algae agent owns the epiphyte metric of the bioindicator service (monitoring, a cultural service), not food; no other entry values the epiphytes' production. Range over the links' ranges, every link at its least or most favourable end at once: gross 66.41-3,028.09, net 31.41-2,993.09 EUR/ha/yr. In the Monte Carlo each link is sampled on its own, from its own distribution (distribution, distribution_basis), and every draw recomputes gross - net_of (Step 8f.3): net P5 / P50 / P95 215 / 490 / 1,085 EUR/ha/yr; parsing requires the lowest value to exceed the 35 EUR it is net of, so no draw reaches EUR 0. Transfer efficiency since Step 8f.1: 14.3%, the median of five Western Mediterranean food-web models (11.8%, the global median, before). Conservative: no microphytobenthos or other algae, first-sale (not retail) prices, only the sustainable share of production.",
       "production_function": {
         "model": "trophic_transfer",
         "producer": "plant",
@@ -871,14 +871,18 @@
             "unit": "g DW/m²/yr",
             "label": "net primary production of the plant: leaf blades, sheaths and rhizomes (its roots and the leaf epiphytes are separate producers, below)",
             "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (abstract): blades 167-530, sheaths 51-142, rhizomes 20-42 g dry weight/m2/yr at 3 sites in Lacco Ameno Bay (Ischia, Italy); value = the sum of the midpoints (348.5 + 96.5 + 31). Range: 238, the sum of the Ischia minima, to 989.3, the Catalan maximum: Cebrián, Duarte, Marbà & Enríquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (full text, Table 1), P. oceanica at Cala Jonquet (Cap de Creus) at 4 m: blades 845.3, sheaths 80.6, rhizomes 63.4, total 989.3 g DW/m2/yr. The Medes Islands give 803 at 5 m and 257 at 13 m (blades + sheaths + rhizomes; Mateo & Romero 1997, doi:10.3354/meps151043, full text, Table 3). The Catalan measurements are from shallow, dense meadows; the central value stays the Ischia mid-range",
-            "status": "verified"
+            "status": "verified",
+            "distribution": "lognormal",
+            "distribution_basis": "Site-to-site production is right-skewed (Ischia 238-714, Catalan sites 257-989 g DW/m2/yr): lognormal with its median at 476 and the range read as its central 95%, truncated at the range ends"
           },
           "carbon_fraction": {
             "value": 0.336,
             "unit": "g C/g DW",
             "label": "carbon content of seagrass dry weight",
             "source": "Duarte (1990), Marine Ecology Progress Series 67:201-207, doi:10.3354/meps067201 (abstract): mean carbon content of seagrass leaves 33.6 ± 0.31% of dry weight (27 species, 30 locations); applied to sheaths and rhizomes as well",
-            "status": "verified"
+            "status": "verified",
+            "distribution": "fixed",
+            "distribution_basis": "Duarte (1990): 33.6 ± 0.31% (SE) over 27 species; an uncertainty of under 1% is not sampled"
           },
           "food_web_share": {
             "value": 0.74,
@@ -889,7 +893,9 @@
             "unit": "fraction",
             "label": "share of the production eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
             "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (abstract): about 26% of the carbon the plant produces in a year is buried below ground, Medes Islands (Catalonia), so 74% is not. Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract: 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebrián, Duarte, Marbà & Enríquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract: 16.8% of P. oceanica production neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
-            "status": "verified"
+            "status": "verified",
+            "distribution": "triangular",
+            "distribution_basis": "Three point estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 74%; Cebrián et al. 1997, 83.2%): triangular with its mode at the Medes Islands value"
           },
           "transfer_efficiency": {
             "value": 0.143,
@@ -900,7 +906,9 @@
             "unit": "fraction per trophic level",
             "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "source": "Sánchez-Zulueta, Valls, Guijarro, Ángeles Torres, Ángeles Zapata, Coll, Corrales, Andonegi, Díaz-Valdés, Massutí & Ordines (2023), Frontiers in Marine Science 10:1166674, doi:10.3389/fmars.2023.1166674 (full text read), Table 3, mean transfer efficiency of five Western Mediterranean Ecopath models: Balearic Islands 21.80%, Gulf of Alicante 13.9% (García-Rodríguez et al. 2021), South Catalan Sea 12.2% (Coll et al. 2006, doi:10.1016/j.jmarsys.2005.09.001), north-western Mediterranean 14.3% (Corrales et al. 2015, doi:10.1016/j.jmarsys.2015.03.006, the model that covers the Catalan coast), Gulf of Lions 19.7% (Banaru et al. 2013); value = their median, 14.3% (= the north-western Mediterranean model), range = their minimum and maximum (12.2-21.8%). The original model papers were not read (closed access); their values are as tabulated in the 2023 comparison. Cross-check: Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read), Methods (e) 'Data sources': temperate and high-latitude ecosystem models mean 14.25% (sd 5.95, median 13.7, n = 39); all 91 models median 11.8%. No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
-            "status": "derived"
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%"
           },
           "catch_trophic_level": {
             "value": 3.1,
@@ -911,14 +919,18 @@
             "unit": "trophic level",
             "label": "mean trophic level of the catch",
             "source": "Francour (1997), Marine Ecology 18:157-173, doi:10.1111/j.1439-0485.1997.tb00434.x (abstract): P. oceanica fish assemblages at Port-Cros dominated by Symphodus ocellatus, S. tinca, Diplodus annularis and Sarpa salpa; FishBase trophic levels from diet studies (fishbase.se, queried 13 October 2026) 3.5, 3.3, 3.6, 2.0: mean 3.1. Upper end 3.5: the median over 13 meadow species with the main targets (D. vulgaris 3.5, D. sargus 3.4, Mullus surmuletus 3.5, Scorpaena porcus 3.9, S. scrofa 4.3, Spondyliosoma cantharus 3.3, Labrus merula 3.6, Serranus scriba 3.8, Oblada melanura 3.4). The choice of species is a judgement",
-            "status": "derived"
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "The documented assemblage (3.1) is the value; 3.5 an alternative choice of species (the main targets): triangular with its mode at 3.1, the low end"
           },
           "wet_weight_per_carbon": {
             "value": 9.0,
             "unit": "kg wet weight/kg C",
             "label": "wet weight of fish per unit of carbon",
             "source": "Pauly & Christensen (1995), Nature 374:255-257, doi:10.1038/374255a0, as cited by Chen et al. (2022), Frontiers in Marine Science 9:863611, doi:10.3389/fmars.2022.863611 ('A CR of 9:1 and TE of 10% were used for this study (Pauly and Christensen, 1995)'); the primary paper was not read",
-            "status": "secondary"
+            "status": "secondary",
+            "distribution": "fixed",
+            "distribution_basis": "A conventional conversion with no range in the source read: not sampled (flagged secondary)"
           },
           "sustainable_catch_share": {
             "value": 0.4652406417112299,
@@ -929,14 +941,18 @@
             "unit": "fraction",
             "label": "share of the production that can be caught sustainably (exploitation rate at maximum sustainable yield)",
             "source": "Zhou, Yin, Thorson, Smith & Fuller (2012), Canadian Journal of Fisheries and Aquatic Sciences 69:1292-1301, doi:10.1139/f2012-060 (abstract): F_MSY = 0.87 M for teleosts (245 species); F proxy about 15% smaller; the rule of thumb F_MSY = M. Exploitation rate E = F/(F + M): 0.87/1.87 = 0.465 (0.74/1.74 = 0.425 to 0.5). That the sustainable catch is E × production is the steady-state relation (production = Z × biomass, catch = F × biomass), inferred here",
-            "status": "derived"
+            "status": "derived",
+            "distribution": "triangular",
+            "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)"
           },
           "first_sale_price": {
             "value": 5.109723057630542,
             "unit": "€/kg",
             "label": "first-sale price of bony white fish, Catalonia, 2014",
             "source": "Generalitat de Catalunya, Estadístiques de pesca: dades per grups biològics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
-            "status": "verified"
+            "status": "verified",
+            "distribution": "fixed",
+            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled"
           }
         },
         "producers": [
@@ -953,14 +969,18 @@
                 "unit": "g DW/m²/yr",
                 "label": "root production of the plant",
                 "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, Table 3, by lepidochronology): roots 23 g dry weight/m2/yr at 5 m and 11 at 13 m, Medes Islands (Catalonia); value = their mean, range = the two depths. Cebrián et al. (1997, doi:10.3354/meps155029, Table 1) did not determine P. oceanica root production at Cala Jonquet (their method 'was not adequate for P. oceanica')",
-                "status": "derived"
+                "status": "derived",
+                "distribution": "uniform",
+                "distribution_basis": "Two depths, no reason to prefer either: uniform between them"
               },
               "carbon_fraction": {
                 "value": 0.409,
                 "unit": "g C/g DW",
                 "label": "carbon content of living roots",
                 "source": "Mateo & Romero (1997), doi:10.3354/meps151043 (full text, Table 4): living roots 40.9% carbon of dry weight at both 5 and 13 m, Medes Islands",
-                "status": "verified"
+                "status": "verified",
+                "distribution": "fixed",
+                "distribution_basis": "The same 40.9% at both depths: not sampled"
               },
               "food_web_share": {
                 "value": 0.04,
@@ -971,7 +991,9 @@
                 "unit": "fraction",
                 "label": "share of root production decomposed within its first year rather than buried in the matte",
                 "source": "Mateo & Romero (1997), doi:10.3354/meps151043 (full text) assume all root and rhizome production is stored in the sediment, where decay is 'practically negligible at least on a mid-term basis (i.e. decades)'. Cebrián et al. (1997), doi:10.3354/meps155029 (full text), use 0.00015 per day for the decay of all belowground parts of P. oceanica, from Mateo (1995, PhD thesis, Universitat de Barcelona; not read): 1 - exp(-0.00015 x 365) = 5.3% of a year's roots decomposed within the year if produced at its start, 2.7% if produced evenly over it; value = the midpoint, 4%. The other 95-97% is buried, and gaia.carbon values the burial (decision D3: the chain uses only what is not buried)",
-                "status": "secondary"
+                "status": "secondary",
+                "distribution": "uniform",
+                "distribution_basis": "Between the two bounding assumptions on when the roots are produced (evenly over the year, or at its start): uniform"
               }
             }
           },
@@ -988,7 +1010,9 @@
                 "unit": "g C/m²/yr",
                 "label": "net primary production of the leaf epiphytes",
                 "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/÷2, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marbà et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
-                "status": "secondary"
+                "status": "secondary",
+                "distribution": "lognormal",
+                "distribution_basis": "One site, a range of x/÷2 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends"
               },
               "food_web_share": {
                 "value": 1.0,
@@ -999,7 +1023,9 @@
                 "unit": "fraction",
                 "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
                 "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the plant's production (74% not buried, the food_web_share above)",
-                "status": "inferred"
+                "status": "inferred",
+                "distribution": "triangular",
+                "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular"
               }
             }
           }

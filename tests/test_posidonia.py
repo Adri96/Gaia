@@ -622,7 +622,8 @@ def test_site_share_is_a_recorded_project_input():
                           tornado=False, normative=False)
     names = {s.name for s in res.sampled}
     assert "agent[Posidonia Meadow].site_share" not in names
-    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    # the meadow's values are still sampled: diving as one value, food link by link (Step 8f.3)
+    assert {"agent[Posidonia Meadow].site_value_per_ha", "production[Posidonia Meadow].transfer_efficiency"} <= names
     with pytest.raises(ValueError, match="site share must be in"):
         case.build_ecosystem(site_share=1.5)
     with pytest.raises(ValueError, match="no site-restricted agent"):
@@ -796,7 +797,8 @@ def test_intensity_is_a_recorded_project_input_not_sampled():
                           tornado=False, normative=False)
     names = {s.name for s in res.sampled}
     assert "agent[Posidonia Meadow].site_intensity" not in names
-    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    # the meadow's values are still sampled: diving as one value, food link by link (Step 8f.3)
+    assert {"agent[Posidonia Meadow].site_value_per_ha", "production[Posidonia Meadow].transfer_efficiency"} <= names
     with pytest.raises(ValueError, match="unknown dive-intensity level"):
         case.build_ecosystem(site_intensity="extreme")
     with pytest.raises(ValueError, match="no site intensity levels"):

@@ -10,7 +10,8 @@ These tests hold the rule as an invariant:
     - the same for random combinations of the numeric inputs (a seeded
       property test);
     - no Monte Carlo draw can bring an agent to €0 (the low end of every
-      agent-value range is > 0);
+      agent-value range is > 0, and a production function's chain with
+      every link at its least favourable end exceeds what it is net of);
     - validation and case parsing reject an agent at €0, citing the rule.
 """
 
@@ -179,6 +180,22 @@ def test_no_monte_carlo_draw_can_bring_an_agent_to_zero(name):
     low = case_from_dict(doc)
     for kwargs in ({}, dict(site_intensity="none") if case.intensity_levels else {}):
         _assert_every_agent_positive(low.build_ecosystem(**kwargs), f"{name} at the low ends {kwargs}")
+
+
+@pytest.mark.parametrize("name", CASE_NAMES)
+def test_no_production_function_draw_can_reach_zero(name):
+    """Step 8f.3: the Monte Carlo samples each link of a production function
+    inside its range, so the chain at every link's least favourable end is
+    the lowest any draw can give; it must exceed what the entry is net of."""
+    from gaia.production import gross_range
+
+    case = load_case(name)
+    booked = {e["service"]: e["value"] for e in case.service_ledger}
+    for entry in case.service_ledger:
+        if entry["production_function"] is None:
+            continue
+        lowest = gross_range(entry["production_function"])[0]
+        assert lowest - sum(booked[s] for s in entry["net_of"]) > 0.0, entry["service"]
 
 
 def test_validation_rejects_an_agent_at_zero():
