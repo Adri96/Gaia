@@ -1240,7 +1240,7 @@
         ],
         "comparison": {
           "metric": "gross primary production",
-          "note": "Gross production of whole communities, the comparable measure across these sources. The chain above starts from the net production of the plant, its roots and its leaf epiphytes (136 g C/m\u00b2/yr at the regional mean depth, Steps 8f.2 and 8g.1; no other algae, no microphytobenthos), which is not comparable with these gross figures. Per hectare, seagrass meadows fix carbon on the scale of coral reefs and intensively farmed land; the Corsican P. oceanica meadow, measured over 12 years, fixes about half the seagrass average and 15 times the bare sediment around it.",
+          "note": "Gross production of whole communities, the comparable measure across these sources. The meadow's chain above starts from the net production of the plant and its roots (114 g C/m\u00b2/yr at the regional mean depth, Steps 8f.2 and 8g.1), the epiphytes' chain from the leaf epiphytes' 22.8 (Step 8g.2): 136 g C/m\u00b2/yr together, with no other algae and no microphytobenthos, which is not comparable with these gross figures. Per hectare, seagrass meadows fix carbon on the scale of coral reefs and intensively farmed land; the Corsican P. oceanica meadow, measured over 12 years, fixes about half the seagrass average and 15 times the bare sediment around it.",
           "rows": [
             {
               "ecosystem": "Posidonia oceanica meadow, Corsica, 12-year mean",
