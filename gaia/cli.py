@@ -309,10 +309,11 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
     block = getattr(case, "depth_production", None)
     if not block:
         return
-    deepest = block["deepest_allowed_m"]
-    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items() if float(z) < deepest)
+    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items())
     unit = block["unit"].replace("DW", "dry weight")
     limit = block["hyperparameters"]["depth_limit"]
+    margin = block["depth_limit_margin"]["value"]
+    span = f", {limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis" if limit.get("range") else ""
     parser.add_argument(
         "--depth-m",
         dest="depth_m",
@@ -323,23 +324,51 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"Project input: the water depth of the affected {block['agent']}, in metres: one "
             f"depth (e.g. 12) or a range (e.g. 5-20: spread evenly over it). "
             f"Its primary production, and so the food it supports, falls with depth as light fades: "
-            f"about {table} {unit}. Default: {block['depth_label']}. It must be shallower "
-            f"than {deepest:g} m: production reaches zero at the depth limit ({limit['value']:g} m, "
-            f"{limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis), and Gaia does "
-            f"not value an agent at €0"
-            if limit.get("range") else
-            f"Project input: the water depth of the affected resource, in metres (default: "
-            f"{block['depth_label']}; shallower than {deepest:g} m)"
+            f"about {table} {unit}. Default: {block['depth_label']}. Any depth is valued: production "
+            f"reaches zero at the depth limit ({limit['value']:g} m{span}), and a meadow that lives at "
+            f"the depth given proves its site's limit lies deeper, so the limit is taken at least "
+            f"{margin:g} m below the deepest depth given (never valued at €0)"
+        ).replace("%", "%%"),
+    )
+    parser.add_argument(
+        "--depth-limit-m",
+        dest="depth_limit_m",
+        type=parse_depth,
+        default=None,
+        metavar="M or LOW-HIGH",
+        help=(
+            f"Project input: the site's own depth limit, where the {block['agent']} ends (its "
+            f"production reaches zero), in metres: one depth (e.g. 15) or a range (e.g. 13-17). "
+            f"Water clarity varies: meadows end at about 15 m in turbid water (Medes Islands) and "
+            f"reach 44 m in the clearest. It replaces the regional limit ({limit['value']:g} m{span}); "
+            f"the depth given with --depth-m (default: {block['depth_label']}) must be shallower"
         ).replace("%", "%%"),
     )
 
 
 def apply_depth(case, args: argparse.Namespace):
-    """The case at the project's depth (``--depth-m``), or the case itself."""
+    """The case at the project's depth (``--depth-m``) and the site's depth
+    limit (``--depth-limit-m``, Step 8g.10; without ``--depth-m`` at the
+    regional mean depth), or the case itself.
+
+    Raises:
+        ValueError: A site's depth limit without a project depth when the
+            regional depth is a distribution, not a mean.
+    """
     depth = getattr(args, "depth_m", None)
-    if depth is None:
+    limit = getattr(args, "depth_limit_m", None)
+    if depth is None and limit is None:
         return case
-    return case.with_project_depth(*depth)
+    if depth is not None:
+        return case.with_project_depth(*depth, depth_limit=limit)
+    bands = case.depth_production["regional_depth"]["bands"]
+    if len(bands) != 1 or bands[0]["from_m"] != bands[0]["to_m"]:
+        raise ValueError("--depth-limit-m needs the meadow's depth too: give --depth-m")
+    try:
+        return case.with_project_depth(bands[0]["from_m"], bands[0]["to_m"], depth_limit=limit)
+    except ValueError as exc:
+        raise ValueError(f"{exc} (without --depth-m the meadow is taken at the regional mean depth, "
+                         f"{bands[0]['from_m']:g} m)") from None
 
 
 SIZE_DESTS: tuple = ("area_ha", "total_units")

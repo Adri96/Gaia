@@ -136,6 +136,13 @@ class Sampled:
             takes (Step 8g.2: a link from the food web to the catch that
             two production functions document identically is one
             quantity, drawn once); "" when drawn on its own.
+        floor: The distribution is truncated below this value (Step 8g.7:
+            the site's depth limit, conditioned on lying deeper than the
+            project's meadow); None when not truncated.
+        quantile_of: The name of another sampled parameter whose quantile
+            this one takes (comonotone: the same uniform draw through this
+            parameter's own distribution; Step 8g.7, the site's depth limit
+            and the regional one); "" when drawn on its own.
     """
 
     name: str
@@ -147,30 +154,19 @@ class Sampled:
     documented: bool
     confidence: str
     same_as: str = ""
+    floor: Optional[float] = None
+    quantile_of: str = ""
 
     def quantile(self, q: float) -> float:
-        """The q-quantile (0..1) of this parameter's distribution."""
-        a, b, c = self.low, self.high, self.value
-        if b <= a:
-            return a
-        if self.kind == "uniform":
-            return a + q * (b - a)
-        if self.kind == "lognormal":
-            mu = math.log(c)
-            sigma = max(math.log(b / c), math.log(c / a)) / _Z95
-            normal = statistics.NormalDist()
-            fa = normal.cdf((math.log(a) - mu) / sigma)
-            fb = normal.cdf((math.log(b) - mu) / sigma)
-            p = min(max(fa + q * (fb - fa), 1e-15), 1.0 - 1e-15)
-            return min(max(math.exp(mu + sigma * normal.inv_cdf(p)), a), b)
-        f = (c - a) / (b - a)
-        if q < f:
-            return a + math.sqrt(q * (b - a) * (c - a))
-        return b - math.sqrt((1.0 - q) * (b - a) * (b - c))
+        """The q-quantile (0..1) of this parameter's distribution (truncated
+        below ``floor``, if set)."""
+        return dist_quantile(self.kind, self.low, self.value, self.high, q, self.floor)
 
     def draw(self, rng: random.Random) -> float:
         if self.high <= self.low:
             return self.low
+        if self.floor is not None:
+            return self.quantile(rng.random())
         if self.kind == "uniform":
             return rng.uniform(self.low, self.high)
         if self.kind == "lognormal":
@@ -179,6 +175,62 @@ class Sampled:
 
 
 _Z95 = statistics.NormalDist().inv_cdf(0.975)
+
+
+def _lognormal(low: float, mode: float, high: float) -> Tuple[float, float, float, float]:
+    """(mu, sigma, F(low), F(high)) of a lognormal with its median at
+    ``mode`` and the range as its central 95% (truncated at the range)."""
+    mu = math.log(mode)
+    sigma = max(math.log(high / mode), math.log(mode / low)) / _Z95
+    normal = statistics.NormalDist()
+    return mu, sigma, normal.cdf((math.log(low) - mu) / sigma), normal.cdf((math.log(high) - mu) / sigma)
+
+
+def dist_cdf(kind: str, low: float, mode: float, high: float, x: float) -> float:
+    """The cumulative probability at ``x`` of a "triangular", "uniform" or
+    "lognormal" distribution (see ``Sampled``)."""
+    if x <= low:
+        return 0.0
+    if x >= high:
+        return 1.0
+    if kind == "uniform":
+        return (x - low) / (high - low)
+    if kind == "lognormal":
+        mu, sigma, fa, fb = _lognormal(low, mode, high)
+        return (statistics.NormalDist().cdf((math.log(x) - mu) / sigma) - fa) / (fb - fa)
+    if x <= mode:
+        return (x - low) ** 2 / ((high - low) * (mode - low))
+    return 1.0 - (high - x) ** 2 / ((high - low) * (high - mode))
+
+
+def dist_quantile(kind: str, low: float, mode: float, high: float, q: float,
+                  floor: Optional[float] = None) -> float:
+    """The q-quantile (0..1) of a "triangular" (mode), "uniform" or
+    "lognormal" (median at ``mode``, the range its central 95%, truncated
+    at the range ends) distribution on [low, high]; truncated below
+    ``floor`` when it lies inside the range (the distribution conditioned on
+    exceeding it: q is read from F(floor) to 1)."""
+    a, b, c = low, high, mode
+    if b <= a:
+        return a
+    if floor is not None and floor > a:
+        f = dist_cdf(kind, a, c, b, floor)
+        q = f + q * (1.0 - f)
+        if floor >= b:
+            return b
+    if kind == "uniform":
+        value = a + q * (b - a)
+    elif kind == "lognormal":
+        mu, sigma, fa, fb = _lognormal(a, c, b)
+        p = min(max(fa + q * (fb - fa), 1e-15), 1.0 - 1e-15)
+        value = min(max(math.exp(mu + sigma * statistics.NormalDist().inv_cdf(p)), a), b)
+    else:
+        f = (c - a) / (b - a)
+        if q < f:
+            value = a + math.sqrt(q * (b - a) * (c - a))
+        else:
+            value = b - math.sqrt((1.0 - q) * (b - a) * (b - c))
+    return max(value, floor) if floor is not None else value
 
 
 class InvariantError(RuntimeError):
@@ -271,11 +323,16 @@ def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sample
     food web to the catch (gaia.production.CHAIN_PARAMETERS) that an
     earlier production function of the case documents identically (value,
     range, distribution) is the same quantity of the same food web: it
-    takes that link's draw (``same_as``, Step 8g.2)."""
-    from gaia.production import CHAIN_PARAMETERS
+    takes that link's draw (``same_as``, Step 8g.2); so does the shape of
+    a depth function (its decline rate and depth limits) that two
+    production functions document identically: one light field. The site's depth limit at a project depth, when it is the
+    regional one conditioned on lying deeper than the meadow (Step 8g.7),
+    takes the regional limit's uniform draw through its own truncated
+    distribution (``quantile_of``: comonotone, the same draw conditioned)."""
+    from gaia.production import CHAIN_PARAMETERS, DEPTH_PREFIX, DEPTH_SHARED
 
     out: List[Sampled] = []
-    first: Dict[Tuple[str, float, float, float, str], str] = {}
+    first: Dict[Tuple[Any, ...], str] = {}
     for e in entries:
         spec = case.service_ledger[e.index]["production_function"]
         for name, p in spec["parameters"].items():
@@ -283,36 +340,62 @@ def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sample
                 continue
             low, high = p["range"]
             full = f"production[{e.agent}].{name}"
+            floor = p.get("truncated_below")
             same_as = ""
-            if name in CHAIN_PARAMETERS:
-                key = (name, p["value"], low, high, p["distribution"])
+            if name in CHAIN_PARAMETERS or name in DEPTH_SHARED:
+                key = (name, p["value"], low, high, p["distribution"], floor, p.get("coupled", False))
                 same_as = first.setdefault(key, full)
                 same_as = "" if same_as == full else same_as
+            quantile_of = ""
+            if not same_as and p.get("coupled"):
+                quantile_of = f"production[{e.agent}].{DEPTH_PREFIX}depth_limit"
             out.append(Sampled(
                 name=full,
                 path=f"$.service_ledger[{e.index}].production_function.{spec['paths'][name]}",
                 value=p["value"], low=low, high=high, kind=p["distribution"],
                 documented=True, confidence=p["status"], same_as=same_as,
+                floor=floor, quantile_of=quantile_of,
             ))
     return out
 
 
 def _draw_all(sampled: Sequence[Sampled], rng: random.Random) -> Dict[str, float]:
     """One draw of every sampled parameter (a ``same_as`` one takes the
-    draw of the parameter it names)."""
+    draw of the parameter it names; a ``quantile_of`` one the same uniform
+    draw through its own distribution)."""
+    leaders = {s.quantile_of for s in sampled if s.quantile_of}
     values: Dict[str, float] = {}
+    uniforms: Dict[str, float] = {}
     for s in sampled:
-        values[s.name] = values[s.same_as] if s.same_as else s.draw(rng)
+        if s.same_as:
+            values[s.name] = values[s.same_as]
+            if s.same_as in uniforms:
+                uniforms[s.name] = uniforms[s.same_as]
+        elif s.quantile_of:
+            uniforms[s.name] = uniforms[s.quantile_of]
+            values[s.name] = s.quantile(uniforms[s.name])
+        elif s.name in leaders:
+            uniforms[s.name] = rng.random()
+            values[s.name] = s.quantile(uniforms[s.name])
+        else:
+            values[s.name] = s.draw(rng)
     return values
 
 
-def _with_aliases(values: Dict[str, float], sampled: Sequence[Sampled]) -> Dict[str, float]:
-    """``values`` with each ``same_as`` parameter set like the one it names."""
-    out = dict(values)
-    for s in sampled:
-        if s.same_as and s.same_as in out:
-            out[s.name] = out[s.same_as]
-    return out
+def _at_quantile(s: Sampled, q: float, sampled: Sequence[Sampled]) -> Dict[str, float]:
+    """{name: value} with ``s`` at its q-quantile and the parameters that
+    follow it (``same_as``, ``quantile_of``, Step 8g.7) set accordingly; the
+    tornado's one-at-a-time values."""
+    values = {s.name: s.quantile(q)}
+    uniforms = {s.name: q}
+    for t in sampled:
+        if t.same_as and t.same_as in values:
+            values[t.name] = values[t.same_as]
+            uniforms[t.name] = uniforms[t.same_as]
+        elif t.quantile_of and t.quantile_of in uniforms:
+            uniforms[t.name] = uniforms[t.quantile_of]
+            values[t.name] = t.quantile(uniforms[t.name])
+    return values
 
 
 def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry]) -> Dict[str, Tuple[float, float]]:
@@ -341,7 +424,17 @@ def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry
         if "gross" in entry:
             entry["gross"] = gross
         entry["value"] = net
-        _set_at_path(doc, f"$.agents[{e.agent_index}].{e.field}", e.agent_value + (net - e.net) / e.weight)
+        value = e.agent_value + (net - e.net) / e.weight
+        raw = doc["agents"][e.agent_index][e.field]
+        if isinstance(raw, dict) and raw.get("range"):
+            # a draw at a range end lands on the agent's range end, up to
+            # float rounding: keep it inside
+            low, high = raw["range"]
+            if low * (1.0 - 1e-12) <= value < low:
+                value = low
+            elif high < value <= high * (1.0 + 1e-12):
+                value = high
+        _set_at_path(doc, f"$.agents[{e.agent_index}].{e.field}", value)
         out[e.agent] = (gross, net)
     return out
 
@@ -620,12 +713,12 @@ def run_uncertainty(
         rows: List[Dict[str, Any]] = []
         if tornado:
             for s in sampled:
-                if s.same_as:
+                if s.same_as or s.quantile_of:
                     continue
                 lo_v, hi_v = s.quantile(0.05), s.quantile(0.95)
                 try:
-                    lo = evaluate(build_case(_with_aliases({s.name: lo_v}, sampled))[0])
-                    hi = evaluate(build_case(_with_aliases({s.name: hi_v}, sampled))[0])
+                    lo = evaluate(build_case(_at_quantile(s, 0.05, sampled))[0])
+                    hi = evaluate(build_case(_at_quantile(s, 0.95, sampled))[0])
                 except ValueError:
                     continue
                 rows.append({

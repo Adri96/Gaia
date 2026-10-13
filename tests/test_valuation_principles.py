@@ -12,9 +12,9 @@ These tests hold the rule as an invariant:
     - no Monte Carlo draw can bring an agent to €0 (the low end of every
       agent-value range is > 0, and a production function's chain with
       every link at its least favourable end exceeds what it is net of);
-    - the same at every allowed project depth of a depth-dependent
-      production function (Step 8g.1, --depth-m), and a depth at or below
-      its depth limit is rejected, never valued at €0;
+    - the same at every project depth of a depth-dependent production
+      function (Step 8g.1, --depth-m), down to and beyond the deepest
+      meadows (Step 8g.7: the site's depth limit lies below the meadow);
     - validation and case parsing reject an agent at €0, citing the rule.
 """
 
@@ -102,14 +102,15 @@ def test_dive_intensity_none_zeroes_a_service_never_an_agent():
         assert meadow.dependency_weight * meadow.annual_value(1.0) > 200.0   # the meadow
 
 
-DEPTHS = [(0.5, 0.5), (5.0, 5.0), (15.0, 15.0), (25.0, 25.0), (29.9, 29.9), (0.0, 29.9), (10.0, 20.0)]
-"""Project depths (--depth-m, Step 8g.1) down to the deepest allowed, just
-above the shallowest depth limit (30 m) of Posidonia's depth function."""
+DEPTHS = [(0.5, 0.5), (5.0, 5.0), (15.0, 15.0), (25.0, 25.0), (29.9, 29.9), (0.0, 29.9), (10.0, 20.0),
+          (30.0, 30.0), (35.0, 35.0), (39.0, 39.0), (43.0, 43.0), (30.0, 40.0), (50.0, 50.0)]
+"""Project depths (--depth-m, Step 8g.1), down to and beyond the deepest
+meadows (Step 8g.7)."""
 
 
 @pytest.mark.parametrize("name", CASE_NAMES)
-def test_every_agent_is_positive_at_every_allowed_depth(name):
-    """Step 8g.1: at every allowed project depth, under every preset and
+def test_every_agent_is_positive_at_every_depth(name):
+    """Step 8g.1, 8g.7: at every project depth, under every preset and
     flag, every agent carries a value > 0 and costs > 0 once a unit is
     lost; the production function's worst case stays above what it is net
     of."""
@@ -139,6 +140,11 @@ def test_every_agent_is_positive_at_every_allowed_depth(name):
 
 @pytest.mark.parametrize("argv", [
     ["--depth-m", "29.9", "--dive-intensity", "none"],
+    ["--depth-m", "35", "--dive-intensity", "none"],
+    ["--depth-m", "30-40", "--area-ha", "50", "--dive-intensity", "none"],
+    ["--depth-m", "44", "--dive-site-share", "0", "--with-pricing"],
+    ["--depth-m", "10", "--depth-limit-m", "15", "--dive-intensity", "none"],
+    ["--depth-m", "14.9", "--depth-limit-m", "13-15", "--area-ha", "50", "--dive-intensity", "none"],
     ["--depth-m", "0-29", "--dive-site-share", "0", "--matte-fate", "buried"],
     ["--depth-m", "25", "--area-ha", "300", "--units", "30", "--dive-intensity", "none", "--with-pricing"],
     ["--dive-intensity", "none"],
@@ -196,9 +202,13 @@ def test_random_inputs_never_bring_an_agent_to_zero():
             kwargs["carbon_fate"] = rng.choice(list(case.release_fates["fates"]))
         built = case
         if case.depth_production is not None and rng.random() < 0.5:
-            deepest = case.depth_production["deepest_allowed_m"]
-            a = rng.uniform(0.0, deepest - 1e-6)
-            built = case.with_project_depth(a, rng.choice([a, rng.uniform(a, deepest - 1e-6)]))
+            a = rng.uniform(0.0, 50.0)
+            b = rng.choice([a, rng.uniform(a, 50.0)])
+            limit = None
+            if rng.random() < 0.5:   # the site's own depth limit (Step 8g.10)
+                high = rng.uniform(b + 1e-3, 60.0)
+                limit = (rng.choice([high, rng.uniform(0.5, high)]), high)
+            built = case.with_project_depth(a, b, depth_limit=limit)
         eco = built.build_ecosystem(**kwargs)
         label = f"{name} {kwargs}"
         _assert_every_agent_positive(eco, label)

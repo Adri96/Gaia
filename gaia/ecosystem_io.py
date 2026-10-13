@@ -1092,22 +1092,26 @@ class Case:
                 return dict(depth_block(spec), agent=entry["agent"], producer=spec["producer"])  # type: ignore[arg-type]
         return None
 
-    def with_project_depth(self, from_m: float, to_m: Optional[float] = None) -> "Case":
+    def with_project_depth(self, from_m: float, to_m: Optional[float] = None,
+                           depth_limit: Optional[Tuple[float, float]] = None) -> "Case":
         """This case with its depth-dependent production functions taken at
         the project's depth (Step 8g.1; gaia.production.with_project_depth):
         one depth, or a band [from_m, to_m] over which the affected resource
-        is spread evenly.
+        is spread evenly; ``depth_limit``, the site's own depth limit (one
+        depth (low, low) or a range; Step 8g.10, ``--depth-limit-m``).
 
         Raises:
             ValueError: Without a document or a depth-dependent production
-                function, or for a depth at or below the depth limit.
+                function, or for a negative depth (any depth >= 0 is valued:
+                the site's depth limit lies below it, Step 8g.7).
         """
         from gaia.production import with_project_depth
 
         if self.document is None:
             raise ValueError(f"{self.name}: the case has no document to set a depth in")
         to_m = from_m if to_m is None else to_m
-        return case_from_dict(with_project_depth(self.document, float(from_m), float(to_m)), origin=self.origin)
+        return case_from_dict(with_project_depth(self.document, float(from_m), float(to_m), depth_limit=depth_limit),
+                              origin=self.origin)
 
     def production_functions(self) -> Dict[str, Dict[str, Any]]:
         """{agent: the JSON form of its ledger production function} (Step

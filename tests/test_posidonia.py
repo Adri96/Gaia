@@ -1048,7 +1048,9 @@ def test_meadow_food_value_is_the_primary_production_chain():
     # Step 8g.2: the leaf epiphytes' food, on the same chain to the catch
     epi = next(e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae" and e["production_function"])
     epi_params = epi["production_function"]["parameters"]
-    assert epi_params["npp_carbon"]["status"] == "secondary"
+    # Step 8g.9: their NPP from their depth function, at the regional 15 m
+    assert epi_params["npp_carbon"]["status"] == "derived"
+    assert epi_params["depth.npp_at_reference_depth"]["status"] == "secondary"
     assert epi_params["food_web_share"]["status"] == "inferred"
     epi_gross = (1.9 * 12.011 * 1.0 * 10 * 0.143 ** (3.1 - 1) * 9 * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert epi["value"] == pytest.approx(epi_gross, rel=1e-12) == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
@@ -1170,7 +1172,7 @@ def test_ledger_enforces_the_subtraction():
     with pytest.raises(ValueError, match="a share"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    epiphytes(doc)["production_function"]["parameters"]["npp_carbon"]["value"] = 40.0
+    epiphytes(doc)["production_function"]["depth_production"]["parameters"]["npp_at_reference_depth"]["value"] = 40.0
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
 

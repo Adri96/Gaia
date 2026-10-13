@@ -378,7 +378,13 @@ value = gross − their values). € 2014-2017/ha/yr:
   €284.74 gross, €249.74 net.
   The epiphytes' food is counted once, in their own chain (Step 8g.2);
   their bioindicator entry is monitoring information, a cultural service,
-  not food.
+  not food. Since Step 8g.9 (the owner's review of #11, question 4) their
+  production follows depth: their own depth function with the plant's
+  decline rate and depth limit (one light field, drawn once; inferred,
+  their biomass "decreases with increasing depth", Lepoint et al. 1999,
+  doi:10.1023/A:1003557303904, abstract), scaled from the regional 15 m
+  (unchanged there, €82.20): €199 at 5 m, €30 at 25 m, €1.89 at 40 m.
+  The roots do not depend on depth.
   The plant's production by depth (Step 8g.1): a light-limited
   exponential shared by marine primary producers, NPP(z) = P_ref ·
   (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max)), with the
@@ -395,9 +401,20 @@ value = gross − their values). € 2014-2017/ha/yr:
   20, 115 at 25, 61 at 30 m. The case's depth is a mean, 15 m (inferred,
   Generalitat 2004; no area-by-depth source could be read), conservative
   since the function is convex. `--depth-m` sets a project's depth (one
-  depth or a band); a depth at or below 30 m, the depth limit's low end,
-  is rejected. At a project depth the €35 netted out scales with the
-  plant's NPP there / NPP at 15 m (exactly €35 in the regional run).
+  depth or a band); any depth is valued (Step 8g.7): a meadow at depth z
+  proves its site's depth limit lies deeper, so the project's curve uses
+  the regional limit conditioned on lying at least 2 m below z
+  (`depth_limit_margin`, the Medes meadow 2 m above its 15 m lower limit;
+  truncated, or beyond 40 m extended to [z + 2, z + 4] m; drawn
+  comonotone with the regional limit), keeping P_ref and k; only a
+  negative depth is rejected. `--depth-limit-m` (Step 8g.10) gives the
+  site's own limit (one depth, or a range sampled uniformly, truncated
+  below the meadow); it replaces the regional one at the site, and a
+  depth at or below it is rejected. At a project depth the €35 netted out scales with the
+  plant's NPP there / NPP at 15 m (exactly €35 in the regional run),
+  recomputed in every Monte Carlo draw; decided by the owner (Step 8g.8,
+  review of #11, question 1), with the 15 m base and the 40 m (30–44)
+  depth limit (questions 2 and 3).
   Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
   (its `distribution` and `distribution_basis` in the case file:
   lognormal for the epiphytes' NPP and the depth function's P_ref,
@@ -410,7 +427,8 @@ value = gross − their values). € 2014-2017/ha/yr:
   meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
   P5 118, P50 254, P95 528 (base 277, lowest draw 47); the epiphytes'
-  chain P5 32, P50 72, P95 151 (base 82). The €3.83 floor above bounds
+  chain P5 33, P50 71, P95 158 (base 82; 32 / 72 / 151 before Step 8g.9,
+  the same distribution drawn in another order). The €3.83 floor above bounds
   every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain

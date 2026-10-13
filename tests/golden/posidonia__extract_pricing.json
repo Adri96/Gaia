@@ -886,7 +886,7 @@
           "trophic_amplification": 1.0,
           "trophic_level": 0,
           "value_notes": [
-            "Primary production \u2192 food: NPP 22.8 g C/m\u00b2/yr \u2192 228 kg C/ha/yr into the food web (not buried) \u2192 34.6 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 16.1 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac82.2/ha/yr"
+            "Primary production \u2192 food: NPP 22.8 g C/m\u00b2/yr at 15 m (the regional mean depth) \u2192 228 kg C/ha/yr into the food web (not buried) \u2192 34.6 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 16.1 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac82.2/ha/yr"
           ]
         },
         {
@@ -1231,10 +1231,101 @@
           }
         ],
         "comparison": null,
-        "depth_production": null,
+        "depth_production": {
+          "data": [],
+          "deepest_allowed_m": null,
+          "depth_bands": [
+            {
+              "from_m": 15.0,
+              "share": 1.0,
+              "to_m": 15.0
+            }
+          ],
+          "depth_label": "15 m (the regional mean depth)",
+          "depth_limit_margin": {
+            "distribution": "fixed",
+            "distribution_basis": "A conditioning margin, not an uncertain quantity of the valuation: not sampled (Step 8g.7)",
+            "label": "least depth between a meadow valued at a project depth and its site's depth limit (where the plant's net production reaches zero)",
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Material and methods, 'Study site'): the Medes Islands meadow extends 'from 3 to 15 m depth'; its deeper station, at 13 m, is 'close to the lower limit, where the meadow is much sparser with ca 100 shoots m-2', and still produced 271 g DW/m2/yr (Table 3; see data). So a living meadow 2 m above its lower limit is still productive: the closest any of the measurements fitted lies to its own meadow's limit. Value: 2 m, the least distance at which a meadow is known to live and produce above its limit; that the site's depth limit (zero net production) lies at least this far below a meadow is an inference",
+            "status": "inferred",
+            "unit": "m",
+            "value": 2.0
+          },
+          "depth_used": "regional",
+          "fit": "Not fitted: no production of P. oceanica leaf epiphytes by depth could be read (Lepoint et al. 1999, doi:10.1023/A:1003557303904, abstract: biomass decreases with depth at Revellata Bay, no rates). The shape is the plant's (scripts/fit_depth_production.py fits the meadow's), so at any depth the epiphytes' production is their regional value x NPP_plant(depth) / NPP_plant(15 m), the same factor as the meadow's net_of scale; the roots' production does not depend on depth",
+          "formula": "NPP(z) = P_ref \u00b7 (e^(\u2212k\u00b7z) \u2212 e^(\u2212k\u00b7z_max)) / (e^(\u2212k\u00b7z_ref) \u2212 e^(\u2212k\u00b7z_max))",
+          "hyperparameters": {
+            "decline_rate": {
+              "distribution": "triangular",
+              "distribution_basis": "The fit \u00b1 1.96 standard errors, triangular with its mode at the fit",
+              "label": "decline rate of the epiphytes' production with depth: the plant's (the light attenuation the meadow's curve was fitted to)",
+              "range": [
+                0.04283656300650749,
+                0.11775075412308353
+              ],
+              "source": "Inferred: the epiphytes are algae that need light, and their biomass is 'mainly related to the substrate leaf availability' and 'decreases with increasing depth' (Lepoint, Havelange, Gobert & Bouquegneau 1999, Hydrobiologia 394:63-67, doi:10.1023/A:1003557303904, abstract on ORBi, Revellata Bay, the site of the epiphytes' production figure; no epiphyte production by depth is given), so their production follows the plant's depth function, the same light: the plant's decline rate, fitted as follows. Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit). For scale: diffuse light attenuation below 0.2/m at Port Lligat (Olesen et al. 2002, doi:10.3354/meps236089, full text)",
+              "status": "inferred",
+              "unit": "1/m",
+              "value": 0.0802936585647955
+            },
+            "depth_limit": {
+              "distribution": "triangular",
+              "distribution_basis": "The depths are read; that the plant's production reaches zero at them is an inference (meadows end where light no longer sustains them): triangular, mode 40 m, between the Catalan lower limit (30 m) and the deepest meadows (44 m)",
+              "label": "depth limit of the epiphytes' production: the plant's (they live on its leaves)",
+              "range": [
+                30.0,
+                44.0
+              ],
+              "source": "Inferred: the epiphytes live on the plant's leaves, so they end where the meadow ends: the plant's depth limit. Generalitat de Catalunya, Departament de Medi Ambient i Habitatge (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (scientific supervision J. Romero), http://www.gencat.cat/mediamb/publicacions/monografies/prats_posidonia_guia_professorat.pdf (read): Catalan meadows grow on well-lit bottoms between 0 and 25 m and 'atenyen els 40 metres en aig\u00fces molt transparents de les Balears, Malta, C\u00f2rsega'; their lower limit is 'molt regular, situat al voltant dels 30 metres', set mainly by light. Gobert, Sartoretto, Rico-Raimondino, Andral, Chery, Lejeune & Boissery (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012 (author copy on Archimer, read): meadows 'between the surface and 44 m depth in the clearest waters'; stable lower limits 37 \u00b1 1 m in Corsica and 25 \u00b1 3 m in Provence (reference values 41 and 34 m). Value 40 m: where meadows end in very transparent waters (the plant still grows there, so its production reaches zero no shallower); low end 30 m: the Catalan meadows' regular lower limit; high end 44 m: the deepest meadows",
+              "status": "inferred",
+              "unit": "m",
+              "value": 40.0
+            },
+            "npp_at_reference_depth": {
+              "distribution": "lognormal",
+              "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
+              "label": "net primary production of the leaf epiphytes at the reference depth, 15 m (the regional mean depth)",
+              "range": [
+                11.410449999999999,
+                45.641799999999996
+              ],
+              "source": "The Corsican annual figure at 10 m, applied at the regional mean depth, 15 m, as the epiphytes' regional value (so their regional value is unchanged since Step 8f.2; re-anchoring it at 10 m on the plant's curve would lower it by about a third: an open question). Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
+              "status": "secondary",
+              "unit": "g C/m\u00b2/yr",
+              "value": 22.820899999999998
+            }
+          },
+          "model": "light_limited_exponential",
+          "net_of_scale": 1.0,
+          "npp": 22.820899999999998,
+          "npp_at_depth": {
+            "10": 35.844461795923706,
+            "15": 22.820899999999998,
+            "20": 14.103754181237147,
+            "25": 8.269049941621327,
+            "30": 4.363669181497442,
+            "5": 55.30188115985896
+          },
+          "npp_regional": 22.820899999999998,
+          "output": "npp_carbon",
+          "reference_depth_m": 15.0,
+          "regional_depth": {
+            "bands": [
+              {
+                "from_m": 15.0,
+                "share": 1.0,
+                "to_m": 15.0
+              }
+            ],
+            "source": "The meadow's regional mean depth (see the Posidonia Meadow's depth_production): Generalitat de Catalunya (2004), 'la praderia mitjana de la costa catalana a 15 metres'",
+            "status": "inferred"
+          },
+          "site_depth_limit": null,
+          "unit": "g C/m\u00b2/yr"
+        },
         "gross_eur_per_ha_yr": 82.19699951512872,
         "gross_range_eur_per_ha_yr": [
-          8.581983708693393,
+          8.58198370869339,
           428.28343412045115
         ],
         "model": "trophic_transfer",
@@ -1253,6 +1344,45 @@
             "status": "derived",
             "unit": "trophic level",
             "value": 3.1
+          },
+          "depth.decline_rate": {
+            "distribution": "triangular",
+            "distribution_basis": "The fit \u00b1 1.96 standard errors, triangular with its mode at the fit",
+            "label": "decline rate of the epiphytes' production with depth: the plant's (the light attenuation the meadow's curve was fitted to)",
+            "range": [
+              0.04283656300650749,
+              0.11775075412308353
+            ],
+            "source": "Inferred: the epiphytes are algae that need light, and their biomass is 'mainly related to the substrate leaf availability' and 'decreases with increasing depth' (Lepoint, Havelange, Gobert & Bouquegneau 1999, Hydrobiologia 394:63-67, doi:10.1023/A:1003557303904, abstract on ORBi, Revellata Bay, the site of the epiphytes' production figure; no epiphyte production by depth is given), so their production follows the plant's depth function, the same light: the plant's decline rate, fitted as follows. Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit). For scale: diffuse light attenuation below 0.2/m at Port Lligat (Olesen et al. 2002, doi:10.3354/meps236089, full text)",
+            "status": "inferred",
+            "unit": "1/m",
+            "value": 0.0802936585647955
+          },
+          "depth.depth_limit": {
+            "distribution": "triangular",
+            "distribution_basis": "The depths are read; that the plant's production reaches zero at them is an inference (meadows end where light no longer sustains them): triangular, mode 40 m, between the Catalan lower limit (30 m) and the deepest meadows (44 m)",
+            "label": "depth limit of the epiphytes' production: the plant's (they live on its leaves)",
+            "range": [
+              30.0,
+              44.0
+            ],
+            "source": "Inferred: the epiphytes live on the plant's leaves, so they end where the meadow ends: the plant's depth limit. Generalitat de Catalunya, Departament de Medi Ambient i Habitatge (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (scientific supervision J. Romero), http://www.gencat.cat/mediamb/publicacions/monografies/prats_posidonia_guia_professorat.pdf (read): Catalan meadows grow on well-lit bottoms between 0 and 25 m and 'atenyen els 40 metres en aig\u00fces molt transparents de les Balears, Malta, C\u00f2rsega'; their lower limit is 'molt regular, situat al voltant dels 30 metres', set mainly by light. Gobert, Sartoretto, Rico-Raimondino, Andral, Chery, Lejeune & Boissery (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012 (author copy on Archimer, read): meadows 'between the surface and 44 m depth in the clearest waters'; stable lower limits 37 \u00b1 1 m in Corsica and 25 \u00b1 3 m in Provence (reference values 41 and 34 m). Value 40 m: where meadows end in very transparent waters (the plant still grows there, so its production reaches zero no shallower); low end 30 m: the Catalan meadows' regular lower limit; high end 44 m: the deepest meadows",
+            "status": "inferred",
+            "unit": "m",
+            "value": 40.0
+          },
+          "depth.npp_at_reference_depth": {
+            "distribution": "lognormal",
+            "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
+            "label": "net primary production of the leaf epiphytes at the reference depth, 15 m (the regional mean depth)",
+            "range": [
+              11.410449999999999,
+              45.641799999999996
+            ],
+            "source": "The Corsican annual figure at 10 m, applied at the regional mean depth, 15 m, as the epiphytes' regional value (so their regional value is unchanged since Step 8f.2; re-anchoring it at 10 m on the plant's curve would lower it by about a third: an open question). Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
+            "status": "secondary",
+            "unit": "g C/m\u00b2/yr",
+            "value": 22.820899999999998
           },
           "first_sale_price": {
             "distribution": "fixed",
@@ -1278,15 +1408,12 @@
             "value": 1.0
           },
           "npp_carbon": {
-            "distribution": "lognormal",
-            "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
-            "label": "net primary production of the leaf epiphytes",
-            "range": [
-              11.410449999999999,
-              45.641799999999996
-            ],
-            "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
-            "status": "secondary",
+            "distribution": "fixed",
+            "distribution_basis": "derived in every draw from the depth function's sampled hyperparameters",
+            "label": "net primary production of the leaf epiphytes at 15 m (the regional mean depth), from its depth function",
+            "range": null,
+            "source": "derived: depth_production (light_limited_exponential) averaged over 15 m (the regional mean depth); its hyperparameters: The Corsican annual figure at 10 m, applied at the regional mean depth, 15 m, as the epiphytes' regional value (so their regional value is unchanged since Step 8f.2; re-anchoring it at 10 m on the plant's curve would lower it by about a third: an open question). Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
+            "status": "derived",
             "unit": "g C/m\u00b2/yr",
             "value": 22.820899999999998
           },
@@ -1501,7 +1628,7 @@
               "value": 238.2
             }
           ],
-          "deepest_allowed_m": 30.0,
+          "deepest_allowed_m": null,
           "depth_bands": [
             {
               "from_m": 15.0,
@@ -1510,6 +1637,15 @@
             }
           ],
           "depth_label": "15 m (the regional mean depth)",
+          "depth_limit_margin": {
+            "distribution": "fixed",
+            "distribution_basis": "A conditioning margin, not an uncertain quantity of the valuation: not sampled (Step 8g.7)",
+            "label": "least depth between a meadow valued at a project depth and its site's depth limit (where the plant's net production reaches zero)",
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Material and methods, 'Study site'): the Medes Islands meadow extends 'from 3 to 15 m depth'; its deeper station, at 13 m, is 'close to the lower limit, where the meadow is much sparser with ca 100 shoots m-2', and still produced 271 g DW/m2/yr (Table 3; see data). So a living meadow 2 m above its lower limit is still productive: the closest any of the measurements fitted lies to its own meadow's limit. Value: 2 m, the least distance at which a meadow is known to live and produce above its limit; that the site's depth limit (zero net production) lies at least this far below a meadow is an inference",
+            "status": "inferred",
+            "unit": "m",
+            "value": 2.0
+          },
           "depth_used": "regional",
           "fit": "Fitted by scripts/fit_depth_production.py: least squares on ln(production) of the 6 measurements in 'data' (3 sites, 3 studies, 4-20 m; depths as the authors give them), with z_ref = 10 m (near the data's mean depth, so the two fitted hyperparameters are almost uncorrelated) and z_max fixed at its literature value (the data do not reach it). P_ref = 498.8 g DW/m2/yr (standard error of ln P_ref 0.090), k = 0.0803/m (standard error 0.0191), correlation -0.12; residual standard deviation of ln(production) 0.218 (sites scatter about \u00d7/\u00f7 1.24 around the curve). Medes (a turbid site whose meadow ends at 15 m) lies below the curve at 13 m, Cala Jonquet (sampled at its densest depth) above it at 4 m. Cross-check: at Port Lligat (Cap de Creus), where the meadow reaches 15.6 m, leaf production per m2 'declined 5- to 6-fold with depth' (Olesen, Enr\u00edquez, Duarte & Sand-Jensen 2002, Marine Ecology Progress Series 236:89-97, doi:10.3354/meps236089, full text; no values tabulated), steeper than the regional curve, as expected where the meadow ends shallower. Not used: Pergent-Martini, Rico-Raimondino & Pergent (1994), Marine Biology 120:9-15, doi:10.1007/BF00381936, production at 22 Mediterranean sites by depth (closed access; only its metadata on Crossref and a search-engine summary were seen)",
           "formula": "NPP(z) = P_ref \u00b7 (e^(\u2212k\u00b7z) \u2212 e^(\u2212k\u00b7z_max)) / (e^(\u2212k\u00b7z_ref) \u2212 e^(\u2212k\u00b7z_max))",
@@ -1579,6 +1715,7 @@
             "source": "Generalitat de Catalunya (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (read): 'la praderia mitjana de la costa catalana a 15 metres' (the average meadow of the Catalan coast, at 15 m, in a worked exercise), and Catalan meadows between the surface and their lower limit at about 30 m (midpoint 15 m); 15 m is also the standard monitoring depth of the PREI index (Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012, author copy, read)",
             "status": "inferred"
           },
+          "site_depth_limit": null,
           "unit": "g DW/m\u00b2/yr"
         },
         "gross_eur_per_ha_yr": 312.49275506563924,
