@@ -235,17 +235,21 @@ def test_forest_watershed_largest_share_of_value():
 
 
 def test_forest_value_is_per_hectare():
-    """Full-damage value = €2,848/ha/yr × area; the default area follows the trees.
+    """Full-damage value = €2,312.16/ha/yr × area; the default area follows the trees.
 
-    €3,000/ha/yr (de Groot 2012, temperate forest) minus its €152 climate
-    regulation component, valued by gaia.carbon instead (decision D3).
+    Int$3,013/ha/yr (de Groot et al. 2012, Table 2, temperate forest) minus
+    its Int$152 climate regulation component, valued by gaia.carbon instead
+    (decision D3), converted at Spain's 2007 PPP (Step 8g.6, gaia.currency).
     """
+    from gaia.currency import int_dollars_to_eur
+
     from gaia.cases.forest import FOREST_AREA_HA, FOREST_TOTAL_TREES
 
     eco = build_forest_ecosystem()
     assert eco.resource.area_ha == FOREST_AREA_HA
     total = sum(a.dependency_weight * a.annual_value(FOREST_AREA_HA) for a in eco.agents)
-    assert total == pytest.approx(2_848.0 * FOREST_AREA_HA, rel=1e-12)
+    assert total == pytest.approx(int_dollars_to_eur(3_013 - 152, 2007) * FOREST_AREA_HA, rel=1e-12)
+    assert int_dollars_to_eur(3_013 - 152, 2007) == pytest.approx(2_312.16, abs=0.005)
     assert build_forest_ecosystem(total_trees=2 * FOREST_TOTAL_TREES).resource.area_ha == (
         2 * FOREST_AREA_HA)
     assert build_forest_ecosystem(total_trees=500, area_ha=40.0).resource.area_ha == 40.0

@@ -47,8 +47,11 @@ class _RecordFlag(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
         flags = list(getattr(namespace, "explicit_flags", []))
-        flags.append(self.option_strings[0])
+        flags.append(option_string or self.option_strings[0])
         namespace.explicit_flags = flags
+        dests = list(getattr(namespace, "explicit_dests", []))
+        dests.append(self.dest)
+        namespace.explicit_dests = dests
 
 
 def _positive_int(text: str) -> int:
@@ -116,7 +119,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "specific meadow a project affects instead of the regional stock — "
             "and sets the number of units (a case with site-restricted values, "
             "e.g. posidonia's diving value, then requires their inputs: "
-            "--dive-intensity and/or --dive-site-share). Agent values are €/ha/yr, so holding "
+            "--dive-intensity and/or --dive-site-share, as with --total-units). Agent values are €/ha/yr, so holding "
             "the area fixed while changing the number of units changes per-unit "
             "figures but not the per-ha externality"
         ),
@@ -280,19 +283,91 @@ def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
     )
 
 
-def require_site_input(case, args: argparse.Namespace) -> None:
-    """A project run must state the diving input (Step 8e.3).
+def parse_depth(text: str):
+    """``--depth-m``: one depth ("12") or a range ("5-20"), in metres;
+    returns (from_m, to_m)."""
+    parts = text.replace("–", "-").split("-")
+    try:
+        if len(parts) == 1:
+            value = float(parts[0])
+            depths = (value, value)
+        elif len(parts) == 2:
+            depths = (float(parts[0]), float(parts[1]))
+        else:
+            raise ValueError
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"a depth in metres (e.g. 12) or a range (e.g. 5-20), got {text!r}") from None
+    if not all(d == d and d >= 0 for d in depths) or depths[0] > depths[1]:
+        raise argparse.ArgumentTypeError(f"depths are >= 0 m and a range is low-high, got {text!r}")
+    return depths
 
-    With --area-ha the user names a specific project resource (e.g. the
-    meadow a project affects), whose site share and intensity the regional
-    averages do not describe; a case with site-restricted values (Posidonia:
-    the meadow's diving value) then needs --<site>-share and/or
-    --<activity>-intensity. The default regional run keeps its defaults.
+
+def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--depth-m`` for a case with a depth-dependent production
+    function (Step 8g.1), explained in plain words in the help."""
+    block = getattr(case, "depth_production", None)
+    if not block:
+        return
+    deepest = block["deepest_allowed_m"]
+    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items() if float(z) < deepest)
+    unit = block["unit"].replace("DW", "dry weight")
+    limit = block["hyperparameters"]["depth_limit"]
+    parser.add_argument(
+        "--depth-m",
+        dest="depth_m",
+        type=parse_depth,
+        default=None,
+        metavar="M or LOW-HIGH",
+        help=(
+            f"Project input: the water depth of the affected {block['agent']}, in metres: one "
+            f"depth (e.g. 12) or a range (e.g. 5-20: spread evenly over it). "
+            f"Its primary production, and so the food it supports, falls with depth as light fades: "
+            f"about {table} {unit}. Default: {block['depth_label']}. It must be shallower "
+            f"than {deepest:g} m: production reaches zero at the depth limit ({limit['value']:g} m, "
+            f"{limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis), and Gaia does "
+            f"not value an agent at €0"
+            if limit.get("range") else
+            f"Project input: the water depth of the affected resource, in metres (default: "
+            f"{block['depth_label']}; shallower than {deepest:g} m)"
+        ).replace("%", "%%"),
+    )
+
+
+def apply_depth(case, args: argparse.Namespace):
+    """The case at the project's depth (``--depth-m``), or the case itself."""
+    depth = getattr(args, "depth_m", None)
+    if depth is None:
+        return case
+    return case.with_project_depth(*depth)
+
+
+SIZE_DESTS: tuple = ("area_ha", "total_units")
+"""The options that set the size of the reference resource: --area-ha,
+--total-units and a legacy case's own flag for it (Posidonia's
+--hectares)."""
+
+
+def require_site_input(case, args: argparse.Namespace) -> None:
+    """A project run must state the diving input (Steps 8e.3, 8g.5).
+
+    With --area-ha, --total-units or (the legacy) --hectares the user sets
+    the size of a specific project resource (e.g. the meadow a project
+    affects), whose site share and intensity the regional averages do not
+    describe; a case with site-restricted values (Posidonia: the meadow's
+    diving value) then needs --<site>-share and/or --<activity>-intensity.
+    The default regional run keeps its defaults.
 
     Raises:
         ValueError: With a plain message, when neither is given.
     """
-    if getattr(args, "area_ha", None) is None or not getattr(case, "site_restricted_agents", []):
+    if not getattr(case, "site_restricted_agents", []):
+        return
+    given = [f for f, d in zip(getattr(args, "explicit_flags", []), getattr(args, "explicit_dests", []))
+             if d in SIZE_DESTS]
+    if getattr(args, "area_ha", None) is not None:
+        given.insert(0, "--area-ha")
+    if not given:
         return
     if getattr(args, "site_share", None) is not None or getattr(args, "site_intensity", None) is not None:
         return
@@ -304,11 +379,12 @@ def require_site_input(case, args: argparse.Namespace) -> None:
         f"{case.sites} is used) and/or " if intensity else ""
     )
     nothing = f"--{intensity} none" if "none" in levels else f"--{case.site_input} 0"
+    flag = given[0]
     raise ValueError(
-        f"with --area-ha (a specific project site), the {case.sites} input is required: "
+        f"with {flag} (a specific project site), the {case.sites} input is required: "
         f"{options}--{case.site_input} F (the share, 0 to 1, of the affected resource "
         f"within reach of {case.sites}). If no {site} is within reach, give {nothing}. "
-        f"Without --area-ha the run uses the regional averages."
+        f"Without {flag} the run uses the regional averages."
     )
 
 
@@ -666,16 +742,20 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     total = case.total_units.value
     if legacy is None:
         parser.add_argument(
-            "--total-units", type=int, default=total, metavar="N",
+            "--total-units", action=_RecordFlag, type=int, default=total, metavar="N",
             help=(
                 f"Total number of units ({case.unit}) in the reference resource "
                 f"(default: {total})"
+                + (f"; a project's own size, so it then requires --{case.intensity_input or case.site_input} "
+                   f"and/or --{case.site_input} (the {case.sites} input)" if case.site_restricted_agents else "")
             ),
         )
     else:
         parser.add_argument(
-            legacy.total_units_flag, dest="total_units", type=int, default=total, metavar="N",
-            help=f"{legacy.total_units_help} (default: {total})",
+            legacy.total_units_flag, dest="total_units", action=_RecordFlag, type=int, default=total, metavar="N",
+            help=f"{legacy.total_units_help} (default: {total})"
+            + (f"; it then requires --{case.intensity_input or case.site_input} and/or --{case.site_input}"
+               if case.site_restricted_agents else ""),
         )
     parser.add_argument(
         "--threshold", type=float, default=case.safe_threshold_ratio.value, metavar="RATIO",
@@ -700,6 +780,7 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     add_common_arguments(parser)
     add_fate_argument(parser, case)
     add_site_argument(parser, case)
+    add_depth_argument(parser, case)
     add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
@@ -739,6 +820,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
     warn_unused_restoration_args(args)
     drop_pricing_in_restore_mode(args)
     try:
+        case = apply_depth(case, args)
         ecosystem = case.build_ecosystem(
             total_units=args.total_units,
             safe_threshold_ratio=args.threshold,

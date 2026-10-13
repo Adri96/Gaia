@@ -32,7 +32,7 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | tree density            | 250           | trees/ha   | Placeholder  | Low        |
     | safe_threshold_ratio    | configurable  | ratio      | Placeholder  | Low        |
     | unit_value              | 100.0 €/tree  | €/tree     | Placeholder  | Low        |
-    | annual_value_per_ha     | 2,848         | €/ha/yr    | de Groot 2012| Low        |
+    | annual_value_per_ha     | 2,312.16      | €/ha/yr    | de Groot 2012| Low        |
     |   (every agent)         |               |            |              |            |
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
@@ -42,19 +42,21 @@ case every agent carries a value > 0 under any input, preset or flag
 (PROJECT_DEFINITION.md, Core Valuation Principles (b); a validated
 invariant since Step 8e.7, tests/test_valuation_principles.py). Here every
 agent uses the biome-level value below, and the dependency weights split it, so
-sum(weight × value) = €2,848/ha/yr × area_ha at full damage
-(€113,920/yr for the 40 ha reference forest).
+sum(weight × value) = €2,312.16/ha/yr × area_ha at full damage
+(€92,486/yr for the 40 ha reference forest).
 
-The value is the order of magnitude of global meta-analyses for temperate
-forests: de Groot et al. (2012), Ecosystem Services 1:50-61, Int$3,013/ha/yr
-(2007 price level); Costanza et al. (2014), Global Environmental Change
-26:152-158, $3,137/ha/yr (2007) — both figures to be re-checked against the
-papers in Step 8. It is used at face value as €; currency and price-year
-conversion, and a site-specific value, are pending (Step 8).
-Carbon is valued only by gaia.carbon (decision D3), so the climate-regulation
-service is taken out of the biome total: de Groot et al. (2012, supporting
-material, Table 8.1, temperate forests) put it at Int$152/ha/yr, hence
-€3,000 − €152 = €2,848/ha/yr. Rates are never tuned to produce an outcome
+The value is de Groot et al. (2012), Ecosystem Services 1:50-61,
+doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full), temperate forest:
+total economic value Int$3,013/ha/yr minus climate regulation Int$152
+(carbon is valued only by gaia.carbon, decision D3) = Int$2,861/ha/yr
+(2007 price level, 58 estimates). Since Step 8g.6 (the owner's answer:
+convert international dollars to euros everywhere) it is converted at
+Spain's 2007 PPP factor for household consumption, 0.808165 €/Int$ (World
+Bank PA.NUS.PRVT.PP, the series de Groot et al. used; gaia/currency.py):
+€2,312.16/ha/yr, 2007 euros, no income or price-year adjustment (Step
+8d.5). Before, it was used at face value as €2,848 (€3,000 − €152, figures
+partly typed from memory; Table 2 gives 3,013). A global biome mean, not a
+site valuation. Rates are never tuned to produce an outcome
 (an earlier version was back-solved so that externality < revenue at 30% and
 > revenue at 50%).
 
@@ -88,7 +90,8 @@ past the 30% threshold the remaining forest degrades along a
 `threshold_logistic` (zero up to the threshold, then the former logistic:
 steepness 12, inflection 15% into the post-threshold span). The default
 run (50%, past the threshold) costs €101,899/yr instead of €95,050, PV
-€10.70 M instead of €10.11 M. **The CalibrationWarning above is gone**:
+€10.70 M instead of €10.11 M (at the €2,848 of the time; since Step 8g.6,
+€82,727/yr and €9.05 M, P5 / P50 / P95 €5.69 / 9.22 / 14.54 M). **The CalibrationWarning above is gone**:
 under `area_loss` the check looks at the remaining forest, whose health at
 the threshold is 1.0 (it degrades only past it). Nothing was tuned: the
 warning measured the logistic's ~21% damage inside the "safe" zone, which
@@ -98,9 +101,10 @@ still unfitted placeholders.
 
 **EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors, both roots (no
 incoming edge), from de Groot et al. (2012) Table 2, temperate forest
-(Int$/ha/yr × the 40-ha reference): Watershed & Local Climate, water 191
-(the former anchor, typed "from memory", now read); Vegetation & Flora,
-food 299 (wild plants, fungi and game, mostly direct market prices). The
+(Int$/ha/yr × the 40-ha reference, converted at 0.808165 €/Int$ since
+Step 8g.6): Watershed & Local Climate, water 191 (€6,174 for 40 ha; the
+former anchor, typed "from memory", now read); Vegetation & Flora, food 299
+(€9,666; wild plants, fungi and game, mostly direct market prices). The
 prices of Animal Populations and Human Communities are derived (labelled
 so): the anchors passed through the placeholder edges, no independent
 information. `anchor_every_agent` is off; no placeholder anchor is left.
@@ -155,25 +159,26 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
     | Fire & Microclimate weight    | 0.10          | ratio   | User spec      | Medium     |
     | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
-    | annual_value_per_ha (all)     | 1,593         | €/ha/yr | de Groot 2012 | Low        |
+    | annual_value_per_ha (all)     | 1,277.71      | €/ha/yr | de Groot 2012 | Low        |
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | exponential base (fire)       | 2.0           | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
 Agent values (decisions D1, D2):
     Every agent uses the same yearly value per hectare and the dependency
-    weights split it, so sum(weight × value) = €1,593/ha/yr × area_ha at full
-    damage (€159,300/yr for the 100 ha reference forest).
+    weights split it, so sum(weight × value) = €1,277.71/ha/yr × area_ha at
+    full damage (€127,771/yr for the 100 ha reference forest).
 
-    €1,600/ha/yr [PLACEHOLDER] is the global mean for woodlands in de Groot
-    et al. (2012), Ecosystem Services 1:50-61 (Int$1,588/ha/yr, 2007 price
-    level; figure to be checked against the paper in Step 8), used at face value
-    as €; a Mediterranean holm-oak valuation and
-    currency/price-year conversion are pending (Step 8). Carbon is valued
-    only by gaia.carbon (decision D3), so the climate-regulation service is
-    taken out of the total: Int$7/ha/yr for woodlands in de Groot et al.
-    (2012, supporting material, Table 9.1; a single estimate), hence
-    €1,600 − €7 = €1,593/ha/yr. The renamed Fire & Microclimate Regulation
+    de Groot et al. (2012), Ecosystem Services 1:50-61,
+    doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full), woodlands:
+    total economic value Int$1,588/ha/yr minus climate regulation Int$7
+    (carbon is valued only by gaia.carbon, decision D3) = Int$1,581/ha/yr
+    (2007 price level, 21 estimates), converted since Step 8g.6 at Spain's
+    2007 PPP factor for household consumption, 0.808165 €/Int$ (World Bank
+    PA.NUS.PRVT.PP; gaia/currency.py): €1,277.71/ha/yr, 2007 euros, no
+    income or price-year adjustment. Before, €1,593 at face value (€1,600 −
+    €7, partly from memory). A global woodland mean; a Mediterranean
+    holm-oak valuation is still pending. The renamed Fire & Microclimate Regulation
     agent keeps its 0.10 share of that non-carbon total; Soil Microbiome's
     description no longer lists carbon storage — soil carbon is valued by
     gaia.carbon through soil_carbon_tonnes × soil_release_fraction, and the
@@ -217,13 +222,15 @@ threshold the remaining forest degrades: ten agents along a
 `threshold_logistic`, Fire & Microclimate Regulation along a new
 `threshold_exponential` (zero up to the threshold, then (2^((D − t)/(1 −
 t)) − 1), no plateau: the fire feedback). Default run (40%): €127,048/yr
-instead of €121,767, PV €9.13 M instead of €8.80 M. **The
+instead of €121,767, PV €9.13 M instead of €8.80 M (at the €1,593 of the
+time; since Step 8g.6, €101,902/yr and €7.55 M). **The
 CalibrationWarning is gone** (the remaining forest's health at the
 threshold is 1.0); what remains is the unfitted post-threshold curves and
 threshold.
 
 **EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors from de Groot et
-al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference):
+al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference,
+converted at 0.808165 €/Int$ since Step 8g.6: €4,202 and €2,505):
 Mycorrhizal Fungi, the only root, food 52 (in Mediterranean woodland
 largely wild mushrooms, the fruiting bodies of mycorrhizal fungi; for
 scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms,
@@ -254,7 +261,9 @@ Posidonia's were, each a judgement for an unfitted parameter:
 No draw is rejected now. Default run (1,000 draws, seed 20261012), PV of
 externality €9.13 M (P5 / P50 / P95 €5.63 / 9.45 / 15.29 M); annual
 externality €127,048 (63,778 / 122,976 / 215,806). The agent value
-(×/÷2) and the safe threshold drive it. No number changes.
+(×/÷2) and the safe threshold drive it. No number changes. Since Step
+8g.6 (the value converted at PPP): €7.55 M (4.81 / 7.92 / 12.63 M);
+annual €101,902 (51,155 / 98,636 / 173,093).
 
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
@@ -273,7 +282,9 @@ an input: the user replaces it with the specific meadow the project
 affects, `gaia run posidonia --area-ha 300 --resource-name "…"
 --dive-intensity low` (or `resource.total_units`/`area_ha` and
 `resource.name` in a copy of the file), recorded as user-supplied. Since
-Step 8e.3 a run with `--area-ha` must also state the diving input,
+Step 8e.3 a run with `--area-ha` (and since Step 8g.5 with
+`--total-units` or the deprecated `--hectares`, which also set the size
+of a specific meadow) must also state the diving input,
 `--dive-intensity` and/or `--dive-site-share` (`--dive-intensity none`
 when no dive site is within reach): the regional averages describe a
 meadow of unknown location, not a named one, so the run stops with a
@@ -311,25 +322,36 @@ value = gross − their values). € 2014-2017/ha/yr:
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
+- Epiphytes & Algae, on every hectare (Step 8g.2, the owner's answer to
+  PR #10 question 2): the food its own production supports, moved from
+  the meadow's production function (where the epiphytes were a producer
+  since Step 8f.2) to a ledger entry of its own: 1.9 mol C/m²/yr (Bay
+  1984, Corsica, as reported by Champenois & Borges 2021, Fig. 6) = 22.8
+  g C/m²/yr, range ×/÷2, × 100% not buried (inferred: grazed, absent from
+  the litter; lower end 74%), on the meadow's chain to the catch below
+  (the same five links, drawn once for both chains in the Monte Carlo) =
+  €82.20 gross, net of nothing (range €8.58–428.28). Total unchanged:
+  the meadow's chain loses the same €82.20. With the bioindicator share,
+  the agent carries €82.41/ha/yr (€0.21 before).
 - Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
   production supports, a production function (gaia/production.py), over
-  three producers (Step 8f.2), each feeding the food web only with the
-  production that is not buried (decision D3):
-    plant: blades, sheaths, rhizomes 476 g DW/m²/yr       (Pergent et al. 1994;
-      × 33.6% carbon (Duarte 1990) = 159.9 g C/m²/yr       range 238–989.3, up to
-      × 74% not buried (Mateo & Romero 1997, Medes)        Cala Jonquet, Cebrián
-                                   = 118.4 g C/m²/yr       et al. 1997)
+  two producers (Step 8f.2; the leaf epiphytes, a third one, have their
+  own chain since Step 8g.2, above), each feeding the food web only with
+  the production that is not buried (decision D3):
+    plant: blades, sheaths, rhizomes 318 g DW/m²/yr at the regional mean
+      depth, 15 m, from its depth function (Step 8g.1, below)
+      × 33.6% carbon (Duarte 1990) = 106.7 g C/m²/yr
+      × 81.1% not buried, the shoots' own (Step 8g.4: blades / (blades +
+        sheaths + rhizomes), Mateo & Romero 1997, Table 3, Medes, 79.2% at
+        5 m, 82.9% at 13 m; 74%, the whole plant with its roots, before;
+        range 71–83.2%)       = 86.5 g C/m²/yr
     roots: 17 g DW/m²/yr (Mateo & Romero 1997, Medes, 11 at 13 m, 23 at 5 m)
       × 40.9% carbon (ibid., living roots) = 6.95 g C/m²/yr
       × 4% decomposed within the year, the rest buried in the matte
         (0.00015/d, Mateo 1995 as cited by Cebrián et al. 1997: 2.7–5.3%)
                                    = 0.28 g C/m²/yr
-    leaf epiphytes: 1.9 mol C/m²/yr (Bay 1984, Corsica, as reported by
-      Champenois & Borges 2021, Fig. 6) = 22.8 g C/m²/yr, range ×/÷2
-      × 100% not buried (inferred: grazed, absent from the litter;
-        lower end 74%)             = 22.8 g C/m²/yr
-    × 10 kg/ha per g/m²: into the food web                = 1,414.5 kg C/ha/yr
-    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 23.81 kg C/ha/yr
+    × 10 kg/ha per g/m²: into the food web                = 867.6 kg C/ha/yr
+    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 14.61 kg C/ha/yr
       level (Step 8f.1: the median of five Western
       Mediterranean Ecopath models, 12.2–21.8%, tabulated by
       Sánchez-Zulueta et al. 2023; the north-western
@@ -337,31 +359,59 @@ value = gross − their values). € 2014-2017/ha/yr:
       average 14.25%, Coll et al. 2008) to the catch's
       trophic level 3.1 (Francour 1997's dominant species,
       FishBase)
-    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 214.3 kg/ha/yr
-    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 99.7 kg/ha/yr
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 131.5 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 61.2 kg/ha/yr
       (Zhou et al. 2012)
-    × €5.11/kg, Catalan white-fish first-sale price 2014  = €509.48 gross
-    − 35.00, the commercial catch booked to Fish          = €474.48 net
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €312.49 gross
+    − 35.00, the commercial catch booked to Fish          = €277.49 net
       Populations and Marine Invertebrates (net_of)
-  Of the gross, the plant gives €426.29, the roots €1.00, the epiphytes
-  €82.20. Range over the links' ends: €31.41–2,993.09 net (€66.41–
-  3,028.09 gross). Before Step 8f.2 roots and epiphytes were left out
+  Of the gross, the plant gives €311.49, the roots €1.00. Range over the
+  links' ends (and the depth function's shape over its ranges):
+  €3.83–1,525.48 net (€38.83–1,560.48 gross): the lowest value still
+  exceeds the €35 it is net of, so moving the epiphytes needed no
+  rebalancing of net_of. Before Step 8g.4 the share was 74% (€285.39
+  gross, €250.39 net). Before Step 8g.2 the epiphytes' €82.20 were in
+  this chain (€367.59 gross, €332.59 net). Before Step 8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
+  €509.48 gross, €474.48 net). Before Step 8f.2 roots and epiphytes were left out
   (€426.29 gross, €391.29 net); before Step 8f.1 the transfer efficiency
   was 11.8%, the median of a global compilation (Coll et al. 2008):
   €284.74 gross, €249.74 net.
-  The epiphytes' food is not counted twice: the Epiphytes & Algae agent
-  owns the epiphyte metric of the bioindicator service (monitoring, a
-  cultural service), not food, and no other entry values their
-  production.
+  The epiphytes' food is counted once, in their own chain (Step 8g.2);
+  their bioindicator entry is monitoring information, a cultural service,
+  not food.
+  The plant's production by depth (Step 8g.1): a light-limited
+  exponential shared by marine primary producers, NPP(z) = P_ref ·
+  (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max)), with the
+  species' hyperparameters in `depth_production`: P_ref = 498.8 g DW/m²/yr
+  at z_ref = 10 m (lognormal, 314–792) and k = 0.0803/m (triangular,
+  0.0428–0.1178), fitted on ln(production) to six full-text measurements
+  (Cala Jonquet 989.3 at 4 m, Cebrián et al. 1997; Medes 803 at 5 m and
+  271 at 13 m, Mateo & Romero 1997, Table 3, 257 before, a misreading;
+  Ischia 709.8, 509.1 and 238.2 at 5, 10 and 20 m, Pergent et al. 1994)
+  by scripts/fit_depth_production.py (residual sd of ln 0.218); z_max =
+  40 m (30–44, triangular; inferred from the Catalan lower limit ~30 m
+  and 40 m in clear waters, Generalitat 2004, and 44 m in the clearest
+  waters, Gobert et al. 2009). 770 at 5 m, 499 at 10, 318 at 15, 196 at
+  20, 115 at 25, 61 at 30 m. The case's depth is a mean, 15 m (inferred,
+  Generalitat 2004; no area-by-depth source could be read), conservative
+  since the function is convex. `--depth-m` sets a project's depth (one
+  depth or a band); a depth at or below 30 m, the depth limit's low end,
+  is rejected. At a project depth the €35 netted out scales with the
+  plant's NPP there / NPP at 15 m (exactly €35 in the regional run).
   Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
   (its `distribution` and `distribution_basis` in the case file:
-  lognormal for the plant's and the epiphytes' NPP, triangular for the
+  lognormal for the epiphytes' NPP and the depth function's P_ref,
+  triangular for its decline rate and depth limit and for the
   shares, the transfer efficiency and the trophic level, uniform for the
   roots; the carbon contents, ×9 and the price fixed) and every draw
-  recomputes gross − net_of; the meadow's agent value is derived, not
+  recomputes gross − net_of (the €35 at its booked value, not coupled to
+  the sampled fisheries values: decided by the owner, Step 8g.3; the
+  transfer efficiency's range, 12.2–21.8%, also kept as decided); the
+  meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
-  P5 215, P50 490, P95 1,085 (base 474, lowest draw 79). The €31.41 floor
-  above bounds every draw; parsing requires it to be > 0.
+  P5 118, P50 254, P95 528 (base 277, lowest draw 47); the epiphytes'
+  chain P5 32, P50 72, P95 151 (base 82). The €3.83 floor above bounds
+  every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
   and the matte's carbon on the meadow's line (the carbon as an
@@ -393,7 +443,7 @@ value = gross − their values). € 2014-2017/ha/yr:
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
   'none' zeroes the diving service, never an agent: the meadow keeps its
-  own €474.48/ha/yr on every hectare (above), and every other agent keeps
+  own €277.49/ha/yr on every hectare (above), and every other agent keeps
   its value. (Before Step 8e.6 the diving service was the meadow's only
   entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
@@ -412,7 +462,7 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €1,293.15/ha/yr (€1,209.95 before Step 8f.2, €1,068.40 before
+Total €1,178.35/ha/yr (€1,151.25 before Step 8g.4, €1,293.15 before Step 8g.1, €1,209.95 before Step 8f.2, €1,068.40 before
 Step 8f.1, €818.66 before Step 8e.6, €284.83 before Step 8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total
@@ -611,7 +661,8 @@ Agent values (decisions D1, D2; re-based in Step 8e.5):
     global mean of 96 estimates, not a Central Amazon valuation (the
     totals of the service medians are less than half the means, Table 3).
     The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27)
-    are parts of the 3,220 and are still used as € at face value.
+    are parts of the 3,220, converted the same way since Step 8g.6
+    (gaia/currency.py; €161,633, €24,245 and €21,820 for 1,000 ha).
 
     Before Step 8e.5, €580/ha/yr was the sum of the non-carbon spec §8 anchors for 1,000 ha:
     water cycling €150k + fisheries €20k + biodiversity/habitat €410k =

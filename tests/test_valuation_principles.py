@@ -12,6 +12,9 @@ These tests hold the rule as an invariant:
     - no Monte Carlo draw can bring an agent to €0 (the low end of every
       agent-value range is > 0, and a production function's chain with
       every link at its least favourable end exceeds what it is net of);
+    - the same at every allowed project depth of a depth-dependent
+      production function (Step 8g.1, --depth-m), and a depth at or below
+      its depth limit is rejected, never valued at €0;
     - validation and case parsing reject an agent at €0, citing the rule.
 """
 
@@ -99,7 +102,45 @@ def test_dive_intensity_none_zeroes_a_service_never_an_agent():
         assert meadow.dependency_weight * meadow.annual_value(1.0) > 200.0   # the meadow
 
 
+DEPTHS = [(0.5, 0.5), (5.0, 5.0), (15.0, 15.0), (25.0, 25.0), (29.9, 29.9), (0.0, 29.9), (10.0, 20.0)]
+"""Project depths (--depth-m, Step 8g.1) down to the deepest allowed, just
+above the shallowest depth limit (30 m) of Posidonia's depth function."""
+
+
+@pytest.mark.parametrize("name", CASE_NAMES)
+def test_every_agent_is_positive_at_every_allowed_depth(name):
+    """Step 8g.1: at every allowed project depth, under every preset and
+    flag, every agent carries a value > 0 and costs > 0 once a unit is
+    lost; the production function's worst case stays above what it is net
+    of."""
+    from gaia.production import net_range
+
+    case = load_case(name)
+    if case.depth_production is None:
+        with pytest.raises(ValueError, match="no depth-dependent production function"):
+            case.with_project_depth(10.0)
+        return
+    for depth in DEPTHS:
+        at = case.with_project_depth(*depth)
+        booked = {e["service"]: e["value"] for e in at.service_ledger}
+        for entry in at.service_ledger:
+            if entry["production_function"] is not None:
+                lowest = net_range(entry["production_function"], sum(booked[s] for s in entry["net_of"]))[0]
+                assert lowest > 0.0, (depth, entry["service"])
+        for kwargs in itertools.islice(_grid(at), 0, None, 7):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                eco = at.build_ecosystem(**kwargs)
+            label = f"{name} at {depth} m {kwargs}"
+            _assert_every_agent_positive(eco, label)
+            units = 1 if kwargs["with_pricing"] else max(1, eco.resource.total_units // 50)
+            _assert_every_cost_positive(eco, units, label)
+
+
 @pytest.mark.parametrize("argv", [
+    ["--depth-m", "29.9", "--dive-intensity", "none"],
+    ["--depth-m", "0-29", "--dive-site-share", "0", "--matte-fate", "buried"],
+    ["--depth-m", "25", "--area-ha", "300", "--units", "30", "--dive-intensity", "none", "--with-pricing"],
     ["--dive-intensity", "none"],
     ["--dive-site-share", "0"],
     ["--area-ha", "300", "--units", "30", "--dive-intensity", "none"],
@@ -153,7 +194,12 @@ def test_random_inputs_never_bring_an_agent_to_zero():
                 kwargs["site_intensity"] = rng.choice(list(case.intensity_levels))
         if case.release_fates and rng.random() < 0.5:
             kwargs["carbon_fate"] = rng.choice(list(case.release_fates["fates"]))
-        eco = case.build_ecosystem(**kwargs)
+        built = case
+        if case.depth_production is not None and rng.random() < 0.5:
+            deepest = case.depth_production["deepest_allowed_m"]
+            a = rng.uniform(0.0, deepest - 1e-6)
+            built = case.with_project_depth(a, rng.choice([a, rng.uniform(a, deepest - 1e-6)]))
+        eco = built.build_ecosystem(**kwargs)
         label = f"{name} {kwargs}"
         _assert_every_agent_positive(eco, label)
         # up to the whole resource, capped to keep the suite fast
@@ -187,15 +233,15 @@ def test_no_production_function_draw_can_reach_zero(name):
     """Step 8f.3: the Monte Carlo samples each link of a production function
     inside its range, so the chain at every link's least favourable end is
     the lowest any draw can give; it must exceed what the entry is net of."""
-    from gaia.production import gross_range
+    from gaia.production import net_range
 
     case = load_case(name)
     booked = {e["service"]: e["value"] for e in case.service_ledger}
     for entry in case.service_ledger:
         if entry["production_function"] is None:
             continue
-        lowest = gross_range(entry["production_function"])[0]
-        assert lowest - sum(booked[s] for s in entry["net_of"]) > 0.0, entry["service"]
+        lowest = net_range(entry["production_function"], sum(booked[s] for s in entry["net_of"]))[0]
+        assert lowest > 0.0, entry["service"]
 
 
 def test_validation_rejects_an_agent_at_zero():
@@ -221,6 +267,7 @@ def test_parsing_rejects_an_agent_at_zero(name):
         target["value"] = 0.0
         target.pop("range", None)
         target.pop("relative_range", None)
+        target.pop("converted_from", None)     # 0 is not the converted figure (Step 8g.6)
     elif "annual_value_per_ha" in agent:
         agent["annual_value_per_ha"] = 0.0
     else:

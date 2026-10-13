@@ -263,6 +263,7 @@ class TestPosidoniMainJson:
     def test_extraction_json_with_notes(self, capsys):
         posidonia_main([
             "--hectares", "100", "--units", "50", "--format", "json",
+            "--dive-intensity", "none",     # Step 8g.5: a size needs the diving input
         ])
         captured = capsys.readouterr()
         parsed = json.loads(captured.out)
@@ -477,7 +478,8 @@ class TestLegacyWrappers:
     def test_user_supplied_labels_name_the_flag_used(self, capsys):
         """The one documented difference: a user-supplied value's source
         names the flag of the command line that set it."""
-        argv = ["--units", "100", "--unit-value", "3000", "--format", "json", "--summary-only"]
+        argv = ["--units", "100", "--unit-value", "3000", "--format", "json", "--summary-only",
+                "--dive-intensity", "none"]     # Step 8g.5: a size needs the diving input
 
         def unit_value_source():
             params = json.loads(capsys.readouterr().out)["calibration"]["parameters"]

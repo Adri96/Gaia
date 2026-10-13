@@ -52,11 +52,18 @@
   },
   "agent_defaults": {
     "annual_value_per_ha": {
-      "value": 1593.0,
+      "value": 1277.708865,
       "unit": "€/ha/yr",
-      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: woodlands Int$1,588/ha/yr; minus climate regulation Int$7 (SM Table 9.1)",
+      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): woodlands, total economic value Int$1,588/ha/yr minus climate regulation Int$7 = Int$1,581/ha/yr (2007 international dollars, 2007 price level; 21 estimates, Table 3); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
       "confidence": "low",
-      "note": "Every agent; the dependency weights split it. Figure partly from memory, to be checked against the paper (Step 8); 2007 Int$ used as € with no currency or price-year conversion; a global woodland mean, not a Mediterranean holm-oak valuation."
+      "note": "Every agent; the dependency weights split it. Step 8g.6 (the owner's answer: convert international dollars to euros everywhere): 1,581 x 0.808165 = EUR 1,277.71/ha/yr in 2007 euros at Spanish purchasing power (it was used at face value as EUR 1,593, from figures partly typed from memory: 1,600 - 7; now read in Table 2). Not inflated to a later price year and no income adjustment (Step 8d.5). Climate regulation is left out (carbon is valued only by gaia.carbon, decision D3). A global woodland mean, not a Mediterranean holm-oak valuation.",
+      "converted_from": {
+        "currency": "Int$",
+        "price_year": 2007,
+        "amounts": {
+          "value": 1581
+        }
+      }
     },
     "damage": "threshold_logistic"
   },
@@ -475,17 +482,31 @@
     "anchors": [
       {
         "agent_name": "Mycorrhizal Fungi",
-        "anchor_value": 5200.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$ 52; Table 1: 118 of the database's 133 food estimates are direct market prices",
+        "anchor_value": 4202.4580000000005,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): woodlands, food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$ 52; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$ 52; Table 1: 118 of the database's 133 food estimates are direct market prices; converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$, Int$52/ha/yr x 100 ha, a global woodlands mean, not a site valuation; for scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms (de-Miguel et al. 2014, Forest Ecology and Management 330:218-227, doi:10.1016/j.foreco.2014.07.014)"
+        "description": "A market-based value (Step 8d.6): food (provisioning; in Mediterranean woodland largely wild mushrooms, the fruiting bodies of mycorrhizal fungi) Int$52/ha/yr x 100 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global woodlands mean, not a site valuation; for scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms (de-Miguel et al. 2014, Forest Ecology and Management 330:218-227, doi:10.1016/j.foreco.2014.07.014)",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 5200
+          }
+        }
       },
       {
         "agent_name": "Pollinators & Insects",
-        "anchor_value": 3100.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): woodlands, pollination Int$ 31; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices)",
+        "anchor_value": 2505.3115000000003,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): woodlands, pollination Int$ 31; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): pollination Int$, Int$31/ha/yr x 100 ha, a global woodlands mean, not a site valuation"
+        "description": "A market-based value (Step 8d.6): pollination Int$31/ha/yr x 100 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global woodlands mean, not a site valuation",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 3100
+          }
+        }
       }
     ],
     "scarcity_functions": {

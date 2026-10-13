@@ -42,6 +42,10 @@ ABS_TOL = 1e-12
 STEP_SAMPLES = 11
 VERSION_PLACEHOLDER = "<gaia_version>"
 
+POSIDONIA_REGIONAL_SHARE = "0.03106721955477957"
+"""The documented share of the meadow near dive sites (repr of the case
+file's float, so the value used is exactly the default)."""
+
 # name → (case, argv). Amazon and the pricing runs use small resources so
 # the suite stays fast. The default restoration runs include a maturation
 # horizon so the timeline, years-to-50%/90% and maturation gap are pinned.
@@ -84,16 +88,21 @@ SCENARIOS: Dict[str, Tuple[str, List[str]]] = {
         "costa_brava",
         ["--mode", "restore", "--trees", "1000", "--units", "900"],
     ),
+    # Step 8g.5: a Posidonia run that sets the meadow's size must state the
+    # diving input; these give the regional one explicitly (the documented
+    # share of meadow near dive sites, 142.35 / 4,582), so the numbers are
+    # those of the runs without it
     "posidonia__extract": (
-        "posidonia", ["--hectares", "5000", "--units", "2000"],
+        "posidonia", ["--hectares", "5000", "--units", "2000", "--dive-site-share", POSIDONIA_REGIONAL_SHARE],
     ),
     "posidonia__extract_pricing": (
-        "posidonia", ["--hectares", "1000", "--units", "300", "--with-pricing"],
+        "posidonia", ["--hectares", "1000", "--units", "300", "--with-pricing",
+                      "--dive-site-share", POSIDONIA_REGIONAL_SHARE],
     ),
     "posidonia__restore": (
         "posidonia",
         ["--mode", "restore", "--hectares", "5000", "--units", "2000",
-         "--time-horizon", "100"],
+         "--time-horizon", "100", "--dive-site-share", POSIDONIA_REGIONAL_SHARE],
     ),
     "amazon_forest__extract": (
         "amazon_forest", ["--trees", "4000", "--units", "800"],

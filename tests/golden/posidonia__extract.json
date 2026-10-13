@@ -13,12 +13,12 @@
   ],
   "cli_summary_json": {
     "benchmarks": {
-      "annual_externality_eur_yr": 5314696.0,
+      "annual_externality_eur_yr": 4878013.93,
       "benchmarks": [
         {
-          "benchmark_central_over_gaia": 0.22,
+          "benchmark_central_over_gaia": 0.24,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1293.15,
+          "gaia_value_eur_per_ha_yr": 1178.35,
           "high": 284.83,
           "includes_carbon": false,
           "low": 276.83,
@@ -29,9 +29,9 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 0.27,
+          "benchmark_central_over_gaia": 0.3,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1451.73,
+          "gaia_value_eur_per_ha_yr": 1336.94,
           "high": 514.0,
           "includes_carbon": true,
           "low": 284.0,
@@ -42,52 +42,52 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 6.0,
-          "central": 8712.0,
-          "gaia_value_eur_per_ha_yr": 1451.73,
-          "high": 95767.0,
+          "benchmark_central_over_gaia": 4.47,
+          "central": 5980.857696,
+          "gaia_value_eur_per_ha_yr": 1336.94,
+          "high": 65744.811636,
           "includes_carbon": true,
-          "low": 1588.0,
+          "low": 1090.174704,
           "name": "Stamatiadou et al. 2025, Mediterranean seagrass meta-regression (country range)",
-          "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita.",
-          "position": "below",
-          "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704",
-          "unit": "Int$2020/ha/yr"
+          "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita. Converted from Int$ (2020 prices: low Int$1,588, high Int$95,767, central Int$8,712) at 0.686508 \u20ac per Int$, the PPP factor for household consumption, Spain 2020 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
+          "position": "within",
+          "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704: values standardised to 'International dollars (Int.$) per hectare per year (with 2020 as the reference year)', basin mean 8,712 Int.$/ha/yr (abstract, as indexed by RePEc IDEAS); converted to EUR at Spain's 2020 PPP factor for household consumption, 0.686508 EUR/Int$ (World Bank, PA.NUS.PRVT.PP, read 13 October 2026; gaia/currency.py)",
+          "unit": "\u20ac2020/ha/yr (PPP)"
         },
         {
-          "benchmark_central_over_gaia": 19.92,
-          "central": 28917.0,
-          "gaia_value_eur_per_ha_yr": 1451.73,
-          "high": 42063.0,
+          "benchmark_central_over_gaia": 17.48,
+          "central": 23369.707305,
+          "gaia_value_eur_per_ha_yr": 1336.94,
+          "high": 33993.844395,
           "includes_carbon": true,
-          "low": 26167.0,
+          "low": 21147.253555,
           "name": "de Groot et al. 2012 (ESVD/TEEB), coastal systems",
-          "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone.",
+          "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone. Converted from Int$ (2007 prices: low Int$26,167, high Int$42,063, central Int$28,917) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
           "position": "below",
-          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, as tabulated by Costanza et al. (2014) Table 4",
-          "unit": "Int$2007/ha/yr"
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (coastal systems, total 28,917) and Table 3 (totals of minimum and maximum values, 26,167-42,063), read in full; also tabulated by Costanza et al. (2014) Table 4; converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
+          "unit": "\u20ac2007/ha/yr (PPP)"
         },
         {
-          "benchmark_central_over_gaia": 19.92,
+          "benchmark_central_over_gaia": 17.48,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1451.73,
-          "high": 28916.0,
+          "gaia_value_eur_per_ha_yr": 1336.94,
+          "high": 23368.89914,
           "includes_carbon": true,
-          "low": 28916.0,
+          "low": 23368.89914,
           "name": "Costanza et al. 2014, seagrass/algae beds",
-          "note": "Global unit value; 26,223 of it is nutrient cycling.",
+          "note": "Global unit value; 26,223 of it is nutrient cycling. Converted from Int$ (2007 prices: low Int$28,916, high Int$28,916) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
           "position": "below",
-          "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3",
-          "unit": "$2007/ha/yr"
+          "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3 (full text: unit values 'in international $/ha/yr', 2007 dollars from de Groot et al. 2012); converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
+          "unit": "\u20ac2007/ha/yr (PPP)"
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
-      "full_damage_eur_per_ha_yr": 1293.15,
-      "full_damage_with_burial_eur_per_ha_yr": 1451.73,
+      "full_damage_eur_per_ha_yr": 1178.35,
+      "full_damage_with_burial_eur_per_ha_yr": 1336.94,
       "hectares_lost": 2000.0,
-      "linear_transfer_eur_yr": 2586296.79,
-      "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
-      "realised_loss_eur_per_ha_yr": 2657.35
+      "linear_transfer_eur_yr": 2356706.67,
+      "method": "Benchmarks in international dollars converted to euros at Spain's PPP for their price year (gaia.currency); the others in their own currency and price year; no price-year adjustment: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
+      "realised_loss_eur_per_ha_yr": 2439.01
     },
     "calibration": {
       "calibration_regime": "B",
@@ -172,14 +172,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 509.48 EUR/ha/yr gross (net primary production of the plant, 476 g DW = 160 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried; of the leaf epiphytes, 22.8 g C/m2/yr, none buried: 1,415 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 474.48 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end at once (31.41-2,993.09 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function from its own distribution and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 215 / 490 / 1,085 EUR/ha/yr, 1,000 draws, seed 20261012).",
+          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1, 8g.2, 8g.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 312.49 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 81.1% not buried (shoots only, Step 8g.4); of its roots, 6.95 g C/m2/yr, 4% not buried: 868 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 277.49 EUR/ha/yr. The leaf epiphytes' food (82.20 EUR/ha/yr) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (3.83-1,525.48 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 118 / 254 / 528 EUR/ha/yr, 1,000 draws, seed 20261012).",
           "range": [
-            285.85238395997214,
-            27237.13590881536
+            34.85445543853452,
+            13881.880718908227
           ],
-          "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029; epiphytes: Champenois & Borges (2021), doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3; transfer efficiency: S\u00e1nchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; see production_function",
+          "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029; transfer efficiency: S\u00e1nchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
           "unit": "\u20ac/ha/yr",
-          "value": 4317.81182200311
+          "value": 2525.184071097317
         },
         {
           "confidence": "low",
@@ -196,14 +196,14 @@
         {
           "confidence": "low",
           "name": "agent[Epiphytes & Algae].annual_value_per_ha",
-          "note": "Service ledger (Step 8c.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72): an intermediate agent with no final service of its own: it owns the epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica. Its production (22.8 g C/m2/yr) enters the meadow's production function as a producer (Step 8f.2): that is food, a provisioning service, booked once to the meadow; this entry is monitoring information, a cultural service, so the two do not overlap. Range x0.5-x2 (judgement).",
+          "note": "Service ledger (Step 8c.2, 8g.2; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72, \u00a72b): two final services. (1) Since Step 8g.2, the food its own primary production supports (the owner's answer to PR #10 question 2: moved from the meadow's production function, where the epiphytes were a producer since Step 8f.2): 22.8 g C/m2/yr, none buried \u2192 the meadow's chain to the catch (14.3% transfer per level to trophic level 3.1, x9, 46.5% sustainable catch, EUR 5.11/kg) = 82.20 EUR/ha/yr, not net of anything (the commercial catch stays netted out of the meadow's chain). (2) The epiphyte share of the bioindicator service, moved from Human Communities (total unchanged): 1.5 x 0.5/3.5 = 0.2143 EUR/ha/yr, the weight of the epiphyte/leaf biomass metric in the PREI index used to monitor P. oceanica; monitoring information, a cultural service, so it does not overlap the food. Weight x value = 82.41 EUR/ha/yr. Range: the food chain at every link's least and most favourable end (8.58-428.28) plus the bioindicator share, divided by the weight; the Monte Carlo does not sample this value as one aggregate: it samples the production function's links (the links shared with the meadow's chain drawn once for both) and recomputes it in every draw.",
           "range": [
-            1.3928571428571428,
-            5.571428571428571
+            114.35150249872838,
+            5570.470357851579
           ],
-          "source": "Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
+          "source": "Service ledger: production function (Step 8g.2): Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724, from Bay (1984), doi:10.1016/0304-3770(84)90026-3, with the meadow's chain to the catch (see the ledger); bioindicator: Campagne et al. (2015), Marine Pollution Bulletin 97:391-400, doi:10.1016/j.marpolbul.2015.05.061, Table 2 (EUR 2014/ha/yr, French Mediterranean P. oceanica): use as bioindicator 1.5 EUR/ha/yr; share: Gobert et al. (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012, PREI EQR' = (N density + N leaf surface + N(E/L) + N lower limit)/3.5 with N(E/L) = [1 - E/L] x 0.5",
           "unit": "\u20ac/ha/yr",
-          "value": 2.7857142857142856
+          "value": 1071.3467079823874
         },
         {
           "confidence": "low",
@@ -758,10 +758,10 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 4317.81182200311,
-          "annual_value_eur_yr": 42269613.45309717,
+          "annual_value_eur_per_ha_yr": 2525.184071097317,
+          "annual_value_eur_yr": 33306474.69856821,
           "dependency_weight": 0.10989010989010989,
-          "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production (with its roots and leaf epiphytes) supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
+          "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production (with its roots) supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
           "keystone_threshold": 0.3,
           "name": "Posidonia Meadow",
@@ -772,7 +772,7 @@
           "trophic_amplification": 1.0,
           "trophic_level": 0,
           "value_notes": [
-            "Primary production \u2192 food: NPP 160 g C/m\u00b2/yr (476 g dry weight) + roots 6.95 + epiphytes 22.8 = 190 g C/m\u00b2/yr \u2192 1,415 kg C/ha/yr into the food web (not buried) \u2192 214 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 99.7 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac509/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac474/ha/yr",
+            "Primary production \u2192 food: NPP 107 g C/m\u00b2/yr (318 g dry weight) at 15 m (the regional mean depth) + roots 6.95 = 114 g C/m\u00b2/yr \u2192 868 kg C/ha/yr into the food web (not buried) \u2192 131 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 61.2 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac312/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac277/ha/yr",
             "Carbon: 1,199 tCO2/ha held in the matte and 0.95 tCO2/ha/yr buried: valued once, in the carbon accounting, and not added to this line"
           ]
         },
@@ -788,15 +788,18 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 2.7857142857142856,
-          "annual_value_eur_yr": 13928.571428571428,
+          "annual_value_eur_per_ha_yr": 1071.3467079823874,
+          "annual_value_eur_yr": 5356733.539911937,
           "dependency_weight": 0.07692307692307693,
-          "description": "Epiphytic algae and plant community: primary production, food web base; owns the epiphyte share of the bioindicator service (PREI E/L metric); the food its production supports is valued once, in the meadow's production function (Step 8f.2), not here",
+          "description": "Epiphytic algae and plant community: primary production, food web base; owns the food its own production supports (production function, Step 8g.2) and the epiphyte share of the bioindicator service (PREI E/L metric)",
           "is_keystone": false,
           "keystone_threshold": null,
           "name": "Epiphytes & Algae",
           "trophic_amplification": 1.0,
-          "trophic_level": 0
+          "trophic_level": 0,
+          "value_notes": [
+            "Primary production \u2192 food: NPP 22.8 g C/m\u00b2/yr \u2192 228 kg C/ha/yr into the food web (not buried) \u2192 34.6 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 16.1 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac82.2/ha/yr"
+          ]
         },
         {
           "annual_value_eur_per_ha_yr": 44.236111111111114,
@@ -1046,23 +1049,158 @@
         "scarcity_rate": 0.01
       },
       "horizon_years": 200,
-      "services_eur_pv": 497424427.73,
-      "substrate_unrecoverable_eur_pv": 31724.85,
-      "total_eur_pv": 757998421.62
+      "services_eur_pv": 456553542.8,
+      "substrate_unrecoverable_eur_pv": 29118.17,
+      "total_eur_pv": 717127536.68
     },
     "production_functions": {
+      "Epiphytes & Algae": {
+        "already_counted_eur_per_ha_yr": 0.0,
+        "chain": [
+          {
+            "step": "net primary production, carbon",
+            "unit": "g C/m\u00b2/yr",
+            "value": 22.820899999999998
+          },
+          {
+            "step": "entering the food web (not buried)",
+            "unit": "kg C/ha/yr",
+            "value": 228.20899999999997
+          },
+          {
+            "step": "consumer production at trophic level 3.1",
+            "unit": "kg C/ha/yr",
+            "value": 3.84183268099249
+          },
+          {
+            "step": "fish and invertebrates produced",
+            "unit": "kg/ha/yr",
+            "value": 34.57649412893241
+          },
+          {
+            "step": "sustainable catch",
+            "unit": "kg/ha/yr",
+            "value": 16.08639031666909
+          },
+          {
+            "step": "food value at first-sale prices",
+            "unit": "\u20ac/ha/yr",
+            "value": 82.19699951512872
+          }
+        ],
+        "comparison": null,
+        "depth_production": null,
+        "gross_eur_per_ha_yr": 82.19699951512872,
+        "gross_range_eur_per_ha_yr": [
+          8.581983708693393,
+          428.28343412045115
+        ],
+        "model": "trophic_transfer",
+        "net_eur_per_ha_yr": 82.19699951512872,
+        "net_of": [],
+        "parameters": {
+          "catch_trophic_level": {
+            "distribution": "triangular",
+            "distribution_basis": "The documented assemblage (3.1) is the value; 3.5 an alternative choice of species (the main targets): triangular with its mode at 3.1, the low end",
+            "label": "mean trophic level of the catch",
+            "range": [
+              3.1,
+              3.5
+            ],
+            "source": "Francour (1997), Marine Ecology 18:157-173, doi:10.1111/j.1439-0485.1997.tb00434.x (abstract): P. oceanica fish assemblages at Port-Cros dominated by Symphodus ocellatus, S. tinca, Diplodus annularis and Sarpa salpa; FishBase trophic levels from diet studies (fishbase.se, queried 13 October 2026) 3.5, 3.3, 3.6, 2.0: mean 3.1. Upper end 3.5: the median over 13 meadow species with the main targets (D. vulgaris 3.5, D. sargus 3.4, Mullus surmuletus 3.5, Scorpaena porcus 3.9, S. scrofa 4.3, Spondyliosoma cantharus 3.3, Labrus merula 3.6, Serranus scriba 3.8, Oblada melanura 3.4). The choice of species is a judgement",
+            "status": "derived",
+            "unit": "trophic level",
+            "value": 3.1
+          },
+          "first_sale_price": {
+            "distribution": "fixed",
+            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled",
+            "label": "first-sale price of bony white fish, Catalonia, 2014",
+            "range": null,
+            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
+            "status": "verified",
+            "unit": "\u20ac/kg",
+            "value": 5.109723057630542
+          },
+          "food_web_share": {
+            "distribution": "triangular",
+            "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular",
+            "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
+            "range": [
+              0.74,
+              1.0
+            ],
+            "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the whole plant, roots included (74% not buried, Mateo & Romero 1997's whole-plant figure, abstract)",
+            "status": "inferred",
+            "unit": "fraction",
+            "value": 1.0
+          },
+          "npp_carbon": {
+            "distribution": "lognormal",
+            "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
+            "label": "net primary production of the leaf epiphytes",
+            "range": [
+              11.410449999999999,
+              45.641799999999996
+            ],
+            "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
+            "status": "secondary",
+            "unit": "g C/m\u00b2/yr",
+            "value": 22.820899999999998
+          },
+          "sustainable_catch_share": {
+            "distribution": "triangular",
+            "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)",
+            "label": "share of the production that can be caught sustainably (exploitation rate at maximum sustainable yield)",
+            "range": [
+              0.42512216154067256,
+              0.5
+            ],
+            "source": "Zhou, Yin, Thorson, Smith & Fuller (2012), Canadian Journal of Fisheries and Aquatic Sciences 69:1292-1301, doi:10.1139/f2012-060 (abstract): F_MSY = 0.87 M for teleosts (245 species); F proxy about 15% smaller; the rule of thumb F_MSY = M. Exploitation rate E = F/(F + M): 0.87/1.87 = 0.465 (0.74/1.74 = 0.425 to 0.5). That the sustainable catch is E \u00d7 production is the steady-state relation (production = Z \u00d7 biomass, catch = F \u00d7 biomass), inferred here",
+            "status": "derived",
+            "unit": "fraction",
+            "value": 0.4652406417112299
+          },
+          "transfer_efficiency": {
+            "distribution": "triangular",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%; the Balearic upper end is kept (the owner's decision, Step 8g.3, PR #10 question 5)",
+            "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
+            "range": [
+              0.122,
+              0.218
+            ],
+            "source": "S\u00e1nchez-Zulueta, Valls, Guijarro, \u00c1ngeles Torres, \u00c1ngeles Zapata, Coll, Corrales, Andonegi, D\u00edaz-Vald\u00e9s, Massut\u00ed & Ordines (2023), Frontiers in Marine Science 10:1166674, doi:10.3389/fmars.2023.1166674 (full text read), Table 3, mean transfer efficiency of five Western Mediterranean Ecopath models: Balearic Islands 21.80%, Gulf of Alicante 13.9% (Garc\u00eda-Rodr\u00edguez et al. 2021), South Catalan Sea 12.2% (Coll et al. 2006, doi:10.1016/j.jmarsys.2005.09.001), north-western Mediterranean 14.3% (Corrales et al. 2015, doi:10.1016/j.jmarsys.2015.03.006, the model that covers the Catalan coast), Gulf of Lions 19.7% (Banaru et al. 2013); value = their median, 14.3% (= the north-western Mediterranean model), range = their minimum and maximum (12.2-21.8%). The original model papers were not read (closed access); their values are as tabulated in the 2023 comparison. Cross-check: Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read), Methods (e) 'Data sources': temperate and high-latitude ecosystem models mean 14.25% (sd 5.95, median 13.7, n = 39); all 91 models median 11.8%. No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
+            "status": "derived",
+            "unit": "fraction per trophic level",
+            "value": 0.143
+          },
+          "wet_weight_per_carbon": {
+            "distribution": "fixed",
+            "distribution_basis": "A conventional conversion with no range in the source read: not sampled (flagged secondary)",
+            "label": "wet weight of fish per unit of carbon",
+            "range": null,
+            "source": "Pauly & Christensen (1995), Nature 374:255-257, doi:10.1038/374255a0, as cited by Chen et al. (2022), Frontiers in Marine Science 9:863611, doi:10.3389/fmars.2022.863611 ('A CR of 9:1 and TE of 10% were used for this study (Pauly and Christensen, 1995)'); the primary paper was not read",
+            "status": "secondary",
+            "unit": "kg wet weight/kg C",
+            "value": 9.0
+          }
+        },
+        "producer": "leaf epiphytes",
+        "producers": [],
+        "service": "Food from the leaf epiphytes' primary production: fish and invertebrates it supports"
+      },
       "Posidonia Meadow": {
         "already_counted_eur_per_ha_yr": 35.0,
         "chain": [
           {
             "step": "net primary production, plant",
             "unit": "g DW/m\u00b2/yr",
-            "value": 476.0
+            "value": 317.55834523711
           },
           {
             "step": "net primary production, plant, carbon",
             "unit": "g C/m\u00b2/yr",
-            "value": 159.936
+            "value": 106.69960399966897
           },
           {
             "step": "net primary production, roots, carbon",
@@ -1070,44 +1208,39 @@
             "value": 6.952999999999999
           },
           {
-            "step": "net primary production, epiphytes, carbon",
-            "unit": "g C/m\u00b2/yr",
-            "value": 22.820899999999998
-          },
-          {
             "step": "net primary production, all producers, carbon",
             "unit": "g C/m\u00b2/yr",
-            "value": 189.7099
+            "value": 113.65260399966897
           },
           {
             "step": "entering the food web (not buried)",
             "unit": "kg C/ha/yr",
-            "value": 1414.5166
+            "value": 867.5944324178022
           },
           {
             "step": "consumer production at trophic level 3.1",
             "unit": "kg C/ha/yr",
-            "value": 23.812978899545513
+            "value": 14.605701985065634
           },
           {
             "step": "fish and invertebrates produced",
             "unit": "kg/ha/yr",
-            "value": 214.3168100959096
+            "value": 131.4513178655907
           },
           {
             "step": "sustainable catch",
             "unit": "kg/ha/yr",
-            "value": 99.70889025852478
+            "value": 61.15649547757428
           },
           {
             "step": "food value at first-sale prices",
             "unit": "\u20ac/ha/yr",
-            "value": 509.4848156047374
+            "value": 312.49275506563924
           }
         ],
         "comparison": {
           "metric": "gross primary production",
-          "note": "Gross production of whole communities, the comparable measure across these sources. The chain above starts from the net production of the plant, its roots and its leaf epiphytes (190 g C/m\u00b2/yr, Step 8f.2; no other algae, no microphytobenthos), which is not comparable with these gross figures. Per hectare, seagrass meadows fix carbon on the scale of coral reefs and intensively farmed land; the Corsican P. oceanica meadow, measured over 12 years, fixes about half the seagrass average and 15 times the bare sediment around it.",
+          "note": "Gross production of whole communities, the comparable measure across these sources. The meadow's chain above starts from the net production of the plant and its roots (114 g C/m\u00b2/yr at the regional mean depth, Steps 8f.2 and 8g.1), the epiphytes' chain from the leaf epiphytes' 22.8 (Step 8g.2): 136 g C/m\u00b2/yr together, with no other algae and no microphytobenthos, which is not comparable with these gross figures. Per hectare, seagrass meadows fix carbon on the scale of coral reefs and intensively farmed land; the Corsican P. oceanica meadow, measured over 12 years, fixes about half the seagrass average and 15 times the bare sediment around it.",
           "rows": [
             {
               "ecosystem": "Posidonia oceanica meadow, Corsica, 12-year mean",
@@ -1175,13 +1308,144 @@
           ],
           "unit": "g C/m\u00b2/yr"
         },
-        "gross_eur_per_ha_yr": 509.4848156047374,
+        "depth_production": {
+          "data": [
+            {
+              "depth_m": 4.0,
+              "note": "Blades 845.3 + sheaths 80.6 + rhizomes 63.4 g DW/m2/yr, 1991-93; sampled at the depth of maximal shoot density (4 m), a sheltered bay",
+              "site": "Cala Jonquet (Cap de Creus, Catalonia)",
+              "source": "Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (full text, archived copy of the publisher's PDF, Table 1 and Methods)",
+              "status": "verified",
+              "value": 989.3
+            },
+            {
+              "depth_m": 5.0,
+              "note": "Blades 620 + sheaths 146 + rhizomes 37 g DW/m2/yr (roots, 23, are a separate producer); the meadow extends from 3 to 15 m, 5 m is near its upper limit (ca 500 shoots/m2)",
+              "site": "Medes Islands (Catalonia)",
+              "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Table 3)",
+              "status": "verified",
+              "value": 803.0
+            },
+            {
+              "depth_m": 13.0,
+              "note": "Blades 219 + sheaths 37 + rhizomes 15 g DW/m2/yr (roots, 11, separate); 13 m is close to the meadow's lower limit (ca 100 shoots/m2). Earlier versions of this file gave 257, misreading the rhizomes as 1.3: the table's total, 282 with the roots, confirms 15",
+              "site": "Medes Islands (Catalonia)",
+              "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Table 3)",
+              "status": "verified",
+              "value": 271.0
+            },
+            {
+              "depth_m": 5.0,
+              "note": "Leaves (blades 530 + sheaths 142) 672 + rhizomes 37.8 g DW/m2/yr, mean of July 1988-July 1990",
+              "site": "Lacco Ameno (Ischia, Italy), station LA05 (4-6 m)",
+              "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (full text, archived copy of the publisher's PDF, Table 1 and Results)",
+              "status": "verified",
+              "value": 709.8
+            },
+            {
+              "depth_m": 10.0,
+              "note": "Leaves (blades 365 + sheaths 102) 467 + rhizomes 42.1 g DW/m2/yr",
+              "site": "Lacco Ameno (Ischia, Italy), station LA10 (10-12 m)",
+              "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (full text, archived copy of the publisher's PDF, Table 1 and Results)",
+              "status": "verified",
+              "value": 509.1
+            },
+            {
+              "depth_m": 20.0,
+              "note": "Leaves (blades 167 + sheaths 51) 218 + rhizomes 20.2 g DW/m2/yr",
+              "site": "Lacco Ameno (Ischia, Italy), station LA20 (20-22 m)",
+              "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (full text, archived copy of the publisher's PDF, Table 1 and Results)",
+              "status": "verified",
+              "value": 238.2
+            }
+          ],
+          "deepest_allowed_m": 30.0,
+          "depth_bands": [
+            {
+              "from_m": 15.0,
+              "share": 1.0,
+              "to_m": 15.0
+            }
+          ],
+          "depth_label": "15 m (the regional mean depth)",
+          "depth_used": "regional",
+          "fit": "Fitted by scripts/fit_depth_production.py: least squares on ln(production) of the 6 measurements in 'data' (3 sites, 3 studies, 4-20 m; depths as the authors give them), with z_ref = 10 m (near the data's mean depth, so the two fitted hyperparameters are almost uncorrelated) and z_max fixed at its literature value (the data do not reach it). P_ref = 498.8 g DW/m2/yr (standard error of ln P_ref 0.090), k = 0.0803/m (standard error 0.0191), correlation -0.12; residual standard deviation of ln(production) 0.218 (sites scatter about \u00d7/\u00f7 1.24 around the curve). Medes (a turbid site whose meadow ends at 15 m) lies below the curve at 13 m, Cala Jonquet (sampled at its densest depth) above it at 4 m. Cross-check: at Port Lligat (Cap de Creus), where the meadow reaches 15.6 m, leaf production per m2 'declined 5- to 6-fold with depth' (Olesen, Enr\u00edquez, Duarte & Sand-Jensen 2002, Marine Ecology Progress Series 236:89-97, doi:10.3354/meps236089, full text; no values tabulated), steeper than the regional curve, as expected where the meadow ends shallower. Not used: Pergent-Martini, Rico-Raimondino & Pergent (1994), Marine Biology 120:9-15, doi:10.1007/BF00381936, production at 22 Mediterranean sites by depth (closed access; only its metadata on Crossref and a search-engine summary were seen)",
+          "formula": "NPP(z) = P_ref \u00b7 (e^(\u2212k\u00b7z) \u2212 e^(\u2212k\u00b7z_max)) / (e^(\u2212k\u00b7z_ref) \u2212 e^(\u2212k\u00b7z_max))",
+          "hyperparameters": {
+            "decline_rate": {
+              "distribution": "triangular",
+              "distribution_basis": "The fit \u00b1 1.96 standard errors, triangular with its mode at the fit",
+              "label": "decline rate of production with depth (the light attenuation coefficient Kd where production is light-limited)",
+              "range": [
+                0.04283656300650749,
+                0.11775075412308353
+              ],
+              "source": "Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit). For scale: diffuse light attenuation below 0.2/m at Port Lligat (Olesen et al. 2002, doi:10.3354/meps236089, full text)",
+              "status": "derived",
+              "unit": "1/m",
+              "value": 0.0802936585647955
+            },
+            "depth_limit": {
+              "distribution": "triangular",
+              "distribution_basis": "The depths are read; that the plant's production reaches zero at them is an inference (meadows end where light no longer sustains them): triangular, mode 40 m, between the Catalan lower limit (30 m) and the deepest meadows (44 m)",
+              "label": "depth limit: the depth at which the plant's net production reaches zero",
+              "range": [
+                30.0,
+                44.0
+              ],
+              "source": "Generalitat de Catalunya, Departament de Medi Ambient i Habitatge (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (scientific supervision J. Romero), http://www.gencat.cat/mediamb/publicacions/monografies/prats_posidonia_guia_professorat.pdf (read): Catalan meadows grow on well-lit bottoms between 0 and 25 m and 'atenyen els 40 metres en aig\u00fces molt transparents de les Balears, Malta, C\u00f2rsega'; their lower limit is 'molt regular, situat al voltant dels 30 metres', set mainly by light. Gobert, Sartoretto, Rico-Raimondino, Andral, Chery, Lejeune & Boissery (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012 (author copy on Archimer, read): meadows 'between the surface and 44 m depth in the clearest waters'; stable lower limits 37 \u00b1 1 m in Corsica and 25 \u00b1 3 m in Provence (reference values 41 and 34 m). Value 40 m: where meadows end in very transparent waters (the plant still grows there, so its production reaches zero no shallower); low end 30 m: the Catalan meadows' regular lower limit; high end 44 m: the deepest meadows",
+              "status": "inferred",
+              "unit": "m",
+              "value": 40.0
+            },
+            "npp_at_reference_depth": {
+              "distribution": "lognormal",
+              "distribution_basis": "Site-to-site variation around the curve is multiplicative: lognormal with its median at the fit and the 95% prediction interval of a site's production at 10 m as its central 95% (\u00d7/\u00f7 exp(1.96 \u00d7 0.236): the residual and the fit's standard error together), truncated at the range ends",
+              "label": "net primary production of the plant (blades, sheaths, rhizomes) at the reference depth, 10 m",
+              "range": [
+                314.0208352261184,
+                792.2590117572665
+              ],
+              "source": "Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit)",
+              "status": "derived",
+              "unit": "g DW/m\u00b2/yr",
+              "value": 498.78435880391834
+            }
+          },
+          "model": "light_limited_exponential",
+          "net_of_scale": 1.0,
+          "npp": 317.55834523711,
+          "npp_at_depth": {
+            "10": 498.78435880391834,
+            "15": 317.55834523711,
+            "20": 196.25715197142267,
+            "25": 115.06583071413878,
+            "30": 60.72151249243027,
+            "5": 769.5390571635702
+          },
+          "npp_regional": 317.55834523711,
+          "output": "npp_dry_weight",
+          "reference_depth_m": 10.0,
+          "regional_depth": {
+            "bands": [
+              {
+                "from_m": 15.0,
+                "share": 1.0,
+                "to_m": 15.0
+              }
+            ],
+            "source": "Generalitat de Catalunya (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (read): 'la praderia mitjana de la costa catalana a 15 metres' (the average meadow of the Catalan coast, at 15 m, in a worked exercise), and Catalan meadows between the surface and their lower limit at about 30 m (midpoint 15 m); 15 m is also the standard monitoring depth of the PREI index (Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012, author copy, read)",
+            "status": "inferred"
+          },
+          "unit": "g DW/m\u00b2/yr"
+        },
+        "gross_eur_per_ha_yr": 312.49275506563924,
         "gross_range_eur_per_ha_yr": [
-          66.41234988571122,
-          3028.091858111578
+          38.8301599383005,
+          1560.4813976822227
         ],
         "model": "trophic_transfer",
-        "net_eur_per_ha_yr": 474.4848156047374,
+        "net_eur_per_ha_yr": 277.49275506563924,
         "net_of": [
           "Commercial fisheries: meadow-associated fish",
           "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
@@ -1210,31 +1474,44 @@
             "unit": "trophic level",
             "value": 3.1
           },
-          "epiphytes.food_web_share": {
+          "depth.decline_rate": {
             "distribution": "triangular",
-            "distribution_basis": "Probably none buried (the value, the mode); at worst buried like the plant (74%): triangular",
-            "label": "share of epiphyte production eaten, decomposed or exported rather than buried",
+            "distribution_basis": "The fit \u00b1 1.96 standard errors, triangular with its mode at the fit",
+            "label": "decline rate of production with depth (the light attenuation coefficient Kd where production is light-limited)",
             "range": [
-              0.74,
-              1.0
+              0.04283656300650749,
+              0.11775075412308353
             ],
-            "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the plant's production (74% not buried, the food_web_share above)",
-            "status": "inferred",
-            "unit": "fraction",
-            "value": 1.0
+            "source": "Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit). For scale: diffuse light attenuation below 0.2/m at Port Lligat (Olesen et al. 2002, doi:10.3354/meps236089, full text)",
+            "status": "derived",
+            "unit": "1/m",
+            "value": 0.0802936585647955
           },
-          "epiphytes.npp_carbon": {
-            "distribution": "lognormal",
-            "distribution_basis": "One site, a range of x/\u00f72 (a judgement): lognormal with its median at the value and the range as its central 95%, truncated at the range ends",
-            "label": "net primary production of the leaf epiphytes",
+          "depth.depth_limit": {
+            "distribution": "triangular",
+            "distribution_basis": "The depths are read; that the plant's production reaches zero at them is an inference (meadows end where light no longer sustains them): triangular, mode 40 m, between the Catalan lower limit (30 m) and the deepest meadows (44 m)",
+            "label": "depth limit: the depth at which the plant's net production reaches zero",
             "range": [
-              11.410449999999999,
-              45.641799999999996
+              30.0,
+              44.0
             ],
-            "source": "Champenois & Borges (2021), Limnology and Oceanography 66:2126-2140, doi:10.1002/lno.11724 (full text, author copy on ORBi, Fig. 6): epiphytes 1.9 mol C/m2/yr, against 15.3 for the P. oceanica leaves and 0.5 below ground, Bay of Revellata (Corsica), 10 m, from Bay (1984), Aquatic Botany 20:43-64, doi:10.1016/0304-3770(84)90026-3 (not read; metadata checked on Crossref); x 12.011 g C/mol = 22.8 g C/m2/yr, 12% of the leaves' production. No Catalan or other Mediterranean annual figure was found. Range x/\u00f72, the default range of a low-confidence value (gaia.uncertainty), a judgement, not a source. For scale: epiphytic algae contribute 20-60% of seagrass meadow primary production across species (Marb\u00e0 et al. 2006, as cited by Champenois & Borges 2021); on P. oceanica leaf sections in short laboratory incubations at Ischia, epiphytes gave 62% of net primary production at ambient pH (Berlinghof et al. 2022, Scientific Reports 12:6249, doi:10.1038/s41598-022-10154-7, full text), a rate on epiphyte-covered leaf parts, not an annual meadow figure",
-            "status": "secondary",
-            "unit": "g C/m\u00b2/yr",
-            "value": 22.820899999999998
+            "source": "Generalitat de Catalunya, Departament de Medi Ambient i Habitatge (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (scientific supervision J. Romero), http://www.gencat.cat/mediamb/publicacions/monografies/prats_posidonia_guia_professorat.pdf (read): Catalan meadows grow on well-lit bottoms between 0 and 25 m and 'atenyen els 40 metres en aig\u00fces molt transparents de les Balears, Malta, C\u00f2rsega'; their lower limit is 'molt regular, situat al voltant dels 30 metres', set mainly by light. Gobert, Sartoretto, Rico-Raimondino, Andral, Chery, Lejeune & Boissery (2009), Marine Pollution Bulletin 58:1727-1733, doi:10.1016/j.marpolbul.2009.06.012 (author copy on Archimer, read): meadows 'between the surface and 44 m depth in the clearest waters'; stable lower limits 37 \u00b1 1 m in Corsica and 25 \u00b1 3 m in Provence (reference values 41 and 34 m). Value 40 m: where meadows end in very transparent waters (the plant still grows there, so its production reaches zero no shallower); low end 30 m: the Catalan meadows' regular lower limit; high end 44 m: the deepest meadows",
+            "status": "inferred",
+            "unit": "m",
+            "value": 40.0
+          },
+          "depth.npp_at_reference_depth": {
+            "distribution": "lognormal",
+            "distribution_basis": "Site-to-site variation around the curve is multiplicative: lognormal with its median at the fit and the 95% prediction interval of a site's production at 10 m as its central 95% (\u00d7/\u00f7 exp(1.96 \u00d7 0.236): the residual and the fit's standard error together), truncated at the range ends",
+            "label": "net primary production of the plant (blades, sheaths, rhizomes) at the reference depth, 10 m",
+            "range": [
+              314.0208352261184,
+              792.2590117572665
+            ],
+            "source": "Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit)",
+            "status": "derived",
+            "unit": "g DW/m\u00b2/yr",
+            "value": 498.78435880391834
           },
           "first_sale_price": {
             "distribution": "fixed",
@@ -1248,29 +1525,26 @@
           },
           "food_web_share": {
             "distribution": "triangular",
-            "distribution_basis": "Three point estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 74%; Cebri\u00e1n et al. 1997, 83.2%): triangular with its mode at the Medes Islands value",
-            "label": "share of the production eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
+            "distribution_basis": "Shoot-only estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 79.2% at 5 m and 82.9% at 13 m; Cebri\u00e1n et al. 1997, 83.2%): triangular with its mode at the Medes Islands mean, 81.1% (Step 8g.4, the owner's answer to PR #10 question 4; 74%, the whole-plant figure, before)",
+            "label": "share of the plant's production (blades, sheaths, rhizomes; its roots are a separate producer) eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
             "range": [
               0.71,
               0.832
             ],
-            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (abstract): about 26% of the carbon the plant produces in a year is buried below ground, Medes Islands (Catalonia), so 74% is not. Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract: 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract: 16.8% of P. oceanica production neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
-            "status": "verified",
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Table 3, carbon, Medes Islands, Catalonia): the leaf blades are not buried, the sheaths and rhizomes go to the matte: blades 252 of 252 + 51 + 15 g C/m2/yr at 5 m = 79.2% not buried, 87 of 87 + 12 + 6 at 13 m = 82.9%; value = their mean, 81.1% (shoot-only: the roots are a separate producer since Step 8f.2; the whole-plant figure in the abstract, 26% buried so 74% not, counts the roots; from Table 5's whole-plant burial, 84 and 24 g C, less the roots, 10 and 5, it would be 76.7% and 81.9%). Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract and full text: production of blades, sheaths and rhizomes, no roots; 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract and full text: 16.8% of P. oceanica production, blades, sheaths and rhizomes, roots not determined, neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
+            "status": "derived",
             "unit": "fraction",
-            "value": 0.74
+            "value": 0.8105121293800539
           },
           "npp_dry_weight": {
-            "distribution": "lognormal",
-            "distribution_basis": "Site-to-site production is right-skewed (Ischia 238-714, Catalan sites 257-989 g DW/m2/yr): lognormal with its median at 476 and the range read as its central 95%, truncated at the range ends",
-            "label": "net primary production of the plant: leaf blades, sheaths and rhizomes (its roots and the leaf epiphytes are separate producers, below)",
-            "range": [
-              238.0,
-              989.3
-            ],
-            "source": "Pergent, Romero, Pergent-Martini, Mateo & Boudouresque (1994), Marine Ecology Progress Series 106:139-146, doi:10.3354/meps106139 (abstract): blades 167-530, sheaths 51-142, rhizomes 20-42 g dry weight/m2/yr at 3 sites in Lacco Ameno Bay (Ischia, Italy); value = the sum of the midpoints (348.5 + 96.5 + 31). Range: 238, the sum of the Ischia minima, to 989.3, the Catalan maximum: Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (full text, Table 1), P. oceanica at Cala Jonquet (Cap de Creus) at 4 m: blades 845.3, sheaths 80.6, rhizomes 63.4, total 989.3 g DW/m2/yr. The Medes Islands give 803 at 5 m and 257 at 13 m (blades + sheaths + rhizomes; Mateo & Romero 1997, doi:10.3354/meps151043, full text, Table 3). The Catalan measurements are from shallow, dense meadows; the central value stays the Ischia mid-range",
-            "status": "verified",
+            "distribution": "fixed",
+            "distribution_basis": "derived in every draw from the depth function's sampled hyperparameters",
+            "label": "net primary production of the plant at 15 m (the regional mean depth), from its depth function",
+            "range": null,
+            "source": "derived: depth_production (light_limited_exponential) averaged over 15 m (the regional mean depth); its hyperparameters: Fitted to 6 measurements of blades + sheaths + rhizomes (see data): Cebri\u00e1n et al. (1997), doi:10.3354/meps155029, Cala Jonquet 4 m; Mateo & Romero (1997), doi:10.3354/meps151043, Medes Islands 5 and 13 m; Pergent et al. (1994), doi:10.3354/meps106139, Ischia 5, 10 and 20 m; by scripts/fit_depth_production.py (see fit)",
+            "status": "derived",
             "unit": "g DW/m\u00b2/yr",
-            "value": 476.0
+            "value": 317.55834523711
           },
           "roots.carbon_fraction": {
             "distribution": "fixed",
@@ -1323,7 +1597,7 @@
           },
           "transfer_efficiency": {
             "distribution": "triangular",
-            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%; the Balearic upper end is kept (the owner's decision, Step 8g.3, PR #10 question 5)",
             "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "range": [
               0.122,
@@ -1350,10 +1624,6 @@
           {
             "description": "the plant's roots: produced in the sediment and almost all buried in the matte; only the part decomposed within a year reaches the food web",
             "name": "roots"
-          },
-          {
-            "description": "the algae growing on the leaves (encrusting red algae, brown erect algae): grazed by sea urchins and fish, not buried",
-            "name": "epiphytes"
           }
         ],
         "service": "Food from primary production: fish and invertebrates the meadow's production supports, net of the commercial catch already counted"
@@ -1369,7 +1639,7 @@
       "agent_cascade_externality_eur_yr": {
         "Coastal Protection": 50785.63,
         "Coralligenous & Red Coral": 5758.17,
-        "Epiphytes & Algae": 50.65,
+        "Epiphytes & Algae": 19479.5,
         "Fish Populations": 0.0,
         "Human Communities": 768.25,
         "Marine Invertebrates": 0.0,
@@ -1381,36 +1651,36 @@
       "agent_direct_externality_eur_yr": {
         "Coastal Protection": 746973.36,
         "Coralligenous & Red Coral": 75282.87,
-        "Epiphytes & Algae": 851.41,
+        "Epiphytes & Algae": 327441.67,
         "Fish Populations": 153125.0,
         "Human Communities": 6419.66,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 3691170.82,
+        "Posidonia Meadow": 2908469.64,
         "Seabirds": 150921.33,
         "Water Quality": 238395.75
       },
       "agent_externality_eur_yr": {
         "Coastal Protection": 797758.99,
         "Coralligenous & Red Coral": 81041.04,
-        "Epiphytes & Algae": 902.06,
+        "Epiphytes & Algae": 346921.17,
         "Fish Populations": 153125.0,
         "Human Communities": 7187.9,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 3691170.82,
+        "Posidonia Meadow": 2908469.64,
         "Seabirds": 150921.33,
         "Water Quality": 259792.53
       },
-      "annual_externality_eur_yr": 5314696.0,
+      "annual_externality_eur_yr": 4878013.93,
       "discount_is_default": false,
       "final_ecosystem_health": 0.098122,
-      "net_social_cost_eur_pv": 752998421.62,
+      "net_social_cost_eur_pv": 712127536.68,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 757998421.62,
-      "pv_externality_h100_eur_pv": 570097612.57,
-      "pv_externality_h200_eur_pv": 757998421.62,
-      "pv_externality_h50_eur_pv": 428522782.57,
+      "pv_externality_eur_pv": 717127536.68,
+      "pv_externality_h100_eur_pv": 543346412.69,
+      "pv_externality_h200_eur_pv": 717127536.68,
+      "pv_externality_h50_eur_pv": 412228828.93,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
@@ -1418,12 +1688,12 @@
   "per_agent": {
     "Coastal Protection": 797758.9921467853,
     "Coralligenous & Red Coral": 81041.03880604345,
-    "Epiphytes & Algae": 902.0639682449918,
+    "Epiphytes & Algae": 346921.1712503387,
     "Fish Populations": 153125.0,
     "Human Communities": 7187.903085597239,
     "Marine Invertebrates": 21875.0,
     "Marine Megafauna": 150921.33075300753,
-    "Posidonia Meadow": 3691170.8196122856,
+    "Posidonia Meadow": 2908469.642097043,
     "Seabirds": 150921.3307530075,
     "Water Quality": 259792.52557007154
   },
@@ -1431,7 +1701,7 @@
     "agent_cascade_annual_costs": [
       0.0,
       5758.169367609364,
-      50.650563881749015,
+      19479.49764641764,
       0.0,
       0.0,
       0.0,
@@ -1441,9 +1711,9 @@
       768.2460166983874
     ],
     "agent_direct_annual_costs": [
-      3691170.8196122856,
+      2908469.642097043,
       75282.86943843408,
-      851.4134043632428,
+      327441.6736039211,
       21875.0,
       153125.0,
       150921.33075300753,
@@ -1464,7 +1734,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 5314696.004695043,
+    "annual_externality": 4878013.9344618935,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -1495,19 +1765,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 222493638.07241184,
       "carbon_released_t": 1510740.0,
-      "direct": 497424427.7331731,
+      "direct": 456553542.795414,
       "horizon": 200,
-      "substrate_unrecoverable": 31724.847302215792,
-      "total": 757998421.6184232
+      "substrate_unrecoverable": 29118.1747878286,
+      "total": 717127536.6806641
     },
     "final_ecosystem_health": 0.09812199065106542,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 752998421.6184232,
-    "pv_externality": 757998421.6184232,
+    "net_social_cost": 712127536.6806641,
+    "pv_externality": 717127536.6806641,
     "pv_externality_by_horizon": {
-      "100": 570097612.571632,
-      "200": 757998421.6184232,
-      "50": 428522782.5652318
+      "100": 543346412.689988,
+      "200": 717127536.6806641,
+      "50": 412228828.92615914
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,
@@ -1518,16 +1788,18 @@
       "--hectares",
       "5000",
       "--units",
-      "2000"
+      "2000",
+      "--dive-site-share",
+      "0.03106721955477957"
     ],
     "case": "posidonia",
     "name": "posidonia__extract"
   },
   "step_sums": {
     "agent_annual_costs": [
-      2832429806.155526,
+      2231821963.0484257,
       62869368.066675894,
-      698203.0015322072,
+      268519097.96741897,
       16745823.88595211,
       133081317.68966964,
       142368626.68519,
@@ -1572,12 +1844,12 @@
       609.778730638634,
       609.778730638634
     ],
-    "annual_externality": 4146363361.7226405,
+    "annual_externality": 3813576413.581422,
     "depletion_ratio": 400.2,
     "ecosystem_health": 1272.9854959325012,
     "effective_k": 9998000.0,
     "k_fraction": 1999.9745031208731,
-    "marginal_annual_externality": 5314696.004695043,
+    "marginal_annual_externality": 4878013.9344618935,
     "model_confidence": 1349.812500000001,
     "revenue": 5002500000.0,
     "step": 2001000.0,
@@ -1587,9 +1859,9 @@
   "steps": [
     {
       "agent_annual_costs": [
-        929.0024934746631,
+        732.0104329355651,
         18.947368421052627,
-        0.2142857142857143,
+        82.41128522941443,
         4.375,
         30.625000000000004,
         30.184266150601506,
@@ -1635,14 +1907,14 @@
         0.0002
       ],
       "agent_prices": [],
-      "annual_externality": 1293.1483941969186,
+      "annual_externality": 1178.3533331729495,
       "depletion_ratio": 0.0002,
       "ecosystem_health": 0.9998,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999998,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1293.1483941969186,
+      "marginal_annual_externality": 1178.3533331729495,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1653,9 +1925,9 @@
     },
     {
       "agent_annual_costs": [
-        186729.50118840727,
+        147134.09702004856,
         3808.421052631578,
-        43.07142857142857,
+        16564.668331112298,
         879.375,
         6155.625,
         6067.037496270903,
@@ -1701,14 +1973,14 @@
         0.0402
       ],
       "agent_prices": [],
-      "annual_externality": 259922.82723358064,
+      "annual_externality": 236849.0199677628,
       "depletion_ratio": 0.0402,
       "ecosystem_health": 0.9598,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999934657844,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1293.1483941969054,
+      "marginal_annual_externality": 1178.3533331729413,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1719,9 +1991,9 @@
     },
     {
       "agent_annual_costs": [
-        372529.99988333986,
+        293536.18360716157,
         7597.894736842103,
-        85.92857142857142,
+        33046.925376995176,
         1754.3749999999998,
         12280.625,
         12103.890726391202,
@@ -1767,14 +2039,14 @@
         0.0802
       ],
       "agent_prices": [],
-      "annual_externality": 518552.5060729644,
+      "annual_externality": 472519.6866023527,
       "depletion_ratio": 0.0802,
       "ecosystem_health": 0.9198,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999998969987456,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1293.1483941969345,
+      "marginal_annual_externality": 1178.3533331729705,
       "model_confidence": 0.8395999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1785,9 +2057,9 @@
     },
     {
       "agent_annual_costs": [
-        558330.4985782725,
+        439938.2701942746,
         11387.36842105263,
-        128.78571428571428,
+        49529.18242287807,
         2629.375,
         18405.625,
         18140.743956511506,
@@ -1833,14 +2105,14 @@
         0.1202
       ],
       "agent_prices": [],
-      "annual_externality": 777182.184912348,
+      "annual_externality": 708190.3532369426,
       "depletion_ratio": 0.1202,
       "ecosystem_health": 0.8798,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999994811320924,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1293.14839419676,
+      "marginal_annual_externality": 1178.3533331729705,
       "model_confidence": 0.7595999999999999,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1851,9 +2123,9 @@
     },
     {
       "agent_annual_costs": [
-        744130.9972732052,
+        586340.3567813876,
         15176.842105263157,
-        171.64285714285714,
+        66011.43946876096,
         3504.375,
         24530.625000000004,
         24177.597186631807,
@@ -1899,14 +2171,14 @@
         0.1602
       ],
       "agent_prices": [],
-      "annual_externality": 1035811.8637517318,
+      "annual_externality": 943861.0198715323,
       "depletion_ratio": 0.1602,
       "ecosystem_health": 0.8398,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999983640720822,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1293.1483941968763,
+      "marginal_annual_externality": 1178.353333172854,
       "model_confidence": 0.6795999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1917,9 +2189,9 @@
     },
     {
       "agent_annual_costs": [
-        931641.2203158204,
+        734089.6260388793,
         19016.870786190902,
-        215.03233421865625,
+        82698.42480125543,
         4395.933502961149,
         30835.024129270932,
         30495.029261993335,
@@ -1965,14 +2237,14 @@
         0.2005680774507478
       ],
       "agent_prices": [],
-      "annual_externality": 1297525.4617505763,
+      "annual_externality": 1182457.259940672,
       "depletion_ratio": 0.2002,
       "ecosystem_health": 0.7990538419015809,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999960113238897,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4377.06755365734,
+      "marginal_annual_externality": 4103.926767722238,
       "model_confidence": 0.599925,
       "price_result": null,
       "resilience_zone": "red",
@@ -1983,9 +2255,9 @@
     },
     {
       "agent_annual_costs": [
-        1487550.3640515597,
+        1172119.982078969,
         33398.99667885018,
-        370.0367081338263,
+        142310.93659706158,
         8726.580705114413,
         73854.94672071378,
         92618.17785677104,
@@ -2031,14 +2303,14 @@
         0.32024679686010554
       ],
       "agent_prices": [],
-      "annual_externality": 2209695.052716515,
+      "annual_externality": 2036205.5706328521,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917622486862,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4742.701201528776,
+      "marginal_annual_externality": 4429.31170391012,
       "model_confidence": 0.585,
       "price_result": null,
       "resilience_zone": "red",
@@ -2049,9 +2321,9 @@
     },
     {
       "agent_annual_costs": [
-        2089796.788042169,
+        1646661.9436515246,
         48156.1822291934,
-        530.7153860996159,
+        204105.7062776398,
         13135.332837197873,
         116164.75030856463,
         149128.4995707785,
@@ -2097,14 +2369,14 @@
         0.4499012225954084
       ],
       "agent_prices": [],
-      "annual_externality": 3165487.661554363,
+      "annual_externality": 2925927.808055258,
       "depletion_ratio": 0.28,
       "ecosystem_health": 0.410180583244278,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.999984734338123,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4740.476290904917,
+      "marginal_annual_externality": 4396.187676537316,
       "model_confidence": 0.57,
       "price_result": null,
       "resilience_zone": "red",
@@ -2115,9 +2387,9 @@
     },
     {
       "agent_annual_costs": [
-        2691953.364612157,
+        2121133.109666771,
         61744.90472469732,
-        681.111311401678,
+        261945.87326555292,
         17110.66834974033,
         151959.55058228577,
         150921.33075300753,
@@ -2163,14 +2435,14 @@
         0.5795363055579518
       ],
       "agent_prices": [],
-      "annual_externality": 4035123.9925349997,
+      "annual_externality": 3725568.4995437646,
       "depletion_ratio": 0.32,
       "ecosystem_health": 0.25085180796275575,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999739415723898,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4120.598026555963,
+      "marginal_annual_externality": 3770.218762399163,
       "model_confidence": 0.5549999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2181,9 +2453,9 @@
     },
     {
       "agent_annual_costs": [
-        3239968.747071501,
+        2552943.5517130755,
         72881.0433999897,
-        807.158399542727,
+        310421.8184201555,
         20245.655927735148,
         153125.0,
         150921.33075300753,
@@ -2229,14 +2501,14 @@
         0.6975156191353894
       ],
       "agent_prices": [],
-      "annual_externality": 4746300.0918045705,
+      "annual_externality": 4368889.556466756,
       "depletion_ratio": 0.36,
       "ecosystem_health": 0.1608237711540168,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999582173599941,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3224.5348148653284,
+      "marginal_annual_externality": 2901.866112532094,
       "model_confidence": 0.5399999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2247,9 +2519,9 @@
     },
     {
       "agent_annual_costs": [
-        3691170.8196122856,
+        2908469.642097043,
         81041.03880604345,
-        902.0639682449918,
+        346921.1712503387,
         21875.0,
         153125.0,
         150921.33075300753,
@@ -2295,14 +2567,14 @@
         0.7946525107390265
       ],
       "agent_prices": [],
-      "annual_externality": 5314696.004695043,
+      "annual_externality": 4878013.9344618935,
       "depletion_ratio": 0.4,
       "ecosystem_health": 0.09812199065106542,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999362217745381,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2447.8197508081794,
+      "marginal_annual_externality": 2180.9391418537125,
       "model_confidence": 0.5249999999999999,
       "price_result": null,
       "resilience_zone": "red",

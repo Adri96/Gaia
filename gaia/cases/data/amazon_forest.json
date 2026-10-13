@@ -58,7 +58,14 @@
       "unit": "€/ha/yr",
       "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): tropical forest, total economic value Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr (2007 international dollars, 2007 price level; 96 estimates, Table 3); converted to euros with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 12 October 2026)",
       "confidence": "low",
-      "note": "Every agent; the dependency weights split it (Step 8e.5, the owner's answer: re-based on de Groot et al. 2012). 3,220 x 0.808165 = EUR 2,602.29/ha/yr in 2007 euros at Spanish purchasing power: international dollars carry US purchasing power and must be converted with a country's PPP rate, not the market exchange rate (de Groot et al., footnote 5); Spain is the country of Gaia's euro figures (the Catalan Posidonia user); the euro area has no 2007 value in this series. At the 2007 market rate (0.7297 EUR/USD, PA.NUS.FCRF) it would be EUR 2,350. Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). Of the 3,220: provisioning 1,828 (food 200, water 27, raw materials 84, genetic 13, medicinal 1,504), regulating without climate 485, habitat 39, cultural (recreation) 867 (the rows sum to 3,219: rounding in Table 2). A global tropical-forest mean, not a Central Amazon valuation: the totals of the service medians (2,355 with climate) are less than half the means (Table 3), so low confidence and the default x/÷2 Monte Carlo range. It replaces EUR 580/ha/yr, the sum of the spec's partly unverified §8 anchors (audit S4). The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27) are parts of the 3,220, still used as EUR at face value."
+      "note": "Every agent; the dependency weights split it (Step 8e.5, the owner's answer: re-based on de Groot et al. 2012). 3,220 x 0.808165 = EUR 2,602.29/ha/yr in 2007 euros at Spanish purchasing power: international dollars carry US purchasing power and must be converted with a country's PPP rate, not the market exchange rate (de Groot et al., footnote 5); Spain is the country of Gaia's euro figures (the Catalan Posidonia user); the euro area has no 2007 value in this series. At the 2007 market rate (0.7297 EUR/USD, PA.NUS.FCRF) it would be EUR 2,350. Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). Of the 3,220: provisioning 1,828 (food 200, water 27, raw materials 84, genetic 13, medicinal 1,504), regulating without climate 485, habitat 39, cultural (recreation) 867 (the rows sum to 3,219: rounding in Table 2). A global tropical-forest mean, not a Central Amazon valuation: the totals of the service medians (2,355 with climate) are less than half the means (Table 3), so low confidence and the default x/÷2 Monte Carlo range. It replaces EUR 580/ha/yr, the sum of the spec's partly unverified §8 anchors (audit S4). The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27) are parts of the 3,220, converted the same way since Step 8g.6 (gaia/currency.py).",
+      "converted_from": {
+        "currency": "Int$",
+        "price_year": 2007,
+        "amounts": {
+          "value": 3220
+        }
+      }
     },
     "damage": "threshold_logistic"
   },
@@ -673,24 +680,45 @@
     "anchors": [
       {
         "agent_name": "Canopy Trees",
-        "anchor_value": 200000.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, food (provisioning: fruits, nuts, game) Int$ 200; Table 1: 118 of the database's 133 food estimates are direct market prices",
+        "anchor_value": 161633.0,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): tropical forest, food (provisioning: fruits, nuts, game) Int$ 200; Table 1: 118 of the database's 133 food estimates are direct market prices; converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): food (provisioning: fruits, nuts, game) Int$, Int$200/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
+        "description": "A market-based value (Step 8d.6): food (provisioning: fruits, nuts, game) Int$200/ha/yr x 1000 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global tropical forest mean, not a site valuation",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 200000
+          }
+        }
       },
       {
         "agent_name": "Pollinators",
-        "anchor_value": 30000.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, pollination Int$ 30; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices)",
+        "anchor_value": 24244.95,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): tropical forest, pollination Int$ 30; Table 1: 2 of its 3 pollination estimates are factor income/production function values (crop output at market prices); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): pollination Int$, Int$30/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
+        "description": "A market-based value (Step 8d.6): pollination Int$30/ha/yr x 1000 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global tropical forest mean, not a site valuation",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 30000
+          }
+        }
       },
       {
         "agent_name": "Aquatic System",
-        "anchor_value": 27000.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): tropical forest, water (provisioning) Int$ 27; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
+        "anchor_value": 21820.455,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): tropical forest, water (provisioning) Int$ 27; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): water (provisioning) Int$, Int$27/ha/yr x 1000 ha, a global tropical forest mean, not a site valuation"
+        "description": "A market-based value (Step 8d.6): water (provisioning) Int$27/ha/yr x 1000 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global tropical forest mean, not a site valuation",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 27000
+          }
+        }
       }
     ],
     "scarcity_functions": {

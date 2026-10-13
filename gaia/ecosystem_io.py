@@ -93,7 +93,10 @@ share's source) is the part of a final service moved to the agent that is
 its best owner. A service net of others (Step 8e.6: gross, net_of, the
 names of the entries it would otherwise count again) books value = gross −
 their values; a production_function (gaia.production) derives the gross
-from primary production. Parsing rejects a service listed twice, an
+from primary production (Step 8g.1: its main producer's NPP may come from a
+depth function, ``depth_production``, at the regional or the project's
+depth; at a project depth the services it is net of scale with that NPP).
+Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
 it is net of, a chain that does not give its gross, a chain whose lowest
 value (every link at its least favourable end, Step 8f.3) does not exceed
@@ -154,7 +157,11 @@ confidence required), which becomes a gaia.provenance.Param, reported in
 every output's calibration block. Optional uncertainty keys (Step 8.4,
 gaia.uncertainty): "range": [low, high] in the parameter's unit, or
 "relative_range": [f_low, f_high] (factors of the value, containing 1), and
-"distribution": "triangular" (default) | "uniform" | "fixed". A bare number is reported only when a
+"distribution": "triangular" (default) | "uniform" | "fixed". A value converted
+from international dollars carries "converted_from" (Step 8g.6,
+gaia.currency: {"currency": "Int$", "price_year", "amounts": {"value": …}};
+parsing checks value = amount × Spain's PPP factor and adds the conversion
+to the note; pricing anchors and benchmarks take it too). A bare number is reported only when a
 ``provenance_defaults`` entry matches its name: keys are parameter names with
 "[*]" for any agent or edge, e.g. "agent[*].dependency_weight" or
 "edge[*].strength", values are the same objects without "value". An inline
@@ -394,7 +401,8 @@ class _Reader:
         if key is not None:
             self.used.add(key)
         if isinstance(raw, dict):
-            obj = _object(raw, path, ("value", "unit", "confidence"), ("source", "note", "range", "relative_range", "distribution"))
+            obj = _object(raw, path, ("value", "unit", "confidence"),
+                          ("source", "note", "range", "relative_range", "distribution", "converted_from"))
             value = _plain_number(obj["value"], _key(path, "value"))
             param = _make_param(value, obj, path, name)
         else:
@@ -446,6 +454,12 @@ def _make_param(value: float, obj: dict, path: str, name: str) -> Param:
             f"{_key(path, 'confidence')}: {confidence!r} is not one of {', '.join(valid)}"
         )
     distribution = _str(obj.get("distribution", ""), _key(path, "distribution"))
+    if "converted_from" in obj:
+        # Step 8g.6: a value converted from international dollars (gaia.currency)
+        from gaia.currency import check_converted, conversion_note
+
+        converted = check_converted(obj["converted_from"], _key(path, "converted_from"), {"value": value})
+        note = f"{note} {conversion_note(converted)}.".strip() if note else f"{conversion_note(converted)}."
     try:
         return Param(value, unit, source, Confidence(confidence), note or "", name=name,
                      spread=_spread(obj, path), distribution=distribution)
@@ -1065,21 +1079,53 @@ class Case:
                     )
         return problems
 
+    @property
+    def depth_production(self) -> Optional[Dict[str, Any]]:
+        """The JSON form of the first depth-dependent production function's
+        depth model (gaia.production.depth_block, Step 8g.1) with its
+        "agent", or None: what ``--depth-m`` changes."""
+        from gaia.production import depth_block
+
+        for entry in self.service_ledger:
+            spec = entry["production_function"]
+            if spec is not None and spec.get("depth") is not None:
+                return dict(depth_block(spec), agent=entry["agent"], producer=spec["producer"])  # type: ignore[arg-type]
+        return None
+
+    def with_project_depth(self, from_m: float, to_m: Optional[float] = None) -> "Case":
+        """This case with its depth-dependent production functions taken at
+        the project's depth (Step 8g.1; gaia.production.with_project_depth):
+        one depth, or a band [from_m, to_m] over which the affected resource
+        is spread evenly.
+
+        Raises:
+            ValueError: Without a document or a depth-dependent production
+                function, or for a depth at or below the depth limit.
+        """
+        from gaia.production import with_project_depth
+
+        if self.document is None:
+            raise ValueError(f"{self.name}: the case has no document to set a depth in")
+        to_m = from_m if to_m is None else to_m
+        return case_from_dict(with_project_depth(self.document, float(from_m), float(to_m)), origin=self.origin)
+
     def production_functions(self) -> Dict[str, Dict[str, Any]]:
         """{agent: the JSON form of its ledger production function} (Step
         8e.6; gaia.production), for the agents whose value is derived from
         primary production."""
         from gaia.production import production_block
 
+        from gaia.production import net_of_scale
+
         values = {e["service"]: e["value"] for e in self.service_ledger}
         out: Dict[str, Dict[str, Any]] = {}
         for entry in self.service_ledger:
             if entry["production_function"] is None:
                 continue
-            counted = sum(values[s] for s in entry["net_of"])
+            counted = net_of_scale(entry["production_function"]) * sum(values[s] for s in entry["net_of"])
+            gross = entry["gross"] if entry["gross"] is not None else entry["value"]
             out[entry["agent"]] = dict(
-                production_block(entry["production_function"], entry["gross"], counted,
-                                 entry["value"], entry["net_of"]),
+                production_block(entry["production_function"], gross, counted, entry["value"], entry["net_of"]),
                 service=entry["service"],
             )
         return out
@@ -1089,16 +1135,17 @@ class Case:
         → € chain of its production-function ledger entry, and, when the
         document asks for it, the carbon it holds (valued once, by
         gaia.carbon, decision D3: shown, never added)."""
-        from gaia.production import chain_text
+        from gaia.production import chain_text, net_of_scale
 
         notes: List[str] = list(agent.notes)
         values = {e["service"]: e for e in self.service_ledger}
         for entry in self.service_ledger:
             if entry["agent"] != agent.name or entry["production_function"] is None:
                 continue
-            counted = sum(values[s]["value"] for s in entry["net_of"])
+            counted = net_of_scale(entry["production_function"]) * sum(values[s]["value"] for s in entry["net_of"])
             owners = ", ".join(dict.fromkeys(values[s]["agent"] for s in entry["net_of"]))
-            notes.append(chain_text(entry["production_function"], entry["gross"], counted,
+            gross = entry["gross"] if entry["gross"] is not None else entry["value"]
+            notes.append(chain_text(entry["production_function"], gross, counted,
                                     entry["value"], f"commercial catch, under {owners}" if owners else "nothing"))
         if agent.carbon_attribution and carbon is not None:
             notes.append(
@@ -1164,7 +1211,7 @@ class Case:
         """The "Primary Production" section of an extraction report (Step
         8e.6): each production-function chain with its sources' status, and
         the productivity comparison; "" without one."""
-        from gaia.production import format_comparison
+        from gaia.production import format_comparison, format_depth
 
         blocks = self.production_functions()
         if not blocks:
@@ -1173,10 +1220,13 @@ class Case:
                  + "\u2500" * 23]
         for agent, block in blocks.items():
             lines.append(f"  {agent}: {block['service']}")
+            if block["depth_production"] is not None:
+                lines.extend(format_depth(block["depth_production"]))
             for step in block["chain"]:
                 lines.append(f"    {step['step'] + ':':<52} {step['value']:>12,.2f} {step['unit']}")
-            lines.append(f"    {'minus the catch already counted (net_of):':<52} "
-                         f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
+            if block["net_of"]:
+                lines.append(f"    {'minus the catch already counted (net_of):':<52} "
+                             f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             lines.append(f"    {'= value of this agent:':<52} {block['net_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             low, high = block["gross_range_eur_per_ha_yr"]
             lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr (every link at")
@@ -1360,22 +1410,31 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
                     f"$.service_ledger[{i}].net_of: {service!r} must be another entry, itself not net of others"
                 )
             counted += other["value"]
-        if not math.isclose(entry["value"], entry["gross"] - counted, rel_tol=1e-9, abs_tol=1e-9):
+        # Step 8g.1: at a project depth, the part of the services netted
+        # out that the hectare's own production supports (gaia.production)
+        scale = 1.0
+        if entry["production_function"] is not None:
+            from gaia.production import net_of_scale
+
+            scale = net_of_scale(entry["production_function"])
+        expected = entry["gross"] - scale * counted
+        if not math.isclose(entry["value"], expected, rel_tol=1e-9, abs_tol=1e-9):
             raise ValueError(
                 f"$.service_ledger[{i}].value: must be gross − the services it is net of = "
-                f"{entry['gross']:.6g} − {counted:.6g} = {entry['gross'] - counted:.6g}, got {entry['value']:.6g} "
+                f"{entry['gross']:.6g} − {scale * counted:.6g} = {expected:.6g}, got {entry['value']:.6g} "
                 f"(otherwise the subtracted services would be counted twice)"
             )
         if entry["production_function"] is not None:
             # Step 8f.3: the Monte Carlo samples each link inside its range,
             # so the lowest value of the chain bounds every draw from below
-            from gaia.production import gross_range
+            from gaia.production import net_range
 
-            lowest = gross_range(entry["production_function"])[0]
-            if not lowest - counted > 0.0:
+            lowest = net_range(entry["production_function"], counted)[0]
+            if not lowest > 0.0:
                 raise ValueError(
                     f"$.service_ledger[{i}].production_function: with every link at its least favourable "
-                    f"end the chain gives {lowest:.6g} €/ha/yr, not above the {counted:.6g} it is net of: "
+                    f"end the chain gives {lowest + scale * counted:.6g} €/ha/yr or less, not above what it is "
+                    f"net of ({lowest:.6g} €/ha/yr net): "
                     f"a Monte Carlo draw could bring the agent to €0 (PROJECT_DEFINITION.md, Core "
                     f"Valuation Principles (b)); fix the model or the ranges"
                 )
@@ -1638,7 +1697,8 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
     """One run.benchmarks entry: a published per-hectare value to compare with."""
-    obj = _object(raw, path, ("name", "low", "high", "unit", "source"), ("central", "note", "includes_carbon"))
+    obj = _object(raw, path, ("name", "low", "high", "unit", "source"),
+                  ("central", "note", "includes_carbon", "converted_from"))
     low = _plain_number(obj["low"], _key(path, "low"))
     high = _plain_number(obj["high"], _key(path, "high"))
     if low > high:
@@ -1658,6 +1718,14 @@ def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
         if not low <= central <= high:
             raise ValueError(f"{path}: central ({central}) is outside [low, high]")
         out["central"] = float(central)
+    if "converted_from" in obj:
+        # Step 8g.6: international dollars converted at PPP (gaia.currency)
+        from gaia.currency import check_converted, conversion_note
+
+        fields = {k: obj[k] for k in ("low", "high", "central") if k in obj}
+        converted = check_converted(obj["converted_from"], _key(path, "converted_from"), fields)
+        out["note"] = f"{out['note']} {conversion_note(converted)}.".strip()
+        out["converted_from"] = converted
     return out
 
 
@@ -2040,14 +2108,24 @@ def _parse_pricing(raw: Any, names: set) -> _PricingSpec:
     anchors = []
     for i, item in enumerate(_list(obj["anchors"], _key(path, "anchors"))):
         ipath = f"{path}.anchors[{i}]"
-        a = _object(item, ipath, ("agent_name", "anchor_value", "source", "confidence"), ("description",))
+        a = _object(item, ipath, ("agent_name", "anchor_value", "source", "confidence"),
+                    ("description", "converted_from"))
         agent = _str(a["agent_name"], _key(ipath, "agent_name"))
         if agent not in names:
             raise ValueError(f"{_key(ipath, 'agent_name')}: unknown agent {agent!r}")
+        anchor_value = float(_plain_number(a["anchor_value"], _key(ipath, "anchor_value")))
+        source = _str(a["source"], _key(ipath, "source"))
+        if "converted_from" in a:
+            # Step 8g.6: international dollars converted at PPP (gaia.currency)
+            from gaia.currency import check_converted, conversion_note
+
+            converted = check_converted(a["converted_from"], _key(ipath, "converted_from"),
+                                        {"anchor_value": anchor_value})
+            source = f"{source}. {conversion_note(converted)}"
         anchors.append(AnchorPoint(
             agent_name=agent,
-            anchor_value=float(_plain_number(a["anchor_value"], _key(ipath, "anchor_value"))),
-            source=_str(a["source"], _key(ipath, "source")),
+            anchor_value=anchor_value,
+            source=source,
             confidence=_str(a["confidence"], _key(ipath, "confidence")),
             description=_str(a.get("description", ""), _key(ipath, "description")),
         ))

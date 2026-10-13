@@ -373,8 +373,10 @@ def test_amazon_pricing_anchors_are_sourced_market_values():
     contains them and is larger than their sum."""
     eco = build_amazon_ecosystem(with_pricing=True)
     anchors = {p.agent_name: p.anchor_value for p in eco.pricing.anchors}
-    assert anchors == {"Canopy Trees": 200_000.0, "Pollinators": 30_000.0,
-                       "Aquatic System": 27_000.0}
+    # Step 8g.6: converted from Int$ at Spain's 2007 PPP (gaia.currency)
+    assert anchors == pytest.approx({"Canopy Trees": 200_000.0 * 0.808165, "Pollinators": 30_000.0 * 0.808165,
+                                     "Aquatic System": 27_000.0 * 0.808165}, rel=1e-12)
+    assert all("0.808165" in p.source and "PA.NUS.PRVT.PP" in p.source for p in eco.pricing.anchors)
     assert all("doi:10.1016/j.ecoser.2012.07.005" in p.source for p in eco.pricing.anchors)
     agents = sum(
         a.dependency_weight * a.annual_value(eco.resource.area_ha) for a in eco.agents)

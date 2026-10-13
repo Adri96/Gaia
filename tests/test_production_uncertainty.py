@@ -22,21 +22,34 @@ from gaia.uncertainty import (
     _rederive_production,
     _set_at_path,
     production_entries,
+    production_sampled,
     run_uncertainty,
     uncertainty_to_dict,
 )
 
 MEADOW = "Posidonia Meadow"
 LINKS = {
-    "npp_dry_weight": "lognormal",
     "food_web_share": "triangular",
     "transfer_efficiency": "triangular",
     "catch_trophic_level": "triangular",
     "sustainable_catch_share": "triangular",
     "roots.npp_dry_weight": "uniform",
     "roots.food_web_share": "uniform",
-    "epiphytes.npp_carbon": "lognormal",
-    "epiphytes.food_web_share": "triangular",
+    # Step 8g.1: the plant's NPP is derived from its depth function, whose
+    # hyperparameters are the sampled links
+    "depth.npp_at_reference_depth": "lognormal",
+    "depth.decline_rate": "triangular",
+    "depth.depth_limit": "triangular",
+}
+EPIPHYTES = "Epiphytes & Algae"
+# Step 8g.2: the epiphytes' own chain; its links to the catch are the
+# meadow's (one food web), drawn once for both
+EPIPHYTE_LINKS = {
+    "npp_carbon": "lognormal",
+    "food_web_share": "triangular",
+    "transfer_efficiency": "triangular",
+    "catch_trophic_level": "triangular",
+    "sustainable_catch_share": "triangular",
 }
 
 
@@ -65,21 +78,47 @@ def test_each_link_is_sampled_on_its_own(mc):
     # the meadow's value is not sampled as one aggregate: it is derived
     assert f"agent[{MEADOW}].annual_value_per_ha" not in {s.name for s in mc.sampled}
     derived = [r for r in mc.not_sampled if r.startswith("derived in each draw")]
-    assert mc.not_sampled[derived[0]] == [f"agent[{MEADOW}].annual_value_per_ha"]
+    assert mc.not_sampled[derived[0]] == [f"agent[{MEADOW}].annual_value_per_ha",
+                                          f"agent[{EPIPHYTES}].annual_value_per_ha"]
     assert mc.production[MEADOW]["links"] == list(LINKS)
+    epi = {s.name.split("].", 1)[1]: s for s in mc.sampled if s.name.startswith(f"production[{EPIPHYTES}].")}
+    assert {n: s.kind for n, s in epi.items()} == EPIPHYTE_LINKS
+    for link in ("transfer_efficiency", "catch_trophic_level", "sustainable_catch_share"):
+        assert epi[link].same_as == f"production[{MEADOW}].{link}"
+    assert not epi["npp_carbon"].same_as and not epi["food_web_share"].same_as
+    assert mc.production[EPIPHYTES]["links"] == list(EPIPHYTE_LINKS)
+
+
+def test_shared_links_take_one_draw_for_both_chains():
+    """The meadow's and the epiphytes' chains share their links to the
+    catch: in every draw both carry the same transfer efficiency."""
+    import random
+
+    from gaia.uncertainty import _draw_all
+
+    case = load_case("posidonia")
+    sampled = production_sampled(case, production_entries(case))
+    rng = random.Random(4)
+    for _ in range(20):
+        values = _draw_all(sampled, rng)
+        assert values[f"production[{EPIPHYTES}].transfer_efficiency"] == values[f"production[{MEADOW}].transfer_efficiency"]
+    u = _run(draws=5, seed=1)
+    assert sum(1 for s in u.sampled if s.same_as) == 3
+    assert all(not row["name"].startswith(f"production[{EPIPHYTES}].transfer") for row in
+               run_uncertainty(case, 50, draws=2, seed=1, normative=False).tornado)
 
 
 def test_each_draw_recomputes_gross_minus_net_of():
     case = load_case("posidonia")
     entries = production_entries(case)
-    (entry,) = entries
+    entry, _ = entries
     doc = copy.deepcopy(case.document)
     base = central(case.service_ledger[entry.index]["production_function"])
     path = f"$.service_ledger[{entry.index}].production_function.parameters.transfer_efficiency"
     _set_at_path(doc, path, 0.2)
-    _set_at_path(doc, f"$.service_ledger[{entry.index}].production_function.producers[1].parameters.npp_carbon", 30.0)
+    _set_at_path(doc, f"$.service_ledger[{entry.index}].production_function.producers[0].parameters.npp_dry_weight", 20.0)
     produced = _rederive_production(doc, entries)
-    gross = gross_value(dict(base, transfer_efficiency=0.2, **{"epiphytes.npp_carbon": 30.0}))
+    gross = gross_value(dict(base, transfer_efficiency=0.2, **{"roots.npp_dry_weight": 20.0}))
     assert produced[MEADOW] == pytest.approx((gross, gross - 35.0), rel=1e-12)
     food = _food(doc)
     assert (food["gross"], food["value"]) == pytest.approx((gross, gross - 35.0), rel=1e-12)
@@ -123,8 +162,7 @@ def test_a_draw_at_zero_stops_the_run_and_is_never_redrawn():
     entries = production_entries(case)
     doc = copy.deepcopy(case.document)
     pf = _food(doc)["production_function"]
-    pf["parameters"]["npp_dry_weight"].update(value=1.0, range=[0.5, 989.3])
-    pf["producers"][1]["parameters"]["npp_carbon"].update(value=0.1, range=[0.05, 45.6])
+    pf["depth_production"]["parameters"]["npp_at_reference_depth"].update(value=1.0, range=[0.5, 792.3])
     with pytest.raises(InvariantError, match="Core Valuation Principles"):
         _rederive_production(doc, entries)
 

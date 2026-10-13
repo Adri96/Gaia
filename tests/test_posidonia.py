@@ -29,9 +29,14 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8e.6: the meadow's own value on every hectare, the food its primary
 # production supports net of the commercial catch already counted (35);
 # Step 8f.1: at the Western Mediterranean transfer efficiency, 14.3%;
-# Step 8f.2: with the production of the roots and of the leaf epiphytes
-MEADOW_FOOD_NET = 474.4848156047374
-LEDGER_TOTAL = 1293.1483941969188    # €/ha/yr of the reference meadow
+# Step 8f.2: with the production of the roots and of the leaf epiphytes;
+# Step 8g.1: the plant's NPP from its depth function at the regional mean
+# depth, 15 m (318 g DW/m²/yr; it was a fixed 476); Step 8g.2: the leaf
+# epiphytes' food moved to the Epiphytes & Algae agent (total unchanged);
+# Step 8g.4: the plant's shoot-only share not buried, 81.1% (74% before)
+MEADOW_FOOD_NET = 277.49275506563924
+EPIPHYTE_FOOD = 82.19699951512872
+LEDGER_TOTAL = 1178.3533331729495    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -56,8 +61,8 @@ def test_posidonia_values_are_the_sourced_final_services():
     assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(35.0, rel=1e-12)
     assert per_ha["Marine Invertebrates"] == pytest.approx(35.0 * 2 / 16, rel=1e-12)
     # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
-    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83, rel=1e-12)
-    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5, rel=1e-12)
+    assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83 + EPIPHYTE_FOOD, rel=1e-12)
+    assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5 + EPIPHYTE_FOOD, rel=1e-12)
     assert per_ha["Posidonia Meadow"] == pytest.approx(MEADOW_FOOD_NET + 34.71 * 60_000 / 4582, rel=1e-12)
     assert per_ha["Coralligenous & Red Coral"] == pytest.approx(60.0 * 60_000 / 190_000, rel=1e-12)
     assert per_ha["Marine Megafauna"] == pytest.approx(per_ha["Seabirds"], rel=1e-12)
@@ -897,6 +902,51 @@ def test_project_meadow_requires_the_dive_input(mode, capsys):
     capsys.readouterr()
 
 
+@pytest.mark.parametrize("size", [["run", "posidonia", "--total-units", "300"],
+                                  ["run", "posidonia", "--total-units", "4582"],
+                                  ["posidonia", "--hectares", "300"]])
+def test_a_meadow_size_also_requires_the_dive_input(size, capsys):
+    """Step 8g.5: --total-units, and the legacy --hectares, set the size of
+    a specific project meadow just as --area-ha does: the same plain error
+    without --dive-intensity or --dive-site-share (even at the regional
+    size, once it is given), and a normal run with either."""
+    import json
+    import warnings
+
+    from gaia.cli import main
+
+    flag = size[2] if size[0] == "run" else size[1]
+    base = size + ["--units", "30"]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        assert main(base) == 1
+        err = " ".join(capsys.readouterr().err.split())
+        assert err.startswith(f"Error: with {flag} (a specific project site), the dive sites input is required")
+        assert "give --dive-intensity none" in err and f"Without {flag} the run uses the regional averages" in err
+        for given in (["--dive-intensity", "none"], ["--dive-site-share", "0.5"]):
+            assert main(base + given + ["--format", "json", "--summary-only"]) == 0
+            json.loads(capsys.readouterr().out)
+    # the other cases are not affected
+    assert main(["run", "forest", "--total-units", "1000", "--units", "100", "--format", "json", "--summary-only"]) == 0
+    capsys.readouterr()
+
+
+def test_the_regional_dive_input_reproduces_the_default_run(capsys):
+    """The golden scenarios give the regional share explicitly (Step 8g.5):
+    the numbers are those of the run without it."""
+    import json
+
+    from gaia.cli import main
+    from tests.golden_support import POSIDONIA_REGIONAL_SHARE
+
+    assert main(["run", "posidonia", "--format", "json", "--summary-only"]) == 0
+    default = json.loads(capsys.readouterr().out)
+    assert main(["run", "posidonia", "--total-units", "4582", "--dive-site-share", POSIDONIA_REGIONAL_SHARE,
+                 "--format", "json", "--summary-only"]) == 0
+    explicit = json.loads(capsys.readouterr().out)
+    assert explicit["summary"] == default["summary"] and explicit["calibration"] == default["calibration"]
+
+
 def test_project_meadow_with_intensity_alone_is_the_whole_meadow(capsys):
     """--area-ha with --dive-intensity alone: the whole affected meadow is
     dived at that intensity (share 1)."""
@@ -945,10 +995,23 @@ def test_meadow_food_value_is_the_primary_production_chain():
     case = load_case("posidonia")
     entry = next(e for e in case.service_ledger if e["production_function"] is not None)
     assert entry["agent"] == "Posidonia Meadow" and not entry["site_restricted"]
-    # g C/m²/yr entering the food web: the plant (74% not buried), its
-    # roots (4% decomposed within a year, the rest buried) and the leaf
-    # epiphytes (1.9 mol C/m²/yr, none buried)
-    web = 476.0 * 0.336 * 0.74 + 17.0 * 0.409 * 0.04 + 1.9 * 12.011 * 1.0
+    # g C/m²/yr entering the food web: the plant (74% not buried) and its
+    # roots (4% decomposed within a year, the rest buried); the leaf
+    # epiphytes' food is the Epiphytes & Algae agent's since Step 8g.2
+    # Step 8g.1: the plant's NPP at the regional mean depth (15 m) from its
+    # depth function, P_ref at 10 m, decline k, zero at the depth limit (40 m)
+    import math
+
+    hyper = entry["production_function"]["parameters"]
+    p_ref, k = hyper["depth.npp_at_reference_depth"]["value"], hyper["depth.decline_rate"]["value"]
+    assert hyper["depth.depth_limit"]["value"] == 40.0
+    npp = p_ref * (math.exp(-k * 15) - math.exp(-k * 40)) / (math.exp(-k * 10) - math.exp(-k * 40))
+    assert npp == pytest.approx(317.56, abs=0.01)
+    # Step 8g.4: the plant's share not buried, shoots only (Mateo & Romero
+    # 1997, Table 3: blades / (blades + sheaths + rhizomes) at 5 and 13 m)
+    shoot_share = (252 / (252 + 51 + 15) + 87 / (87 + 12 + 6)) / 2
+    assert shoot_share == pytest.approx(0.8105, abs=1e-4)
+    web = npp * 0.336 * shoot_share + 17.0 * 0.409 * 0.04
     gross = (web * 10 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
@@ -965,23 +1028,39 @@ def test_meadow_food_value_is_the_primary_production_chain():
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
     assert params["wet_weight_per_carbon"]["status"] == "secondary"
-    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "first_sale_price"):
+    for name in ("carbon_fraction", "first_sale_price"):
         assert params[name]["status"] == "verified"
+    assert params["food_web_share"]["status"] == "derived"     # the mean of two read values
+    assert params["food_web_share"]["range"] == (0.71, 0.832)
+    assert params["npp_dry_weight"]["status"] == "derived"     # from the depth function
     # Step 8f.1: the median of five Western Mediterranean food-web models
     te = params["transfer_efficiency"]
     assert (te["value"], te["range"], te["status"]) == (0.143, (0.122, 0.218), "derived")
     assert "doi:10.3389/fmars.2023.1166674" in te["source"] and "14.25%" in te["source"]
     for p in params.values():
         assert "doi:" in p["source"] or "ge3m-4jgm" in p["source"]
-    # Step 8f.2: two more producers, each link sourced and flagged
+    # Step 8f.2: the roots, each link sourced and flagged
     pf = entry["production_function"]
-    assert [p["name"] for p in pf["producers"]] == ["roots", "epiphytes"]
+    assert [p["name"] for p in pf["producers"]] == ["roots"]
     assert (params["roots.npp_dry_weight"]["value"], params["roots.npp_dry_weight"]["range"]) == (17.0, (11.0, 23.0))
     assert params["roots.carbon_fraction"]["status"] == "verified"
     assert params["roots.food_web_share"]["status"] == "secondary"
-    assert params["epiphytes.npp_carbon"]["status"] == "secondary"
-    assert params["epiphytes.food_web_share"]["status"] == "inferred"
-    assert params["npp_dry_weight"]["range"] == (238.0, 989.3)    # up to Cala Jonquet, Cap de Creus
+    # Step 8g.2: the leaf epiphytes' food, on the same chain to the catch
+    epi = next(e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae" and e["production_function"])
+    epi_params = epi["production_function"]["parameters"]
+    assert epi_params["npp_carbon"]["status"] == "secondary"
+    assert epi_params["food_web_share"]["status"] == "inferred"
+    epi_gross = (1.9 * 12.011 * 1.0 * 10 * 0.143 ** (3.1 - 1) * 9 * (0.87 / 1.87) * (41_056_589 / 8_034_993))
+    assert epi["value"] == pytest.approx(epi_gross, rel=1e-12) == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
+    assert not epi["net_of"]
+    for link in ("transfer_efficiency", "catch_trophic_level", "wet_weight_per_carbon",
+                 "sustainable_catch_share", "first_sale_price"):
+        assert epi_params[link] == params[link]
+    # Step 8g.1: the depth function's hyperparameters are sampled links
+    for name in ("npp_at_reference_depth", "decline_rate", "depth_limit"):
+        assert params[f"depth.{name}"]["range"] is not None
+    assert params["depth.depth_limit"]["range"] == (30.0, 44.0)
+    assert "range" not in params["npp_dry_weight"]
 
 
 def test_roots_feed_the_food_web_only_through_what_is_not_buried():
@@ -993,28 +1072,38 @@ def test_roots_feed_the_food_web_only_through_what_is_not_buried():
 
     entry = next(e for e in load_case("posidonia").service_ledger if e["production_function"] is not None)
     shares = {name or "plant": share for name, _, share in producer_carbon(central(entry["production_function"]))}
-    assert shares["roots"] < 0.06 < shares["plant"] < shares["epiphytes"] == 1.0
+    assert shares["roots"] < 0.06 < shares["plant"] < 1.0
     low, high = entry["production_function"]["parameters"]["roots.food_web_share"]["range"]
     assert low > 0.0 and high < 0.06
 
 
 def test_epiphyte_production_is_not_counted_twice():
-    """The Epiphytes & Algae agent owns the epiphyte metric of the
-    bioindicator service (monitoring, a cultural service); the food the
-    epiphytes' production supports is a provisioning service, booked once,
-    in the meadow's production function. No other entry values food."""
+    """Step 8g.2 (PR #10, question 2): the Epiphytes & Algae agent owns the
+    food its own production supports (a provisioning service) and the
+    epiphyte metric of the bioindicator service (monitoring, a cultural
+    service); the meadow's chain no longer counts the epiphytes. The two
+    food chains together are the former one (total unchanged), the
+    commercial catch is netted out once, from the meadow's chain, and its
+    lowest value still exceeds it."""
     from gaia.cases import load_case
+    from gaia.production import net_range
 
     case = load_case("posidonia")
     epiphyte_entries = [e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae"]
-    assert [(e["section"], e["split_of"]) for e in epiphyte_entries] == [("cultural", "Use as bioindicator (1.5 EUR/ha/yr)")]
+    assert [(e["section"], e["split_of"]) for e in epiphyte_entries] == [
+        ("cultural", "Use as bioindicator (1.5 EUR/ha/yr)"), ("provisioning", None)]
     food = [e for e in case.service_ledger if e["section"] == "provisioning"]
-    with_epiphytes = [e for e in food if e["production_function"] is not None
-                      and any(p["name"] == "epiphytes" for p in e["production_function"]["producers"])]
-    assert len(with_epiphytes) == 1
-    # every other provisioning entry is commercial catch, which the food entry is net of
-    others = {e["service"] for e in food} - {with_epiphytes[0]["service"]}
-    assert others == set(with_epiphytes[0]["net_of"])
+    chains = [e for e in food if e["production_function"] is not None]
+    assert [e["agent"] for e in chains] == ["Posidonia Meadow", "Epiphytes & Algae"]
+    meadow, epiphytes = chains
+    assert all(p["name"] != "epiphytes" for p in meadow["production_function"]["producers"])
+    # the former single chain (Step 8g.1): 367.59 gross, 332.59 net
+    assert meadow["gross"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + 35.0 + EPIPHYTE_FOOD, rel=1e-12)
+    assert meadow["value"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + EPIPHYTE_FOOD, rel=1e-12)
+    # every other provisioning entry is commercial catch, netted out once
+    others = {e["service"] for e in food} - {e["service"] for e in chains}
+    assert others == set(meadow["net_of"]) and not epiphytes["net_of"]
+    assert net_range(meadow["production_function"], 35.0)[0] > 0.0
 
 
 def test_meadow_range_is_the_chain_at_its_ends():
@@ -1068,15 +1157,20 @@ def test_ledger_enforces_the_subtraction():
     with pytest.raises(ValueError, match="producers\\[0\\].parameters: give npp_dry_weight"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["name"] = "roots"
+    roots = food(doc)["production_function"]["producers"][0]
+    food(doc)["production_function"]["producers"].append(copy.deepcopy(roots))
     with pytest.raises(ValueError, match="listed twice"):
         case_from_dict(doc)
+
+    def epiphytes(doc):
+        return next(e for e in doc["service_ledger"] if e["agent"] == "Epiphytes & Algae" and "production_function" in e)
+
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["parameters"]["food_web_share"]["range"] = [0.74, 1.2]
+    epiphytes(doc)["production_function"]["parameters"]["food_web_share"]["range"] = [0.74, 1.2]
     with pytest.raises(ValueError, match="a share"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["producers"][1]["parameters"]["npp_carbon"]["value"] = 40.0
+    epiphytes(doc)["production_function"]["parameters"]["npp_carbon"]["value"] = 40.0
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
 
@@ -1095,8 +1189,12 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     text = case.report(result)
     meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
     flat = " ".join(meadow_line.split())
-    assert "NPP 160 g C/m²/yr" in flat and "+ roots 6.95 + epiphytes 22.8 = 190 g C/m²/yr" in flat
-    assert "€509/ha/yr" in flat and "= €474/ha/yr" in flat
+    assert "NPP 107 g C/m²/yr (318 g dry weight) at 15 m (the regional mean depth)" in flat
+    assert "+ roots 6.95 = 114 g C/m²/yr" in flat and "epiphytes" not in flat
+    assert "€312/ha/yr" in flat and "= €277/ha/yr" in flat
+    # Step 8g.2: the epiphytes' own chain, on their own line
+    epi_line = " ".join(text[text.index("Epiphytes & Algae:"):text.index("Marine Invertebrates:")].split())
+    assert "Primary production → food: NPP 22.8 g C/m²/yr" in epi_line and "= €82.2/ha/yr" in epi_line
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's
@@ -1112,5 +1210,5 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     assert rows["Coral reefs"]["low"] == 1720.0 and "doi:10.5194/bg-2-1-2005" in rows["Coral reefs"]["source"]
     assert all("doi:" in r["source"] for r in rows.values())
     meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
-    assert meadow["value_notes"][0].startswith("Primary production → food: NPP 160")
+    assert meadow["value_notes"][0].startswith("Primary production → food: NPP 107")
     assert meadow["annual_value_eur_per_ha_yr"] * meadow["dependency_weight"] == pytest.approx(MEADOW_FOOD_NET)
