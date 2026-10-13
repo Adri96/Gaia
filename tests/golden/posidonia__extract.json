@@ -42,43 +42,43 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 6.52,
-          "central": 8712.0,
+          "benchmark_central_over_gaia": 4.47,
+          "central": 5980.857696,
           "gaia_value_eur_per_ha_yr": 1336.94,
-          "high": 95767.0,
+          "high": 65744.811636,
           "includes_carbon": true,
-          "low": 1588.0,
+          "low": 1090.174704,
           "name": "Stamatiadou et al. 2025, Mediterranean seagrass meta-regression (country range)",
-          "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita.",
-          "position": "below",
-          "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704",
-          "unit": "Int$2020/ha/yr"
+          "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita. Converted from Int$ (2020 prices: low Int$1,588, high Int$95,767, central Int$8,712) at 0.686508 \u20ac per Int$, the PPP factor for household consumption, Spain 2020 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
+          "position": "within",
+          "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704: values standardised to 'International dollars (Int.$) per hectare per year (with 2020 as the reference year)', basin mean 8,712 Int.$/ha/yr (abstract, as indexed by RePEc IDEAS); converted to EUR at Spain's 2020 PPP factor for household consumption, 0.686508 EUR/Int$ (World Bank, PA.NUS.PRVT.PP, read 13 October 2026; gaia/currency.py)",
+          "unit": "\u20ac2020/ha/yr (PPP)"
         },
         {
-          "benchmark_central_over_gaia": 21.63,
-          "central": 28917.0,
+          "benchmark_central_over_gaia": 17.48,
+          "central": 23369.707305,
           "gaia_value_eur_per_ha_yr": 1336.94,
-          "high": 42063.0,
+          "high": 33993.844395,
           "includes_carbon": true,
-          "low": 26167.0,
+          "low": 21147.253555,
           "name": "de Groot et al. 2012 (ESVD/TEEB), coastal systems",
-          "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone.",
+          "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone. Converted from Int$ (2007 prices: low Int$26,167, high Int$42,063, central Int$28,917) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
           "position": "below",
-          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, as tabulated by Costanza et al. (2014) Table 4",
-          "unit": "Int$2007/ha/yr"
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (coastal systems, total 28,917) and Table 3 (totals of minimum and maximum values, 26,167-42,063), read in full; also tabulated by Costanza et al. (2014) Table 4; converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
+          "unit": "\u20ac2007/ha/yr (PPP)"
         },
         {
-          "benchmark_central_over_gaia": 21.63,
+          "benchmark_central_over_gaia": 17.48,
           "central": null,
           "gaia_value_eur_per_ha_yr": 1336.94,
-          "high": 28916.0,
+          "high": 23368.89914,
           "includes_carbon": true,
-          "low": 28916.0,
+          "low": 23368.89914,
           "name": "Costanza et al. 2014, seagrass/algae beds",
-          "note": "Global unit value; 26,223 of it is nutrient cycling.",
+          "note": "Global unit value; 26,223 of it is nutrient cycling. Converted from Int$ (2007 prices: low Int$28,916, high Int$28,916) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
           "position": "below",
-          "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3",
-          "unit": "$2007/ha/yr"
+          "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3 (full text: unit values 'in international $/ha/yr', 2007 dollars from de Groot et al. 2012); converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
+          "unit": "\u20ac2007/ha/yr (PPP)"
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
@@ -86,7 +86,7 @@
       "full_damage_with_burial_eur_per_ha_yr": 1336.94,
       "hectares_lost": 2000.0,
       "linear_transfer_eur_yr": 2356706.67,
-      "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
+      "method": "Benchmarks in international dollars converted to euros at Spain's PPP for their price year (gaia.currency); the others in their own currency and price year; no price-year adjustment: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
       "realised_loss_eur_per_ha_yr": 2439.01
     },
     "calibration": {

@@ -366,6 +366,9 @@ def _set_at_path(doc: Any, path: str, value: float) -> None:
     target = node[key] if key is not None else node[int(index)]
     if isinstance(target, dict):
         target["value"] = value
+        # a draw is no longer the figure converted from another currency
+        # (Step 8g.6, gaia.currency)
+        target.pop("converted_from", None)
     elif key is not None:
         node[key] = value
     else:

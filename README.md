@@ -37,8 +37,8 @@ Default run of each case (extraction):
 <!-- BEGIN:example name="cases" table="cases" -->
 | Case (default run) | Extracted | Revenue (€, one-off) | Annual externality (€/yr) | PV of externality (€ PV) | Health after | Placeholder or low-confidence parameters |
 |---|---|---|---|---|---|---|
-| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 101,899 | 10,704,259 | 10.6% | 24 of 27 |
-| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 127,048 | 9,133,733 | 20.2% | 51 of 55 |
+| Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 82,727 | 9,045,382 | 10.6% | 24 of 27 |
+| Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 101,902 | 7,553,545 | 20.2% | 51 of 55 |
 | Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 58,918 | 12,028,698 | 98.9% | 52 of 63 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 520,458 | 60,350,545 | 80.0% | 66 of 71 |
 <!-- END:example -->
@@ -68,26 +68,26 @@ $ gaia run forest --total-units 10000 --units 5000
   Revenue:                                     500,000.00€ (one-off)
 
   ── Annual Externalized Costs ───────────────────────────────────
-  Human Communities:                            19,602.00€/yr
+  Human Communities:                            15,913.96€/yr
     → Health costs, water treatment, lost recreation
-    → Direct: €19,248/yr | Cascade: €354/yr
-  Animal Populations:                           34,176.00€/yr
+    → Direct: €15,627/yr | Cascade: €287/yr
+  Animal Populations:                           27,745.92€/yr
     → Habitat loss, population decline, species loss
     → Trophic amplification: 1.6× (primary consumer)
-  Vegetation & Flora:                           14,436.33€/yr
+  Vegetation & Flora:                           11,720.19€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                    33,684.78€/yr
+  Watershed & Local Climate:                    27,347.12€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  ANNUAL EXTERNALITY:                          101,899.11€/yr
-  PV OF EXTERNALITY:                        10,704,259.24€ (PV)
+  ANNUAL EXTERNALITY:                           82,727.20€/yr
+  PV OF EXTERNALITY:                         9,045,382.37€ (PV)
     (services and carbon over 100 years; see NPV Analysis)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €     6,178,693
-      100-year horizon:                  €    10,704,259
-      200-year horizon:                  €    17,711,574
+      50-year horizon:                   €     5,288,465
+      100-year horizon:                  €     9,045,382
+      200-year horizon:                  €    14,815,986
   ---------------------------------------------------------------
-  NET SOCIAL COST (PV − revenue):           10,204,259.24€ (PV)
+  NET SOCIAL COST (PV − revenue):            8,545,382.37€ (PV)
 
   ── Resilience Assessment ───────────────────────────────────────
   Current zone:          ⚠⚠ RED — Resilience likely compromised
@@ -122,12 +122,12 @@ $ gaia run forest --total-units 10000 --units 5000
     (social cost of carbon, US EPA 2023)
 
   Externality present value (€ PV at year 0):
-    Ecosystem services (annual flow):    €     8,816,964
+    Ecosystem services (annual flow):    €     7,158,087
     Carbon released (one-off):           €       727,762
     Absorption lost (annual flow):       €     1,159,533
     ==================================== ===============
-    Total extraction PV:                 €    10,704,259
-    of which unrecoverable (substrate):  €         2,575
+    Total extraction PV:                 €     9,045,382
+    of which unrecoverable (substrate):  €         2,091
       (part of the services PV that restoration cannot recover; not added)
 
   ── Parameter Provenance ────────────────────────────────────────
@@ -185,17 +185,35 @@ $ gaia run forest --total-units 10000 --units 5000
     [placeholder] discount.horizon_years = 100 years
         A modelling choice; the outputs also report the PV at 50,
         100 and 200 years (horizon sensitivity).
-    [low] agents.annual_value_per_ha = 2,848 €/ha/yr
+    [low] agents.annual_value_per_ha = 2,312 €/ha/yr
         Source: de Groot et al. (2012), Ecosystem Services
-        1:50-61: temperate forest Int$3,013/ha/yr; Costanza et
-        al. (2014), Global Environmental Change 26:152-158:
-        $3,137/ha/yr (2007); minus climate regulation Int$152 (de
-        Groot 2012, SM Table 8.1).
-        Every agent; the dependency weights split it. Figures
-        partly from memory, to be checked against the papers
-        (Step 8); 2007 Int$ used as € with no currency or price-
-        year conversion; a global biome mean, not a site
-        valuation.
+        1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read
+        in full): temperate forest, total economic value
+        Int$3,013/ha/yr minus climate regulation Int$152 =
+        Int$2,861/ha/yr (2007 international dollars, 2007 price
+        level; 58 estimates, Table 3); converted to EUR with the
+        World Bank's PPP conversion factor for household final
+        consumption (PA.NUS.PRVT.PP, the 'private consumption'
+        series de Groot et al. used), Spain, 2007: 0.808165 EUR
+        per international $ (World Development Indicators, https:
+        //api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.
+        PP?date=2007&format=json, read 13 October 2026;
+        gaia/currency.py).
+        Every agent; the dependency weights split it. Step 8g.6
+        (the owner's answer: convert international dollars to
+        euros everywhere): 2,861 x 0.808165 = EUR 2,312.16/ha/yr
+        in 2007 euros at Spanish purchasing power (it was used at
+        face value as EUR 2,848, from figures partly typed from
+        memory: 3,000 - 152; now read in Table 2). Not inflated
+        to a later price year and no income adjustment (the
+        owner's decision for benefit transfers, Step 8d.5).
+        Climate regulation is left out because carbon is valued
+        only by gaia.carbon (decision D3). A global temperate-
+        forest mean, not a site valuation. Converted from Int$
+        (2007 prices: value Int$2,861) at 0.808165 € per Int$,
+        the PPP factor for household consumption, Spain 2007
+        (PA.NUS.PRVT.PP, World Bank); no income or price-year
+        adjustment.
     [low] discount.scarcity_rate = 0.02 1/yr
         2% relative price change of ecosystem services. Above the
         estimates of Drupp et al. (2024), 1.28%/yr for forests
@@ -235,25 +253,25 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   TOTAL RESTORATION COST:                       75,000.00€ (one-off)
 
   ── Recovered Ecosystem Services ────────────────────────────────
-  Human Communities:                               108.62€/yr
+  Human Communities:                                88.18€/yr
     → Health costs, water treatment, lost recreation
   Animal Populations:                                0.00€/yr
     → Habitat loss, population decline, species loss
-  Vegetation & Flora:                               90.52€/yr
+  Vegetation & Flora:                               73.49€/yr
     → Soil erosion, pollination network disruption
-  Watershed & Local Climate:                       211.21€/yr
+  Watershed & Local Climate:                       171.47€/yr
     → Watershed degradation, loss of local cooling and humidity regulation
 
-  Damage reversal (upper bound):                 1,202.09€/yr
+  Damage reversal (upper bound):                   975.92€/yr
     (annual externality before − after restoring, same damage model)
-  ANNUAL RECOVERED VALUE:                          410.35€/yr
+  ANNUAL RECOVERED VALUE:                          333.14€/yr
   ---------------------------------------------------------------
-  NET RESTORATION VALUE:                        23,494.61€ (PV)
+  NET RESTORATION VALUE:                        19,043.47€ (PV)
     (PV of recovered services and carbon − PV of restoration costs)
     Horizon sensitivity (€ PV):
-      50-year horizon:                   €       -36,564
-      100-year horizon:                  €        23,495
-      200-year horizon:                  €        93,342
+      50-year horizon:                   €       -37,936
+      100-year horizon:                  €        19,043
+      200-year horizon:                  €        83,911
 
   ── Restoration Cost Ratio ──────────────────────────────────────
   (Revenue + restoration cost) / revenue:        2.50
@@ -266,7 +284,7 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Years to 90% service recovery:                   48 years
 
   ── Maturation Gap ──────────────────────────────────────────────
-  Lost services during maturation:              11,847.84€ (PV)
+  Lost services during maturation:               9,618.71€ (PV)
   (discounted services not delivered while succession proceeds,
    over the 100-year NPV horizon)
 
@@ -281,12 +299,12 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
 
   ── Investment Analysis (NPV, 100-year) ─────────────────────────
   Restoration cost (PV):                   €        69,216
-  Service recovery (PV):                   €        23,658
+  Service recovery (PV):                   €        19,207
   Carbon absorption (PV):                  €        69,053
-  Total benefits (PV):                     €        92,711
+  Total benefits (PV):                     €        88,260
   ---------------------------------------------------------------
-  Net Present Value:                       €        23,495
-  ROI (benefits / cost):                             1.34x
+  Net Present Value:                       €        19,043
+  ROI (benefits / cost):                             1.28x
   Carbon payback:                                      71 years
 
   ── Carbon Credit Breakeven ─────────────────────────────────────
@@ -300,14 +318,14 @@ $ gaia run forest --total-units 1000 --units 500 --units-lost 1000 --mode restor
   Social cost of cutting these units and restoring them, over
   not cutting them:
     Restoration cost:                      €        69,216
-    Maturation gap (temporary):            €        11,848
-    Substrate loss (permanent):            €            32
-    Recovery shortfall (permanent):        €        68,474
+    Maturation gap (temporary):            €         9,619
+    Substrate loss (permanent):            €            26
+    Recovery shortfall (permanent):        €        55,591
     Carbon not recovered:                  €       119,677
     ====================================== ===============
-    Penalty:                               €       269,247
+    Penalty:                               €       254,129
     Foregone revenue (PV of not cutting):  €        50,000
-    Penalty per € of foregone revenue:                5.38
+    Penalty per € of foregone revenue:                5.08
   [... excerpt: the output continues with '── Parameter Provenance']
 ```
 <!-- END:example -->
@@ -500,7 +518,7 @@ result = run_extraction(ecosystem, units_to_extract=500)
 
 What the values rest on. The authoritative, per-parameter list is in each output's calibration status:
 
-- **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012) and Costanza et al. (2014), minus climate regulation (carbon is valued separately). The figures are partly from memory and have no currency or price-year conversion: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
+- **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012, Table 2, read in full), minus climate regulation (carbon is valued separately): temperate forest Int$2,861/ha/yr, woodlands Int$1,581, converted to euros at Spain's 2007 PPP rate for household consumption (World Bank, 0.808165 €/Int$; Step 8g.6, `gaia/currency.py`, the same conversion as Amazon and every Int$ figure): €2,312 and €1,278/ha/yr, 2007 euros, no income adjustment. Global means, not site valuations: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
 - **Posidonia** (the v1.0 case, Step 8):
   - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money, under any input, without double counting. €1,178/ha/yr in total:
     - **the meadow's own value, from its primary production** (Step 8e.6): the fish and invertebrates its net primary production supports (the plant 107 and its roots 7 g C/m²/yr, of which only the part not buried in the matte feeds the food web, 81% of the shoots' production → 14.3% transfer per trophic level, the median of five Western Mediterranean food-web models → 131 kg/ha/yr produced → 61 kg/ha/yr sustainable catch × €5.11/kg = €312/ha/yr), net of the €35 of commercial catch already counted under fish and invertebrates: **€277/ha/yr on every hectare**, whatever the diving. The plant's production comes from a depth function (Step 8g.1): light fades exponentially with depth, so production does too, from 770 g dry weight/m²/yr at 5 m to 318 at 15 m (the regional mean depth, the default) and zero at its depth limit (about 40 m), fitted to six measurements in Catalonia and Ischia; `--depth-m` sets the affected meadow's depth. Every link is sourced in the case file; the report shows the chain on the meadow's line and compares the meadow's productivity with coral reefs, cropland and tropical forest;
@@ -509,11 +527,11 @@ What the values rest on. The authoritative, per-parameter list is in each output
     - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031, and how much it is dived with `--dive-intensity {none,low,medium,high}`, default the Costa Brava average), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
     - the non-use values of megafauna and seabirds (Börger et al. 2014, a benefit transfer).
 
-    Beach tourism and the meadow's own existence value are not valued (no willingness-to-pay study for the meadow was found), so the total is still a lower bound, ~7× below the Mediterranean seagrass meta-regression.
+    Beach tourism and the meadow's own existence value are not valued (no willingness-to-pay study for the meadow was found), so the total is still a lower bound, ~4.5× below the Mediterranean seagrass meta-regression (converted to euros at PPP since Step 8g.6).
   - **Small losses are priced linearly** (damage model `area_loss`): below the 20% threshold each hectare costs its average value; past it the remaining meadow degrades. The reference resource is the regional stock unless the user enters the meadow a project affects (`--area-ha`).
   - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95, and samples the meadow's production function link by link (its food value, net: P5 / P50 / P95 €118 / €254 / €528 per hectare a year; base €277), the depth function's three hyperparameters among its links; the epiphytes' chain shares its links to the catch, drawn once for both. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
-- **Amazon**: the agent value is de Groot et al.'s (2012, Table 2) tropical-forest value without climate regulation, Int$3,220/ha/yr, converted at Spain's 2007 PPP rate for household consumption (World Bank, 0.808165 €/Int$): €2,602/ha/yr in 2007 euros, no income adjustment (Step 8e.5; it replaced €580, the sum of its spec's partly unverified anchors). A global mean, not a Central Amazon valuation: *low* confidence. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
+- **Amazon**: the agent value is de Groot et al.'s (2012, Table 2) tropical-forest value without climate regulation, Int$3,220/ha/yr, converted at Spain's 2007 PPP rate for household consumption (World Bank, 0.808165 €/Int$; its EXPERIMENTAL anchors too since Step 8g.6): €2,602/ha/yr in 2007 euros, no income adjustment (Step 8e.5; it replaced €580, the sum of its spec's partly unverified anchors). A global mean, not a Central Amazon valuation: *low* confidence. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
 - **All cases**: every agent carries a positive euro value under any input, preset or flag (PROJECT_DEFINITION.md, Core Valuation Principles): validation and case parsing reject an agent at €0, and a test runs every case under every preset and flag (Step 8e.7). Small losses priced linearly (damage model `area_loss`, Steps 8c.3 and 8d.1): below the safe threshold each unit lost costs its average value, past it the remaining resource degrades along placeholder curves (steepness 12; Costa Brava's fire agent exponential), which start at the threshold. Placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
 
 ---

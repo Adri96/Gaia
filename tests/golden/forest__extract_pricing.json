@@ -76,10 +76,10 @@
         {
           "confidence": "low",
           "name": "agents.annual_value_per_ha",
-          "note": "Every agent; the dependency weights split it. Figures partly from memory, to be checked against the papers (Step 8); 2007 Int$ used as \u20ac with no currency or price-year conversion; a global biome mean, not a site valuation.",
-          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: temperate forest Int$3,013/ha/yr; Costanza et al. (2014), Global Environmental Change 26:152-158: $3,137/ha/yr (2007); minus climate regulation Int$152 (de Groot 2012, SM Table 8.1)",
+          "note": "Every agent; the dependency weights split it. Step 8g.6 (the owner's answer: convert international dollars to euros everywhere): 2,861 x 0.808165 = EUR 2,312.16/ha/yr in 2007 euros at Spanish purchasing power (it was used at face value as EUR 2,848, from figures partly typed from memory: 3,000 - 152; now read in Table 2). Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). A global temperate-forest mean, not a site valuation. Converted from Int$ (2007 prices: value Int$2,861) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): temperate forest, total economic value Int$3,013/ha/yr minus climate regulation Int$152 = Int$2,861/ha/yr (2007 international dollars, 2007 price level; 58 estimates, Table 3); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
           "unit": "\u20ac/ha/yr",
-          "value": 2848.0
+          "value": 2312.160065
         },
         {
           "confidence": "placeholder",
@@ -236,18 +236,18 @@
         {
           "confidence": "low",
           "name": "pricing.anchor[Watershed & Local Climate]",
-          "note": "EXPERIMENTAL pricing (quarantined). A market-based value (Step 8d.6): water (provisioning) Int$, Int$191/ha/yr x 40 ha, a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')",
-          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
+          "note": "EXPERIMENTAL pricing (quarantined). A market-based value (Step 8d.6): water (provisioning) Int$191/ha/yr x 40 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py). Converted from Int$ (2007 prices: anchor_value Int$7,640) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment",
           "unit": "\u20ac/yr",
-          "value": 1528.0
+          "value": 1234.8761200000001
         },
         {
           "confidence": "low",
           "name": "pricing.anchor[Vegetation & Flora]",
-          "note": "EXPERIMENTAL pricing (quarantined). A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$, Int$299/ha/yr x 40 ha, a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream",
-          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices",
+          "note": "EXPERIMENTAL pricing (quarantined). A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$299/ha/yr x 40 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices; converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py). Converted from Int$ (2007 prices: anchor_value Int$11,960) at 0.808165 \u20ac per Int$, the PPP factor for household consumption, Spain 2007 (PA.NUS.PRVT.PP, World Bank); no income or price-year adjustment",
           "unit": "\u20ac/yr",
-          "value": 2392.0
+          "value": 1933.1306800000002
         },
         {
           "confidence": "placeholder",
@@ -280,8 +280,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 2848.0,
-          "annual_value_eur_yr": 22784.0,
+          "annual_value_eur_per_ha_yr": 2312.160065,
+          "annual_value_eur_yr": 18497.28052,
           "dependency_weight": 0.2,
           "description": "Health costs, water treatment, lost recreation",
           "is_keystone": false,
@@ -291,8 +291,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 2848.0,
-          "annual_value_eur_yr": 22784.0,
+          "annual_value_eur_per_ha_yr": 2312.160065,
+          "annual_value_eur_yr": 18497.28052,
           "dependency_weight": 0.3,
           "description": "Habitat loss, population decline, species loss",
           "is_keystone": false,
@@ -302,8 +302,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 2848.0,
-          "annual_value_eur_yr": 22784.0,
+          "annual_value_eur_per_ha_yr": 2312.160065,
+          "annual_value_eur_yr": 18497.28052,
           "dependency_weight": 0.15,
           "description": "Soil erosion, pollination network disruption",
           "is_keystone": false,
@@ -313,8 +313,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 2848.0,
-          "annual_value_eur_yr": 22784.0,
+          "annual_value_eur_per_ha_yr": 2312.160065,
+          "annual_value_eur_yr": 18497.28052,
           "dependency_weight": 0.35,
           "description": "Watershed degradation, loss of local cooling and humidity regulation",
           "is_keystone": false,
@@ -385,9 +385,9 @@
         "scarcity_rate": 0.02
       },
       "horizon_years": 100,
-      "services_eur_pv": 6065552.81,
-      "substrate_unrecoverable_eur_pv": 1773.16,
-      "total_eur_pv": 6443011.89
+      "services_eur_pv": 4901967.49,
+      "substrate_unrecoverable_eur_pv": 1433.01,
+      "total_eur_pv": 5279426.57
     },
     "pricing": {
       "convergence_check": "direct_iteration",
@@ -406,10 +406,10 @@
       "iterations": 4,
       "note": "EXPERIMENTAL (decision D4, C8): endogenous pricing is quarantined. Every price is certified convergent (a run that cannot be certified fails instead of falling back to static values), but the formulation counts upstream value once per dependent agent and prices the whole loss at the end-state scarcity price, and most shipped anchors are placeholders. Do not use these figures as estimates.",
       "prices_eur_yr": {
-        "Animal Populations": 154146.42,
-        "Human Communities": 110373.09,
-        "Vegetation & Flora": 15414.64,
-        "Watershed & Local Climate": 9846.81
+        "Animal Populations": 124575.74,
+        "Human Communities": 89199.67,
+        "Vegetation & Flora": 12457.57,
+        "Watershed & Local Climate": 7957.85
       },
       "scarcity_multipliers": {
         "Animal Populations": 50.0,
@@ -429,53 +429,53 @@
     "summary": {
       "agent_cascade_externality_eur_yr": {
         "Animal Populations": 0.0,
-        "Human Communities": 342.55,
+        "Human Communities": 276.83,
         "Vegetation & Flora": 0.0,
         "Watershed & Local Climate": 0.0
       },
       "agent_direct_externality_eur_yr": {
-        "Animal Populations": 46243.93,
-        "Human Communities": 18649.14,
-        "Vegetation & Flora": 1953.4,
-        "Watershed & Local Climate": 2911.58
+        "Animal Populations": 37372.72,
+        "Human Communities": 15071.58,
+        "Vegetation & Flora": 1578.67,
+        "Watershed & Local Climate": 2353.04
       },
       "agent_externality_eur_yr": {
-        "Animal Populations": 46243.93,
-        "Human Communities": 18991.69,
-        "Vegetation & Flora": 1953.4,
-        "Watershed & Local Climate": 2911.58
+        "Animal Populations": 37372.72,
+        "Human Communities": 15348.42,
+        "Vegetation & Flora": 1578.67,
+        "Watershed & Local Climate": 2353.04
       },
-      "annual_externality_eur_yr": 70100.6,
+      "annual_externality_eur_yr": 56652.85,
       "discount_is_default": false,
       "final_ecosystem_health": 0.10552,
-      "net_social_cost_eur_pv": 6343011.89,
+      "net_social_cost_eur_pv": 5179426.57,
       "num_steps": 1000,
-      "pv_externality_eur_pv": 6443011.89,
-      "pv_externality_h100_eur_pv": 6443011.89,
-      "pv_externality_h200_eur_pv": 11051780.53,
-      "pv_externality_h50_eur_pv": 3544470.89,
+      "pv_externality_eur_pv": 5279426.57,
+      "pv_externality_h100_eur_pv": 5279426.57,
+      "pv_externality_h200_eur_pv": 9020730.05,
+      "pv_externality_h50_eur_pv": 2920038.73,
       "revenue_eur": 100000.0,
       "total_units_extracted": 1000
     }
   },
   "per_agent": {
-    "Animal Populations": 46243.92691523222,
-    "Human Communities": 18991.690397539165,
-    "Vegetation & Flora": 1953.396345761611,
-    "Watershed & Local Climate": 2911.5840738943966
+    "Animal Populations": 37372.723195448656,
+    "Human Communities": 15348.41947012724,
+    "Vegetation & Flora": 1578.6665577724323,
+    "Watershed & Local Climate": 2353.0403430788656
   },
   "result": {
     "agent_cascade_annual_costs": [
-      342.5476067794979,
+      276.83498663295296,
       0.0,
       0.0,
       0.0
     ],
     "agent_direct_annual_costs": [
-      18649.142790759666,
-      46243.92691523222,
-      1953.396345761611,
-      2911.5840738943966
+      15071.584483494287,
+      37372.723195448656,
+      1578.6665577724323,
+      2353.0403430788656
     ],
     "agent_trophic_amplification": [
       1.0,
@@ -483,7 +483,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 70100.59773242738,
+    "annual_externality": 56652.8495664272,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -501,19 +501,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 145552.44265452633,
       "carbon_released_t": 875.0,
-      "direct": 6065552.809484282,
+      "direct": 4901967.486276869,
       "horizon": 100,
-      "substrate_unrecoverable": 1773.159577553537,
-      "total": 6443011.892230952
+      "substrate_unrecoverable": 1433.0055099935555,
+      "total": 5279426.569023538
     },
     "final_ecosystem_health": 0.10552045047871328,
     "final_model_confidence": 0.5142857142857142,
-    "net_social_cost": 6343011.892230952,
-    "pv_externality": 6443011.892230952,
+    "net_social_cost": 5179426.569023538,
+    "pv_externality": 5279426.569023538,
     "pv_externality_by_horizon": {
-      "100": 6443011.892230952,
-      "200": 11051780.528743302,
-      "50": 3544470.8888796475
+      "100": 5279426.569023538,
+      "200": 9020730.048731185,
+      "50": 2920038.733728058
     },
     "revenue": 100000.0,
     "substrate_recovery_years": 2.1376830468913255,
@@ -532,10 +532,10 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      1050918.2162328192,
-      3368426.4916904154,
-      323539.9364098237,
-      482244.0300779644
+      849315.3202217966,
+      2722244.395656984,
+      261473.65270864512,
+      389732.74656795827
     ],
     "agent_cascade_damages": [
       6.725608293176764,
@@ -556,17 +556,17 @@
       327.5312883445703
     ],
     "agent_prices": [
-      6454079.3769079875,
-      11994882.957438892,
-      4548932.909398828,
-      2905840.0859370427
+      5215961.059638844,
+      9693844.585298605,
+      3676288.3647242985,
+      2348398.253051309
     ],
-    "annual_externality": 5225128.674411024,
+    "annual_externality": 4222766.115155385,
     "depletion_ratio": 250.25,
     "ecosystem_health": 656.1386527061705,
     "effective_k": 1999000.0,
     "k_fraction": 999.9053772345821,
-    "marginal_annual_externality": 70100.59773242738,
+    "marginal_annual_externality": 56652.8495664272,
     "model_confidence": 732.6642857142843,
     "revenue": 50050000.0,
     "step": 500500.0,
@@ -576,10 +576,10 @@
   "steps": [
     {
       "agent_annual_costs": [
-        0.004791183181984487,
-        0.07183181385590241,
-        0.17948974487243619,
-        0.26753376688344166
+        0.003872066556268493,
+        0.05805195784485538,
+        0.1450573296648324,
+        0.21621142671335666
       ],
       "agent_cascade_damages": [
         0.0,
@@ -600,19 +600,19 @@
         0.0005
       ],
       "agent_prices": [
-        47.91183181984486,
-        478.87875903934946,
-        2393.196598299149,
-        1528.7643821910954
+        38.72066556268493,
+        387.0130522990359,
+        1934.0977288644322,
+        1235.4938669334667
       ],
-      "annual_externality": 0.5236465087937647,
+      "annual_externality": 0.42319278077931294,
       "depletion_ratio": 0.0005,
       "ecosystem_health": 0.9995,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999145292948,
       "keystone_triggered": [],
-      "marginal_annual_externality": 0.5236465087937647,
+      "marginal_annual_externality": 0.42319278077931294,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
@@ -630,10 +630,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 478.87875903934946,
-          "Human Communities": 47.91183181984486,
-          "Vegetation & Flora": 2393.196598299149,
-          "Watershed & Local Climate": 1528.7643821910954
+          "Animal Populations": 387.0130522990359,
+          "Human Communities": 38.72066556268493,
+          "Vegetation & Flora": 1934.0977288644322,
+          "Watershed & Local Climate": 1235.4938669334667
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.0005002501250624,
@@ -651,10 +651,10 @@
     },
     {
       "agent_annual_costs": [
-        0.5644528075651524,
-        8.039219111746682,
-        19.083096366508688,
-        28.443812532912055
+        0.45617100322589144,
+        6.497015513444758,
+        15.422290575039497,
+        22.987293755660875
       ],
       "agent_cascade_damages": [
         0.0,
@@ -675,19 +675,19 @@
         0.0505
       ],
       "agent_prices": [
-        55.88641659060914,
-        530.6415255278338,
-        2519.220642443391,
-        1609.26803580832
+        45.16544586394964,
+        428.84590847820186,
+        2035.9459505002635,
+        1300.5541021590311
       ],
-      "annual_externality": 56.130580818732575,
+      "annual_externality": 45.362770847371024,
       "depletion_ratio": 0.0505,
       "ecosystem_health": 0.9495,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999911515389103,
       "keystone_triggered": [],
-      "marginal_annual_externality": 0.5897731208174335,
+      "marginal_annual_externality": 0.47663399418542696,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
@@ -705,10 +705,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 530.6415255278338,
-          "Human Communities": 55.88641659060914,
-          "Vegetation & Flora": 2519.220642443391,
-          "Watershed & Local Climate": 1609.26803580832
+          "Animal Populations": 428.84590847820186,
+          "Human Communities": 45.16544586394964,
+          "Vegetation & Flora": 2035.9459505002635,
+          "Watershed & Local Climate": 1300.5541021590311
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.05318588730911,
@@ -726,10 +726,10 @@
     },
     {
       "agent_annual_costs": [
-        1.3212461212089068,
-        17.826913290411174,
-        40.08827126181212,
-        59.75252918287938
+        1.0677848715467961,
+        14.407087379345144,
+        32.39793774430239,
+        48.28990274708172
       ],
       "agent_cascade_damages": [
         0.0,
@@ -750,19 +750,19 @@
         0.1005
       ],
       "agent_prices": [
-        65.73363787108988,
-        591.2740726504535,
-        2659.255141745414,
-        1698.721511951084
+        53.12362545008936,
+        477.84701092355374,
+        2149.116931628683,
+        1372.847270705948
       ],
-      "annual_externality": 118.98895985631157,
+      "annual_externality": 96.16271274227606,
       "depletion_ratio": 0.1005,
       "ecosystem_health": 0.8995,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999811306425426,
       "keystone_triggered": [],
-      "marginal_annual_externality": 0.6690695956805683,
+      "marginal_annual_externality": 0.5407186297931901,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
@@ -780,10 +780,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 591.2740726504535,
-          "Human Communities": 65.73363787108988,
-          "Vegetation & Flora": 2659.255141745414,
-          "Watershed & Local Climate": 1698.721511951084
+          "Animal Populations": 477.84701092355374,
+          "Human Communities": 53.12362545008936,
+          "Vegetation & Flora": 2149.116931628683,
+          "Watershed & Local Climate": 1372.847270705948
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.1117287381878822,
@@ -801,10 +801,10 @@
     },
     {
       "agent_annual_costs": [
-        2.3489161665052043,
-        29.931064251692558,
-        63.56609770453206,
-        94.74679223072394
+        1.898311833703679,
+        24.189238540969125,
+        51.371895351383166,
+        76.57104134314302
       ],
       "agent_cascade_damages": [
         0.0,
@@ -825,19 +825,19 @@
         0.1505
       ],
       "agent_prices": [
-        78.03708194369449,
-        662.9250111116846,
-        2815.7739846968802,
-        1798.7051206592112
+        63.06683832902588,
+        535.7527916050748,
+        2275.6099823425548,
+        1453.6505238375516
       ],
-      "annual_externality": 190.59287035345375,
+      "annual_externality": 154.030487069199,
       "depletion_ratio": 0.1505,
       "ecosystem_health": 0.8495,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999686125239529,
       "keystone_triggered": [],
-      "marginal_annual_externality": 0.7652294008789511,
+      "marginal_annual_externality": 0.6184316187613774,
       "model_confidence": 0.9,
       "price_result": {
         "anchor_contributions": {
@@ -855,10 +855,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 662.9250111116846,
-          "Human Communities": 78.03708194369449,
-          "Vegetation & Flora": 2815.7739846968802,
-          "Watershed & Local Climate": 1798.7051206592112
+          "Animal Populations": 535.7527916050748,
+          "Human Communities": 63.06683832902588,
+          "Vegetation & Flora": 2275.6099823425548,
+          "Watershed & Local Climate": 1453.6505238375516
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.1771630370806356,
@@ -876,10 +876,10 @@
     },
     {
       "agent_annual_costs": [
-        3.7538778728524416,
-        45.0183803901829,
-        89.98048780487805,
-        134.1180737961226
+        3.0337527111137943,
+        36.38227938803217,
+        72.71908092682929,
+        108.38953310944342
       ],
       "agent_cascade_damages": [
         0.0,
@@ -900,19 +900,19 @@
         0.2005
       ],
       "agent_prices": [
-        93.6129145349736,
-        748.4352517071138,
-        2991.869918699187,
-        1911.1944965603502
+        75.65468107515696,
+        604.8591751958797,
+        2417.924552845529,
+        1544.5605003126957
       ],
-      "annual_externality": 272.870819864036,
+      "annual_externality": 220.52464613541866,
       "depletion_ratio": 0.2005,
       "ecosystem_health": 0.7995,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999523578669016,
       "keystone_triggered": [],
-      "marginal_annual_externality": 0.8833198640359683,
+      "marginal_annual_externality": 0.7138681979186572,
       "model_confidence": 0.8985000000000002,
       "price_result": {
         "anchor_contributions": {
@@ -930,10 +930,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 748.4352517071138,
-          "Human Communities": 93.6129145349736,
-          "Vegetation & Flora": 2991.869918699187,
-          "Watershed & Local Climate": 1911.1944965603502
+          "Animal Populations": 604.8591751958797,
+          "Human Communities": 75.65468107515696,
+          "Vegetation & Flora": 2417.924552845529,
+          "Watershed & Local Climate": 1544.5605003126957
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.2507817385866167,
@@ -951,10 +951,10 @@
     },
     {
       "agent_annual_costs": [
-        5.692643476225638,
-        63.99954428146672,
-        119.91914609739825,
-        178.7423615743829
+        4.600595214963892,
+        51.72219170423155,
+        96.91445670580387,
+        144.45332064176117
       ],
       "agent_cascade_damages": [
         0.0,
@@ -975,19 +975,19 @@
         0.2505
       ],
       "agent_prices": [
-        113.62561828793687,
-        851.6240090680868,
-        3191.460973982655,
-        2038.692461641094
+        91.8282478036705,
+        688.2527172885103,
+        2579.2270580386926,
+        1647.5998932621749
       ],
-      "annual_externality": 368.35369542947353,
+      "annual_externality": 297.6905642667605,
       "depletion_ratio": 0.2505,
       "ecosystem_health": 0.7495,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.999931127355149,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1.0304361702143296,
+      "marginal_annual_externality": 0.8327624475011817,
       "model_confidence": 0.7485000000000004,
       "price_result": {
         "anchor_contributions": {
@@ -1005,10 +1005,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 851.6240090680868,
-          "Human Communities": 113.62561828793687,
-          "Vegetation & Flora": 3191.460973982655,
-          "Watershed & Local Climate": 2038.692461641094
+          "Animal Populations": 688.2527172885103,
+          "Human Communities": 91.8282478036705,
+          "Vegetation & Flora": 2579.2270580386926,
+          "Watershed & Local Climate": 1647.5998932621749
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.33422281521014,
@@ -1026,10 +1026,10 @@
     },
     {
       "agent_annual_costs": [
-        8.36851311953353,
-        87.86938775510205,
-        153.77142857142857,
-        229.20000000000002
+        6.7631394052478155,
+        71.01296375510205,
+        124.27268657142858,
+        185.23141800000002
       ],
       "agent_cascade_damages": [
         0.0,
@@ -1050,19 +1050,19 @@
         0.3
       ],
       "agent_prices": [
-        139.47521865889217,
-        976.326530612245,
-        3417.1428571428573,
-        2182.857142857143
+        112.7189900874636,
+        789.0329306122451,
+        2761.6152571428574,
+        1764.1087428571432
       ],
-      "annual_externality": 479.2093294460642,
+      "annual_externality": 387.28020773177843,
       "depletion_ratio": 0.3,
       "ecosystem_health": 0.7,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999039909636748,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1.21464382679153,
+      "marginal_annual_externality": 0.9816326282788168,
       "model_confidence": 0.6,
       "price_result": {
         "anchor_contributions": {
@@ -1080,10 +1080,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 976.326530612245,
-          "Human Communities": 139.47521865889217,
-          "Vegetation & Flora": 3417.1428571428573,
-          "Watershed & Local Climate": 2182.857142857143
+          "Animal Populations": 789.0329306122451,
+          "Human Communities": 112.7189900874636,
+          "Vegetation & Flora": 2761.6152571428574,
+          "Watershed & Local Climate": 1764.1087428571432
         },
         "scarcity_multipliers": {
           "Animal Populations": 1.4285714285714286,
@@ -1101,10 +1101,10 @@
     },
     {
       "agent_annual_costs": [
-        31.712178171536074,
-        289.350693976469,
-        293.6007036516298,
-        437.6188860448484
+        25.628672471999455,
+        233.84310359749307,
+        237.2778126666194,
+        353.66826704043496
       ],
       "agent_cascade_damages": [
         0.013599956979975245,
@@ -1125,19 +1125,19 @@
         0.4500312492127649
       ],
       "agent_prices": [
-        341.997882670054,
-        1834.3699181237366,
-        4349.338024344199,
-        2778.3396744138527
+        276.39071884804423,
+        1482.4735648804697,
+        3514.9827644441298,
+        2245.3568829726714
       ],
-      "annual_externality": 1052.2824618444834,
+      "annual_externality": 850.417855776547,
       "depletion_ratio": 0.35,
       "ecosystem_health": 0.5245196697822848,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9998691714732901,
       "keystone_triggered": [],
-      "marginal_annual_externality": 8.460140650121502,
+      "marginal_annual_externality": 6.837189568505664,
       "model_confidence": 0.5785714285714286,
       "price_result": {
         "anchor_contributions": {
@@ -1155,10 +1155,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 1834.3699181237366,
-          "Human Communities": 341.997882670054,
-          "Vegetation & Flora": 4349.338024344199,
-          "Watershed & Local Climate": 2778.3396744138527
+          "Animal Populations": 1482.4735648804697,
+          "Human Communities": 276.39071884804423,
+          "Vegetation & Flora": 3514.9827644441298,
+          "Watershed & Local Climate": 2245.3568829726714
         },
         "scarcity_multipliers": {
           "Animal Populations": 2.1087920826759907,
@@ -1176,10 +1176,10 @@
     },
     {
       "agent_annual_costs": [
-        158.24070158437704,
-        1061.0893036170326,
-        546.258081293428,
-        814.2107633102711
+        127.88459659593809,
+        857.5352370576593,
+        441.4666622685032,
+        658.0166415306453
       ],
       "agent_cascade_damages": [
         0.02161211403073592,
@@ -1200,19 +1200,19 @@
         0.6035613543307241
       ],
       "agent_prices": [
-        1265.5743533000198,
-        4743.708453781346,
-        6033.720541956186,
-        3854.3164666007747
+        1022.7928972347107,
+        3833.6991425502024,
+        4876.241761790022,
+        3114.9236672304155
       ],
-      "annual_externality": 2579.7988498051086,
+      "annual_externality": 2084.903137452746,
       "depletion_ratio": 0.4,
       "ecosystem_health": 0.34950113049134157,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9998256705726488,
       "keystone_triggered": [],
-      "marginal_annual_externality": 26.585750858320807,
+      "marginal_annual_externality": 21.485673342414884,
       "model_confidence": 0.5571428571428572,
       "price_result": {
         "anchor_contributions": {
@@ -1230,10 +1230,10 @@
         },
         "iterations": 0,
         "prices": {
-          "Animal Populations": 4743.708453781346,
-          "Human Communities": 1265.5743533000198,
-          "Vegetation & Flora": 6033.720541956186,
-          "Watershed & Local Climate": 3854.3164666007747
+          "Animal Populations": 3833.6991425502024,
+          "Human Communities": 1022.7928972347107,
+          "Vegetation & Flora": 4876.241761790022,
+          "Watershed & Local Climate": 3114.9236672304155
         },
         "scarcity_multipliers": {
           "Animal Populations": 3.9309978153573826,
@@ -1251,10 +1251,10 @@
     },
     {
       "agent_annual_costs": [
-        1584.0301713650322,
-        6853.091593320122,
-        1023.0667059750232,
-        1524.9054469215228
+        1280.157743441221,
+        5538.4287675155565,
+        826.8067044343046,
+        1232.3752105113326
       ],
       "agent_cascade_damages": [
         0.022025432072715154,
@@ -1275,19 +1275,19 @@
         0.7403512231327432
       ],
       "agent_prices": [
-        10388.763615395204,
-        24686.12758570044,
-        9212.444706500155,
-        5884.8727054900655
+        8395.835147235864,
+        19950.464300297597,
+        7445.175376228698,
+        4755.948150032379
       ],
-      "annual_externality": 10985.0939175817,
+      "annual_externality": 8877.768425902414,
       "depletion_ratio": 0.45,
       "ecosystem_health": 0.19974004117365407,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9997722489455121,
       "keystone_triggered": [],
-      "marginal_annual_externality": 244.29866775297342,
+      "marginal_annual_externality": 197.43363282457904,
       "model_confidence": 0.5357142857142857,
       "price_result": {
         "anchor_contributions": {
@@ -1305,10 +1305,10 @@
         },
         "iterations": 3,
         "prices": {
-          "Animal Populations": 24686.12758570044,
-          "Human Communities": 10388.763615395204,
-          "Vegetation & Flora": 9212.444706500155,
-          "Watershed & Local Climate": 5884.8727054900655
+          "Animal Populations": 19950.464300297597,
+          "Human Communities": 8395.835147235864,
+          "Vegetation & Flora": 7445.175376228698,
+          "Watershed & Local Climate": 4755.948150032379
         },
         "scarcity_multipliers": {
           "Animal Populations": 13.398250069431786,
@@ -1326,10 +1326,10 @@
     },
     {
       "agent_annual_costs": [
-        18991.690397539165,
-        46243.92691523222,
-        1953.396345761611,
-        2911.5840738943966
+        15348.41947012724,
+        37372.723195448656,
+        1578.6665577724323,
+        2353.0403430788656
       ],
       "agent_cascade_damages": [
         0.015517713305693126,
@@ -1350,19 +1350,19 @@
         0.8448228669430686
       ],
       "agent_prices": [
-        110373.09429277324,
-        154146.4230507741,
-        15414.642305077408,
-        9846.811639698277
+        89199.6717491191,
+        124575.74398482885,
+        12457.574398482884,
+        7957.848528796759
       ],
-      "annual_externality": 70100.59773242738,
+      "annual_externality": 56652.8495664272,
       "depletion_ratio": 0.5,
       "ecosystem_health": 0.10552045047871328,
       "effective_k": 1999,
       "irreversibility_warning": false,
       "k_fraction": 0.9997076672756388,
       "keystone_triggered": [],
-      "marginal_annual_externality": 515.0836143178021,
+      "marginal_annual_externality": 416.2725491651581,
       "model_confidence": 0.5142857142857142,
       "price_result": {
         "anchor_contributions": {
@@ -1380,10 +1380,10 @@
         },
         "iterations": 4,
         "prices": {
-          "Animal Populations": 154146.4230507741,
-          "Human Communities": 110373.09429277324,
-          "Vegetation & Flora": 15414.642305077408,
-          "Watershed & Local Climate": 9846.811639698277
+          "Animal Populations": 124575.74398482885,
+          "Human Communities": 89199.6717491191,
+          "Vegetation & Flora": 12457.574398482884,
+          "Watershed & Local Climate": 7957.848528796759
         },
         "scarcity_multipliers": {
           "Animal Populations": 50.0,

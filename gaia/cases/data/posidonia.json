@@ -1315,32 +1315,58 @@
       },
       {
         "name": "Stamatiadou et al. 2025, Mediterranean seagrass meta-regression (country range)",
-        "low": 1588.0,
-        "high": 95767.0,
-        "unit": "Int$2020/ha/yr",
-        "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704",
+        "low": 1090.174704,
+        "high": 65744.811636,
+        "unit": "€2020/ha/yr (PPP)",
+        "source": "Stamatiadou, Mazaris & Katsanevakis (2025), Ecosystem Services 72:101704, doi:10.1016/j.ecoser.2025.101704: values standardised to 'International dollars (Int.$) per hectare per year (with 2020 as the reference year)', basin mean 8,712 Int.$/ha/yr (abstract, as indexed by RePEc IDEAS); converted to EUR at Spain's 2020 PPP factor for household consumption, 0.686508 EUR/Int$ (World Bank, PA.NUS.PRVT.PP, read 13 October 2026; gaia/currency.py)",
         "note": "Basin mean 8,712; range across countries (Morocco to Monaco). 17 studies, 91 observations, 8 services incl. recreation and climate regulation; values scale with GDP per capita.",
         "includes_carbon": true,
-        "central": 8712.0
+        "central": 5980.857696,
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2020,
+          "amounts": {
+            "low": 1588.0,
+            "high": 95767.0,
+            "central": 8712.0
+          }
+        }
       },
       {
         "name": "de Groot et al. 2012 (ESVD/TEEB), coastal systems",
-        "low": 26167.0,
-        "high": 42063.0,
-        "unit": "Int$2007/ha/yr",
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, as tabulated by Costanza et al. (2014) Table 4",
+        "low": 21147.253555,
+        "high": 33993.844395,
+        "unit": "€2007/ha/yr (PPP)",
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (coastal systems, total 28,917) and Table 3 (totals of minimum and maximum values, 26,167-42,063), read in full; also tabulated by Costanza et al. (2014) Table 4; converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
         "note": "Central: total of the per-service means (28 estimates); range: totals of the per-service minima and maxima. Coastal systems, not seagrass alone.",
         "includes_carbon": true,
-        "central": 28917.0
+        "central": 23369.707305,
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "low": 26167.0,
+            "high": 42063.0,
+            "central": 28917.0
+          }
+        }
       },
       {
         "name": "Costanza et al. 2014, seagrass/algae beds",
-        "low": 28916.0,
-        "high": 28916.0,
-        "unit": "$2007/ha/yr",
-        "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3",
+        "low": 23368.89914,
+        "high": 23368.89914,
+        "unit": "€2007/ha/yr (PPP)",
+        "source": "Costanza et al. (2014), Global Environmental Change 26:152-158, doi:10.1016/j.gloenvcha.2014.04.002, Table 3 (full text: unit values 'in international $/ha/yr', 2007 dollars from de Groot et al. 2012); converted to EUR at Spain's 2007 PPP factor, 0.808165 EUR/Int$ (World Bank, PA.NUS.PRVT.PP; gaia/currency.py)",
         "note": "Global unit value; 26,223 of it is nutrient cycling.",
-        "includes_carbon": true
+        "includes_carbon": true,
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "low": 28916.0,
+            "high": 28916.0
+          }
+        }
       }
     ]
   }

@@ -17,9 +17,12 @@ reports where Gaia's own per-hectare figures fall among them:
     linear_transfer  hectares lost × full_damage: the plain benefit transfer
                      most impact assessments would use
 
-Benchmarks are reported in their own currency and price year, unconverted:
-the comparison is an order of magnitude ("below", "within", "above" and the
-ratio of the benchmark midpoint to Gaia's figure), not a test.
+Benchmarks in international dollars are converted to euros at Spain's PPP
+for their price year (Step 8g.6, gaia.currency; the case file records it,
+``converted_from``); the others are in their own currency and price year.
+No price-year adjustment: the comparison is an order of magnitude
+("below", "within", "above" and the ratio of the benchmark midpoint to
+Gaia's figure), not a test.
 
 No third-party dependencies.
 """
@@ -82,9 +85,11 @@ def benchmark_comparison(result: Any, benchmarks: Sequence[Dict[str, Any]]) -> O
         "linear_transfer_eur_yr": round(full * ha_lost, 2),
         "annual_externality_eur_yr": round(result.annual_externality, 2),
         "method": (
-            "Benchmarks in their own currency and price year, not converted: an "
-            "order-of-magnitude comparison. Gaia's carbon release (a stock, "
-            "released at once or over time) is not in any per-hectare yearly figure."
+            "Benchmarks in international dollars converted to euros at Spain's PPP for "
+            "their price year (gaia.currency); the others in their own currency and "
+            "price year; no price-year adjustment: an order-of-magnitude comparison. "
+            "Gaia's carbon release (a stock, released at once or over time) is not in "
+            "any per-hectare yearly figure."
         ),
         "benchmarks": rows,
     }
@@ -106,7 +111,7 @@ def format_benchmarks(block: Optional[Dict[str, Any]]) -> str:
         f"  {'Charged per hectare lost (this run):':<40} {block['realised_loss_eur_per_ha_yr']:>12,.2f}€/ha/yr",
         f"  {'Linear benefit transfer (ha × value):':<40} {block['linear_transfer_eur_yr']:>12,.2f}€/yr"
         f"  (Gaia: {block['annual_externality_eur_yr']:,.2f}€/yr)",
-        "  Published values (own currency and price year, not converted):",
+        "  Published values (Int$ converted to € at PPP; own price year):",
     ]
     for row in block["benchmarks"]:
         ratio = row["benchmark_central_over_gaia"]

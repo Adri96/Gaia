@@ -32,7 +32,7 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | tree density            | 250           | trees/ha   | Placeholder  | Low        |
     | safe_threshold_ratio    | configurable  | ratio      | Placeholder  | Low        |
     | unit_value              | 100.0 €/tree  | €/tree     | Placeholder  | Low        |
-    | annual_value_per_ha     | 2,848         | €/ha/yr    | de Groot 2012| Low        |
+    | annual_value_per_ha     | 2,312.16      | €/ha/yr    | de Groot 2012| Low        |
     |   (every agent)         |               |            |              |            |
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
@@ -42,19 +42,21 @@ case every agent carries a value > 0 under any input, preset or flag
 (PROJECT_DEFINITION.md, Core Valuation Principles (b); a validated
 invariant since Step 8e.7, tests/test_valuation_principles.py). Here every
 agent uses the biome-level value below, and the dependency weights split it, so
-sum(weight × value) = €2,848/ha/yr × area_ha at full damage
-(€113,920/yr for the 40 ha reference forest).
+sum(weight × value) = €2,312.16/ha/yr × area_ha at full damage
+(€92,486/yr for the 40 ha reference forest).
 
-The value is the order of magnitude of global meta-analyses for temperate
-forests: de Groot et al. (2012), Ecosystem Services 1:50-61, Int$3,013/ha/yr
-(2007 price level); Costanza et al. (2014), Global Environmental Change
-26:152-158, $3,137/ha/yr (2007) — both figures to be re-checked against the
-papers in Step 8. It is used at face value as €; currency and price-year
-conversion, and a site-specific value, are pending (Step 8).
-Carbon is valued only by gaia.carbon (decision D3), so the climate-regulation
-service is taken out of the biome total: de Groot et al. (2012, supporting
-material, Table 8.1, temperate forests) put it at Int$152/ha/yr, hence
-€3,000 − €152 = €2,848/ha/yr. Rates are never tuned to produce an outcome
+The value is de Groot et al. (2012), Ecosystem Services 1:50-61,
+doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full), temperate forest:
+total economic value Int$3,013/ha/yr minus climate regulation Int$152
+(carbon is valued only by gaia.carbon, decision D3) = Int$2,861/ha/yr
+(2007 price level, 58 estimates). Since Step 8g.6 (the owner's answer:
+convert international dollars to euros everywhere) it is converted at
+Spain's 2007 PPP factor for household consumption, 0.808165 €/Int$ (World
+Bank PA.NUS.PRVT.PP, the series de Groot et al. used; gaia/currency.py):
+€2,312.16/ha/yr, 2007 euros, no income or price-year adjustment (Step
+8d.5). Before, it was used at face value as €2,848 (€3,000 − €152, figures
+partly typed from memory; Table 2 gives 3,013). A global biome mean, not a
+site valuation. Rates are never tuned to produce an outcome
 (an earlier version was back-solved so that externality < revenue at 30% and
 > revenue at 50%).
 
@@ -88,7 +90,8 @@ past the 30% threshold the remaining forest degrades along a
 `threshold_logistic` (zero up to the threshold, then the former logistic:
 steepness 12, inflection 15% into the post-threshold span). The default
 run (50%, past the threshold) costs €101,899/yr instead of €95,050, PV
-€10.70 M instead of €10.11 M. **The CalibrationWarning above is gone**:
+€10.70 M instead of €10.11 M (at the €2,848 of the time; since Step 8g.6,
+€82,727/yr and €9.05 M, P5 / P50 / P95 €5.69 / 9.22 / 14.54 M). **The CalibrationWarning above is gone**:
 under `area_loss` the check looks at the remaining forest, whose health at
 the threshold is 1.0 (it degrades only past it). Nothing was tuned: the
 warning measured the logistic's ~21% damage inside the "safe" zone, which
@@ -98,9 +101,10 @@ still unfitted placeholders.
 
 **EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors, both roots (no
 incoming edge), from de Groot et al. (2012) Table 2, temperate forest
-(Int$/ha/yr × the 40-ha reference): Watershed & Local Climate, water 191
-(the former anchor, typed "from memory", now read); Vegetation & Flora,
-food 299 (wild plants, fungi and game, mostly direct market prices). The
+(Int$/ha/yr × the 40-ha reference, converted at 0.808165 €/Int$ since
+Step 8g.6): Watershed & Local Climate, water 191 (€6,174 for 40 ha; the
+former anchor, typed "from memory", now read); Vegetation & Flora, food 299
+(€9,666; wild plants, fungi and game, mostly direct market prices). The
 prices of Animal Populations and Human Communities are derived (labelled
 so): the anchors passed through the placeholder edges, no independent
 information. `anchor_every_agent` is off; no placeholder anchor is left.
@@ -155,25 +159,26 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | Watershed & Water Cycle wt    | 0.12          | ratio   | User spec      | Medium     |
     | Fire & Microclimate weight    | 0.10          | ratio   | User spec      | Medium     |
     | Human Communities weight      | 0.06          | ratio   | User spec      | Medium     |
-    | annual_value_per_ha (all)     | 1,593         | €/ha/yr | de Groot 2012 | Low        |
+    | annual_value_per_ha (all)     | 1,277.71      | €/ha/yr | de Groot 2012 | Low        |
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | exponential base (fire)       | 2.0           | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
 Agent values (decisions D1, D2):
     Every agent uses the same yearly value per hectare and the dependency
-    weights split it, so sum(weight × value) = €1,593/ha/yr × area_ha at full
-    damage (€159,300/yr for the 100 ha reference forest).
+    weights split it, so sum(weight × value) = €1,277.71/ha/yr × area_ha at
+    full damage (€127,771/yr for the 100 ha reference forest).
 
-    €1,600/ha/yr [PLACEHOLDER] is the global mean for woodlands in de Groot
-    et al. (2012), Ecosystem Services 1:50-61 (Int$1,588/ha/yr, 2007 price
-    level; figure to be checked against the paper in Step 8), used at face value
-    as €; a Mediterranean holm-oak valuation and
-    currency/price-year conversion are pending (Step 8). Carbon is valued
-    only by gaia.carbon (decision D3), so the climate-regulation service is
-    taken out of the total: Int$7/ha/yr for woodlands in de Groot et al.
-    (2012, supporting material, Table 9.1; a single estimate), hence
-    €1,600 − €7 = €1,593/ha/yr. The renamed Fire & Microclimate Regulation
+    de Groot et al. (2012), Ecosystem Services 1:50-61,
+    doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full), woodlands:
+    total economic value Int$1,588/ha/yr minus climate regulation Int$7
+    (carbon is valued only by gaia.carbon, decision D3) = Int$1,581/ha/yr
+    (2007 price level, 21 estimates), converted since Step 8g.6 at Spain's
+    2007 PPP factor for household consumption, 0.808165 €/Int$ (World Bank
+    PA.NUS.PRVT.PP; gaia/currency.py): €1,277.71/ha/yr, 2007 euros, no
+    income or price-year adjustment. Before, €1,593 at face value (€1,600 −
+    €7, partly from memory). A global woodland mean; a Mediterranean
+    holm-oak valuation is still pending. The renamed Fire & Microclimate Regulation
     agent keeps its 0.10 share of that non-carbon total; Soil Microbiome's
     description no longer lists carbon storage — soil carbon is valued by
     gaia.carbon through soil_carbon_tonnes × soil_release_fraction, and the
@@ -217,13 +222,15 @@ threshold the remaining forest degrades: ten agents along a
 `threshold_logistic`, Fire & Microclimate Regulation along a new
 `threshold_exponential` (zero up to the threshold, then (2^((D − t)/(1 −
 t)) − 1), no plateau: the fire feedback). Default run (40%): €127,048/yr
-instead of €121,767, PV €9.13 M instead of €8.80 M. **The
+instead of €121,767, PV €9.13 M instead of €8.80 M (at the €1,593 of the
+time; since Step 8g.6, €101,902/yr and €7.55 M). **The
 CalibrationWarning is gone** (the remaining forest's health at the
 threshold is 1.0); what remains is the unfitted post-threshold curves and
 threshold.
 
 **EXPERIMENTAL pricing (Step 8d.6).** Two sourced anchors from de Groot et
-al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference):
+al. (2012) Table 2, woodlands (Int$/ha/yr × the 100-ha reference,
+converted at 0.808165 €/Int$ since Step 8g.6: €4,202 and €2,505):
 Mycorrhizal Fungi, the only root, food 52 (in Mediterranean woodland
 largely wild mushrooms, the fruiting bodies of mycorrhizal fungi; for
 scale, Catalan pine forests yield ~14 kg/ha/yr of marketed mushrooms,
@@ -254,7 +261,9 @@ Posidonia's were, each a judgement for an unfitted parameter:
 No draw is rejected now. Default run (1,000 draws, seed 20261012), PV of
 externality €9.13 M (P5 / P50 / P95 €5.63 / 9.45 / 15.29 M); annual
 externality €127,048 (63,778 / 122,976 / 215,806). The agent value
-(×/÷2) and the safe threshold drive it. No number changes.
+(×/÷2) and the safe threshold drive it. No number changes. Since Step
+8g.6 (the value converted at PPP): €7.55 M (4.81 / 7.92 / 12.63 M);
+annual €101,902 (51,155 / 98,636 / 173,093).
 
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
@@ -652,7 +661,8 @@ Agent values (decisions D1, D2; re-based in Step 8e.5):
     global mean of 96 estimates, not a Central Amazon valuation (the
     totals of the service medians are less than half the means, Table 3).
     The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27)
-    are parts of the 3,220 and are still used as € at face value.
+    are parts of the 3,220, converted the same way since Step 8g.6
+    (gaia/currency.py; €161,633, €24,245 and €21,820 for 1,000 ha).
 
     Before Step 8e.5, €580/ha/yr was the sum of the non-carbon spec §8 anchors for 1,000 ha:
     water cycling €150k + fisheries €20k + biodiversity/habitat €410k =

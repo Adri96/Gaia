@@ -39,11 +39,18 @@
   },
   "agent_defaults": {
     "annual_value_per_ha": {
-      "value": 2848.0,
+      "value": 2312.160065,
       "unit": "€/ha/yr",
-      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61: temperate forest Int$3,013/ha/yr; Costanza et al. (2014), Global Environmental Change 26:152-158: $3,137/ha/yr (2007); minus climate regulation Int$152 (de Groot 2012, SM Table 8.1)",
+      "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): temperate forest, total economic value Int$3,013/ha/yr minus climate regulation Int$152 = Int$2,861/ha/yr (2007 international dollars, 2007 price level; 58 estimates, Table 3); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
       "confidence": "low",
-      "note": "Every agent; the dependency weights split it. Figures partly from memory, to be checked against the papers (Step 8); 2007 Int$ used as € with no currency or price-year conversion; a global biome mean, not a site valuation."
+      "note": "Every agent; the dependency weights split it. Step 8g.6 (the owner's answer: convert international dollars to euros everywhere): 2,861 x 0.808165 = EUR 2,312.16/ha/yr in 2007 euros at Spanish purchasing power (it was used at face value as EUR 2,848, from figures partly typed from memory: 3,000 - 152; now read in Table 2). Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). A global temperate-forest mean, not a site valuation.",
+      "converted_from": {
+        "currency": "Int$",
+        "price_year": 2007,
+        "amounts": {
+          "value": 2861
+        }
+      }
     },
     "damage": "threshold_logistic"
   },
@@ -199,17 +206,31 @@
     "anchors": [
       {
         "agent_name": "Watershed & Local Climate",
-        "anchor_value": 7640.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9)",
+        "anchor_value": 6174.3806,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): temperate forest, water (provisioning) Int$ 191; Table 1: 32 of its 38 water estimates are market or cost-based values (direct market prices 5, factor income/production function 10, avoided cost 7, mitigation/restoration cost 1, replacement cost 9); converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): water (provisioning) Int$, Int$191/ha/yr x 40 ha, a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')"
+        "description": "A market-based value (Step 8d.6): water (provisioning) Int$191/ha/yr x 40 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global temperate forest mean, not a site valuation (verified in Step 8d.6; it was the case's anchor 'from memory')",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 7640
+          }
+        }
       },
       {
         "agent_name": "Vegetation & Flora",
-        "anchor_value": 11960.0,
-        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, used as EUR at face value): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices",
+        "anchor_value": 9665.653400000001,
+        "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (Int$/ha/yr, 2007 price level, read in full): temperate forest, food (provisioning: wild plants, fungi and game) Int$ 299; Table 1: 118 of the database's 133 food estimates are direct market prices; converted to EUR with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 13 October 2026; gaia/currency.py)",
         "confidence": "low",
-        "description": "A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$, Int$299/ha/yr x 40 ha, a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream"
+        "description": "A market-based value (Step 8d.6): food (provisioning: wild plants, fungi and game) Int$299/ha/yr x 40 ha x 0.808165 EUR/Int$ (PPP, Spain 2007), a global temperate forest mean, not a site valuation; de Groot et al.'s food bundles plant and animal products, Animal Populations' price is derived downstream",
+        "converted_from": {
+          "currency": "Int$",
+          "price_year": 2007,
+          "amounts": {
+            "anchor_value": 11960
+          }
+        }
       }
     ],
     "scarcity_functions": {

@@ -93,7 +93,10 @@ share's source) is the part of a final service moved to the agent that is
 its best owner. A service net of others (Step 8e.6: gross, net_of, the
 names of the entries it would otherwise count again) books value = gross −
 their values; a production_function (gaia.production) derives the gross
-from primary production. Parsing rejects a service listed twice, an
+from primary production (Step 8g.1: its main producer's NPP may come from a
+depth function, ``depth_production``, at the regional or the project's
+depth; at a project depth the services it is net of scale with that NPP).
+Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
 it is net of, a chain that does not give its gross, a chain whose lowest
 value (every link at its least favourable end, Step 8f.3) does not exceed
@@ -154,7 +157,11 @@ confidence required), which becomes a gaia.provenance.Param, reported in
 every output's calibration block. Optional uncertainty keys (Step 8.4,
 gaia.uncertainty): "range": [low, high] in the parameter's unit, or
 "relative_range": [f_low, f_high] (factors of the value, containing 1), and
-"distribution": "triangular" (default) | "uniform" | "fixed". A bare number is reported only when a
+"distribution": "triangular" (default) | "uniform" | "fixed". A value converted
+from international dollars carries "converted_from" (Step 8g.6,
+gaia.currency: {"currency": "Int$", "price_year", "amounts": {"value": …}};
+parsing checks value = amount × Spain's PPP factor and adds the conversion
+to the note; pricing anchors and benchmarks take it too). A bare number is reported only when a
 ``provenance_defaults`` entry matches its name: keys are parameter names with
 "[*]" for any agent or edge, e.g. "agent[*].dependency_weight" or
 "edge[*].strength", values are the same objects without "value". An inline
@@ -394,7 +401,8 @@ class _Reader:
         if key is not None:
             self.used.add(key)
         if isinstance(raw, dict):
-            obj = _object(raw, path, ("value", "unit", "confidence"), ("source", "note", "range", "relative_range", "distribution"))
+            obj = _object(raw, path, ("value", "unit", "confidence"),
+                          ("source", "note", "range", "relative_range", "distribution", "converted_from"))
             value = _plain_number(obj["value"], _key(path, "value"))
             param = _make_param(value, obj, path, name)
         else:
@@ -446,6 +454,12 @@ def _make_param(value: float, obj: dict, path: str, name: str) -> Param:
             f"{_key(path, 'confidence')}: {confidence!r} is not one of {', '.join(valid)}"
         )
     distribution = _str(obj.get("distribution", ""), _key(path, "distribution"))
+    if "converted_from" in obj:
+        # Step 8g.6: a value converted from international dollars (gaia.currency)
+        from gaia.currency import check_converted, conversion_note
+
+        converted = check_converted(obj["converted_from"], _key(path, "converted_from"), {"value": value})
+        note = f"{note} {conversion_note(converted)}.".strip() if note else f"{conversion_note(converted)}."
     try:
         return Param(value, unit, source, Confidence(confidence), note or "", name=name,
                      spread=_spread(obj, path), distribution=distribution)
@@ -1683,7 +1697,8 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
     """One run.benchmarks entry: a published per-hectare value to compare with."""
-    obj = _object(raw, path, ("name", "low", "high", "unit", "source"), ("central", "note", "includes_carbon"))
+    obj = _object(raw, path, ("name", "low", "high", "unit", "source"),
+                  ("central", "note", "includes_carbon", "converted_from"))
     low = _plain_number(obj["low"], _key(path, "low"))
     high = _plain_number(obj["high"], _key(path, "high"))
     if low > high:
@@ -1703,6 +1718,14 @@ def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:
         if not low <= central <= high:
             raise ValueError(f"{path}: central ({central}) is outside [low, high]")
         out["central"] = float(central)
+    if "converted_from" in obj:
+        # Step 8g.6: international dollars converted at PPP (gaia.currency)
+        from gaia.currency import check_converted, conversion_note
+
+        fields = {k: obj[k] for k in ("low", "high", "central") if k in obj}
+        converted = check_converted(obj["converted_from"], _key(path, "converted_from"), fields)
+        out["note"] = f"{out['note']} {conversion_note(converted)}.".strip()
+        out["converted_from"] = converted
     return out
 
 
@@ -2085,14 +2108,24 @@ def _parse_pricing(raw: Any, names: set) -> _PricingSpec:
     anchors = []
     for i, item in enumerate(_list(obj["anchors"], _key(path, "anchors"))):
         ipath = f"{path}.anchors[{i}]"
-        a = _object(item, ipath, ("agent_name", "anchor_value", "source", "confidence"), ("description",))
+        a = _object(item, ipath, ("agent_name", "anchor_value", "source", "confidence"),
+                    ("description", "converted_from"))
         agent = _str(a["agent_name"], _key(ipath, "agent_name"))
         if agent not in names:
             raise ValueError(f"{_key(ipath, 'agent_name')}: unknown agent {agent!r}")
+        anchor_value = float(_plain_number(a["anchor_value"], _key(ipath, "anchor_value")))
+        source = _str(a["source"], _key(ipath, "source"))
+        if "converted_from" in a:
+            # Step 8g.6: international dollars converted at PPP (gaia.currency)
+            from gaia.currency import check_converted, conversion_note
+
+            converted = check_converted(a["converted_from"], _key(ipath, "converted_from"),
+                                        {"anchor_value": anchor_value})
+            source = f"{source}. {conversion_note(converted)}"
         anchors.append(AnchorPoint(
             agent_name=agent,
-            anchor_value=float(_plain_number(a["anchor_value"], _key(ipath, "anchor_value"))),
-            source=_str(a["source"], _key(ipath, "source")),
+            anchor_value=anchor_value,
+            source=source,
             confidence=_str(a["confidence"], _key(ipath, "confidence")),
             description=_str(a.get("description", ""), _key(ipath, "description")),
         ))

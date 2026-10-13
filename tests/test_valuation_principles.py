@@ -267,6 +267,7 @@ def test_parsing_rejects_an_agent_at_zero(name):
         target["value"] = 0.0
         target.pop("range", None)
         target.pop("relative_range", None)
+        target.pop("converted_from", None)     # 0 is not the converted figure (Step 8g.6)
     elif "annual_value_per_ha" in agent:
         agent["annual_value_per_ha"] = 0.0
     else:

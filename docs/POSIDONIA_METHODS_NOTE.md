@@ -296,8 +296,8 @@ The fisheries, coralligenous and invertebrate values each swing it by less than 
 
 **Benchmarks** (per hectare per year):
 - Gaia's service value at full damage is €1,178/ha/yr (€1,337 with carbon burial at the SCC). That is about 4.2× Campagne et al.'s non-carbon services, because the ledger adds recreation, non-use values and the meadow's food production beyond the commercial catch to theirs.
-- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, about 7.4× higher. It includes recreation and tourism.
-- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014) are about 22× higher, mostly a transferred nutrient-cycling value.
+- The Mediterranean seagrass meta-regression of Stamatiadou et al. (2025) has a basin mean of 8,712 Int$2020/ha/yr, €5,981 at Spain's 2020 PPP (0.686508 €/Int$; Step 8g.6), about 4.5× higher than Gaia with carbon burial; its country range (€1,090–65,745) now contains Gaia. It includes recreation and tourism.
+- The global syntheses for coastal systems and seagrass (de Groot et al. 2012; Costanza et al. 2014), 28,917 Int$2007/ha/yr = €23,370 at Spain's 2007 PPP, are about 17.5× higher, mostly a transferred nutrient-cycling value.
 
 **Reading.**
 1. Carbon and services now weigh about the same for the default project. Per hectare destroyed:
@@ -327,7 +327,7 @@ Destroying and then restoring is therefore much worse than not destroying: the d
    The owner chose not to adjust for now. The Monte Carlo ranges do not include these transfer errors.
 5. **Scale and space.** The resource is the regional stock, treated as one homogeneous meadow. Since Step 8g.1 the meadow's primary production depends on depth (the regional mean depth, 15 m, by default; `--depth-m` for a project), but only that link does: shoot density, wave exposure and distance to beaches, which also change a hectare's services and carbon, and the depth-dependence of the roots, epiphytes, carbon and other services, are not represented. The regional depth is a mean (inferred), not an area-weighted distribution. The default 50 ha is illustrative.
 6. **Carbon fate** (§5, §7): the release fraction and its half-life are project inputs; the defaults (0.63, 10 years) are a global assumption range and an inferred central half-life for matte left exposed. No Mediterranean measurement of the release rate from exposed *P. oceanica* matte was found.
-7. **Currency.** The SCC is in 2020 euros and the services in 2014 euros, and the two are not harmonised; the benchmarks are not converted at all.
+7. **Currency.** The SCC is in 2020 euros and the services in 2014 euros, and the two are not harmonised. Since Step 8g.6 every value in international dollars, in every case (the de Groot et al. agent values and pricing anchors, the Int$ benchmarks), is converted to euros at Spain's PPP for household consumption in its own price year (`gaia/currency.py`); no price-year adjustment follows (Step 8d.5).
 8. **Not varied:** the model-wide trophic and keystone constants, and the health weights.
 9. **EXPERIMENTAL endogenous pricing** is quarantined and excluded. Since Step 8c.6 three sourced anchors (meadow, fisheries, coastal protection) determine every price through the network. The other seven prices are derived through placeholder edge strengths, labelled as such, and are not estimates.
 10. **Restoration** evidence for *P. oceanica* is thin and mostly negative.
