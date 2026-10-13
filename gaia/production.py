@@ -358,7 +358,10 @@ def extrapolation_warnings(spec: Dict[str, Any], who: str = "") -> List[str]:
     (``--depth-limit-m``, its deepest end for a range) lies beyond the
     deepest depth limit documented (``deepest_documented``). Never a
     rejection: the value is computed and positive, but it extrapolates the
-    depth function beyond the range its sources document. Empty otherwise
+    depth function beyond the range its sources document. Step 8i.1: also
+    when the project depth lies within the documented range but the site's
+    depth limit it implies (its deepest end + ``depth_limit_margin``) lies
+    beyond it (unless the project gives its site's limit). Empty otherwise
     (and without a project depth)."""
     depth = spec.get("depth")
     if depth is None or depth["project"] is None:
@@ -375,10 +378,22 @@ def extrapolation_warnings(spec: Dict[str, Any], who: str = "") -> List[str]:
     out = []
     a, b, _ = depth["project"]["bands"][0]
     deepest = max(z for _, z, _ in depth["project"]["bands"])
-    if deepest > documented:
-        given = f"{a:g} m" if a == b else f"{a:g}-{b:g} m (its deep end, {deepest:g} m)"
-        out.append(f"The project depth {given} lies beyond {basis}. {tail}.")
+    given = f"{a:g} m" if a == b else f"{a:g}-{b:g} m (its deep end, {deepest:g} m)"
     site = spec["parameters"].get(DEPTH_PREFIX + SITE_LIMIT)
+    if deepest > documented:
+        out.append(f"The project depth {given} lies beyond {basis}. {tail}.")
+    elif site is None or site["status"] != USER_STATUS:
+        # Step 8i.1: within the documented range, but the site's limit it
+        # implies (a living meadow lies at least the margin above its limit,
+        # Step 8g.7) is beyond it; not when the project gives its own limit
+        margin = depth["margin"]["value"]
+        implied = deepest + margin
+        if implied > documented:
+            out.append(
+                f"The project depth {given} implies a site depth limit of at least {implied:g} m (a living "
+                f"meadow lies at least {margin:g} m above its depth limit), beyond {basis}. Gaia still values it "
+                f"(every agent > €0), but the site's depth limit is extrapolated beyond its documented range: "
+                f"treat the value as an extrapolation.")
     if site is not None and site["status"] == USER_STATUS:
         top = _support(site)[1]
         if top > documented:

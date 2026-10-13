@@ -668,8 +668,10 @@ def test_beyond_the_deepest_documented_limit_is_valued_with_a_warning(depth, lim
 
 
 @pytest.mark.parametrize("depth, limit", [
-    (None, None), ((15.0, 15.0), None), ((43.0, 43.0), None), ((44.0, 44.0), None), ((30.0, 44.0), None),
+    (None, None), ((15.0, 15.0), None), ((41.0, 41.0), None), ((42.0, 42.0), None), ((30.0, 42.0), None),
     ((10.0, 10.0), (15.0, 15.0)), ((12.0, 12.0), (13.0, 44.0)), ((30.0, 30.0), (44.0, 44.0)),
+    # a site's limit given replaces the implied one (Step 8i.1): no warning within 44 m
+    ((43.0, 43.0), (44.0, 44.0)), ((42.5, 42.5), (43.0, 44.0)),
 ])
 def test_within_the_documented_range_there_is_no_warning(depth, limit):
     case = load_case("posidonia")
@@ -704,3 +706,53 @@ def test_cli_prints_the_extrapolation_warning_to_stderr():
         capture_output=True, text=True, cwd=ROOT, check=True)
     assert "Warning (DepthExtrapolationWarning): The site's depth limit given (--depth-limit-m, 48 m)" in out.stderr
     assert json.loads(out.stdout)["warnings"]
+
+
+# ── Step 8i.1: the site's limit a depth implies, beyond the documented range ──
+
+
+@pytest.mark.parametrize("depth", [(42.5, 42.5), (43.0, 43.0), (44.0, 44.0), (30.0, 43.0), (42.1, 42.1),
+                                   (40.0, 44.0)])
+def test_an_implied_site_limit_beyond_the_documented_range_warns(depth):
+    """The owner's decision (Step 8i.1): a meadow at depth z implies a site
+    limit of at least z + the margin; when that passes the deepest limit
+    documented (z between 42 and 44 m for Posidonia), the same warning
+    fires, worded for the implied limit. The margin and the documented
+    maximum are read from the case file. The value is unchanged and > €0."""
+    case = load_case("posidonia")
+    spec = _meadow_entry(case)["production_function"]
+    documented = _documented_deepest(case)
+    margin = spec["depth"]["margin"]["value"]
+    assert documented - margin < depth[1] <= documented
+    at = case.with_project_depth(*depth)
+    messages = at.depth_warnings()
+    assert len(messages) == 1
+    implied = depth[1] + margin
+    assert f"implies a site depth limit of at least {implied:g} m" in messages[0]
+    assert f"{documented:g} m" in messages[0] and "extrapolation" in messages[0] and "> €0" in messages[0]
+    for entry in at.service_ledger:
+        if entry["production_function"] is not None:
+            assert entry["value"] > 0.0
+    eco = at.build_ecosystem(site_intensity="none")
+    assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
+
+
+def test_the_implied_limit_warning_does_not_change_the_value():
+    """The warning only reports: the values at 43 m are those documented
+    since Step 8g.7/8h.1 (meadow €6.00, epiphytes €0.95/ha/yr), > €0."""
+    at = load_case("posidonia").with_project_depth(43.0, 43.0)
+    values = {e["agent"]: e["value"] for e in at.service_ledger if e["production_function"] is not None}
+    assert values[MEADOW] == pytest.approx(6.00, abs=0.005)
+    assert values["Epiphytes & Algae"] == pytest.approx(0.95, abs=0.005)
+
+
+def test_cli_warns_on_an_implied_site_limit(capsys):
+    from gaia.production import DepthExtrapolationWarning
+
+    argv = ["run", "posidonia", "--area-ha", "50", "--dive-intensity", "none", "--format", "json", "--summary-only"]
+    with pytest.warns(DepthExtrapolationWarning, match=r"The project depth 43 m implies a site depth limit of "
+                                                         r"at least 45 m .* 44 m"):
+        assert main([*argv, "--depth-m", "43"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert len(out["warnings"]) == 1 and "implies" in out["warnings"][0]
+    assert all(v > 0.0 for v in out["summary"]["agent_externality_eur_yr"].values())

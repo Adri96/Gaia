@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Step 8i — the implied depth limit; prices
+
+The owner's decisions after #13, one commit per sub-step. The version is not bumped (the owner decides).
+
+#### Added
+- **The warning also when the implied site limit passes the deepest documented limit** (Posidonia; Step 8i.1). A meadow at depth z implies a site depth limit of at least z + the margin (2 m, `depth_limit_margin`, Step 8g.7). When that implied limit lies beyond the deepest depth limit documented (44 m), i.e. for a project depth (or a band's deep end) deeper than 42 m and down to 44 m, the same `DepthExtrapolationWarning` fires (stderr and the JSON `warnings`), worded for the implied limit: "The project depth 43 m implies a site depth limit of at least 45 m (a living meadow lies at least 2 m above its depth limit), beyond the deepest depth limit documented for the Posidonia Meadow, 44 m (…)". The margin and the documented maximum are read from the case file. Not when the project gives its site's limit (`--depth-limit-m`), which replaces the implied one; beyond 44 m the project-depth warning fires instead (one message). No number changes (meadow €6.00, epiphytes €0.95/ha/yr at 43 m); goldens unchanged.
+
 ### Step 8h — depth anchors
 
 The owner's decisions after #12, one commit per sub-step. The version is not bumped (the owner decides).
