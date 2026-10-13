@@ -28,7 +28,6 @@ from gaia.uncertainty import (
 
 MEADOW = "Posidonia Meadow"
 LINKS = {
-    "npp_dry_weight": "lognormal",
     "food_web_share": "triangular",
     "transfer_efficiency": "triangular",
     "catch_trophic_level": "triangular",
@@ -37,6 +36,11 @@ LINKS = {
     "roots.food_web_share": "uniform",
     "epiphytes.npp_carbon": "lognormal",
     "epiphytes.food_web_share": "triangular",
+    # Step 8g.1: the plant's NPP is derived from its depth function, whose
+    # hyperparameters are the sampled links
+    "depth.npp_at_reference_depth": "lognormal",
+    "depth.decline_rate": "triangular",
+    "depth.depth_limit": "triangular",
 }
 
 
@@ -123,7 +127,7 @@ def test_a_draw_at_zero_stops_the_run_and_is_never_redrawn():
     entries = production_entries(case)
     doc = copy.deepcopy(case.document)
     pf = _food(doc)["production_function"]
-    pf["parameters"]["npp_dry_weight"].update(value=1.0, range=[0.5, 989.3])
+    pf["depth_production"]["parameters"]["npp_at_reference_depth"].update(value=1.0, range=[0.5, 792.3])
     pf["producers"][1]["parameters"]["npp_carbon"].update(value=0.1, range=[0.05, 45.6])
     with pytest.raises(InvariantError, match="Core Valuation Principles"):
         _rederive_production(doc, entries)

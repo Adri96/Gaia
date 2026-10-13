@@ -1065,18 +1065,50 @@ class Case:
                     )
         return problems
 
+    @property
+    def depth_production(self) -> Optional[Dict[str, Any]]:
+        """The JSON form of the first depth-dependent production function's
+        depth model (gaia.production.depth_block, Step 8g.1) with its
+        "agent", or None: what ``--depth-m`` changes."""
+        from gaia.production import depth_block
+
+        for entry in self.service_ledger:
+            spec = entry["production_function"]
+            if spec is not None and spec.get("depth") is not None:
+                return dict(depth_block(spec), agent=entry["agent"], producer=spec["producer"])  # type: ignore[arg-type]
+        return None
+
+    def with_project_depth(self, from_m: float, to_m: Optional[float] = None) -> "Case":
+        """This case with its depth-dependent production functions taken at
+        the project's depth (Step 8g.1; gaia.production.with_project_depth):
+        one depth, or a band [from_m, to_m] over which the affected resource
+        is spread evenly.
+
+        Raises:
+            ValueError: Without a document or a depth-dependent production
+                function, or for a depth at or below the depth limit.
+        """
+        from gaia.production import with_project_depth
+
+        if self.document is None:
+            raise ValueError(f"{self.name}: the case has no document to set a depth in")
+        to_m = from_m if to_m is None else to_m
+        return case_from_dict(with_project_depth(self.document, float(from_m), float(to_m)), origin=self.origin)
+
     def production_functions(self) -> Dict[str, Dict[str, Any]]:
         """{agent: the JSON form of its ledger production function} (Step
         8e.6; gaia.production), for the agents whose value is derived from
         primary production."""
         from gaia.production import production_block
 
+        from gaia.production import net_of_scale
+
         values = {e["service"]: e["value"] for e in self.service_ledger}
         out: Dict[str, Dict[str, Any]] = {}
         for entry in self.service_ledger:
             if entry["production_function"] is None:
                 continue
-            counted = sum(values[s] for s in entry["net_of"])
+            counted = net_of_scale(entry["production_function"]) * sum(values[s] for s in entry["net_of"])
             out[entry["agent"]] = dict(
                 production_block(entry["production_function"], entry["gross"], counted,
                                  entry["value"], entry["net_of"]),
@@ -1089,14 +1121,14 @@ class Case:
         → € chain of its production-function ledger entry, and, when the
         document asks for it, the carbon it holds (valued once, by
         gaia.carbon, decision D3: shown, never added)."""
-        from gaia.production import chain_text
+        from gaia.production import chain_text, net_of_scale
 
         notes: List[str] = list(agent.notes)
         values = {e["service"]: e for e in self.service_ledger}
         for entry in self.service_ledger:
             if entry["agent"] != agent.name or entry["production_function"] is None:
                 continue
-            counted = sum(values[s]["value"] for s in entry["net_of"])
+            counted = net_of_scale(entry["production_function"]) * sum(values[s]["value"] for s in entry["net_of"])
             owners = ", ".join(dict.fromkeys(values[s]["agent"] for s in entry["net_of"]))
             notes.append(chain_text(entry["production_function"], entry["gross"], counted,
                                     entry["value"], f"commercial catch, under {owners}" if owners else "nothing"))
@@ -1164,7 +1196,7 @@ class Case:
         """The "Primary Production" section of an extraction report (Step
         8e.6): each production-function chain with its sources' status, and
         the productivity comparison; "" without one."""
-        from gaia.production import format_comparison
+        from gaia.production import format_comparison, format_depth
 
         blocks = self.production_functions()
         if not blocks:
@@ -1173,10 +1205,13 @@ class Case:
                  + "\u2500" * 23]
         for agent, block in blocks.items():
             lines.append(f"  {agent}: {block['service']}")
+            if block["depth_production"] is not None:
+                lines.extend(format_depth(block["depth_production"]))
             for step in block["chain"]:
                 lines.append(f"    {step['step'] + ':':<52} {step['value']:>12,.2f} {step['unit']}")
-            lines.append(f"    {'minus the catch already counted (net_of):':<52} "
-                         f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
+            if block["net_of"]:
+                lines.append(f"    {'minus the catch already counted (net_of):':<52} "
+                             f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             lines.append(f"    {'= value of this agent:':<52} {block['net_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             low, high = block["gross_range_eur_per_ha_yr"]
             lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr (every link at")
@@ -1360,22 +1395,31 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
                     f"$.service_ledger[{i}].net_of: {service!r} must be another entry, itself not net of others"
                 )
             counted += other["value"]
-        if not math.isclose(entry["value"], entry["gross"] - counted, rel_tol=1e-9, abs_tol=1e-9):
+        # Step 8g.1: at a project depth, the part of the services netted
+        # out that the hectare's own production supports (gaia.production)
+        scale = 1.0
+        if entry["production_function"] is not None:
+            from gaia.production import net_of_scale
+
+            scale = net_of_scale(entry["production_function"])
+        expected = entry["gross"] - scale * counted
+        if not math.isclose(entry["value"], expected, rel_tol=1e-9, abs_tol=1e-9):
             raise ValueError(
                 f"$.service_ledger[{i}].value: must be gross − the services it is net of = "
-                f"{entry['gross']:.6g} − {counted:.6g} = {entry['gross'] - counted:.6g}, got {entry['value']:.6g} "
+                f"{entry['gross']:.6g} − {scale * counted:.6g} = {expected:.6g}, got {entry['value']:.6g} "
                 f"(otherwise the subtracted services would be counted twice)"
             )
         if entry["production_function"] is not None:
             # Step 8f.3: the Monte Carlo samples each link inside its range,
             # so the lowest value of the chain bounds every draw from below
-            from gaia.production import gross_range
+            from gaia.production import net_range
 
-            lowest = gross_range(entry["production_function"])[0]
-            if not lowest - counted > 0.0:
+            lowest = net_range(entry["production_function"], counted)[0]
+            if not lowest > 0.0:
                 raise ValueError(
                     f"$.service_ledger[{i}].production_function: with every link at its least favourable "
-                    f"end the chain gives {lowest:.6g} €/ha/yr, not above the {counted:.6g} it is net of: "
+                    f"end the chain gives {lowest + scale * counted:.6g} €/ha/yr or less, not above what it is "
+                    f"net of ({lowest:.6g} €/ha/yr net): "
                     f"a Monte Carlo draw could bring the agent to €0 (PROJECT_DEFINITION.md, Core "
                     f"Valuation Principles (b)); fix the model or the ranges"
                 )

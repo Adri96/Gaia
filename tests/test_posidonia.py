@@ -29,9 +29,11 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8e.6: the meadow's own value on every hectare, the food its primary
 # production supports net of the commercial catch already counted (35);
 # Step 8f.1: at the Western Mediterranean transfer efficiency, 14.3%;
-# Step 8f.2: with the production of the roots and of the leaf epiphytes
-MEADOW_FOOD_NET = 474.4848156047374
-LEDGER_TOTAL = 1293.1483941969188    # €/ha/yr of the reference meadow
+# Step 8f.2: with the production of the roots and of the leaf epiphytes;
+# Step 8g.1: the plant's NPP from its depth function at the regional mean
+# depth, 15 m (318 g DW/m²/yr; it was a fixed 476)
+MEADOW_FOOD_NET = 332.59096864832713
+LEDGER_TOTAL = 1151.2545472405084    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -948,7 +950,16 @@ def test_meadow_food_value_is_the_primary_production_chain():
     # g C/m²/yr entering the food web: the plant (74% not buried), its
     # roots (4% decomposed within a year, the rest buried) and the leaf
     # epiphytes (1.9 mol C/m²/yr, none buried)
-    web = 476.0 * 0.336 * 0.74 + 17.0 * 0.409 * 0.04 + 1.9 * 12.011 * 1.0
+    # Step 8g.1: the plant's NPP at the regional mean depth (15 m) from its
+    # depth function, P_ref at 10 m, decline k, zero at the depth limit (40 m)
+    import math
+
+    hyper = entry["production_function"]["parameters"]
+    p_ref, k = hyper["depth.npp_at_reference_depth"]["value"], hyper["depth.decline_rate"]["value"]
+    assert hyper["depth.depth_limit"]["value"] == 40.0
+    npp = p_ref * (math.exp(-k * 15) - math.exp(-k * 40)) / (math.exp(-k * 10) - math.exp(-k * 40))
+    assert npp == pytest.approx(317.56, abs=0.01)
+    web = npp * 0.336 * 0.74 + 17.0 * 0.409 * 0.04 + 1.9 * 12.011 * 1.0
     gross = (web * 10 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
@@ -965,8 +976,9 @@ def test_meadow_food_value_is_the_primary_production_chain():
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
     assert params["wet_weight_per_carbon"]["status"] == "secondary"
-    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "first_sale_price"):
+    for name in ("carbon_fraction", "food_web_share", "first_sale_price"):
         assert params[name]["status"] == "verified"
+    assert params["npp_dry_weight"]["status"] == "derived"     # from the depth function
     # Step 8f.1: the median of five Western Mediterranean food-web models
     te = params["transfer_efficiency"]
     assert (te["value"], te["range"], te["status"]) == (0.143, (0.122, 0.218), "derived")
@@ -981,7 +993,11 @@ def test_meadow_food_value_is_the_primary_production_chain():
     assert params["roots.food_web_share"]["status"] == "secondary"
     assert params["epiphytes.npp_carbon"]["status"] == "secondary"
     assert params["epiphytes.food_web_share"]["status"] == "inferred"
-    assert params["npp_dry_weight"]["range"] == (238.0, 989.3)    # up to Cala Jonquet, Cap de Creus
+    # Step 8g.1: the depth function's hyperparameters are sampled links
+    for name in ("npp_at_reference_depth", "decline_rate", "depth_limit"):
+        assert params[f"depth.{name}"]["range"] is not None
+    assert params["depth.depth_limit"]["range"] == (30.0, 44.0)
+    assert "range" not in params["npp_dry_weight"]
 
 
 def test_roots_feed_the_food_web_only_through_what_is_not_buried():
@@ -1095,8 +1111,9 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     text = case.report(result)
     meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
     flat = " ".join(meadow_line.split())
-    assert "NPP 160 g C/m²/yr" in flat and "+ roots 6.95 + epiphytes 22.8 = 190 g C/m²/yr" in flat
-    assert "€509/ha/yr" in flat and "= €474/ha/yr" in flat
+    assert "NPP 107 g C/m²/yr (318 g dry weight) at 15 m (the regional mean depth)" in flat
+    assert "+ roots 6.95 + epiphytes 22.8 = 136 g C/m²/yr" in flat
+    assert "€368/ha/yr" in flat and "= €333/ha/yr" in flat
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's
@@ -1112,5 +1129,5 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     assert rows["Coral reefs"]["low"] == 1720.0 and "doi:10.5194/bg-2-1-2005" in rows["Coral reefs"]["source"]
     assert all("doi:" in r["source"] for r in rows.values())
     meadow = next(a for a in out["ecosystem"]["agents"] if a["name"] == "Posidonia Meadow")
-    assert meadow["value_notes"][0].startswith("Primary production → food: NPP 160")
+    assert meadow["value_notes"][0].startswith("Primary production → food: NPP 107")
     assert meadow["annual_value_eur_per_ha_yr"] * meadow["dependency_weight"] == pytest.approx(MEADOW_FOOD_NET)

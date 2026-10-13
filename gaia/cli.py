@@ -280,6 +280,65 @@ def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
     )
 
 
+def parse_depth(text: str):
+    """``--depth-m``: one depth ("12") or a range ("5-20"), in metres;
+    returns (from_m, to_m)."""
+    parts = text.replace("–", "-").split("-")
+    try:
+        if len(parts) == 1:
+            value = float(parts[0])
+            depths = (value, value)
+        elif len(parts) == 2:
+            depths = (float(parts[0]), float(parts[1]))
+        else:
+            raise ValueError
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"a depth in metres (e.g. 12) or a range (e.g. 5-20), got {text!r}") from None
+    if not all(d == d and d >= 0 for d in depths) or depths[0] > depths[1]:
+        raise argparse.ArgumentTypeError(f"depths are >= 0 m and a range is low-high, got {text!r}")
+    return depths
+
+
+def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--depth-m`` for a case with a depth-dependent production
+    function (Step 8g.1), explained in plain words in the help."""
+    block = getattr(case, "depth_production", None)
+    if not block:
+        return
+    deepest = block["deepest_allowed_m"]
+    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items() if float(z) < deepest)
+    unit = block["unit"].replace("DW", "dry weight")
+    limit = block["hyperparameters"]["depth_limit"]
+    parser.add_argument(
+        "--depth-m",
+        dest="depth_m",
+        type=parse_depth,
+        default=None,
+        metavar="M or LOW-HIGH",
+        help=(
+            f"Project input: the water depth of the affected {block['agent']}, in metres: one "
+            f"depth (e.g. 12) or a range (e.g. 5-20: spread evenly over it). "
+            f"Its primary production, and so the food it supports, falls with depth as light fades: "
+            f"about {table} {unit}. Default: {block['depth_label']}. It must be shallower "
+            f"than {deepest:g} m: production reaches zero at the depth limit ({limit['value']:g} m, "
+            f"{limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis), and Gaia does "
+            f"not value an agent at €0"
+            if limit.get("range") else
+            f"Project input: the water depth of the affected resource, in metres (default: "
+            f"{block['depth_label']}; shallower than {deepest:g} m)"
+        ).replace("%", "%%"),
+    )
+
+
+def apply_depth(case, args: argparse.Namespace):
+    """The case at the project's depth (``--depth-m``), or the case itself."""
+    depth = getattr(args, "depth_m", None)
+    if depth is None:
+        return case
+    return case.with_project_depth(*depth)
+
+
 def require_site_input(case, args: argparse.Namespace) -> None:
     """A project run must state the diving input (Step 8e.3).
 
@@ -700,6 +759,7 @@ def build_case_parser(case, prog: str, legacy: Optional[LegacyCLI] = None) -> ar
     add_common_arguments(parser)
     add_fate_argument(parser, case)
     add_site_argument(parser, case)
+    add_depth_argument(parser, case)
     add_uncertainty_arguments(parser)
     defaults = case.restoration_defaults()
     add_restoration_arguments(
@@ -739,6 +799,7 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
     warn_unused_restoration_args(args)
     drop_pricing_in_restore_mode(args)
     try:
+        case = apply_depth(case, args)
         ecosystem = case.build_ecosystem(
             total_units=args.total_units,
             safe_threshold_ratio=args.threshold,

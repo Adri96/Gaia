@@ -315,10 +315,10 @@ value = gross − their values). € 2014-2017/ha/yr:
   production supports, a production function (gaia/production.py), over
   three producers (Step 8f.2), each feeding the food web only with the
   production that is not buried (decision D3):
-    plant: blades, sheaths, rhizomes 476 g DW/m²/yr       (Pergent et al. 1994;
-      × 33.6% carbon (Duarte 1990) = 159.9 g C/m²/yr       range 238–989.3, up to
-      × 74% not buried (Mateo & Romero 1997, Medes)        Cala Jonquet, Cebrián
-                                   = 118.4 g C/m²/yr       et al. 1997)
+    plant: blades, sheaths, rhizomes 318 g DW/m²/yr at the regional mean
+      depth, 15 m, from its depth function (Step 8g.1, below)
+      × 33.6% carbon (Duarte 1990) = 106.7 g C/m²/yr
+      × 74% not buried (Mateo & Romero 1997, Medes) = 79.0 g C/m²/yr
     roots: 17 g DW/m²/yr (Mateo & Romero 1997, Medes, 11 at 13 m, 23 at 5 m)
       × 40.9% carbon (ibid., living roots) = 6.95 g C/m²/yr
       × 4% decomposed within the year, the rest buried in the matte
@@ -328,8 +328,8 @@ value = gross − their values). € 2014-2017/ha/yr:
       Champenois & Borges 2021, Fig. 6) = 22.8 g C/m²/yr, range ×/÷2
       × 100% not buried (inferred: grazed, absent from the litter;
         lower end 74%)             = 22.8 g C/m²/yr
-    × 10 kg/ha per g/m²: into the food web                = 1,414.5 kg C/ha/yr
-    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 23.81 kg C/ha/yr
+    × 10 kg/ha per g/m²: into the food web                = 1,020.6 kg C/ha/yr
+    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 17.18 kg C/ha/yr
       level (Step 8f.1: the median of five Western
       Mediterranean Ecopath models, 12.2–21.8%, tabulated by
       Sánchez-Zulueta et al. 2023; the north-western
@@ -337,15 +337,17 @@ value = gross − their values). € 2014-2017/ha/yr:
       average 14.25%, Coll et al. 2008) to the catch's
       trophic level 3.1 (Francour 1997's dominant species,
       FishBase)
-    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 214.3 kg/ha/yr
-    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 99.7 kg/ha/yr
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 154.6 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 71.9 kg/ha/yr
       (Zhou et al. 2012)
-    × €5.11/kg, Catalan white-fish first-sale price 2014  = €509.48 gross
-    − 35.00, the commercial catch booked to Fish          = €474.48 net
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €367.59 gross
+    − 35.00, the commercial catch booked to Fish          = €332.59 net
       Populations and Marine Invertebrates (net_of)
-  Of the gross, the plant gives €426.29, the roots €1.00, the epiphytes
-  €82.20. Range over the links' ends: €31.41–2,993.09 net (€66.41–
-  3,028.09 gross). Before Step 8f.2 roots and epiphytes were left out
+  Of the gross, the plant gives €284.39, the roots €1.00, the epiphytes
+  €82.20. Range over the links' ends (and the depth function's shape over
+  its ranges): €12.41–1,953.76 net (€47.41–1,988.76 gross). Before Step
+  8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
+  €509.48 gross, €474.48 net). Before Step 8f.2 roots and epiphytes were left out
   (€426.29 gross, €391.29 net); before Step 8f.1 the transfer efficiency
   was 11.8%, the median of a global compilation (Coll et al. 2008):
   €284.74 gross, €249.74 net.
@@ -353,14 +355,34 @@ value = gross − their values). € 2014-2017/ha/yr:
   owns the epiphyte metric of the bioindicator service (monitoring, a
   cultural service), not food, and no other entry values their
   production.
+  The plant's production by depth (Step 8g.1): a light-limited
+  exponential shared by marine primary producers, NPP(z) = P_ref ·
+  (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max)), with the
+  species' hyperparameters in `depth_production`: P_ref = 498.8 g DW/m²/yr
+  at z_ref = 10 m (lognormal, 314–792) and k = 0.0803/m (triangular,
+  0.0428–0.1178), fitted on ln(production) to six full-text measurements
+  (Cala Jonquet 989.3 at 4 m, Cebrián et al. 1997; Medes 803 at 5 m and
+  271 at 13 m, Mateo & Romero 1997, Table 3, 257 before, a misreading;
+  Ischia 709.8, 509.1 and 238.2 at 5, 10 and 20 m, Pergent et al. 1994)
+  by scripts/fit_depth_production.py (residual sd of ln 0.218); z_max =
+  40 m (30–44, triangular; inferred from the Catalan lower limit ~30 m
+  and 40 m in clear waters, Generalitat 2004, and 44 m in the clearest
+  waters, Gobert et al. 2009). 770 at 5 m, 499 at 10, 318 at 15, 196 at
+  20, 115 at 25, 61 at 30 m. The case's depth is a mean, 15 m (inferred,
+  Generalitat 2004; no area-by-depth source could be read), conservative
+  since the function is convex. `--depth-m` sets a project's depth (one
+  depth or a band); a depth at or below 30 m, the depth limit's low end,
+  is rejected. At a project depth the €35 netted out scales with the
+  plant's NPP there / NPP at 15 m (exactly €35 in the regional run).
   Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
   (its `distribution` and `distribution_basis` in the case file:
-  lognormal for the plant's and the epiphytes' NPP, triangular for the
+  lognormal for the epiphytes' NPP and the depth function's P_ref,
+  triangular for its decline rate and depth limit and for the
   shares, the transfer efficiency and the trophic level, uniform for the
   roots; the carbon contents, ×9 and the price fixed) and every draw
   recomputes gross − net_of; the meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
-  P5 215, P50 490, P95 1,085 (base 474, lowest draw 79). The €31.41 floor
+  P5 151, P50 320, P95 622 (base 333, lowest draw 89). The €12.41 floor
   above bounds every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
@@ -393,7 +415,7 @@ value = gross − their values). € 2014-2017/ha/yr:
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
   'none' zeroes the diving service, never an agent: the meadow keeps its
-  own €474.48/ha/yr on every hectare (above), and every other agent keeps
+  own €332.59/ha/yr on every hectare (above), and every other agent keeps
   its value. (Before Step 8e.6 the diving service was the meadow's only
   entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
@@ -412,7 +434,7 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €1,293.15/ha/yr (€1,209.95 before Step 8f.2, €1,068.40 before
+Total €1,151.25/ha/yr (€1,293.15 before Step 8g.1, €1,209.95 before Step 8f.2, €1,068.40 before
 Step 8f.1, €818.66 before Step 8e.6, €284.83 before Step 8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total

@@ -284,7 +284,7 @@ def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry
     Raises:
         InvariantError: A net value <= 0 (an agent at €0).
     """
-    from gaia.production import central, gross_value, parse_production_function
+    from gaia.production import central, gross_value, net_value, parse_production_function
 
     ledger = doc["service_ledger"]
     booked = {e["service"]: e["value"] for e in ledger}
@@ -293,7 +293,7 @@ def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry
         entry = ledger[e.index]
         spec = parse_production_function(entry["production_function"], f"$.service_ledger[{e.index}].production_function")
         gross = gross_value(central(spec))
-        net = gross - sum(booked[s] for s in entry.get("net_of", []))
+        net = net_value(spec, gross, sum(booked[s] for s in entry.get("net_of", [])))
         if not net > 0.0:
             raise InvariantError(
                 f"uncertainty: a draw of {e.agent}'s production function gives {net:.6g} €/ha/yr net: "
