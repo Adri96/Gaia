@@ -26,6 +26,7 @@ from gaia.production import (
     mean_depth_npp,
     net_of_scale,
     net_range,
+    parse_market_prices,
     parse_production_function,
     profile_npp,
     with_project_depth,
@@ -134,7 +135,8 @@ def test_a_case_file_supplies_the_hyperparameters_of_another_producer():
     depth["regional_depth"] = {"distribution": [{"from_m": 0.0, "to_m": 5.0, "share": 0.5},
                                                 {"from_m": 5.0, "to_m": 15.0, "share": 0.5}],
                                "source": "test", "status": "inferred"}
-    spec = parse_production_function(pf, "pf")
+    prices = parse_market_prices(raw["market_prices"])
+    spec = parse_production_function(pf, "pf", prices)
     v = central(spec)
     assert v["npp_carbon"] == pytest.approx(
         profile_npp([(0.0, 5.0, 0.5), (5.0, 15.0, 0.5)], 200.0, 0.15, 25.0, 10.0), rel=1e-12)
@@ -142,12 +144,12 @@ def test_a_case_file_supplies_the_hyperparameters_of_another_producer():
     # a regional band at or below the shallowest depth limit is rejected
     depth["regional_depth"]["distribution"][1]["to_m"] = 20.0
     with pytest.raises(ValueError, match="depth limit"):
-        parse_production_function(pf, "pf")
+        parse_production_function(pf, "pf", prices)
     # the NPP it derives cannot also be given
     depth["regional_depth"]["distribution"][1]["to_m"] = 15.0
     pf["parameters"]["npp_carbon"] = dict(hyper["npp_at_reference_depth"])
     with pytest.raises(ValueError, match="derived from depth_production"):
-        parse_production_function(pf, "pf")
+        parse_production_function(pf, "pf", prices)
 
 
 # ── A project depth ──────────────────────────────────────────────────────────

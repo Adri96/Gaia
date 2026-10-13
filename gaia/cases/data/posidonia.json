@@ -759,6 +759,18 @@
       "note": "Years before a replanted meadow delivers any service; no source (placeholder)."
     }
   },
+  "market_prices": {
+    "white_fish_first_sale_catalonia_2014": {
+      "value": 5.109723057630542,
+      "unit": "€/kg",
+      "label": "first-sale price of bony white fish, Catalonia, 2014",
+      "source": "Generalitat de Catalunya, Estadístiques de pesca: dades per grups biològics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026 and re-queried for Step 8h.4, ?any=2014): 'OSSIS-BLANC' (bony white fish) 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg (the dataset's preu_kg: 5.11); EUR 2014, the price year of the fisheries value the meadow's chain is net of",
+      "status": "verified",
+      "distribution": "fixed",
+      "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled",
+      "note": "Step 8h.4 (the owner's decision: 'the sale price of fish does not depend on the depth at which it was caught, and that should anchor the prices of the rest'): the one sourced market price of the catch, referenced by every production-function chain that converts production to euros through fish and invertebrates (the Posidonia Meadow's and the Epiphytes & Algae's; each gives {\"market_price\": \"white_fish_first_sale_catalonia_2014\"}). Depth and the site's depth limit change only quantities (NPP, consumer production, kg caught), never this price. Until Step 8h.4 each chain carried its own identical copy. The whole catch, invertebrates included, is priced as white fish: in the same 2014 data cephalopods sold at EUR 5.04/kg, gastropods 5.19, bivalves 4.78 (crustaceans 17.61), so the white-fish price is close to most of it. The Fish Populations and Marine Invertebrates entries are not priced here: they are Campagne et al.'s (2015) per-hectare values (their own production function at the 2014 Sète auction prices), depth-independent (the owner's decision, Step 8h.4)"
+    }
+  },
   "service_ledger": [
     {
       "service": "Protection from coastal erosion",
@@ -933,13 +945,7 @@
             "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)"
           },
           "first_sale_price": {
-            "value": 5.109723057630542,
-            "unit": "€/kg",
-            "label": "first-sale price of bony white fish, Catalonia, 2014",
-            "source": "Generalitat de Catalunya, Estadístiques de pesca: dades per grups biològics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
-            "status": "verified",
-            "distribution": "fixed",
-            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled"
+            "market_price": "white_fish_first_sale_catalonia_2014"
           }
         },
         "depth_production": {
@@ -1229,13 +1235,7 @@
             "distribution_basis": "Zhou et al. (2012): F_MSY = 0.87 M (teleosts) as the mode, between the F proxy about 15% smaller (0.425) and the rule of thumb F_MSY = M (0.5)"
           },
           "first_sale_price": {
-            "value": 5.109723057630542,
-            "unit": "€/kg",
-            "label": "first-sale price of bony white fish, Catalonia, 2014",
-            "source": "Generalitat de Catalunya, Estadístiques de pesca: dades per grups biològics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
-            "status": "verified",
-            "distribution": "fixed",
-            "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled"
+            "market_price": "white_fish_first_sale_catalonia_2014"
           }
         },
         "depth_production": {

@@ -1388,8 +1388,9 @@
             "distribution": "fixed",
             "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled",
             "label": "first-sale price of bony white fish, Catalonia, 2014",
+            "market_price": "white_fish_first_sale_catalonia_2014",
             "range": null,
-            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
+            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026 and re-queried for Step 8h.4, ?any=2014): 'OSSIS-BLANC' (bony white fish) 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg (the dataset's preu_kg: 5.11); EUR 2014, the price year of the fisheries value the meadow's chain is net of",
             "status": "verified",
             "unit": "\u20ac/kg",
             "value": 5.109723057630542
@@ -1796,8 +1797,9 @@
             "distribution": "fixed",
             "distribution_basis": "One verified price, the price year of the fisheries value it is net of: not sampled",
             "label": "first-sale price of bony white fish, Catalonia, 2014",
+            "market_price": "white_fish_first_sale_catalonia_2014",
             "range": null,
-            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026): 'OSSIS-BLANC' 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg; EUR 2014, the price year of the fisheries value it is net of",
+            "source": "Generalitat de Catalunya, Estad\u00edstiques de pesca: dades per grups biol\u00f2gics (open data, dataset ge3m-4jgm, https://analisi.transparenciacatalunya.cat/resource/ge3m-4jgm.json, queried 13 October 2026 and re-queried for Step 8h.4, ?any=2014): 'OSSIS-BLANC' (bony white fish) 2014, EUR 41,056,589 for 8,034,993 kg = EUR 5.11/kg (the dataset's preu_kg: 5.11); EUR 2014, the price year of the fisheries value the meadow's chain is net of",
             "status": "verified",
             "unit": "\u20ac/kg",
             "value": 5.109723057630542

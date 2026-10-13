@@ -1153,7 +1153,8 @@ def test_ledger_enforces_the_subtraction():
     with pytest.raises(ValueError, match="needs gross"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["parameters"]["first_sale_price"]["value"] = 9.0
+    # the chain's price is the case's market-price anchor (Step 8h.4)
+    doc["market_prices"]["white_fish_first_sale_catalonia_2014"]["value"] = 9.0
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)

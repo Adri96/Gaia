@@ -329,7 +329,7 @@ def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sample
     regional one conditioned on lying deeper than the meadow (Step 8g.7),
     takes the regional limit's uniform draw through its own truncated
     distribution (``quantile_of``: comonotone, the same draw conditioned)."""
-    from gaia.production import CHAIN_PARAMETERS, DEPTH_PREFIX, DEPTH_SHARED
+    from gaia.production import CHAIN_PARAMETERS, DEPTH_PREFIX, DEPTH_SHARED, parameter_path
 
     out: List[Sampled] = []
     first: Dict[Tuple[Any, ...], str] = {}
@@ -351,7 +351,7 @@ def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sample
                 quantile_of = f"production[{e.agent}].{DEPTH_PREFIX}depth_limit"
             out.append(Sampled(
                 name=full,
-                path=f"$.service_ledger[{e.index}].production_function.{spec['paths'][name]}",
+                path=parameter_path(spec, name, f"$.service_ledger[{e.index}].production_function"),
                 value=p["value"], low=low, high=high, kind=p["distribution"],
                 documented=True, confidence=p["status"], same_as=same_as,
                 floor=floor, quantile_of=quantile_of,
@@ -406,14 +406,16 @@ def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry
     Raises:
         InvariantError: A net value <= 0 (an agent at €0).
     """
-    from gaia.production import central, gross_value, net_value, parse_production_function
+    from gaia.production import central, gross_value, net_value, parse_market_prices, parse_production_function
 
     ledger = doc["service_ledger"]
+    prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
     booked = {e["service"]: e["value"] for e in ledger}
     out: Dict[str, Tuple[float, float]] = {}
     for e in entries:
         entry = ledger[e.index]
-        spec = parse_production_function(entry["production_function"], f"$.service_ledger[{e.index}].production_function")
+        spec = parse_production_function(entry["production_function"], f"$.service_ledger[{e.index}].production_function",
+                                         prices)
         gross = gross_value(central(spec))
         net = net_value(spec, gross, sum(booked[s] for s in entry.get("net_of", [])))
         if not net > 0.0:

@@ -124,6 +124,25 @@ NPP(project) × (food per unit of NPP − booked / NPP(regional)) + the other
 producers' food, positive at every depth whenever the regional
 chain's lowest value exceeds what it is net of (parsing checks it).
 
+Market prices anchor every chain (Step 8h.4, the owner's decision). The
+€/kg (or € per unit of any consumable) a chain applies is a market price:
+the sale price of fish does not depend on the depth at which it was caught,
+so depth (and the site's depth limit) changes only QUANTITIES (NPP →
+consumer production → catch, in kg) and never the price. A case declares
+its sourced prices once, at the top level,
+
+    "market_prices": {"<name>": {"value"*, "unit"*, "label"*, "source"*,
+      "status"*, "distribution", "distribution_basis", "range", "note"}}
+
+and every chain's price parameter (``MARKET_PRICE_PARAMETERS``) references
+one, ``{"market_price": "<name>"}``: the same anchor for every chain that
+values the same catch (for Posidonia the meadow's and the epiphytes'). A
+case that declares market prices may not type a price into a chain, so no
+chain can drift from the anchor; the parsed parameter carries the anchor's
+name (``market_price``) and its document path is the anchor's, so a
+sampled price would be drawn once for every chain. ``with_project_depth``
+never touches it.
+
 Uncertainty (Step 8f.3): each link has its own distribution for the Monte
 Carlo (gaia.uncertainty), which samples the links one by one and recomputes
 the chain, the gross and the net value in every draw: "triangular" (the
@@ -166,6 +185,12 @@ STATUSES: Tuple[str, ...] = ("verified", "derived", "secondary", "inferred")
 
 DISTRIBUTIONS: Tuple[str, ...] = ("triangular", "uniform", "lognormal", "fixed")
 """How the Monte Carlo samples a link (Step 8f.3; see the module docstring)."""
+
+MARKET_PRICE_PARAMETERS: Tuple[str, ...] = ("first_sale_price",)
+"""Chain parameters that are market prices (€ per unit of what people
+consume): taken from the case's ``market_prices`` anchors (Step 8h.4)."""
+
+_MARKET_PRICE_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 
 DEPTH_MODEL = "light_limited_exponential"
 DEPTH_PARAMETERS: Tuple[str, ...] = ("npp_at_reference_depth", "decline_rate", "depth_limit")
@@ -561,13 +586,57 @@ def gross_range(spec: Dict[str, Any]) -> Tuple[float, float]:
 # ── Parsing ──────────────────────────────────────────────────────────────────
 
 
-def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
+def parse_market_prices(raw: Any, path: str = "$.market_prices") -> Dict[str, Dict[str, Any]]:
+    """Validate a case's ``market_prices`` block (Step 8h.4; see the module
+    docstring): {name: price}, each a sourced parameter (value > 0, unit,
+    label, source, status, optional distribution and range) with an
+    optional free-text ``note``. Returns the raw prices (without the note),
+    ready to stand in for a chain's price parameter.
+
+    Raises:
+        ValueError: Naming the JSON path of the first problem.
+    """
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError(f"{path}: an object of named market prices, at least one")
+    out: Dict[str, Dict[str, Any]] = {}
+    for name, price in raw.items():
+        ppath = f"{path}.{name}"
+        if not _MARKET_PRICE_NAME.match(name):
+            raise ValueError(f"{ppath}: a market price's name is lower-case letters, digits and _")
+        if not isinstance(price, dict):
+            raise ValueError(f"{ppath}: expected an object")
+        if not isinstance(price.get("note", ""), str):
+            raise ValueError(f"{ppath}.note: a string")
+        body = {k: v for k, v in price.items() if k != "note"}
+        _parse_parameters({MARKET_PRICE_PARAMETERS[0]: body}, MARKET_PRICE_PARAMETERS[:1], path)
+        out[name] = body
+    return out
+
+
+def _is_price_reference(p: Any) -> bool:
+    return isinstance(p, dict) and set(p) == {"market_price"}
+
+
+def parameter_path(spec: Dict[str, Any], name: str, entry_path: str) -> str:
+    """The document path of a parsed production function's parameter
+    ``name``, the function being at ``entry_path`` (e.g.
+    "$.service_ledger[3].production_function"): a market price's is its
+    anchor's (Step 8h.4), shared by every chain that references it."""
+    path = spec["paths"][name]
+    return path if path.startswith("$") else f"{entry_path}.{path}"
+
+
+def parse_production_function(raw: Any, path: str,
+                              market_prices: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Validate a ledger entry's ``production_function`` block (see the
     module docstring); returns it with numbers as floats, the parameters
     flat ({name: parameter}, additional producers' as "<name>.<parameter>",
     the depth hyperparameters as "depth.<parameter>"), each parameter's JSON
-    path relative to the block (``paths``) and the depth model (``depth``,
-    or None).
+    path relative to the block (``paths``; a market price's is its anchor's,
+    absolute) and the depth model (``depth``, or None). ``market_prices``:
+    the case's anchors (``parse_market_prices``; Step 8h.4), which a price
+    parameter references as {"market_price": "<name>"}; when given, a price
+    typed into the chain is rejected.
 
     Raises:
         ValueError: Naming the JSON path of the first problem.
@@ -585,6 +654,25 @@ def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
     params_raw = raw.get("parameters")
     if not isinstance(params_raw, dict):
         raise ValueError(f"{path}.parameters: expected an object")
+    # Step 8h.4: a market price is a case-level anchor, the same for every chain
+    anchors: Dict[str, str] = {}
+    params_raw = dict(params_raw)
+    for name, p in list(params_raw.items()):
+        if _is_price_reference(p):
+            if name not in MARKET_PRICE_PARAMETERS:
+                raise ValueError(f"{path}.parameters.{name}: only a price ({', '.join(MARKET_PRICE_PARAMETERS)}) "
+                                 f"references a market price")
+            anchor = p["market_price"]
+            if not isinstance(anchor, str) or not market_prices or anchor not in market_prices:
+                raise ValueError(f"{path}.parameters.{name}: unknown market price {anchor!r} (declare it in "
+                                 f"$.market_prices)")
+            params_raw[name] = market_prices[anchor]
+            anchors[name] = anchor
+        elif name in MARKET_PRICE_PARAMETERS and market_prices:
+            raise ValueError(
+                f"{path}.parameters.{name}: the case declares its market prices ($.market_prices), so the chain "
+                f"references one ({{\"market_price\": \"<name>\"}}): one sourced price anchors every chain, "
+                f"whatever the depth (Step 8h.4)")
     depth: Optional[Dict[str, Any]] = None
     derived_output = ""
     if "depth_production" in raw:
@@ -609,6 +697,9 @@ def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
     names = tuple(n for n in main + CHAIN_PARAMETERS if n != derived_output)
     params = _parse_parameters(params_raw, names, f"{path}.parameters")
     paths = {name: f"parameters.{name}" for name in params}
+    for name, anchor in anchors.items():
+        params[name]["market_price"] = anchor
+        paths[name] = f"$.market_prices.{anchor}"
     producers: List[Dict[str, Any]] = []
     producers_raw = raw.get("producers", [])
     if not isinstance(producers_raw, list):
@@ -1065,6 +1156,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
     doc = copy.deepcopy(document)
     ledger = doc.get("service_ledger", [])
     booked = {e["service"]: e["value"] for e in ledger}
+    prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
     found = False
     for i, entry in enumerate(ledger):
         raw = entry.get("production_function")
@@ -1072,7 +1164,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
             continue
         found = True
         path = f"$.service_ledger[{i}].production_function"
-        old = parse_production_function(raw, path)
+        old = parse_production_function(raw, path, prices)
         depth = old["depth"]
         if depth_limit is None:
             site = site_depth_limit(old["parameters"][DEPTH_PREFIX + "depth_limit"], depth["margin"]["value"],
@@ -1082,7 +1174,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
                                           float(to_m), limit_source)
         raw["depth_production"]["project_depth"] = {"from_m": float(from_m), "to_m": float(to_m), "source": source,
                                                     "depth_limit": site}
-        new = parse_production_function(raw, path)
+        new = parse_production_function(raw, path, prices)
         counted = sum(booked[s] for s in entry.get("net_of", []))
         gross = gross_value(central(new))
         net = gross - net_of_scale(new) * counted

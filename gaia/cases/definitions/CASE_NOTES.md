@@ -368,6 +368,8 @@ value = gross − their values). € 2014-2017/ha/yr:
     × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 61.2 kg/ha/yr
       (Zhou et al. 2012)
     × €5.11/kg, Catalan white-fish first-sale price 2014  = €312.49 gross
+      (one market-price anchor, $.market_prices, for this chain and
+      the epiphytes'; depth never changes it, Step 8h.4)
     − 35.00, the commercial catch booked to Fish          = €277.49 net
       Populations and Marine Invertebrates (net_of)
   Of the gross, the plant gives €311.49, the roots €1.00. Range over the
