@@ -395,8 +395,13 @@ value = gross − their values). € 2014-2017/ha/yr:
   20, 115 at 25, 61 at 30 m. The case's depth is a mean, 15 m (inferred,
   Generalitat 2004; no area-by-depth source could be read), conservative
   since the function is convex. `--depth-m` sets a project's depth (one
-  depth or a band); a depth at or below 30 m, the depth limit's low end,
-  is rejected. At a project depth the €35 netted out scales with the
+  depth or a band); any depth is valued (Step 8g.7): a meadow at depth z
+  proves its site's depth limit lies deeper, so the project's curve uses
+  the regional limit conditioned on lying at least 2 m below z
+  (`depth_limit_margin`, the Medes meadow 2 m above its 15 m lower limit;
+  truncated, or beyond 40 m extended to [z + 2, z + 4] m; drawn
+  comonotone with the regional limit), keeping P_ref and k; only a
+  negative depth is rejected. At a project depth the €35 netted out scales with the
   plant's NPP there / NPP at 15 m (exactly €35 in the regional run).
   Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
   (its `distribution` and `distribution_basis` in the case file:

@@ -1100,7 +1100,8 @@ class Case:
 
         Raises:
             ValueError: Without a document or a depth-dependent production
-                function, or for a depth at or below the depth limit.
+                function, or for a negative depth (any depth >= 0 is valued:
+                the site's depth limit lies below it, Step 8g.7).
         """
         from gaia.production import with_project_depth
 

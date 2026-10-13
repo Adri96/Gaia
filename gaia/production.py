@@ -60,7 +60,8 @@ with three hyperparameters per species (``DEPTH_PARAMETERS``):
 z_ref, in the unit of the NPP it replaces), ``decline_rate`` (k, 1/m; it is
 the light attenuation coefficient Kd when production is light-limited
 throughout) and ``depth_limit`` (z_max, m, where production reaches zero;
-inputs at or below it are rejected, never valued at €0). NPP(z) declines
+a project depth is valued at any depth, its site's depth limit lying below
+it, see below). NPP(z) declines
 monotonically and is convex, so the production at a mean depth is below the
 mean production over the depths around it. The block:
 
@@ -70,12 +71,16 @@ mean production over the depths around it. The block:
       "reference_depth_m"*: z_ref,
       "parameters"*: {npp_at_reference_depth, decline_rate, depth_limit},
         each a parameter as above,
+      "depth_limit_margin"*: a parameter (fixed, m): the least depth between
+        a living meadow and its site's depth limit (Step 8g.7, below),
       "regional_depth"*: the depth of the reference resource, either
         {"distribution": [{"from_m", "to_m", "share"}, ...], "source"*,
         "status"*, "note"} (production averaged over each band, weighted by
         its share of the area) or {"mean_m", "source"*, "status"*, "note"},
       "project_depth": the depth of the affected resource, {"from_m",
-        "to_m", "source"} (a single depth has from_m = to_m; set by
+        "to_m", "source", "depth_limit"} (a single depth has from_m = to_m;
+        "depth_limit", the site's depth limit, a parameter with optional
+        "truncated_below" and "coupled", derived when absent; set by
         ``with_project_depth``, e.g. ``gaia run ... --depth-m``),
       "data": [{"site"*, "depth_m"*, "value"*, "source"*, "status"*}],
         the measurements the hyperparameters were fitted to,
@@ -86,6 +91,27 @@ project's depth (or, without one, over the regional depth distribution).
 Each hyperparameter is a link the Monte Carlo samples; every draw
 recomputes the NPP, the chain and the net value.
 
+The site's depth limit at a project depth (Step 8g.7). Any project depth
+>= 0 is valued, never rejected: a meadow that lives at depth z proves that
+its site's depth limit lies deeper than z. So the project's production
+uses the site's depth limit z_site, the documented (regional) depth limit
+conditioned on lying deeper than the project's deepest depth plus
+``depth_limit_margin`` (``site_depth_limit``: the documented distribution
+truncated below that floor, its central value the conditional mode,
+max(z_max, floor); within two margins of the range's deepest value, or
+below it, extended to [floor, floor + margin], triangular with its mode at
+the floor). The Monte Carlo draws z_site comonotone with z_max (the same
+uniform draw through the conditioned distribution: above the floor they
+are the same draw). The site's curve keeps the regional light-driven term
+(P_ref and k, normalised at z_ref with the regional z_max) and reaches zero
+at z_site:
+
+    NPP_site(z) = P_ref · (e^(−k·z) − e^(−k·z_site)) / (e^(−k·z_ref) − e^(−k·z_max)),
+
+the regional curve when z_site = z_max, defined for any z_site > 0. The
+regional production (the basis of what an entry is net of, below) keeps
+the regional z_max.
+
 Net of what is already counted, at a project depth (Step 8g.1). The
 services an entry is net of (for Posidonia, the commercial catch of
 Campagne et al. 2015, €35/ha/yr) are regional values per hectare of the
@@ -95,7 +121,7 @@ the entry subtracts ``net_of_scale`` × their booked values, where the scale
 is NPP(project) / NPP(regional) (1 without a project depth, so the regional
 run subtracts exactly the booked values). The net value is then
 NPP(project) × (food per unit of NPP − booked / NPP(regional)) + the other
-producers' food, positive at every allowed depth whenever the regional
+producers' food, positive at every depth whenever the regional
 chain's lowest value exceeds what it is net of (parsing checks it).
 
 Uncertainty (Step 8f.3): each link has its own distribution for the Monte
@@ -147,6 +173,18 @@ DEPTH_PREFIX = "depth."
 """Prefix of the depth hyperparameters in the parsed parameters
 ("depth.decline_rate"); "depth" is not a producer name."""
 
+SITE_LIMIT = "site_depth_limit"
+"""The site's depth limit at a project depth (Step 8g.7), a parsed parameter
+("depth.site_depth_limit") stored in the project depth
+(``project_depth.depth_limit``)."""
+
+DEPTH_SHARED: Tuple[str, ...] = tuple(DEPTH_PREFIX + n for n in ("decline_rate", "depth_limit", SITE_LIMIT))
+"""The depth function's shape: one light field, drawn once by the Monte
+Carlo for every production function that documents it identically."""
+
+USER_STATUS = "user-supplied"
+"""The status of a site's depth limit given by the project (Step 8g.10)."""
+
 DEPTH_GRID = 41
 """Points per depth-shape hyperparameter (decline rate, depth limit) when
 the lowest and highest value of a chain is searched (``net_range``)."""
@@ -162,55 +200,70 @@ _DEFAULT_PRODUCER = "the plant"
 
 
 def depth_npp(depth: float, npp_at_reference_depth: float, decline_rate: float,
-              depth_limit: float, reference_depth: float) -> float:
+              depth_limit: float, reference_depth: float, site_limit: Optional[float] = None) -> float:
     """Net primary production at ``depth`` (m) of a marine primary producer
     (``DEPTH_MODEL``; see the module docstring), in the unit of
-    ``npp_at_reference_depth``.
+    ``npp_at_reference_depth``. With ``site_limit`` (Step 8g.7), the
+    production of a site whose own depth limit it is: the regional curve's
+    light-driven term (P_ref, k, normalised with the regional depth limit)
+    with the site's limit where its production reaches zero.
 
     Raises:
         ValueError: For a depth < 0 or at or below the depth limit (where
             production is zero: such a resource is not valued, never at €0),
             or for hyperparameters out of their domain.
     """
-    _check_shape(npp_at_reference_depth, decline_rate, depth_limit, reference_depth)
-    if not (math.isfinite(depth) and 0.0 <= depth < depth_limit):
+    limit = _limit(npp_at_reference_depth, decline_rate, depth_limit, reference_depth, site_limit)
+    if not (math.isfinite(depth) and 0.0 <= depth < limit):
         raise ValueError(
-            f"depth {depth:g} m is outside the producer's depth range [0, {depth_limit:g}) m: "
-            f"production reaches zero at its depth limit, {depth_limit:g} m"
+            f"depth {depth:g} m is outside the producer's depth range [0, {limit:g}) m: "
+            f"production reaches zero at its depth limit, {limit:g} m"
         )
-    return npp_at_reference_depth * _shape(depth, decline_rate, depth_limit) / _shape(
+    return npp_at_reference_depth * _shape(depth, decline_rate, limit) / _shape(
         reference_depth, decline_rate, depth_limit)
 
 
 def mean_depth_npp(from_m: float, to_m: float, npp_at_reference_depth: float, decline_rate: float,
-                   depth_limit: float, reference_depth: float) -> float:
+                   depth_limit: float, reference_depth: float, site_limit: Optional[float] = None) -> float:
     """The mean of ``depth_npp`` over the depths [from_m, to_m] (uniform
     over the band; exact, the integral of the exponential): the production
     per unit area of a resource spread evenly over that band. A band of zero
     width is the production at that depth."""
     if from_m == to_m:
-        return depth_npp(from_m, npp_at_reference_depth, decline_rate, depth_limit, reference_depth)
+        return depth_npp(from_m, npp_at_reference_depth, decline_rate, depth_limit, reference_depth, site_limit)
     if not 0.0 <= from_m < to_m:
         raise ValueError(f"a depth band needs 0 <= from_m < to_m, got [{from_m:g}, {to_m:g}]")
-    depth_npp(from_m, npp_at_reference_depth, decline_rate, depth_limit, reference_depth)
-    if not to_m < depth_limit:
+    depth_npp(from_m, npp_at_reference_depth, decline_rate, depth_limit, reference_depth, site_limit)
+    limit = depth_limit if site_limit is None else site_limit
+    if not to_m < limit:
         raise ValueError(
-            f"depth {to_m:g} m is outside the producer's depth range [0, {depth_limit:g}) m: "
-            f"production reaches zero at its depth limit, {depth_limit:g} m"
+            f"depth {to_m:g} m is outside the producer's depth range [0, {limit:g}) m: "
+            f"production reaches zero at its depth limit, {limit:g} m"
         )
     k = decline_rate
     mean_exp = (math.exp(-k * from_m) - math.exp(-k * to_m)) / (k * (to_m - from_m))
-    shape = mean_exp - math.exp(-k * depth_limit)
+    shape = mean_exp - math.exp(-k * limit)
     return npp_at_reference_depth * shape / _shape(reference_depth, k, depth_limit)
 
 
 def profile_npp(bands: Sequence[Tuple[float, float, float]], npp_at_reference_depth: float,
-                decline_rate: float, depth_limit: float, reference_depth: float) -> float:
+                decline_rate: float, depth_limit: float, reference_depth: float,
+                site_limit: Optional[float] = None) -> float:
     """The area-weighted mean production over depth bands [(from_m, to_m,
     share)], the shares summing to 1."""
     return sum(share * mean_depth_npp(a, b, npp_at_reference_depth, decline_rate, depth_limit,
-                                      reference_depth)
+                                      reference_depth, site_limit)
                for a, b, share in bands)
+
+
+def _limit(p_ref: float, k: float, depth_limit: float, reference_depth: float,
+           site_limit: Optional[float]) -> float:
+    _check_shape(p_ref, k, depth_limit, reference_depth)
+    if site_limit is None:
+        return depth_limit
+    if not (math.isfinite(site_limit) and site_limit > 0.0):
+        raise ValueError(f"depth production: a site's depth limit is > 0 m, got {site_limit!r}")
+    return site_limit
 
 
 def _shape(depth: float, k: float, depth_limit: float) -> float:
@@ -240,19 +293,40 @@ def depth_bands(depth: Dict[str, Any], which: str) -> List[Tuple[float, float, f
 
 def npp_over(depth: Dict[str, Any], values: Dict[str, float], which: str) -> float:
     """The production of a parsed depth block at its "regional" or
-    "project" depth, at the hyperparameter ``values``."""
+    "project" depth, at the hyperparameter ``values`` (at the project
+    depth, with the site's depth limit, Step 8g.7)."""
     p_ref, k, z_max = _depth_values(values)
-    return profile_npp(depth_bands(depth, which), p_ref, k, z_max, depth["reference_depth_m"])
+    site = values.get(DEPTH_PREFIX + SITE_LIMIT) if which == "project" else None
+    return profile_npp(depth_bands(depth, which), p_ref, k, z_max, depth["reference_depth_m"], site)
 
 
 def deepest_allowed(spec: Dict[str, Any]) -> Optional[float]:
-    """The depth (m) a project depth must stay shallower than: the low end of
-    the depth limit's range (the shallowest depth limit a Monte Carlo draw
-    can take), or its value without a range; None without a depth model."""
-    if spec.get("depth") is None:
+    """The depth (m) a project depth must stay shallower than: the deepest
+    depth limit the project gave for its site (``--depth-limit-m``, Step
+    8g.10); None otherwise (any depth is valued: the site's depth limit is
+    conditioned to lie below it, Step 8g.7) or without a depth model."""
+    site = spec["parameters"].get(DEPTH_PREFIX + SITE_LIMIT) if spec.get("depth") is not None else None
+    if site is None or site["status"] != USER_STATUS:
         return None
-    p = spec["parameters"][DEPTH_PREFIX + "depth_limit"]
-    return p["range"][0] if p.get("range") else p["value"]
+    return _support(site)[1]
+
+
+def _support(p: Dict[str, Any]) -> Tuple[float, float]:
+    """(lowest, highest) value a parameter can take: its range, raised to
+    the value it is truncated below (Step 8g.7); its value without a range."""
+    if not p.get("range"):
+        return p["value"], p["value"]
+    low, high = p["range"]
+    floor = p.get("truncated_below")
+    return (max(low, floor) if floor is not None else low), high
+
+
+def _central(p: Dict[str, Any]) -> float:
+    """A parameter's central value: its value, raised to the value its
+    distribution is truncated below (the conditional mode of a triangular
+    one; Step 8g.7)."""
+    floor = p.get("truncated_below")
+    return max(p["value"], floor) if floor is not None else p["value"]
 
 
 def net_of_scale(spec: Dict[str, Any], values: Optional[Dict[str, float]] = None) -> float:
@@ -339,7 +413,7 @@ def central(spec: Dict[str, Any]) -> Dict[str, float]:
     (additional producers' parameters as "<name>.<parameter>", the depth
     hyperparameters as "depth.<parameter>"; a NPP derived from the depth
     model at its documented hyperparameters)."""
-    return {name: p["value"] for name, p in spec["parameters"].items()}
+    return {name: _central(p) for name, p in spec["parameters"].items()}
 
 
 def _with_depth_npp(spec: Dict[str, Any], values: Dict[str, float], which: str = "") -> Dict[str, float]:
@@ -359,23 +433,43 @@ def _ends(spec: Dict[str, Any], favourable: bool) -> Dict[str, float]:
     at most 1), and with the production at the reference depth."""
     out = {}
     for name, p in spec["parameters"].items():
-        low, high = p["range"] if p.get("range") else (p["value"], p["value"])
+        low, high = _support(p)
         rising = name != "catch_trophic_level"
         out[name] = high if favourable == rising else low
     return out
 
 
-def _shape_grid(spec: Dict[str, Any]) -> List[Tuple[float, float]]:
-    """(decline_rate, depth_limit) pairs spanning their ranges (with the
-    ends), the shape of the depth function being monotone in neither."""
-    def axis(name: str) -> List[float]:
-        p = spec["parameters"][DEPTH_PREFIX + name]
-        low, high = p["range"] if p.get("range") else (p["value"], p["value"])
+def _shape_grid(spec: Dict[str, Any]) -> List[Tuple[float, float, Optional[float]]]:
+    """(decline_rate, depth_limit, the site's depth limit or None) triples
+    spanning their ranges (with the ends), the shape of the depth function
+    being monotone in neither of the first two. The production at the
+    project depth, and so the net value, is monotone in the site's limit
+    (Step 8g.7): a site's limit coupled to the regional one follows it
+    (comonotone, as the Monte Carlo draws it); another is taken at its two
+    ends."""
+    from gaia.uncertainty import dist_cdf, dist_quantile
+
+    def axis(p: Dict[str, Any]) -> List[float]:
+        low, high = _support(p)
         if low == high:
             return [low]
         return [low + (high - low) * i / (DEPTH_GRID - 1) for i in range(DEPTH_GRID)]
 
-    return [(k, z) for k in axis("decline_rate") for z in axis("depth_limit")]
+    params = spec["parameters"]
+    regional = params[DEPTH_PREFIX + "depth_limit"]
+    site = params.get(DEPTH_PREFIX + SITE_LIMIT)
+    pairs: List[Tuple[float, Optional[float]]]
+    if site is None:
+        pairs = [(z, None) for z in axis(regional)]
+    elif site.get("coupled") and regional.get("range") and site.get("range"):
+        low, high = regional["range"]
+        pairs = [(z, dist_quantile(site["distribution"], site["range"][0], site["value"], site["range"][1],
+                                   dist_cdf(regional["distribution"], low, regional["value"], high, z),
+                                   site.get("truncated_below")))
+                 for z in axis(regional)]
+    else:
+        pairs = [(z, s) for z in axis(regional) for s in sorted(set(_support(site)))]
+    return [(k, z, s) for k in axis(params[DEPTH_PREFIX + "decline_rate"]) for z, s in pairs]
 
 
 def net_range(spec: Dict[str, Any], booked: float = 0.0) -> Tuple[float, float]:
@@ -390,9 +484,11 @@ def net_range(spec: Dict[str, Any], booked: float = 0.0) -> Tuple[float, float]:
     if depth is None:
         return gross_value(lows) - booked, gross_value(highs) - booked
     lowest, highest = math.inf, -math.inf
-    for k, z_max in _shape_grid(spec):
+    for k, z_max, z_site in _shape_grid(spec):
         for values, keep in ((lows, min), (highs, max)):
             v = dict(values, **{DEPTH_PREFIX + "decline_rate": k, DEPTH_PREFIX + "depth_limit": z_max})
+            if z_site is not None:
+                v[DEPTH_PREFIX + SITE_LIMIT] = z_site
             v = _with_depth_npp(spec, v)
             scale = 1.0
             if depth["project"] is not None and booked:
@@ -495,7 +591,11 @@ def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
         for key, p in depth.pop("parameters").items():
             params[DEPTH_PREFIX + key] = p
             paths[DEPTH_PREFIX + key] = f"depth_production.parameters.{key}"
-        values = {k: p["value"] for k, p in params.items()}
+        site = depth.pop("site")
+        if site is not None:
+            params[DEPTH_PREFIX + SITE_LIMIT] = site
+            paths[DEPTH_PREFIX + SITE_LIMIT] = "depth_production.project_depth.depth_limit"
+        values = {k: _central(p) for k, p in params.items()}
         which = "project" if depth["project"] is not None else "regional"
         npp = npp_over(depth, values, which)
         params[derived_output] = {
@@ -536,8 +636,8 @@ def depth_label(depth: Dict[str, Any]) -> str:
 def _parse_depth(raw: Any, path: str) -> Dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: expected an object")
-    allowed = {"model", "output", "reference_depth_m", "parameters", "regional_depth", "project_depth",
-               "data", "fit", "description"}
+    allowed = {"model", "output", "reference_depth_m", "parameters", "depth_limit_margin", "regional_depth",
+               "project_depth", "data", "fit", "description"}
     unknown = set(raw) - allowed
     if unknown:
         raise ValueError(f"{path}: unknown key {sorted(unknown)[0]!r}")
@@ -561,12 +661,21 @@ def _parse_depth(raw: Any, path: str) -> Dict[str, Any]:
             f"{path}.reference_depth_m: must be shallower than the depth limit's low end, "
             f"{shallowest_limit:g} m, got {z_ref:g}"
         )
+    margin = _parse_parameters({"depth_limit_margin": raw.get("depth_limit_margin")}, ("depth_limit_margin",),
+                               path)["depth_limit_margin"]
+    if margin["distribution"] != "fixed":
+        raise ValueError(f"{path}.depth_limit_margin: a fixed number of metres, not sampled")
     regional = _parse_depth_spec(raw.get("regional_depth"), f"{path}.regional_depth", shallowest_limit,
                                  regional=True)
     project = None
+    site = None
     if raw.get("project_depth") is not None:
-        project = _parse_depth_spec(raw["project_depth"], f"{path}.project_depth", shallowest_limit,
-                                    regional=False)
+        project = _parse_depth_spec(raw["project_depth"], f"{path}.project_depth", math.inf, regional=False)
+        deepest = max(b for _, b, _ in project["bands"])
+        site_raw = raw["project_depth"].get("depth_limit")
+        if site_raw is None:
+            site_raw = site_depth_limit(params["depth_limit"], margin["value"], deepest)
+        site = _parse_site_limit(site_raw, f"{path}.project_depth", deepest)
     data = []
     for i, row in enumerate(_list_of(raw.get("data", []), f"{path}.data")):
         rpath = f"{path}.data[{i}]"
@@ -584,8 +693,87 @@ def _parse_depth(raw: Any, path: str) -> Dict[str, Any]:
         if not isinstance(raw.get(key, ""), str):
             raise ValueError(f"{path}.{key}: a string")
     return {"model": DEPTH_MODEL, "output": output, "reference_depth_m": z_ref, "parameters": params,
-            "regional": regional, "project": project, "data": data, "fit": raw.get("fit", ""),
-            "description": raw.get("description", "")}
+            "margin": margin, "regional": regional, "project": project, "site": site, "data": data,
+            "fit": raw.get("fit", ""), "description": raw.get("description", "")}
+
+
+def _parse_site_limit(raw: Any, path: str, deepest: float) -> Dict[str, Any]:
+    """The site's depth limit at a project depth (``project_depth.depth_limit``,
+    a parameter with an optional ``truncated_below`` and ``coupled``; Step
+    8g.7): it must lie below the project's deepest depth in every draw."""
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path}.depth_limit: expected an object")
+    rest = {k: v for k, v in raw.items() if k not in ("truncated_below", "coupled")}
+    site = _parse_parameters({"depth_limit": rest}, ("depth_limit",), path)["depth_limit"]
+    if "truncated_below" in raw:
+        floor = _positive(raw["truncated_below"], f"{path}.depth_limit.truncated_below")
+        if not (site.get("range") and site["range"][0] < floor < site["range"][1]):
+            raise ValueError(f"{path}.depth_limit.truncated_below: must lie inside the range")
+        site["truncated_below"] = floor
+    coupled = raw.get("coupled", False)
+    if not isinstance(coupled, bool):
+        raise ValueError(f"{path}.depth_limit.coupled: true or false")
+    site["coupled"] = coupled
+    if not _support(site)[0] > deepest:
+        raise ValueError(
+            f"{path}.depth_limit: the site's depth limit ({_support(site)[0]:g} m at its shallowest) must lie "
+            f"below the project's deepest depth, {deepest:g} m (production reaches zero at the depth limit; "
+            f"a resource there is not valued, never at €0)"
+        )
+    return site
+
+
+def site_depth_limit(documented: Dict[str, Any], margin: float, deepest: float) -> Dict[str, Any]:
+    """The site's depth limit at a project whose deepest depth is ``deepest``
+    (Step 8g.7), as a raw parameter (``project_depth.depth_limit``): the
+    documented (regional) depth limit conditioned on the evidence that the
+    meadow lives at that depth, so its limit lies deeper by at least the
+    ``margin`` (``depth_limit_margin``): z_site > deepest + margin.
+
+    - floor = deepest + margin at or above the range's low end: unchanged;
+    - inside the range, up to its high end less the margin: the documented
+      distribution truncated below the floor (``truncated_below``; its
+      central value the conditional mode, max(value, floor));
+    - deeper (the project lies within two margins of the deepest limit
+      documented, or below it): the distribution would be narrower than the
+      margin or empty, so it is extended: triangular from the floor (its
+      mode) to the floor + the margin, continuing the truncated triangle's
+      shape (inferred: beyond the deepest meadows documented).
+
+    When the documented limit is sampled, the site's limit takes the same
+    draw through its own distribution (``coupled``: comonotone)."""
+    low, high = documented["range"] if documented.get("range") else (documented["value"], documented["value"])
+    floor = deepest + margin
+    sampled = documented["distribution"] != "fixed" and low < high
+    out: Dict[str, Any] = {k: documented[k] for k in ("value", "unit", "label", "source", "status",
+                                                       "distribution", "distribution_basis")}
+    if documented.get("range"):
+        out["range"] = [low, high]
+    out["label"] = "depth limit of the site (where the plant's net production reaches zero), at the project's depth"
+    where = f"a meadow at {deepest:g} m proves its site's depth limit lies deeper; with the margin, below {floor:g} m"
+    if floor <= low:
+        out["source"] = f"The regional depth limit ({where}, which every value of the range already does). " \
+                        + documented["source"]
+    elif floor <= high - margin:
+        out["truncated_below"] = floor
+        out["source"] = f"The regional depth limit conditioned on the project's depth ({where}): its distribution " \
+                        f"truncated below {floor:g} m. " + documented["source"]
+        out["distribution_basis"] = f"The regional distribution truncated below {floor:g} m (conditioned on the " \
+                                    f"meadow at {deepest:g} m). " + documented["distribution_basis"]
+    else:
+        out.update(value=floor, range=[floor, floor + margin], distribution="triangular", status="inferred")
+        out["source"] = (
+            f"The regional depth limit ({documented['value']:g} m, {low:g}-{high:g} m) extended ({where}): within "
+            f"two margins of its deepest value or below it, the truncated distribution would be narrower than "
+            f"the margin, so the site's limit is taken between {floor:g} and {floor + margin:g} m (inferred, beyond "
+            f"the deepest limits documented). " + documented["source"]
+        )
+        out["distribution_basis"] = (
+            f"Triangular, mode at {floor:g} m (the floor), {margin:g} m wide: the shape of the regional triangle "
+            f"truncated near its deepest value, continued below it"
+        )
+    out["coupled"] = sampled
+    return out
 
 
 def _parse_depth_spec(raw: Any, path: str, shallowest_limit: float, regional: bool) -> Dict[str, Any]:
@@ -626,8 +814,8 @@ def _parse_depth_spec(raw: Any, path: str, shallowest_limit: float, regional: bo
                 raise ValueError(f"{path}.distribution: the shares must sum to 1, got {total:.6g}")
             kind = "distribution"
     else:
-        if set(raw) - {"from_m", "to_m", "source"}:
-            raise ValueError(f"{path}: expected from_m, to_m and source")
+        if set(raw) - {"from_m", "to_m", "source", "depth_limit"}:
+            raise ValueError(f"{path}: expected from_m, to_m, source and depth_limit")
         a = _non_negative(raw.get("from_m"), f"{path}.from_m")
         b = _non_negative(raw.get("to_m"), f"{path}.to_m")
         if not a <= b:
@@ -758,14 +946,18 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
     are taken at the project depth [from_m, to_m] (a single depth when
     from_m = to_m): each such ledger entry's gross and net value (net of
     ``net_of_scale`` × the services it is net of), and its owner's
-    annual_value_per_ha and range, are recomputed.
+    annual_value_per_ha and range, are recomputed. Any depth >= 0 is valued:
+    a meadow that lives there proves its site's depth limit lies deeper, so
+    the site's depth limit is the regional one conditioned on it
+    (``site_depth_limit``, Step 8g.7).
 
     Raises:
         ValueError: Without a depth-dependent production function, or for a
-            depth outside [0, the shallowest depth limit) (production
-            reaches zero at the depth limit: such a meadow is not valued,
-            never at €0).
+            negative depth.
     """
+    if not (math.isfinite(from_m) and math.isfinite(to_m) and 0.0 <= from_m <= to_m):
+        raise ValueError(f"the project depth must be >= 0 m (a single depth or a range low-high), "
+                         f"got {from_m:g}-{to_m:g}")
     doc = copy.deepcopy(document)
     ledger = doc.get("service_ledger", [])
     booked = {e["service"]: e["value"] for e in ledger}
@@ -777,20 +969,11 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
         found = True
         path = f"$.service_ledger[{i}].production_function"
         old = parse_production_function(raw, path)
-        limit = deepest_allowed(old)
-        if not (math.isfinite(from_m) and math.isfinite(to_m) and 0.0 <= from_m <= to_m):
-            raise ValueError(f"the project depth must be >= 0 m (a single depth or a range low-high), "
-                             f"got {from_m:g}-{to_m:g}")
-        if not to_m < limit:  # type: ignore[operator]
-            z_max = old["parameters"][DEPTH_PREFIX + "depth_limit"]
-            span = (f", between {z_max['range'][0]:g} and {z_max['range'][1]:g} m in the uncertainty analysis"
-                    if z_max.get("range") else "")
-            raise ValueError(
-                f"a depth of {to_m:g} m is at or below the depth limit of {entry['agent']}'s primary "
-                f"producer ({z_max['value']:g} m{span}), where its production reaches zero; Gaia does not "
-                f"value an agent at €0, so give a depth shallower than {limit:g} m"
-            )
-        raw["depth_production"]["project_depth"] = {"from_m": float(from_m), "to_m": float(to_m), "source": source}
+        depth = old["depth"]
+        site = site_depth_limit(old["parameters"][DEPTH_PREFIX + "depth_limit"], depth["margin"]["value"],
+                                float(to_m))
+        raw["depth_production"]["project_depth"] = {"from_m": float(from_m), "to_m": float(to_m), "source": source,
+                                                    "depth_limit": site}
         new = parse_production_function(raw, path)
         counted = sum(booked[s] for s in entry.get("net_of", []))
         gross = gross_value(central(new))
@@ -884,6 +1067,11 @@ def depth_block(spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     p_ref, k, z_max = _depth_values(values)
     z_ref = depth["reference_depth_m"]
     which = "project" if depth["project"] is not None else "regional"
+    site = spec["parameters"].get(DEPTH_PREFIX + SITE_LIMIT)
+    site_block = None
+    if site is not None:
+        site_block = {key: (list(v) if key == "range" and v else v) for key, v in site.items()}
+        site_block.update(value=_central(site), support=list(_support(site)))
     return {
         "model": DEPTH_MODEL,
         "formula": "NPP(z) = P_ref · (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max))",
@@ -903,6 +1091,8 @@ def depth_block(spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "npp_regional": npp_over(depth, values, "regional"),
         "net_of_scale": net_of_scale(spec),
         "deepest_allowed_m": deepest_allowed(spec),
+        "depth_limit_margin": dict(depth["margin"]),
+        "site_depth_limit": site_block,
         "npp_at_depth": {f"{z:g}": depth_npp(z, p_ref, k, z_max, z_ref) for z in DEPTH_TABLE_M if z < z_max},
         "data": [dict(row) for row in depth["data"]],
         "fit": depth["fit"],
@@ -939,6 +1129,12 @@ def format_depth(block: Dict[str, Any]) -> List[str]:
     """Report lines of a production function's depth model."""
     h = block["hyperparameters"]
     unit = block["unit"]
+    site = block.get("site_depth_limit")
+    site_text = ""
+    if site is not None:
+        low, high = site["support"]
+        span = f", {low:g}–{high:g} m in the uncertainty analysis" if low < high else ""
+        site_text = f"; the site's depth limit {site['value']:g} m{span}"
     lines = [
         f"    Depth → production ({block['model']}): {block['formula']}",
         f"      P_ref = {_num(h['npp_at_reference_depth']['value'])} {unit} at z_ref = "
@@ -946,7 +1142,7 @@ def format_depth(block: Dict[str, Any]) -> List[str]:
         f"{h['depth_limit']['value']:g} m",
         "      " + "   ".join(f"{z} m: {_num(v)}" for z, v in block["npp_at_depth"].items()) + f" {unit}",
         f"      Taken at {block['depth_label']}: {_num(block['npp'])} {unit}"
-        + (f" (regional {_num(block['npp_regional'])}; what it is net of × {block['net_of_scale']:.3f})"
+        + (f" (regional {_num(block['npp_regional'])}; what it is net of × {block['net_of_scale']:.3f}{site_text})"
            if block["depth_used"] == "project" else ""),
     ]
     return lines

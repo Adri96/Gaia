@@ -309,10 +309,11 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
     block = getattr(case, "depth_production", None)
     if not block:
         return
-    deepest = block["deepest_allowed_m"]
-    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items() if float(z) < deepest)
+    table = ", ".join(f"{v:,.0f} at {z} m" for z, v in block["npp_at_depth"].items())
     unit = block["unit"].replace("DW", "dry weight")
     limit = block["hyperparameters"]["depth_limit"]
+    margin = block["depth_limit_margin"]["value"]
+    span = f", {limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis" if limit.get("range") else ""
     parser.add_argument(
         "--depth-m",
         dest="depth_m",
@@ -323,13 +324,10 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"Project input: the water depth of the affected {block['agent']}, in metres: one "
             f"depth (e.g. 12) or a range (e.g. 5-20: spread evenly over it). "
             f"Its primary production, and so the food it supports, falls with depth as light fades: "
-            f"about {table} {unit}. Default: {block['depth_label']}. It must be shallower "
-            f"than {deepest:g} m: production reaches zero at the depth limit ({limit['value']:g} m, "
-            f"{limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis), and Gaia does "
-            f"not value an agent at €0"
-            if limit.get("range") else
-            f"Project input: the water depth of the affected resource, in metres (default: "
-            f"{block['depth_label']}; shallower than {deepest:g} m)"
+            f"about {table} {unit}. Default: {block['depth_label']}. Any depth is valued: production "
+            f"reaches zero at the depth limit ({limit['value']:g} m{span}), and a meadow that lives at "
+            f"the depth given proves its site's limit lies deeper, so the limit is taken at least "
+            f"{margin:g} m below the deepest depth given (never valued at €0)"
         ).replace("%", "%%"),
     )
 

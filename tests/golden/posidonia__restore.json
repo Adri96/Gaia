@@ -2252,7 +2252,7 @@
               "value": 238.2
             }
           ],
-          "deepest_allowed_m": 30.0,
+          "deepest_allowed_m": null,
           "depth_bands": [
             {
               "from_m": 15.0,
@@ -2261,6 +2261,15 @@
             }
           ],
           "depth_label": "15 m (the regional mean depth)",
+          "depth_limit_margin": {
+            "distribution": "fixed",
+            "distribution_basis": "A conditioning margin, not an uncertain quantity of the valuation: not sampled (Step 8g.7)",
+            "label": "least depth between a meadow valued at a project depth and its site's depth limit (where the plant's net production reaches zero)",
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Material and methods, 'Study site'): the Medes Islands meadow extends 'from 3 to 15 m depth'; its deeper station, at 13 m, is 'close to the lower limit, where the meadow is much sparser with ca 100 shoots m-2', and still produced 271 g DW/m2/yr (Table 3; see data). So a living meadow 2 m above its lower limit is still productive: the closest any of the measurements fitted lies to its own meadow's limit. Value: 2 m, the least distance at which a meadow is known to live and produce above its limit; that the site's depth limit (zero net production) lies at least this far below a meadow is an inference",
+            "status": "inferred",
+            "unit": "m",
+            "value": 2.0
+          },
           "depth_used": "regional",
           "fit": "Fitted by scripts/fit_depth_production.py: least squares on ln(production) of the 6 measurements in 'data' (3 sites, 3 studies, 4-20 m; depths as the authors give them), with z_ref = 10 m (near the data's mean depth, so the two fitted hyperparameters are almost uncorrelated) and z_max fixed at its literature value (the data do not reach it). P_ref = 498.8 g DW/m2/yr (standard error of ln P_ref 0.090), k = 0.0803/m (standard error 0.0191), correlation -0.12; residual standard deviation of ln(production) 0.218 (sites scatter about \u00d7/\u00f7 1.24 around the curve). Medes (a turbid site whose meadow ends at 15 m) lies below the curve at 13 m, Cala Jonquet (sampled at its densest depth) above it at 4 m. Cross-check: at Port Lligat (Cap de Creus), where the meadow reaches 15.6 m, leaf production per m2 'declined 5- to 6-fold with depth' (Olesen, Enr\u00edquez, Duarte & Sand-Jensen 2002, Marine Ecology Progress Series 236:89-97, doi:10.3354/meps236089, full text; no values tabulated), steeper than the regional curve, as expected where the meadow ends shallower. Not used: Pergent-Martini, Rico-Raimondino & Pergent (1994), Marine Biology 120:9-15, doi:10.1007/BF00381936, production at 22 Mediterranean sites by depth (closed access; only its metadata on Crossref and a search-engine summary were seen)",
           "formula": "NPP(z) = P_ref \u00b7 (e^(\u2212k\u00b7z) \u2212 e^(\u2212k\u00b7z_max)) / (e^(\u2212k\u00b7z_ref) \u2212 e^(\u2212k\u00b7z_max))",
@@ -2330,6 +2339,7 @@
             "source": "Generalitat de Catalunya (2004), Els prats submarins de Posid\u00f2nia: guia pedag\u00f2gica, quadern del professorat (read): 'la praderia mitjana de la costa catalana a 15 metres' (the average meadow of the Catalan coast, at 15 m, in a worked exercise), and Catalan meadows between the surface and their lower limit at about 30 m (midpoint 15 m); 15 m is also the standard monitoring depth of the PREI index (Gobert et al. 2009, doi:10.1016/j.marpolbul.2009.06.012, author copy, read)",
             "status": "inferred"
           },
+          "site_depth_limit": null,
           "unit": "g DW/m\u00b2/yr"
         },
         "gross_eur_per_ha_yr": 312.49275506563924,
