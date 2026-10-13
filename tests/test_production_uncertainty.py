@@ -43,13 +43,17 @@ LINKS = {
 }
 EPIPHYTES = "Epiphytes & Algae"
 # Step 8g.2: the epiphytes' own chain; its links to the catch are the
-# meadow's (one food web), drawn once for both
+# meadow's (one food web), drawn once for both. Step 8g.9: their NPP comes
+# from their depth function, whose shape (decline rate, depth limit) is the
+# plant's (one light field), drawn once for both
 EPIPHYTE_LINKS = {
-    "npp_carbon": "lognormal",
     "food_web_share": "triangular",
     "transfer_efficiency": "triangular",
     "catch_trophic_level": "triangular",
     "sustainable_catch_share": "triangular",
+    "depth.npp_at_reference_depth": "lognormal",
+    "depth.decline_rate": "triangular",
+    "depth.depth_limit": "triangular",
 }
 
 
@@ -83,9 +87,10 @@ def test_each_link_is_sampled_on_its_own(mc):
     assert mc.production[MEADOW]["links"] == list(LINKS)
     epi = {s.name.split("].", 1)[1]: s for s in mc.sampled if s.name.startswith(f"production[{EPIPHYTES}].")}
     assert {n: s.kind for n, s in epi.items()} == EPIPHYTE_LINKS
-    for link in ("transfer_efficiency", "catch_trophic_level", "sustainable_catch_share"):
+    for link in ("transfer_efficiency", "catch_trophic_level", "sustainable_catch_share",
+                 "depth.decline_rate", "depth.depth_limit"):
         assert epi[link].same_as == f"production[{MEADOW}].{link}"
-    assert not epi["npp_carbon"].same_as and not epi["food_web_share"].same_as
+    assert not epi["depth.npp_at_reference_depth"].same_as and not epi["food_web_share"].same_as
     assert mc.production[EPIPHYTES]["links"] == list(EPIPHYTE_LINKS)
 
 
@@ -103,7 +108,7 @@ def test_shared_links_take_one_draw_for_both_chains():
         values = _draw_all(sampled, rng)
         assert values[f"production[{EPIPHYTES}].transfer_efficiency"] == values[f"production[{MEADOW}].transfer_efficiency"]
     u = _run(draws=5, seed=1)
-    assert sum(1 for s in u.sampled if s.same_as) == 3
+    assert sum(1 for s in u.sampled if s.same_as) == 5
     assert all(not row["name"].startswith(f"production[{EPIPHYTES}].transfer") for row in
                run_uncertainty(case, 50, draws=2, seed=1, normative=False).tornado)
 

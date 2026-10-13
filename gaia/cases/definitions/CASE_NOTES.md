@@ -378,7 +378,13 @@ value = gross − their values). € 2014-2017/ha/yr:
   €284.74 gross, €249.74 net.
   The epiphytes' food is counted once, in their own chain (Step 8g.2);
   their bioindicator entry is monitoring information, a cultural service,
-  not food.
+  not food. Since Step 8g.9 (the owner's review of #11, question 4) their
+  production follows depth: their own depth function with the plant's
+  decline rate and depth limit (one light field, drawn once; inferred,
+  their biomass "decreases with increasing depth", Lepoint et al. 1999,
+  doi:10.1023/A:1003557303904, abstract), scaled from the regional 15 m
+  (unchanged there, €82.20): €199 at 5 m, €30 at 25 m, €1.89 at 40 m.
+  The roots do not depend on depth.
   The plant's production by depth (Step 8g.1): a light-limited
   exponential shared by marine primary producers, NPP(z) = P_ref ·
   (e^(−k·z) − e^(−k·z_max)) / (e^(−k·z_ref) − e^(−k·z_max)), with the
@@ -418,7 +424,8 @@ value = gross − their values). € 2014-2017/ha/yr:
   meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
   P5 118, P50 254, P95 528 (base 277, lowest draw 47); the epiphytes'
-  chain P5 32, P50 72, P95 151 (base 82). The €3.83 floor above bounds
+  chain P5 33, P50 71, P95 158 (base 82; 32 / 72 / 151 before Step 8g.9,
+  the same distribution drawn in another order). The €3.83 floor above bounds
   every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain

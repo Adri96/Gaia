@@ -73,7 +73,7 @@ def test_what_is_sampled(posidonia_mc):
     assert "agent[Posidonia Meadow].annual_value_per_ha" not in names
     assert "agent[Epiphytes & Algae].annual_value_per_ha" not in names
     assert "production[Posidonia Meadow].transfer_efficiency" in names
-    assert "production[Epiphytes & Algae].npp_carbon" in names
+    assert "production[Epiphytes & Algae].depth.npp_at_reference_depth" in names
     release = next(s for s in posidonia_mc.sampled if s.name == "carbon.soil_release_fraction")
     assert (release.low, release.value, release.high, release.documented) == (0.25, 0.63, 1.0, True)
     reasons = posidonia_mc.not_sampled

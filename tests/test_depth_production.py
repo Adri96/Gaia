@@ -466,3 +466,52 @@ def test_the_regional_run_and_the_base_depth_subtract_exactly_35():
     for case in (load_case("posidonia"), load_case("posidonia").with_project_depth(15.0, 15.0)):
         entry = _meadow_entry(case)
         assert entry["gross"] - entry["value"] == pytest.approx(35.0, rel=1e-12)
+
+
+# ── Step 8g.9: the epiphytes' production follows depth, the roots' does not ──
+
+EPIPHYTES = "Epiphytes & Algae"
+
+
+def _epiphyte_entry(case):
+    return next(e for e in case.service_ledger if e["agent"] == EPIPHYTES and e["production_function"] is not None)
+
+
+def test_the_epiphytes_share_the_plants_light_field():
+    """Their depth function borrows the plant's decline rate and depth
+    limit (identical, so the Monte Carlo draws them once) and is scaled from
+    the regional mean depth, where their value is unchanged."""
+    case = load_case("posidonia")
+    epi = _epiphyte_entry(case)["production_function"]
+    meadow = _meadow_entry(case)["production_function"]
+    for name in ("depth.decline_rate", "depth.depth_limit"):
+        a, b = epi["parameters"][name], meadow["parameters"][name]
+        assert (a["value"], a["range"], a["distribution"]) == (b["value"], b["range"], b["distribution"])
+        assert a["status"] == "inferred" and a["source"].startswith("Inferred")
+    assert "doi:10.1023/A:1003557303904" in epi["parameters"]["depth.decline_rate"]["source"]
+    assert epi["depth"]["reference_depth_m"] == 15.0 and epi["depth"]["regional"]["bands"] == [(15.0, 15.0, 1.0)]
+    assert _epiphyte_entry(case)["value"] == pytest.approx(82.19699951512872, rel=1e-12)
+    assert central(epi)["npp_carbon"] == pytest.approx(22.8209, rel=1e-12)
+
+
+@pytest.mark.parametrize("depth", GRID + [(50.0, 50.0)])
+def test_the_epiphytes_food_scales_with_the_plants_production(depth):
+    case = load_case("posidonia")
+    at = case.with_project_depth(*depth)
+    scale = net_of_scale(_meadow_entry(at)["production_function"])
+    epi = _epiphyte_entry(at)
+    assert epi["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    assert epi["value"] > 0.0 and net_range(epi["production_function"])[0] > 0.0
+    # the roots do not depend on depth
+    roots = {k: v for k, v in central(_meadow_entry(at)["production_function"]).items() if k.startswith("roots.")}
+    assert roots == {k: v for k, v in central(_meadow_entry(case)["production_function"]).items()
+                     if k.startswith("roots.")}
+    eco = at.build_ecosystem(site_intensity="none")
+    agent = next(a for a in eco.agents if a.name == EPIPHYTES)
+    assert agent.dependency_weight * agent.annual_value(1.0) > 0.0
+
+
+def test_deeper_epiphytes_are_worth_less_and_never_zero():
+    case = load_case("posidonia")
+    values = [_epiphyte_entry(case.with_project_depth(z, z))["value"] for z in (1, 5, 15, 25, 30, 35, 40, 43, 50)]
+    assert all(a > b > 0.0 for a, b in zip(values, values[1:]))

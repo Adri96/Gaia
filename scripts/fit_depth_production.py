@@ -96,12 +96,14 @@ def fit(depths: Sequence[float], values: Sequence[float], z_ref: float, z_max: f
 
 
 def fits_of(document: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any], Dict[str, float]]]:
-    """[(ledger service, its depth_production block, the fit)] of a case document."""
+    """[(ledger service, its depth_production block, the fit)] of a case
+    document; a block without data (its shape borrowed from another
+    producer's fit, e.g. the leaf epiphytes', Step 8g.9) is skipped."""
     out = []
     for entry in document.get("service_ledger", []):
         pf = entry.get("production_function") or {}
         depth = pf.get("depth_production")
-        if not depth:
+        if not depth or not depth.get("data"):
             continue
         data = depth["data"]
         result = fit([row["depth_m"] for row in data], [row["value"] for row in data],
