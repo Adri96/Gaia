@@ -32,10 +32,11 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8f.2: with the production of the roots and of the leaf epiphytes;
 # Step 8g.1: the plant's NPP from its depth function at the regional mean
 # depth, 15 m (318 g DW/m²/yr; it was a fixed 476); Step 8g.2: the leaf
-# epiphytes' food moved to the Epiphytes & Algae agent (total unchanged)
-MEADOW_FOOD_NET = 250.39396913319848
+# epiphytes' food moved to the Epiphytes & Algae agent (total unchanged);
+# Step 8g.4: the plant's shoot-only share not buried, 81.1% (74% before)
+MEADOW_FOOD_NET = 277.49275506563924
 EPIPHYTE_FOOD = 82.19699951512872
-LEDGER_TOTAL = 1151.2545472405084    # €/ha/yr of the reference meadow
+LEDGER_TOTAL = 1178.3533331729495    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -961,7 +962,11 @@ def test_meadow_food_value_is_the_primary_production_chain():
     assert hyper["depth.depth_limit"]["value"] == 40.0
     npp = p_ref * (math.exp(-k * 15) - math.exp(-k * 40)) / (math.exp(-k * 10) - math.exp(-k * 40))
     assert npp == pytest.approx(317.56, abs=0.01)
-    web = npp * 0.336 * 0.74 + 17.0 * 0.409 * 0.04
+    # Step 8g.4: the plant's share not buried, shoots only (Mateo & Romero
+    # 1997, Table 3: blades / (blades + sheaths + rhizomes) at 5 and 13 m)
+    shoot_share = (252 / (252 + 51 + 15) + 87 / (87 + 12 + 6)) / 2
+    assert shoot_share == pytest.approx(0.8105, abs=1e-4)
+    web = npp * 0.336 * shoot_share + 17.0 * 0.409 * 0.04
     gross = (web * 10 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
@@ -978,8 +983,10 @@ def test_meadow_food_value_is_the_primary_production_chain():
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
     assert params["wet_weight_per_carbon"]["status"] == "secondary"
-    for name in ("carbon_fraction", "food_web_share", "first_sale_price"):
+    for name in ("carbon_fraction", "first_sale_price"):
         assert params[name]["status"] == "verified"
+    assert params["food_web_share"]["status"] == "derived"     # the mean of two read values
+    assert params["food_web_share"]["range"] == (0.71, 0.832)
     assert params["npp_dry_weight"]["status"] == "derived"     # from the depth function
     # Step 8f.1: the median of five Western Mediterranean food-web models
     te = params["transfer_efficiency"]
@@ -1046,8 +1053,8 @@ def test_epiphyte_production_is_not_counted_twice():
     meadow, epiphytes = chains
     assert all(p["name"] != "epiphytes" for p in meadow["production_function"]["producers"])
     # the former single chain (Step 8g.1): 367.59 gross, 332.59 net
-    assert meadow["gross"] + epiphytes["value"] == pytest.approx(367.59096864832713, rel=1e-12)
-    assert meadow["value"] + epiphytes["value"] == pytest.approx(332.59096864832713, rel=1e-12)
+    assert meadow["gross"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + 35.0 + EPIPHYTE_FOOD, rel=1e-12)
+    assert meadow["value"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + EPIPHYTE_FOOD, rel=1e-12)
     # every other provisioning entry is commercial catch, netted out once
     others = {e["service"] for e in food} - {e["service"] for e in chains}
     assert others == set(meadow["net_of"]) and not epiphytes["net_of"]
@@ -1139,7 +1146,7 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     flat = " ".join(meadow_line.split())
     assert "NPP 107 g C/m²/yr (318 g dry weight) at 15 m (the regional mean depth)" in flat
     assert "+ roots 6.95 = 114 g C/m²/yr" in flat and "epiphytes" not in flat
-    assert "€285/ha/yr" in flat and "= €250/ha/yr" in flat
+    assert "€312/ha/yr" in flat and "= €277/ha/yr" in flat
     # Step 8g.2: the epiphytes' own chain, on their own line
     epi_line = " ".join(text[text.index("Epiphytes & Algae:"):text.index("Marine Invertebrates:")].split())
     assert "Primary production → food: NPP 22.8 g C/m²/yr" in epi_line and "= €82.2/ha/yr" in epi_line

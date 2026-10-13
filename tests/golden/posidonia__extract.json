@@ -13,12 +13,12 @@
   ],
   "cli_summary_json": {
     "benchmarks": {
-      "annual_externality_eur_yr": 4770343.34,
+      "annual_externality_eur_yr": 4878013.93,
       "benchmarks": [
         {
           "benchmark_central_over_gaia": 0.24,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1151.25,
+          "gaia_value_eur_per_ha_yr": 1178.35,
           "high": 284.83,
           "includes_carbon": false,
           "low": 276.83,
@@ -31,7 +31,7 @@
         {
           "benchmark_central_over_gaia": 0.3,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1309.84,
+          "gaia_value_eur_per_ha_yr": 1336.94,
           "high": 514.0,
           "includes_carbon": true,
           "low": 284.0,
@@ -42,9 +42,9 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 6.65,
+          "benchmark_central_over_gaia": 6.52,
           "central": 8712.0,
-          "gaia_value_eur_per_ha_yr": 1309.84,
+          "gaia_value_eur_per_ha_yr": 1336.94,
           "high": 95767.0,
           "includes_carbon": true,
           "low": 1588.0,
@@ -55,9 +55,9 @@
           "unit": "Int$2020/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 22.08,
+          "benchmark_central_over_gaia": 21.63,
           "central": 28917.0,
-          "gaia_value_eur_per_ha_yr": 1309.84,
+          "gaia_value_eur_per_ha_yr": 1336.94,
           "high": 42063.0,
           "includes_carbon": true,
           "low": 26167.0,
@@ -68,9 +68,9 @@
           "unit": "Int$2007/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 22.08,
+          "benchmark_central_over_gaia": 21.63,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1309.84,
+          "gaia_value_eur_per_ha_yr": 1336.94,
           "high": 28916.0,
           "includes_carbon": true,
           "low": 28916.0,
@@ -82,12 +82,12 @@
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
-      "full_damage_eur_per_ha_yr": 1151.25,
-      "full_damage_with_burial_eur_per_ha_yr": 1309.84,
+      "full_damage_eur_per_ha_yr": 1178.35,
+      "full_damage_with_burial_eur_per_ha_yr": 1336.94,
       "hectares_lost": 2000.0,
-      "linear_transfer_eur_yr": 2302509.09,
+      "linear_transfer_eur_yr": 2356706.67,
       "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
-      "realised_loss_eur_per_ha_yr": 2385.17
+      "realised_loss_eur_per_ha_yr": 2439.01
     },
     "calibration": {
       "calibration_regime": "B",
@@ -172,14 +172,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 285.39 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 74% not buried; of its roots, 6.95 g C/m2/yr, 4% not buried: 793 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 250.39 EUR/ha/yr. The leaf epiphytes' food (82.20 EUR/ha/yr) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (3.83-1,525.48 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 151 / 320 / 622 EUR/ha/yr, 1,000 draws, seed 20261012).",
+          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1, 8g.2, 8g.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 312.49 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 81.1% not buried (shoots only, Step 8g.4); of its roots, 6.95 g C/m2/yr, 4% not buried: 868 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 277.49 EUR/ha/yr. The leaf epiphytes' food (82.20 EUR/ha/yr) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (3.83-1,525.48 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 118 / 254 / 528 EUR/ha/yr, 1,000 draws, seed 20261012).",
           "range": [
             34.85445543853452,
             13881.880718908227
           ],
           "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029; transfer efficiency: S\u00e1nchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
           "unit": "\u20ac/ha/yr",
-          "value": 2278.5851191121064
+          "value": 2525.184071097317
         },
         {
           "confidence": "low",
@@ -758,8 +758,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 2278.5851191121064,
-          "annual_value_eur_yr": 32073479.938642155,
+          "annual_value_eur_per_ha_yr": 2525.184071097317,
+          "annual_value_eur_yr": 33306474.69856821,
           "dependency_weight": 0.10989010989010989,
           "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production (with its roots) supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
@@ -772,7 +772,7 @@
           "trophic_amplification": 1.0,
           "trophic_level": 0,
           "value_notes": [
-            "Primary production \u2192 food: NPP 107 g C/m\u00b2/yr (318 g dry weight) at 15 m (the regional mean depth) + roots 6.95 = 114 g C/m\u00b2/yr \u2192 792 kg C/ha/yr into the food web (not buried) \u2192 120 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 55.9 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac285/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac250/ha/yr",
+            "Primary production \u2192 food: NPP 107 g C/m\u00b2/yr (318 g dry weight) at 15 m (the regional mean depth) + roots 6.95 = 114 g C/m\u00b2/yr \u2192 868 kg C/ha/yr into the food web (not buried) \u2192 131 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 61.2 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac312/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac277/ha/yr",
             "Carbon: 1,199 tCO2/ha held in the matte and 0.95 tCO2/ha/yr buried: valued once, in the carbon accounting, and not added to this line"
           ]
         },
@@ -1049,9 +1049,9 @@
         "scarcity_rate": 0.01
       },
       "horizon_years": 200,
-      "services_eur_pv": 446476205.87,
-      "substrate_unrecoverable_eur_pv": 28475.46,
-      "total_eur_pv": 707050199.75
+      "services_eur_pv": 456553542.8,
+      "substrate_unrecoverable_eur_pv": 29118.17,
+      "total_eur_pv": 717127536.68
     },
     "production_functions": {
       "Epiphytes & Algae": {
@@ -1130,7 +1130,7 @@
               0.74,
               1.0
             ],
-            "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the plant's production (74% not buried, the meadow's food_web_share)",
+            "source": "Inferred: the epiphytes are grazed (sea urchins at 5 per m2 cut the epiphyte load by about 60%, fish by about 30%: Tomas, Turon & Romero 2005, Marine Ecology Progress Series 287:115-125, doi:10.3354/meps287115, abstract), they are not found in the leaf litter, 'probably because they detach soon after leaf abscission', and the matte stores roots, rhizomes and sheaths (Mateo & Romero 1997, doi:10.3354/meps151043, full text). Value: none buried. Lower end: buried like the whole plant, roots included (74% not buried, Mateo & Romero 1997's whole-plant figure, abstract)",
             "status": "inferred",
             "unit": "fraction",
             "value": 1.0
@@ -1215,27 +1215,27 @@
           {
             "step": "entering the food web (not buried)",
             "unit": "kg C/ha/yr",
-            "value": 792.3582695975504
+            "value": 867.5944324178022
           },
           {
             "step": "consumer production at trophic level 3.1",
             "unit": "kg C/ha/yr",
-            "value": 13.33912288820567
+            "value": 14.605701985065634
           },
           {
             "step": "fish and invertebrates produced",
             "unit": "kg/ha/yr",
-            "value": 120.05210599385103
+            "value": 131.4513178655907
           },
           {
             "step": "sustainable catch",
             "unit": "kg/ha/yr",
-            "value": 55.853118831363844
+            "value": 61.15649547757428
           },
           {
             "step": "food value at first-sale prices",
             "unit": "\u20ac/ha/yr",
-            "value": 285.3939691331985
+            "value": 312.49275506563924
           }
         ],
         "comparison": {
@@ -1439,13 +1439,13 @@
           },
           "unit": "g DW/m\u00b2/yr"
         },
-        "gross_eur_per_ha_yr": 285.3939691331985,
+        "gross_eur_per_ha_yr": 312.49275506563924,
         "gross_range_eur_per_ha_yr": [
           38.8301599383005,
           1560.4813976822227
         ],
         "model": "trophic_transfer",
-        "net_eur_per_ha_yr": 250.39396913319848,
+        "net_eur_per_ha_yr": 277.49275506563924,
         "net_of": [
           "Commercial fisheries: meadow-associated fish",
           "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
@@ -1525,16 +1525,16 @@
           },
           "food_web_share": {
             "distribution": "triangular",
-            "distribution_basis": "Three point estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 74%; Cebri\u00e1n et al. 1997, 83.2%): triangular with its mode at the Medes Islands value",
-            "label": "share of the production eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
+            "distribution_basis": "Shoot-only estimates (Pergent et al. 1994, 71%; Mateo & Romero 1997, 79.2% at 5 m and 82.9% at 13 m; Cebri\u00e1n et al. 1997, 83.2%): triangular with its mode at the Medes Islands mean, 81.1% (Step 8g.4, the owner's answer to PR #10 question 4; 74%, the whole-plant figure, before)",
+            "label": "share of the plant's production (blades, sheaths, rhizomes; its roots are a separate producer) eaten, decomposed or exported (to beaches and deep water) rather than buried in the matte",
             "range": [
               0.71,
               0.832
             ],
-            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (abstract): about 26% of the carbon the plant produces in a year is buried below ground, Medes Islands (Catalonia), so 74% is not. Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract: 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract: 16.8% of P. oceanica production neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
-            "status": "verified",
+            "source": "Mateo & Romero (1997), Marine Ecology Progress Series 151:43-53, doi:10.3354/meps151043 (full text, archived copy of the publisher's PDF, Table 3, carbon, Medes Islands, Catalonia): the leaf blades are not buried, the sheaths and rhizomes go to the matte: blades 252 of 252 + 51 + 15 g C/m2/yr at 5 m = 79.2% not buried, 87 of 87 + 12 + 6 at 13 m = 82.9%; value = their mean, 81.1% (shoot-only: the roots are a separate producer since Step 8f.2; the whole-plant figure in the abstract, 26% buried so 74% not, counts the roots; from Table 5's whole-plant burial, 84 and 24 g C, less the roots, 10 and 5, it would be 76.7% and 81.9%). Range: 71%, Pergent et al. (1994, doi:10.3354/meps106139, abstract and full text: production of blades, sheaths and rhizomes, no roots; 42% degraded in place, 29% exported, 29% buried in the matte); 83.2%, Cebri\u00e1n, Duarte, Marb\u00e0 & Enr\u00edquez (1997), Marine Ecology Progress Series 155:29-44, doi:10.3354/meps155029 (abstract and full text: 16.8% of P. oceanica production, blades, sheaths and rhizomes, roots not determined, neither consumed nor decomposed in its first year, Cala Jonquet, Catalonia). Mateo & Romero add that most of it reaches animals through the detritus and its microbes (48% lost as very fine particles, 17% respired), not directly: the transfer efficiency of the next link carries that loss",
+            "status": "derived",
             "unit": "fraction",
-            "value": 0.74
+            "value": 0.8105121293800539
           },
           "npp_dry_weight": {
             "distribution": "fixed",
@@ -1656,7 +1656,7 @@
         "Human Communities": 6419.66,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 2800799.05,
+        "Posidonia Meadow": 2908469.64,
         "Seabirds": 150921.33,
         "Water Quality": 238395.75
       },
@@ -1668,19 +1668,19 @@
         "Human Communities": 7187.9,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 2800799.05,
+        "Posidonia Meadow": 2908469.64,
         "Seabirds": 150921.33,
         "Water Quality": 259792.53
       },
-      "annual_externality_eur_yr": 4770343.34,
+      "annual_externality_eur_yr": 4878013.93,
       "discount_is_default": false,
       "final_ecosystem_health": 0.098122,
-      "net_social_cost_eur_pv": 702050199.75,
+      "net_social_cost_eur_pv": 712127536.68,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 707050199.75,
-      "pv_externality_h100_eur_pv": 536750498.39,
-      "pv_externality_h200_eur_pv": 707050199.75,
-      "pv_externality_h50_eur_pv": 408211307.38,
+      "pv_externality_eur_pv": 717127536.68,
+      "pv_externality_h100_eur_pv": 543346412.69,
+      "pv_externality_h200_eur_pv": 717127536.68,
+      "pv_externality_h50_eur_pv": 412228828.93,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
@@ -1693,7 +1693,7 @@
     "Human Communities": 7187.903085597239,
     "Marine Invertebrates": 21875.0,
     "Marine Megafauna": 150921.33075300753,
-    "Posidonia Meadow": 2800799.0507010752,
+    "Posidonia Meadow": 2908469.642097043,
     "Seabirds": 150921.3307530075,
     "Water Quality": 259792.52557007154
   },
@@ -1711,7 +1711,7 @@
       768.2460166983874
     ],
     "agent_direct_annual_costs": [
-      2800799.0507010752,
+      2908469.642097043,
       75282.86943843408,
       327441.6736039211,
       21875.0,
@@ -1734,7 +1734,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 4770343.343065926,
+    "annual_externality": 4878013.9344618935,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -1765,19 +1765,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 222493638.07241184,
       "carbon_released_t": 1510740.0,
-      "direct": 446476205.8674841,
+      "direct": 456553542.795414,
       "horizon": 200,
-      "substrate_unrecoverable": 28475.460121183703,
-      "total": 707050199.7527342
+      "substrate_unrecoverable": 29118.1747878286,
+      "total": 717127536.6806641
     },
     "final_ecosystem_health": 0.09812199065106542,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 702050199.7527342,
-    "pv_externality": 707050199.7527342,
+    "net_social_cost": 712127536.6806641,
+    "pv_externality": 717127536.6806641,
     "pv_externality_by_horizon": {
-      "100": 536750498.38952106,
-      "200": 707050199.7527342,
-      "50": 408211307.3834022
+      "100": 543346412.689988,
+      "200": 717127536.6806641,
+      "50": 412228828.92615914
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,
@@ -1795,7 +1795,7 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      2149200646.609771,
+      2231821963.0484257,
       62869368.066675894,
       268519097.96741897,
       16745823.88595211,
@@ -1842,12 +1842,12 @@
       609.778730638634,
       609.778730638634
     ],
-    "annual_externality": 3730955097.142762,
+    "annual_externality": 3813576413.581422,
     "depletion_ratio": 400.2,
     "ecosystem_health": 1272.9854959325012,
     "effective_k": 9998000.0,
     "k_fraction": 1999.9745031208731,
-    "marginal_annual_externality": 4770343.343065926,
+    "marginal_annual_externality": 4878013.9344618935,
     "model_confidence": 1349.812500000001,
     "revenue": 5002500000.0,
     "step": 2001000.0,
@@ -1857,7 +1857,7 @@
   "steps": [
     {
       "agent_annual_costs": [
-        704.9116470031242,
+        732.0104329355651,
         18.947368421052627,
         82.41128522941443,
         4.375,
@@ -1905,14 +1905,14 @@
         0.0002
       ],
       "agent_prices": [],
-      "annual_externality": 1151.2545472405086,
+      "annual_externality": 1178.3533331729495,
       "depletion_ratio": 0.0002,
       "ecosystem_health": 0.9998,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999998,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1151.2545472405086,
+      "marginal_annual_externality": 1178.3533331729495,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1923,7 +1923,7 @@
     },
     {
       "agent_annual_costs": [
-        141687.24104762796,
+        147134.09702004856,
         3808.421052631578,
         16564.668331112298,
         879.375,
@@ -1971,14 +1971,14 @@
         0.0402
       ],
       "agent_prices": [],
-      "annual_externality": 231402.1639953422,
+      "annual_externality": 236849.0199677628,
       "depletion_ratio": 0.0402,
       "ecosystem_health": 0.9598,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999934657844,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1151.2545472404745,
+      "marginal_annual_externality": 1178.3533331729413,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1989,7 +1989,7 @@
     },
     {
       "agent_annual_costs": [
-        282669.5704482528,
+        293536.18360716157,
         7597.894736842103,
         33046.925376995176,
         1754.3749999999998,
@@ -2037,14 +2037,14 @@
         0.0802
       ],
       "agent_prices": [],
-      "annual_externality": 461653.0734434439,
+      "annual_externality": 472519.6866023527,
       "depletion_ratio": 0.0802,
       "ecosystem_health": 0.9198,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999998969987456,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1151.2545472404454,
+      "marginal_annual_externality": 1178.3533331729705,
       "model_confidence": 0.8395999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -2055,7 +2055,7 @@
     },
     {
       "agent_annual_costs": [
-        423651.89984887774,
+        439938.2701942746,
         11387.36842105263,
         49529.18242287807,
         2629.375,
@@ -2103,14 +2103,14 @@
         0.1202
       ],
       "agent_prices": [],
-      "annual_externality": 691903.9828915457,
+      "annual_externality": 708190.3532369426,
       "depletion_ratio": 0.1202,
       "ecosystem_health": 0.8798,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999994811320924,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1151.2545472405618,
+      "marginal_annual_externality": 1178.3533331729705,
       "model_confidence": 0.7595999999999999,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -2121,7 +2121,7 @@
     },
     {
       "agent_annual_costs": [
-        564634.2292495025,
+        586340.3567813876,
         15176.842105263157,
         66011.43946876096,
         3504.375,
@@ -2169,14 +2169,14 @@
         0.1602
       ],
       "agent_prices": [],
-      "annual_externality": 922154.8923396473,
+      "annual_externality": 943861.0198715323,
       "depletion_ratio": 0.1602,
       "ecosystem_health": 0.8398,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999983640720822,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1151.254547240329,
+      "marginal_annual_externality": 1178.353333172854,
       "model_confidence": 0.6795999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -2187,7 +2187,7 @@
     },
     {
       "agent_annual_costs": [
-        706913.8690602842,
+        734089.6260388793,
         19016.870786190902,
         82698.42480125543,
         4395.933502961149,
@@ -2235,14 +2235,14 @@
         0.2005680774507478
       ],
       "agent_prices": [],
-      "annual_externality": 1155281.5029620768,
+      "annual_externality": 1182457.259940672,
       "depletion_ratio": 0.2002,
       "ecosystem_health": 0.7990538419015809,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999960113238897,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4026.9557215678506,
+      "marginal_annual_externality": 4103.926767722238,
       "model_confidence": 0.599925,
       "price_result": null,
       "resilience_zone": "red",
@@ -2253,7 +2253,7 @@
     },
     {
       "agent_annual_costs": [
-        1128728.4851106599,
+        1172119.982078969,
         33398.99667885018,
         142310.93659706158,
         8726.580705114413,
@@ -2301,14 +2301,14 @@
         0.32024679686010554
       ],
       "agent_prices": [],
-      "annual_externality": 1992814.073664543,
+      "annual_externality": 2036205.5706328521,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917622486862,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4343.863946387311,
+      "marginal_annual_externality": 4429.31170391012,
       "model_confidence": 0.585,
       "price_result": null,
       "resilience_zone": "red",
@@ -2319,7 +2319,7 @@
     },
     {
       "agent_annual_costs": [
-        1585703.0590422428,
+        1646661.9436515246,
         48156.1822291934,
         204105.7062776398,
         13135.332837197873,
@@ -2367,14 +2367,14 @@
         0.4499012225954084
       ],
       "agent_prices": [],
-      "annual_externality": 2864968.923445977,
+      "annual_externality": 2925927.808055258,
       "depletion_ratio": 0.28,
       "ecosystem_health": 0.410180583244278,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.999984734338123,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4307.073381277267,
+      "marginal_annual_externality": 4396.187676537316,
       "model_confidence": 0.57,
       "price_result": null,
       "resilience_zone": "red",
@@ -2385,7 +2385,7 @@
     },
     {
       "agent_annual_costs": [
-        2042609.4582448083,
+        2121133.109666771,
         61744.90472469732,
         261945.87326555292,
         17110.66834974033,
@@ -2433,14 +2433,14 @@
         0.5795363055579518
       ],
       "agent_prices": [],
-      "annual_externality": 3647044.8481218023,
+      "annual_externality": 3725568.4995437646,
       "depletion_ratio": 0.32,
       "ecosystem_health": 0.25085180796275575,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999739415723898,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3685.0392817491665,
+      "marginal_annual_externality": 3770.218762399163,
       "model_confidence": 0.5549999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2451,7 +2451,7 @@
     },
     {
       "agent_annual_costs": [
-        2458434.4194756565,
+        2552943.5517130755,
         72881.0433999897,
         310421.8184201555,
         20245.655927735148,
@@ -2499,14 +2499,14 @@
         0.6975156191353894
       ],
       "agent_prices": [],
-      "annual_externality": 4274380.424229338,
+      "annual_externality": 4368889.556466756,
       "depletion_ratio": 0.36,
       "ecosystem_health": 0.1608237711540168,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999582173599941,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2828.212880915962,
+      "marginal_annual_externality": 2901.866112532094,
       "model_confidence": 0.5399999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2517,7 +2517,7 @@
     },
     {
       "agent_annual_costs": [
-        2800799.0507010752,
+        2908469.642097043,
         81041.03880604345,
         346921.1712503387,
         21875.0,
@@ -2565,14 +2565,14 @@
         0.7946525107390265
       ],
       "agent_prices": [],
-      "annual_externality": 4770343.343065926,
+      "annual_externality": 4878013.9344618935,
       "depletion_ratio": 0.4,
       "ecosystem_health": 0.09812199065106542,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999362217745381,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2123.2856185100973,
+      "marginal_annual_externality": 2180.9391418537125,
       "model_confidence": 0.5249999999999999,
       "price_result": null,
       "resilience_zone": "red",
