@@ -627,3 +627,78 @@ def test_cli_site_depth_limit(capsys):
     assert "Give a depth shallower than 30 m" in capsys.readouterr().err
     assert main(["run", "posidonia", "--help"]) == 0
     assert "--depth-limit-m" in capsys.readouterr().out
+
+
+# ── Step 8h.2: beyond the deepest documented limit, valued with a warning ────
+
+
+def _documented_deepest(case):
+    return _meadow_entry(case)["production_function"]["parameters"]["depth.depth_limit"]["range"][1]
+
+
+@pytest.mark.parametrize("depth, limit, n", [
+    ((45.0, 45.0), None, 1), ((50.0, 50.0), None, 1), ((40.0, 50.0), None, 1),
+    ((12.0, 12.0), (45.0, 45.0), 1), ((12.0, 12.0), (13.0, 50.0), 1), ((46.0, 46.0), (50.0, 50.0), 2),
+])
+def test_beyond_the_deepest_documented_limit_is_valued_with_a_warning(depth, limit, n):
+    """The owner's decision (Step 8h.2): a project depth, or the deep end of
+    a band, or a site's depth limit given, beyond the deepest limit documented
+    (the case's depth limit range, 44 m for Posidonia) is still valued, every
+    agent > €0, with a warning that the value is an extrapolation."""
+    from gaia.production import deepest_documented
+
+    case = load_case("posidonia")
+    documented = _documented_deepest(case)
+    assert deepest_documented(_meadow_entry(case)["production_function"]) == documented == 44.0
+    at = case.with_project_depth(*depth, depth_limit=limit)
+    messages = at.depth_warnings()
+    assert len(messages) == n
+    assert all(f"{documented:g} m" in m and "extrapolation" in m and "> €0" in m for m in messages)
+    if depth[1] > documented:
+        assert f"{depth[1]:g} m" in messages[0] and "project depth" in messages[0]
+    if limit is not None and limit[1] > documented:
+        assert "--depth-limit-m" in messages[-1] and f"{limit[1]:g} m" in messages[-1]
+    for entry in at.service_ledger:
+        if entry["production_function"] is not None:
+            assert entry["value"] > 0.0
+    eco = at.build_ecosystem(site_intensity="none")
+    assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
+
+
+@pytest.mark.parametrize("depth, limit", [
+    (None, None), ((15.0, 15.0), None), ((43.0, 43.0), None), ((44.0, 44.0), None), ((30.0, 44.0), None),
+    ((10.0, 10.0), (15.0, 15.0)), ((12.0, 12.0), (13.0, 44.0)), ((30.0, 30.0), (44.0, 44.0)),
+])
+def test_within_the_documented_range_there_is_no_warning(depth, limit):
+    case = load_case("posidonia")
+    at = case if depth is None else case.with_project_depth(*depth, depth_limit=limit)
+    assert at.depth_warnings() == []
+
+
+def test_cli_warns_beyond_the_documented_limit_on_stderr_and_in_json(capsys):
+    from gaia.production import DepthExtrapolationWarning
+
+    argv = ["run", "posidonia", "--area-ha", "50", "--dive-intensity", "none", "--format", "json", "--summary-only"]
+    with pytest.warns(DepthExtrapolationWarning, match=r"The project depth 50 m lies beyond .* 44 m"):
+        assert main([*argv, "--depth-m", "50"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert len(out["warnings"]) == 1 and "extrapolation" in out["warnings"][0]
+    assert all(v > 0.0 for v in out["summary"]["agent_externality_eur_yr"].values())
+    # within the documented range: no warning, no "warnings" block
+    import warnings as _warnings
+
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", DepthExtrapolationWarning)
+        assert main([*argv, "--depth-m", "40"]) == 0
+    assert "warnings" not in json.loads(capsys.readouterr().out)
+
+
+def test_cli_prints_the_extrapolation_warning_to_stderr():
+    import subprocess
+
+    out = subprocess.run(
+        [sys.executable, "-m", "gaia", "run", "posidonia", "--dive-intensity", "none", "--depth-m", "12",
+         "--depth-limit-m", "48", "--summary-only", "--format", "json"],
+        capture_output=True, text=True, cwd=ROOT, check=True)
+    assert "Warning (DepthExtrapolationWarning): The site's depth limit given (--depth-limit-m, 48 m)" in out.stderr
+    assert json.loads(out.stdout)["warnings"]

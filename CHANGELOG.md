@@ -6,6 +6,9 @@
 
 The owner's decisions after #12, one commit per sub-step. The version is not bumped (the owner decides).
 
+#### Added
+- **A warning, never a rejection, beyond the deepest documented depth limit** (Posidonia; Step 8h.2). When the project depth (or the deep end of a band), or a site's depth limit given with `--depth-limit-m` (its deep end for a range), lies beyond the deepest depth limit documented for the producer (the upper end of the case's `depth_limit` range, 44 m for *P. oceanica*, read from the case file), Gaia still computes and values it (every agent > €0) and prints a `DepthExtrapolationWarning` on stderr; the JSON output carries the same messages in a top-level `warnings` list (absent otherwise). `gaia.production.deepest_documented`, `extrapolation_warnings`; `Case.depth_warnings`. No number changes; goldens unchanged.
+
 #### Changed
 - **The epiphytes anchored at their measured depth** (Posidonia; Step 8h.1). The Epiphytes & Algae agent's only annual production figure, 22.8 g C/m²/yr (1.9 mol C/m²/yr; Champenois & Borges 2021, Fig. 6, a budget of a meadow "at 10 m depth", from Bay 1984, re-read in the author copy; Bay's own paper not read, flagged), was measured at 10 m but used as the regional value at 15 m. Like the plant's measurements it now sits at its measured depth on the plant's depth curve (`reference_depth_m` 10), and the regional value is the curve at 15 m: 14.5 g C/m²/yr, **€52.33/ha/yr** (€82.20 before; €82.20 is now the value at 10 m). Range €4.36–320.62 (€8.58–428.28), > €0 at every depth (€0.95 at 43 m). Monte Carlo P5 / P50 / P95 €20 / €45 / €99 (€33 / €71 / €158). Ledger total €1,178.35 → €1,148.49/ha/yr; default run (50 ha) annual externality €58,918 → €57,424, PV €12.03 M → €11.89 M (P5 / P50 / P95 10.50 / 14.12 / 18.26 → 10.38 / 13.96 / 18.13 M). Goldens: Posidonia extract and restore.
 

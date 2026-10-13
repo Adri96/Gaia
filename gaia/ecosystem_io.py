@@ -1092,6 +1092,26 @@ class Case:
                 return dict(depth_block(spec), agent=entry["agent"], producer=spec["producer"])  # type: ignore[arg-type]
         return None
 
+    def depth_warnings(self) -> List[str]:
+        """Warnings (Step 8h.2) when the project's depth, or the site's depth
+        limit it gives, lies beyond the deepest depth limit documented for a
+        depth-dependent producer (gaia.production.extrapolation_warnings):
+        still valued, an extrapolation. Each message once; empty without a
+        project depth or within the documented range."""
+        from gaia.production import extrapolation_warnings
+
+        out: List[str] = []
+        entries = [e for e in self.service_ledger
+                   if e["production_function"] is not None and e["production_function"].get("depth") is not None]
+        # named after the first depth-dependent agent (for Posidonia the
+        # meadow): the producers that share its depth limit give the same message
+        who = f"the {entries[0]['agent']}" if entries else ""
+        for entry in entries:
+            for message in extrapolation_warnings(entry["production_function"], who=who):
+                if message not in out:
+                    out.append(message)
+        return out
+
     def with_project_depth(self, from_m: float, to_m: Optional[float] = None,
                            depth_limit: Optional[Tuple[float, float]] = None) -> "Case":
         """This case with its depth-dependent production functions taken at

@@ -311,6 +311,57 @@ def deepest_allowed(spec: Dict[str, Any]) -> Optional[float]:
     return _support(site)[1]
 
 
+class DepthExtrapolationWarning(UserWarning):
+    """A project depth, or a site's depth limit given, beyond the deepest
+    depth limit documented for the producer (Step 8h.2): still valued
+    (> €0), but the depth function is extrapolated there."""
+
+
+def deepest_documented(spec: Dict[str, Any]) -> Optional[float]:
+    """The deepest depth limit documented for a production function's
+    producer (m): the upper end of its regional ``depth_limit`` (its range,
+    else its value; for Posidonia 44 m, the deepest meadows); None without a
+    depth model."""
+    if spec.get("depth") is None:
+        return None
+    return _support(spec["parameters"][DEPTH_PREFIX + "depth_limit"])[1]
+
+
+def extrapolation_warnings(spec: Dict[str, Any], who: str = "") -> List[str]:
+    """Plain-words warnings (Step 8h.2) when the project's depth (its
+    deepest end for a band) or a site's depth limit given by the project
+    (``--depth-limit-m``, its deepest end for a range) lies beyond the
+    deepest depth limit documented (``deepest_documented``). Never a
+    rejection: the value is computed and positive, but it extrapolates the
+    depth function beyond the range its sources document. Empty otherwise
+    (and without a project depth)."""
+    depth = spec.get("depth")
+    if depth is None or depth["project"] is None:
+        return []
+    documented = deepest_documented(spec)
+    assert documented is not None
+    limit = spec["parameters"][DEPTH_PREFIX + "depth_limit"]
+    low, high = _support(limit)
+    span = f"{low:g}-{high:g} m" if low < high else f"{high:g} m"
+    who = who or f"the {spec['producer']}"
+    basis = f"the deepest depth limit documented for {who}, {documented:g} m (its documented depth limit: {span})"
+    tail = ("Gaia still values it (every agent > €0), but the depth function is extrapolated beyond "
+            "its documented range: treat the value as an extrapolation")
+    out = []
+    a, b, _ = depth["project"]["bands"][0]
+    deepest = max(z for _, z, _ in depth["project"]["bands"])
+    if deepest > documented:
+        given = f"{a:g} m" if a == b else f"{a:g}-{b:g} m (its deep end, {deepest:g} m)"
+        out.append(f"The project depth {given} lies beyond {basis}. {tail}.")
+    site = spec["parameters"].get(DEPTH_PREFIX + SITE_LIMIT)
+    if site is not None and site["status"] == USER_STATUS:
+        top = _support(site)[1]
+        if top > documented:
+            given = f"{top:g} m" if _support(site)[0] == top else f"{top:g} m at its deepest"
+            out.append(f"The site's depth limit given (--depth-limit-m, {given}) lies beyond {basis}. {tail}.")
+    return out
+
+
 def _support(p: Dict[str, Any]) -> Tuple[float, float]:
     """(lowest, highest) value a parameter can take: its range, raised to
     the value it is truncated below (Step 8g.7); its value without a range."""

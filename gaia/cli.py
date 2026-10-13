@@ -314,6 +314,9 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
     limit = block["hyperparameters"]["depth_limit"]
     margin = block["depth_limit_margin"]["value"]
     span = f", {limit['range'][0]:g}-{limit['range'][1]:g} m in the uncertainty analysis" if limit.get("range") else ""
+    deepest = (limit.get("range") or [limit["value"], limit["value"]])[1]
+    beyond = (f". Beyond {deepest:g} m, the deepest limit documented, the value is an extrapolation: "
+              f"still computed (> €0), with a warning")
     parser.add_argument(
         "--depth-m",
         dest="depth_m",
@@ -327,7 +330,7 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"about {table} {unit}. Default: {block['depth_label']}. Any depth is valued: production "
             f"reaches zero at the depth limit ({limit['value']:g} m{span}), and a meadow that lives at "
             f"the depth given proves its site's limit lies deeper, so the limit is taken at least "
-            f"{margin:g} m below the deepest depth given (never valued at €0)"
+            f"{margin:g} m below the deepest depth given (never valued at €0){beyond}"
         ).replace("%", "%%"),
     )
     parser.add_argument(
@@ -341,7 +344,7 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"production reaches zero), in metres: one depth (e.g. 15) or a range (e.g. 13-17). "
             f"Water clarity varies: meadows end at about 15 m in turbid water (Medes Islands) and "
             f"reach 44 m in the clearest. It replaces the regional limit ({limit['value']:g} m{span}); "
-            f"the depth given with --depth-m (default: {block['depth_label']}) must be shallower"
+            f"the depth given with --depth-m (default: {block['depth_label']}) must be shallower{beyond}"
         ).replace("%", "%%"),
     )
 
@@ -850,6 +853,12 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
     drop_pricing_in_restore_mode(args)
     try:
         case = apply_depth(case, args)
+        # Step 8h.2: beyond the deepest documented depth limit, valued with a warning
+        depth_warnings = case.depth_warnings() if hasattr(case, "depth_warnings") else []
+        for message in depth_warnings:
+            from gaia.production import DepthExtrapolationWarning
+
+            warnings.warn(message, DepthExtrapolationWarning, stacklevel=2)
         ecosystem = case.build_ecosystem(
             total_units=args.total_units,
             safe_threshold_ratio=args.threshold,
@@ -891,6 +900,8 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             "production_functions": case.production_functions() or None,
             "benchmarks": case.benchmark_block(result),
             "uncertainty": uncertainty_to_dict(uncertainty),
+            # Step 8h.2: the depth extrapolation warnings, also on stderr
+            "warnings": list(depth_warnings) or None,
         }
         output_result(text_report, result, args, notes=list(case.json_notes) or None,
                       extra=extra)
