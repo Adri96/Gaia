@@ -389,7 +389,10 @@ value = gross − their values). € 2014-2017/ha/yr:
   triangular for its decline rate and depth limit and for the
   shares, the transfer efficiency and the trophic level, uniform for the
   roots; the carbon contents, ×9 and the price fixed) and every draw
-  recomputes gross − net_of; the meadow's agent value is derived, not
+  recomputes gross − net_of (the €35 at its booked value, not coupled to
+  the sampled fisheries values: decided by the owner, Step 8g.3; the
+  transfer efficiency's range, 12.2–21.8%, also kept as decided); the
+  meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
   P5 114, P50 245, P95 511 (base 250, lowest draw 46); the epiphytes'
   chain P5 32, P50 72, P95 151 (base 82). The €3.83 floor above bounds

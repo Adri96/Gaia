@@ -1163,7 +1163,7 @@
           },
           "transfer_efficiency": {
             "distribution": "triangular",
-            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%; the Balearic upper end is kept (the owner's decision, Step 8g.3, PR #10 question 5)",
             "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "range": [
               0.122,
@@ -1597,7 +1597,7 @@
           },
           "transfer_efficiency": {
             "distribution": "triangular",
-            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%",
+            "distribution_basis": "Five model values (12.2-21.8%), right-skewed (mean 16.4%, median 14.3%): triangular with its mode at the median, mean 16.1%; the Balearic upper end is kept (the owner's decision, Step 8g.3, PR #10 question 5)",
             "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "range": [
               0.122,

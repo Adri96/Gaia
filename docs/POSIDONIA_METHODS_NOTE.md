@@ -214,7 +214,7 @@ Re-absorption is not modelled in the extraction view. On the footprint the conve
 Each recorded parameter that can change an extraction result is sampled:
 
 - **Distribution.** The parameter's documented range is used where the review gives one, otherwise a range set by its confidence (high ±10%, medium ±25%, low ×/÷2, placeholder ×/÷3). The distribution is triangular with the documented value as its mode, or uniform where the review sees no reason to prefer the documented value: threshold 0.1–0.3, steepness 6–18, keystone threshold 0.15–0.45.
-- **The meadow's food value, link by link (Step 8f.3).** It is not sampled as one value between the ends of its range: that range puts every link at its least (or most) favourable end at once, so a triangular draw over it reached down to €0.10/ha/yr before Step 8f.1. Each link of the production function is sampled from its own range and distribution, and each draw recomputes the chain, the gross value, the net value (gross − the €35 of commercial catch at its booked value) and the meadow's value:
+- **The meadow's food value, link by link (Step 8f.3).** It is not sampled as one value between the ends of its range: that range puts every link at its least (or most) favourable end at once, so a triangular draw over it reached down to €0.10/ha/yr before Step 8f.1. Each link of the production function is sampled from its own range and distribution, and each draw recomputes the chain, the gross value, the net value (gross − the €35 of commercial catch at its booked value: fixed, not coupled to the fisheries values sampled in the same draw, the owner's decision, Step 8g.3) and the meadow's value:
 
   | Link | Distribution | Why |
   |---|---|---|
@@ -222,7 +222,7 @@ Each recorded parameter that can change an extraction result is sampled:
   | depth function: decline rate 0.0803 (0.0428–0.1178)/m | triangular, mode at the fit | the fit ± 1.96 standard errors |
   | depth function: depth limit 40 (30–44) m | triangular, mode 40 m | between the Catalan lower limit and the deepest meadows |
   | share not buried, 74% (71–83.2%) | triangular, mode 74% | three point estimates, mode the Medes value |
-  | transfer efficiency, 14.3% (12.2–21.8%) | triangular, mode 14.3% | five model values, right-skewed (mean 16.4%) |
+  | transfer efficiency, 14.3% (12.2–21.8%) | triangular, mode 14.3% | five model values, right-skewed (mean 16.4%); the Balearic upper end kept (the owner's decision, Step 8g.3) |
   | trophic level of the catch, 3.1 (3.1–3.5) | triangular, mode 3.1 | 3.5 is an alternative choice of species |
   | sustainable catch share, 46.5% (42.5–50%) | triangular, mode 46.5% | F_MSY = 0.87 M between its proxy and F = M |
   | roots: NPP 17 (11–23) g DW; share decomposed 4% (2.7–5.3%) | uniform, uniform | two depths; two bounding assumptions |
