@@ -477,10 +477,16 @@ def _epiphyte_entry(case):
     return next(e for e in case.service_ledger if e["agent"] == EPIPHYTES and e["production_function"] is not None)
 
 
+EPIPHYTE_FOOD = 52.331919974541826
+"""The epiphytes' food at the regional mean depth, 15 m: their annual
+production measured at 10 m, anchored there on the plant's curve (Step 8h.1;
+82.20 before, the 10 m figure used at 15 m)."""
+
+
 def test_the_epiphytes_share_the_plants_light_field():
     """Their depth function borrows the plant's decline rate and depth
-    limit (identical, so the Monte Carlo draws them once) and is scaled from
-    the regional mean depth, where their value is unchanged."""
+    limit (identical, so the Monte Carlo draws them once) and is anchored at
+    the depth their production was measured, 10 m (Step 8h.1)."""
     case = load_case("posidonia")
     epi = _epiphyte_entry(case)["production_function"]
     meadow = _meadow_entry(case)["production_function"]
@@ -489,9 +495,27 @@ def test_the_epiphytes_share_the_plants_light_field():
         assert (a["value"], a["range"], a["distribution"]) == (b["value"], b["range"], b["distribution"])
         assert a["status"] == "inferred" and a["source"].startswith("Inferred")
     assert "doi:10.1023/A:1003557303904" in epi["parameters"]["depth.decline_rate"]["source"]
-    assert epi["depth"]["reference_depth_m"] == 15.0 and epi["depth"]["regional"]["bands"] == [(15.0, 15.0, 1.0)]
-    assert _epiphyte_entry(case)["value"] == pytest.approx(82.19699951512872, rel=1e-12)
-    assert central(epi)["npp_carbon"] == pytest.approx(22.8209, rel=1e-12)
+    assert epi["depth"]["reference_depth_m"] == 10.0 and epi["depth"]["regional"]["bands"] == [(15.0, 15.0, 1.0)]
+    assert _epiphyte_entry(case)["value"] == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
+    p, k, z_max, z_ref = _hyper(case)
+    measured = epi["parameters"]["depth.npp_at_reference_depth"]["value"]
+    assert measured == pytest.approx(22.8209, rel=1e-12)
+    assert central(epi)["npp_carbon"] == pytest.approx(
+        measured * depth_npp(15.0, p, k, z_max, z_ref) / depth_npp(10.0, p, k, z_max, z_ref), rel=1e-12)
+
+
+def test_the_epiphytes_measured_value_sits_at_its_measured_depth():
+    """Step 8h.1: at 10 m, where it was measured (Champenois & Borges 2021,
+    Fig. 6, from Bay 1984), the epiphytes' production is the measured figure,
+    and their food the 82.20 the case used at 15 m before; at 15 m it is the
+    plant's curve, about a third lower, and > 0 at every depth."""
+    case = load_case("posidonia")
+    at10 = _epiphyte_entry(case.with_project_depth(10.0, 10.0))
+    assert central(at10["production_function"])["npp_carbon"] == pytest.approx(22.8209, rel=1e-12)
+    assert at10["value"] == pytest.approx(82.19699951512872, rel=1e-9)
+    assert 50.0 < _epiphyte_entry(case)["value"] < 55.0
+    assert "10 m depth" in _epiphyte_entry(case)["production_function"]["parameters"][
+        "depth.npp_at_reference_depth"]["source"]
 
 
 @pytest.mark.parametrize("depth", GRID + [(50.0, 50.0)])
@@ -500,7 +524,7 @@ def test_the_epiphytes_food_scales_with_the_plants_production(depth):
     at = case.with_project_depth(*depth)
     scale = net_of_scale(_meadow_entry(at)["production_function"])
     epi = _epiphyte_entry(at)
-    assert epi["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    assert epi["value"] == pytest.approx(EPIPHYTE_FOOD * scale, rel=1e-9)
     assert epi["value"] > 0.0 and net_range(epi["production_function"])[0] > 0.0
     # the roots do not depend on depth
     roots = {k: v for k, v in central(_meadow_entry(at)["production_function"]).items() if k.startswith("roots.")}
@@ -537,7 +561,7 @@ def test_a_given_site_limit_replaces_the_regional_one():
     assert npp < depth_npp(10.0, p, k, z_max, z_ref)      # a turbid site produces less
     scale = npp / depth_npp(15.0, p, k, z_max, z_ref)
     assert net_of_scale(spec) == pytest.approx(scale, rel=1e-12)
-    assert _epiphyte_entry(at)["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    assert _epiphyte_entry(at)["value"] == pytest.approx(EPIPHYTE_FOOD * scale, rel=1e-9)
     eco = at.build_ecosystem(area_ha=50.0, site_intensity="none")
     assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
 

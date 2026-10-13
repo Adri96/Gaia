@@ -39,7 +39,7 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 82,727 | 9,045,382 | 10.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 101,902 | 7,553,545 | 20.2% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 58,918 | 12,028,698 | 98.9% | 52 of 63 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 57,424 | 11,888,939 | 98.9% | 52 of 63 |
 | Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 520,458 | 60,350,545 | 80.0% | 66 of 71 |
 <!-- END:example -->
 
@@ -348,9 +348,9 @@ The JSON output starts with the calibration status:
     "n_medium": 11
   },
   "summary": {
-    "annual_externality_eur_yr": 58917.67,
-    "pv_externality_eur_pv": 12028698.48,
-    "net_social_cost_eur_pv": 11903698.48
+    "annual_externality_eur_yr": 57424.41,
+    "pv_externality_eur_pv": 11888938.65,
+    "net_social_cost_eur_pv": 11763938.65
   }
 }
 ```
@@ -521,14 +521,14 @@ What the values rest on. The authoritative, per-parameter list is in each output
 
 - **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012, Table 2, read in full), minus climate regulation (carbon is valued separately): temperate forest Int$2,861/ha/yr, woodlands Int$1,581, converted to euros at Spain's 2007 PPP rate for household consumption (World Bank, 0.808165 €/Int$; Step 8g.6, `gaia/currency.py`, the same conversion as Amazon and every Int$ figure): €2,312 and €1,278/ha/yr, 2007 euros, no income adjustment. Global means, not site valuations: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
 - **Posidonia** (the v1.0 case, Step 8):
-  - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money, under any input, without double counting. €1,178/ha/yr in total:
+  - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money, under any input, without double counting. €1,148/ha/yr in total:
     - **the meadow's own value, from its primary production** (Step 8e.6): the fish and invertebrates its net primary production supports (the plant 107 and its roots 7 g C/m²/yr, of which only the part not buried in the matte feeds the food web, 81% of the shoots' production → 14.3% transfer per trophic level, the median of five Western Mediterranean food-web models → 131 kg/ha/yr produced → 61 kg/ha/yr sustainable catch × €5.11/kg = €312/ha/yr), net of the €35 of commercial catch already counted under fish and invertebrates: **€277/ha/yr on every hectare**, whatever the diving. The plant's production comes from a depth function (Step 8g.1): light fades exponentially with depth, so production does too, from 770 g dry weight/m²/yr at 5 m to 318 at 15 m (the regional mean depth, the default) and zero at its depth limit (about 40 m), fitted to six measurements in Catalonia and Ischia; `--depth-m` sets the affected meadow's depth. Every link is sourced in the case file; the report shows the chain on the meadow's line and compares the meadow's productivity with coral reefs, cropland and tropical forest;
-    - **the food the leaf epiphytes' own production supports** (Step 8g.2): 23 g C/m²/yr on the same chain, €82/ha/yr, owned by the Epiphytes & Algae agent (it was part of the meadow's chain; the total is unchanged); at a project depth it follows the plant's depth function (Step 8g.9: epiphytes need light), the roots do not;
+    - **the food the leaf epiphytes' own production supports** (Step 8g.2): 23 g C/m²/yr measured at 10 m, 14.5 at the regional 15 m on the plant's depth function (Step 8h.1), on the same chain, €52/ha/yr, owned by the Epiphytes & Algae agent (it was part of the meadow's chain); at a project depth it follows the plant's depth function (Step 8g.9: epiphytes need light), the roots do not;
     - coastal protection, water purification, fisheries and bioindicator/knowledge (Campagne et al. 2015), with fisheries split between fish and invertebrates and the bioindicator use split with the epiphytes;
     - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031, and how much it is dived with `--dive-intensity {none,low,medium,high}`, default the Costa Brava average), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
     - the non-use values of megafauna and seabirds (Börger et al. 2014, a benefit transfer).
 
-    Beach tourism and the meadow's own existence value are not valued (no willingness-to-pay study for the meadow was found), so the total is still a lower bound, ~4.5× below the Mediterranean seagrass meta-regression (converted to euros at PPP since Step 8g.6).
+    Beach tourism and the meadow's own existence value are not valued (no willingness-to-pay study for the meadow was found), so the total is still a lower bound, ~4.6× below the Mediterranean seagrass meta-regression (converted to euros at PPP since Step 8g.6).
   - **Small losses are priced linearly** (damage model `area_loss`): below the 20% threshold each hectare costs its average value; past it the remaining meadow degrades. The reference resource is the regional stock unless the user enters the meadow a project affects (`--area-ha`).
   - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95, and samples the meadow's production function link by link (its food value, net: P5 / P50 / P95 €118 / €254 / €528 per hectare a year; base €277), the depth function's three hyperparameters among its links; the epiphytes' chain shares its links to the catch, drawn once for both. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
