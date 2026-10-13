@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Step 8f — the meadow's production function, the owner's answers
+
+The owner's answers to the open questions 6–8 of #9, one commit each. The version is not bumped (the owner decides).
+
+#### Changed
+- **Transfer efficiency of the meadow's production function: a Western Mediterranean figure, 14.3%** (Posidonia; Step 8f.1). The owner asked for the temperate mean, 14.25% (Coll et al. 2008, doi:10.1371/journal.pone.0003881, verified in the full text, Methods (e): temperate and high-latitude models, n = 39, mean 14.25%, sd 5.95, median 13.7%; a temperate estimate, not a Mediterranean one), or a Mediterranean-specific figure if a verified one exists. One does, and is used: the median of the mean transfer efficiencies of five Western Mediterranean Ecopath models tabulated by Sánchez-Zulueta et al. (2023), *Front. Mar. Sci.* 10:1166674, doi:10.3389/fmars.2023.1166674 (full text, Table 3: Balearic Islands 21.8%, Gulf of Alicante 13.9%, South Catalan Sea 12.2%, north-western Mediterranean 14.3%, Gulf of Lions 19.7%), **14.3%**, which is the north-western Mediterranean model (Corrales et al. 2015), the one covering the Catalan coast; range 12.2–21.8% (status `derived`: a median of read values; the model papers are closed and were not read). It replaces the global median, 11.8%. The meadow's food value: gross **€284.74 → €426.29/ha/yr**, net of the €35 commercial catch **€249.74 → €391.29/ha/yr** (range over the links' ends €22.71–1,837.96 net). Ledger total €1,068.40 → **€1,209.95/ha/yr**. Default run (50 of 4,582 ha): annual externality **€53,420 → €60,497**, PV of externality **€11.51 M → €12.18 M** (P5 / P50 / P95 11.46 / 15.56 / 20.60). The meadow's food value, still sampled as one aggregate between the ends of its links, now leads the tornado (Step 8f.3 replaces that sampling). The three Posidonia goldens and the README example change.
+
 ### Step 8e — the owner's answers, third round
 
 The owner's answers to the five open questions of #8, one commit each. The version is not bumped (the owner decides).

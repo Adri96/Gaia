@@ -13,12 +13,12 @@
   ],
   "cli_summary_json": {
     "benchmarks": {
-      "annual_externality_eur_yr": 4421723.77,
+      "annual_externality_eur_yr": 4984125.56,
       "benchmarks": [
         {
-          "benchmark_central_over_gaia": 0.26,
+          "benchmark_central_over_gaia": 0.23,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1068.4,
+          "gaia_value_eur_per_ha_yr": 1209.95,
           "high": 284.83,
           "includes_carbon": false,
           "low": 276.83,
@@ -29,9 +29,9 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 0.33,
+          "benchmark_central_over_gaia": 0.29,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1226.99,
+          "gaia_value_eur_per_ha_yr": 1368.53,
           "high": 514.0,
           "includes_carbon": true,
           "low": 284.0,
@@ -42,9 +42,9 @@
           "unit": "\u20ac2014/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 7.1,
+          "benchmark_central_over_gaia": 6.37,
           "central": 8712.0,
-          "gaia_value_eur_per_ha_yr": 1226.99,
+          "gaia_value_eur_per_ha_yr": 1368.53,
           "high": 95767.0,
           "includes_carbon": true,
           "low": 1588.0,
@@ -55,9 +55,9 @@
           "unit": "Int$2020/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 23.57,
+          "benchmark_central_over_gaia": 21.13,
           "central": 28917.0,
-          "gaia_value_eur_per_ha_yr": 1226.99,
+          "gaia_value_eur_per_ha_yr": 1368.53,
           "high": 42063.0,
           "includes_carbon": true,
           "low": 26167.0,
@@ -68,9 +68,9 @@
           "unit": "Int$2007/ha/yr"
         },
         {
-          "benchmark_central_over_gaia": 23.57,
+          "benchmark_central_over_gaia": 21.13,
           "central": null,
-          "gaia_value_eur_per_ha_yr": 1226.99,
+          "gaia_value_eur_per_ha_yr": 1368.53,
           "high": 28916.0,
           "includes_carbon": true,
           "low": 28916.0,
@@ -82,12 +82,12 @@
         }
       ],
       "carbon_burial_eur_per_ha_yr": 158.58,
-      "full_damage_eur_per_ha_yr": 1068.4,
-      "full_damage_with_burial_eur_per_ha_yr": 1226.99,
+      "full_damage_eur_per_ha_yr": 1209.95,
+      "full_damage_with_burial_eur_per_ha_yr": 1368.53,
       "hectares_lost": 2000.0,
-      "linear_transfer_eur_yr": 2136806.11,
+      "linear_transfer_eur_yr": 2419899.31,
       "method": "Benchmarks in their own currency and price year, not converted: an order-of-magnitude comparison. Gaia's carbon release (a stock, released at once or over time) is not in any per-hectare yearly figure.",
-      "realised_loss_eur_per_ha_yr": 2210.86
+      "realised_loss_eur_per_ha_yr": 2492.06
     },
     "calibration": {
       "calibration_regime": "B",
@@ -172,14 +172,14 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8e.6; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 284.74 EUR/ha/yr gross (NPP 476 g DW = 160 g C/m2/yr \u2192 74% into the food web \u2192 11.8% transfer per trophic level to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 249.74 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (0.10-731.98 EUR/ha/yr), divided by the weight.",
+          "note": "Service ledger (Step 8e.6, 8f.1; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 426.29 EUR/ha/yr gross (NPP 476 g DW = 160 g C/m2/yr \u2192 74% into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 391.29 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (22.71-1,837.96 EUR/ha/yr), divided by the weight.",
           "range": [
-            0.9255068460192185,
-            6660.983728112955
+            206.6328289340391,
+            16725.46840754674
           ],
           "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); see production_function",
           "unit": "\u20ac/ha/yr",
-          "value": 2272.6292413276424
+          "value": 3560.7032839860512
         },
         {
           "confidence": "low",
@@ -758,8 +758,8 @@
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 2272.6292413276424,
-          "annual_value_eur_yr": 32043700.549719833,
+          "annual_value_eur_per_ha_yr": 3560.7032839860512,
+          "annual_value_eur_yr": 38484070.76301188,
           "dependency_weight": 0.10989010989010989,
           "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
           "is_keystone": true,
@@ -772,7 +772,7 @@
           "trophic_amplification": 1.0,
           "trophic_level": 0,
           "value_notes": [
-            "Primary production \u2192 food: NPP 160 g C/m\u00b2/yr (476 g dry weight) \u2192 1,184 kg C/ha/yr into the food web \u2192 120 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 55.7 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac285/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac250/ha/yr",
+            "Primary production \u2192 food: NPP 160 g C/m\u00b2/yr (476 g dry weight) \u2192 1,184 kg C/ha/yr into the food web \u2192 179 kg fish and invertebrates/ha/yr (trophic level 3.1) \u2192 83.4 kg/ha/yr sustainable catch \u00d7 \u20ac5.11/kg = \u20ac426/ha/yr; minus \u20ac35.0 already counted (commercial catch, under Fish Populations, Marine Invertebrates) = \u20ac391/ha/yr",
             "Carbon: 1,199 tCO2/ha held in the matte and 0.95 tCO2/ha/yr buried: valued once, in the carbon accounting, and not added to this line"
           ]
         },
@@ -1046,9 +1046,9 @@
         "scarcity_rate": 0.01
       },
       "horizon_years": 200,
-      "services_eur_pv": 413847454.76,
-      "substrate_unrecoverable_eur_pv": 26394.46,
-      "total_eur_pv": 674421448.65
+      "services_eur_pv": 466484970.09,
+      "substrate_unrecoverable_eur_pv": 29751.58,
+      "total_eur_pv": 727058963.98
     },
     "production_functions": {
       "Posidonia Meadow": {
@@ -1072,22 +1072,22 @@
           {
             "step": "consumer production at trophic level 3.1",
             "unit": "kg C/ha/yr",
-            "value": 13.308532367668068
+            "value": 19.924325518876955
           },
           {
             "step": "fish and invertebrates produced",
             "unit": "kg/ha/yr",
-            "value": 119.77679130901261
+            "value": 179.3189296698926
           },
           {
             "step": "sustainable catch",
             "unit": "kg/ha/yr",
-            "value": 55.725031250717095
+            "value": 83.42645391059175
           },
           {
             "step": "food value at first-sale prices",
             "unit": "\u20ac/ha/yr",
-            "value": 284.73947706897167
+            "value": 426.2860751633023
           }
         ],
         "comparison": {
@@ -1160,13 +1160,13 @@
           ],
           "unit": "g C/m\u00b2/yr"
         },
-        "gross_eur_per_ha_yr": 284.73947706897167,
+        "gross_eur_per_ha_yr": 426.2860751633023,
         "gross_range_eur_per_ha_yr": [
-          35.1017040490131,
-          766.9762338585665
+          57.706904278465835,
+          1872.9635612688726
         ],
         "model": "trophic_transfer",
-        "net_eur_per_ha_yr": 249.73947706897167,
+        "net_eur_per_ha_yr": 391.2860751633023,
         "net_of": [
           "Commercial fisheries: meadow-associated fish",
           "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
@@ -1233,15 +1233,15 @@
             "value": 0.4652406417112299
           },
           "transfer_efficiency": {
-            "label": "trophic transfer efficiency per level",
+            "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
             "range": [
-              0.1,
-              0.1425
+              0.122,
+              0.218
             ],
-            "source": "Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read): transfer efficiencies of a compilation of ecosystem models, median 11.8% (mean 11.92%, 91 models); temperate and high-latitude models mean 14.25% (39 models); 10% the nominal value of Pauly & Christensen (1995). No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
-            "status": "verified",
+            "source": "S\u00e1nchez-Zulueta, Valls, Guijarro, \u00c1ngeles Torres, \u00c1ngeles Zapata, Coll, Corrales, Andonegi, D\u00edaz-Vald\u00e9s, Massut\u00ed & Ordines (2023), Frontiers in Marine Science 10:1166674, doi:10.3389/fmars.2023.1166674 (full text read), Table 3, mean transfer efficiency of five Western Mediterranean Ecopath models: Balearic Islands 21.80%, Gulf of Alicante 13.9% (Garc\u00eda-Rodr\u00edguez et al. 2021), South Catalan Sea 12.2% (Coll et al. 2006, doi:10.1016/j.jmarsys.2005.09.001), north-western Mediterranean 14.3% (Corrales et al. 2015, doi:10.1016/j.jmarsys.2015.03.006, the model that covers the Catalan coast), Gulf of Lions 19.7% (Banaru et al. 2013); value = their median, 14.3% (= the north-western Mediterranean model), range = their minimum and maximum (12.2-21.8%). The original model papers were not read (closed access); their values are as tabulated in the 2023 comparison. Cross-check: Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read), Methods (e) 'Data sources': temperate and high-latitude ecosystem models mean 14.25% (sd 5.95, median 13.7, n = 39); all 91 models median 11.8%. No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
+            "status": "derived",
             "unit": "fraction per trophic level",
-            "value": 0.118
+            "value": 0.143
           },
           "wet_weight_per_carbon": {
             "label": "wet weight of fish per unit of carbon",
@@ -1282,7 +1282,7 @@
         "Human Communities": 6419.66,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 2798198.58,
+        "Posidonia Meadow": 3360600.38,
         "Seabirds": 150921.33,
         "Water Quality": 238395.75
       },
@@ -1294,19 +1294,19 @@
         "Human Communities": 7187.9,
         "Marine Invertebrates": 21875.0,
         "Marine Megafauna": 150921.33,
-        "Posidonia Meadow": 2798198.58,
+        "Posidonia Meadow": 3360600.38,
         "Seabirds": 150921.33,
         "Water Quality": 259792.53
       },
-      "annual_externality_eur_yr": 4421723.77,
+      "annual_externality_eur_yr": 4984125.56,
       "discount_is_default": false,
       "final_ecosystem_health": 0.098122,
-      "net_social_cost_eur_pv": 669421448.65,
+      "net_social_cost_eur_pv": 722058963.98,
       "num_steps": 2000,
-      "pv_externality_eur_pv": 674421448.65,
-      "pv_externality_h100_eur_pv": 515394018.24,
-      "pv_externality_h200_eur_pv": 674421448.65,
-      "pv_externality_h50_eur_pv": 395203236.76,
+      "pv_externality_eur_pv": 727058963.98,
+      "pv_externality_h100_eur_pv": 549846824.83,
+      "pv_externality_h200_eur_pv": 727058963.98,
+      "pv_externality_h50_eur_pv": 416188180.83,
       "revenue_eur": 5000000.0,
       "total_units_extracted": 2000
     }
@@ -1319,7 +1319,7 @@
     "Human Communities": 7187.903085597239,
     "Marine Invertebrates": 21875.0,
     "Marine Megafauna": 150921.33075300753,
-    "Posidonia Meadow": 2798198.5818905924,
+    "Posidonia Meadow": 3360600.3797017313,
     "Seabirds": 150921.3307530075,
     "Water Quality": 259792.52557007154
   },
@@ -1337,7 +1337,7 @@
       768.2460166983874
     ],
     "agent_direct_annual_costs": [
-      2798198.5818905924,
+      3360600.3797017313,
       75282.86943843408,
       851.4134043632428,
       21875.0,
@@ -1360,7 +1360,7 @@
       1.0,
       1.0
     ],
-    "annual_externality": 4421723.766973349,
+    "annual_externality": 4984125.564784488,
     "discount": {
       "carbon_price_current": 166.3456487480301,
       "carbon_price_growth": 0.013,
@@ -1391,19 +1391,19 @@
       "carbon_price": 166.3456487480301,
       "carbon_release": 222493638.07241184,
       "carbon_released_t": 1510740.0,
-      "direct": 413847454.7627667,
+      "direct": 466484970.09481543,
       "horizon": 200,
-      "substrate_unrecoverable": 26394.456276687288,
-      "total": 674421448.6480169
+      "substrate_unrecoverable": 29751.583597288154,
+      "total": 727058963.9800656
     },
     "final_ecosystem_health": 0.09812199065106542,
     "final_model_confidence": 0.5249999999999999,
-    "net_social_cost": 669421448.6480169,
-    "pv_externality": 674421448.6480169,
+    "net_social_cost": 722058963.9800656,
+    "pv_externality": 727058963.9800656,
     "pv_externality_by_horizon": {
-      "100": 515394018.2443041,
-      "200": 674421448.6480169,
-      "50": 395203236.7578032
+      "100": 549846824.8342541,
+      "200": 727058963.9800656,
+      "50": 416188180.8274627
     },
     "revenue": 5000000.0,
     "substrate_recovery_years": 0.0800800200002949,
@@ -1421,7 +1421,7 @@
   },
   "step_sums": {
     "agent_annual_costs": [
-      2147205169.909083,
+      2578765694.469971,
       62869368.066675894,
       698203.0015322072,
       16745823.88595211,
@@ -1468,12 +1468,12 @@
       609.778730638634,
       609.778730638634
     ],
-    "annual_externality": 3461138725.476187,
+    "annual_externality": 3892699250.0370727,
     "depletion_ratio": 400.2,
     "ecosystem_health": 1272.9854959325012,
     "effective_k": 9998000.0,
     "k_fraction": 1999.9745031208731,
-    "marginal_annual_externality": 4421723.766973349,
+    "marginal_annual_externality": 4984125.564784488,
     "model_confidence": 1349.812500000001,
     "revenue": 5002500000.0,
     "step": 2001000.0,
@@ -1483,7 +1483,7 @@
   "steps": [
     {
       "agent_annual_costs": [
-        704.2571549388974,
+        845.8037530332281,
         18.947368421052627,
         0.2142857142857143,
         4.375,
@@ -1531,14 +1531,14 @@
         0.0002
       ],
       "agent_prices": [],
-      "annual_externality": 1068.403055661153,
+      "annual_externality": 1209.9496537554837,
       "depletion_ratio": 0.0002,
       "ecosystem_health": 0.9998,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999999999998,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1068.403055661153,
+      "marginal_annual_externality": 1209.9496537554837,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1549,7 +1549,7 @@
     },
     {
       "agent_annual_costs": [
-        141555.68814271837,
+        170006.55435967885,
         3808.421052631578,
         43.07142857142857,
         879.375,
@@ -1597,14 +1597,14 @@
         0.0402
       ],
       "agent_prices": [],
-      "annual_externality": 214749.01418789173,
+      "annual_externality": 243199.8804048522,
       "depletion_ratio": 0.0402,
       "ecosystem_health": 0.9598,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999999934657844,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1068.403055661125,
+      "marginal_annual_externality": 1209.949653755466,
       "model_confidence": 0.9,
       "price_result": null,
       "resilience_zone": "green",
@@ -1615,7 +1615,7 @@
     },
     {
       "agent_annual_costs": [
-        282407.1191304978,
+        339167.3049663244,
         7597.894736842103,
         85.92857142857142,
         1754.3749999999998,
@@ -1663,14 +1663,14 @@
         0.0802
       ],
       "agent_prices": [],
-      "annual_externality": 428429.62532012234,
+      "annual_externality": 485189.81115594896,
       "depletion_ratio": 0.0802,
       "ecosystem_health": 0.9198,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999998969987456,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1068.403055661125,
+      "marginal_annual_externality": 1209.949653755466,
       "model_confidence": 0.8395999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1681,7 +1681,7 @@
     },
     {
       "agent_annual_costs": [
-        423258.5501182774,
+        508328.05557297013,
         11387.36842105263,
         128.78571428571428,
         2629.375,
@@ -1729,14 +1729,14 @@
         0.1202
       ],
       "agent_prices": [],
-      "annual_externality": 642110.236452353,
+      "annual_externality": 727179.7419070458,
       "depletion_ratio": 0.1202,
       "ecosystem_health": 0.8798,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999994811320924,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1068.4030556612415,
+      "marginal_annual_externality": 1209.9496537556406,
       "model_confidence": 0.7595999999999999,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1747,7 +1747,7 @@
     },
     {
       "agent_annual_costs": [
-        564109.9811060568,
+        677488.8061796158,
         15176.842105263157,
         171.64285714285714,
         3504.375,
@@ -1795,14 +1795,14 @@
         0.1602
       ],
       "agent_prices": [],
-      "annual_externality": 855790.8475845834,
+      "annual_externality": 969169.6726581424,
       "depletion_ratio": 0.1602,
       "ecosystem_health": 0.8398,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999983640720822,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1068.4030556610087,
+      "marginal_annual_externality": 1209.9496537554078,
       "model_confidence": 0.6795999999999998,
       "price_result": null,
       "resilience_zone": "yellow",
@@ -1813,7 +1813,7 @@
     },
     {
       "agent_annual_costs": [
-        706257.5179851404,
+        848206.1632325085,
         19016.870786190902,
         215.03233421865625,
         4395.933502961149,
@@ -1861,14 +1861,14 @@
         0.2005680774507478
       ],
       "agent_prices": [],
-      "annual_externality": 1072141.7594198962,
+      "annual_externality": 1214090.4046672643,
       "depletion_ratio": 0.2002,
       "ecosystem_health": 0.7990538419015809,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999960113238897,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3738.703758742893,
+      "marginal_annual_externality": 4140.7509117804,
       "model_confidence": 0.599925,
       "price_result": null,
       "resilience_zone": "red",
@@ -1879,7 +1879,7 @@
     },
     {
       "agent_annual_costs": [
-        1127680.4901749648,
+        1354329.7134057353,
         33398.99667885018,
         370.0367081338263,
         8726.580705114413,
@@ -1927,14 +1927,14 @@
         0.32024679686010554
       ],
       "agent_prices": [],
-      "annual_externality": 1849825.17883992,
+      "annual_externality": 2076474.4020706906,
       "depletion_ratio": 0.24,
       "ecosystem_health": 0.6046203484619533,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999917622486862,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4034.0353137115017,
+      "marginal_annual_externality": 4480.359345433535,
       "model_confidence": 0.585,
       "price_result": null,
       "resilience_zone": "red",
@@ -1945,7 +1945,7 @@
     },
     {
       "agent_annual_costs": [
-        1584230.7751428694,
+        1902640.712827171,
         48156.1822291934,
         530.7153860996159,
         13135.332837197873,
@@ -1993,14 +1993,14 @@
         0.4499012225954084
       ],
       "agent_prices": [],
-      "annual_externality": 2659921.648655063,
+      "annual_externality": 2978331.5863393643,
       "depletion_ratio": 0.28,
       "ecosystem_health": 0.410180583244278,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.999984734338123,
       "keystone_triggered": [],
-      "marginal_annual_externality": 4001.4017616370693,
+      "marginal_annual_externality": 4466.877424168866,
       "model_confidence": 0.57,
       "price_result": null,
       "resilience_zone": "red",
@@ -2011,7 +2011,7 @@
     },
     {
       "agent_annual_costs": [
-        2040712.9486802132,
+        2450869.911299636,
         61744.90472469732,
         681.111311401678,
         17110.66834974033,
@@ -2059,14 +2059,14 @@
         0.5795363055579518
       ],
       "agent_prices": [],
-      "annual_externality": 3383883.576603056,
+      "annual_externality": 3794040.539222479,
       "depletion_ratio": 0.32,
       "ecosystem_health": 0.25085180796275575,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999739415723898,
       "keystone_triggered": [],
-      "marginal_annual_externality": 3414.1571084009483,
+      "marginal_annual_externality": 3859.079834589269,
       "model_confidence": 0.5549999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2077,7 +2077,7 @@
     },
     {
       "agent_annual_costs": [
-        2456151.8272886644,
+        2949806.6423200406,
         72881.0433999897,
         807.158399542727,
         20245.655927735148,
@@ -2125,14 +2125,14 @@
         0.6975156191353894
       ],
       "agent_prices": [],
-      "annual_externality": 3962483.172021733,
+      "annual_externality": 4456137.98705311,
       "depletion_ratio": 0.36,
       "ecosystem_health": 0.1608237711540168,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999582173599941,
       "keystone_triggered": [],
-      "marginal_annual_externality": 2613.6875054971315,
+      "marginal_annual_externality": 2998.4045330425724,
       "model_confidence": 0.5399999999999999,
       "price_result": null,
       "resilience_zone": "red",
@@ -2143,7 +2143,7 @@
     },
     {
       "agent_annual_costs": [
-        2798198.5818905924,
+        3360600.3797017313,
         81041.03880604345,
         902.0639682449918,
         21875.0,
@@ -2191,14 +2191,14 @@
         0.7946525107390265
       ],
       "agent_prices": [],
-      "annual_externality": 4421723.766973349,
+      "annual_externality": 4984125.564784488,
       "depletion_ratio": 0.4,
       "ecosystem_health": 0.09812199065106542,
       "effective_k": 4999,
       "irreversibility_warning": false,
       "k_fraction": 0.9999362217745381,
       "keystone_triggered": [],
-      "marginal_annual_externality": 1969.6669415337965,
+      "marginal_annual_externality": 2270.811801591888,
       "model_confidence": 0.5249999999999999,
       "price_result": null,
       "resilience_zone": "red",

@@ -27,9 +27,10 @@ THRESHOLD_UNITS = 1_000      # 20% of 5,000 ha
 REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 
 # Step 8e.6: the meadow's own value on every hectare, the food its primary
-# production supports net of the commercial catch already counted (35)
-MEADOW_FOOD_NET = 249.73947706897167
-LEDGER_TOTAL = 1068.403055661153    # €/ha/yr of the reference meadow
+# production supports net of the commercial catch already counted (35);
+# Step 8f.1: at the Western Mediterranean transfer efficiency, 14.3%
+MEADOW_FOOD_NET = 391.2860751633023
+LEDGER_TOTAL = 1209.9496537554837    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -941,7 +942,7 @@ def test_meadow_food_value_is_the_primary_production_chain():
     case = load_case("posidonia")
     entry = next(e for e in case.service_ledger if e["production_function"] is not None)
     assert entry["agent"] == "Posidonia Meadow" and not entry["site_restricted"]
-    gross = (476.0 * 0.336 * 10 * 0.74 * 0.118 ** (3.1 - 1) * 9
+    gross = (476.0 * 0.336 * 10 * 0.74 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
     counted = {e["service"]: e["value"] for e in case.service_ledger if e["service"] in entry["net_of"]}
@@ -957,8 +958,12 @@ def test_meadow_food_value_is_the_primary_production_chain():
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
     assert params["wet_weight_per_carbon"]["status"] == "secondary"
-    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "transfer_efficiency", "first_sale_price"):
+    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "first_sale_price"):
         assert params[name]["status"] == "verified"
+    # Step 8f.1: the median of five Western Mediterranean food-web models
+    te = params["transfer_efficiency"]
+    assert (te["value"], te["range"], te["status"]) == (0.143, (0.122, 0.218), "derived")
+    assert "doi:10.3389/fmars.2023.1166674" in te["source"] and "14.25%" in te["source"]
     for p in params.values():
         assert "doi:" in p["source"] or "ge3m-4jgm" in p["source"]
 
@@ -1023,7 +1028,7 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     text = case.report(result)
     meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
     flat = " ".join(meadow_line.split())
-    assert "NPP 160 g C/m²/yr" in flat and "€285/ha/yr" in flat and "= €250/ha/yr" in flat
+    assert "NPP 160 g C/m²/yr" in flat and "€426/ha/yr" in flat and "= €391/ha/yr" in flat
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's

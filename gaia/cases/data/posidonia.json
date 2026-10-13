@@ -75,14 +75,14 @@
       "description": "The meadow itself, keystone foundation species and one of the most productive habitats of the sea; its own final services: the food its primary production supports (production function, net of the commercial catch booked to fish and invertebrates), on every hectare, and the underwater amenity divers enjoy (Zunino et al. 2020), only where the meadow is within reach of dive sites",
       "dependency_weight": 0.10989010989010989,
       "annual_value_per_ha": {
-        "value": 2272.6292413276424,
+        "value": 3560.7032839860512,
         "unit": "€/ha/yr",
         "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); see production_function",
         "confidence": "low",
-        "note": "Service ledger (Step 8e.6; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 284.74 EUR/ha/yr gross (NPP 476 g DW = 160 g C/m2/yr → 74% into the food web → 11.8% transfer per trophic level to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 249.74 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (0.10-731.98 EUR/ha/yr), divided by the weight.",
+        "note": "Service ledger (Step 8e.6, 8f.1; docs/POSIDONIA_LITERATURE_REVIEW.md §2b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 426.29 EUR/ha/yr gross (NPP 476 g DW = 160 g C/m2/yr → 74% into the food web → 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 → x9 wet weight → 46.5% sustainable catch → EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 391.29 EUR/ha/yr. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles). Range: the chain at every link's least and most favourable end (22.71-1,837.96 EUR/ha/yr), divided by the weight.",
         "range": [
-          0.9255068460192185,
-          6660.983728112955
+          206.6328289340391,
+          16725.46840754674
         ]
       },
       "trophic_level": 0,
@@ -594,7 +594,7 @@
     "anchors": [
       {
         "agent_name": "Posidonia Meadow",
-        "anchor_value": 29364847.183763254,
+        "anchor_value": 35266802.44722409,
         "source": "Service ledger (Steps 8c.2, 8d.4, 8e.6): the meadow's food production supported by its primary production (production function, net of the commercial catch counted under fish and invertebrates) on every hectare, plus its recreational diving amenity, Zunino et al. (2020), Frontiers in Marine Science 6:823, doi:10.3389/fmars.2019.00823 (EUR 34.71 per dive) x ~60,000 Medes dives/yr / 142.35 ha near dive sites x the regional share 142.35/4,582, per hectare / dependency weight x 4,582 ha; the diving part scaled with --dive-site-share and --dive-intensity",
         "confidence": "low",
         "description": "Required: the meadow is the only agent with no incoming edge, so no other anchor can reach it. A production-function value (market prices of the food supported) plus a stated-preference value: no market price exists for the meadow itself"
@@ -846,8 +846,8 @@
     {
       "service": "Food from primary production: fish and invertebrates the meadow's production supports, net of the commercial catch already counted",
       "agent": "Posidonia Meadow",
-      "value": 249.73947706897167,
-      "gross": 284.73947706897167,
+      "value": 391.2860751633023,
+      "gross": 426.2860751633023,
       "net_of": [
         "Commercial fisheries: meadow-associated fish",
         "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
@@ -857,7 +857,7 @@
       "method": "production function: net primary production → food web (not buried) → trophic transfer to the catch's trophic level → sustainable catch → first-sale price",
       "source": "Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); see production_function",
       "transfer": "Mediterranean (Ischia, Medes Islands, Port-Cros) and global trophic parameters to Catalonia; Catalan first-sale prices, EUR 2014",
-      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Conservative: roots and epiphytes are left out. Range over the links' ranges: gross 35.10-766.98, net 0.10-731.98 EUR/ha/yr (the low end, every link at its least favourable value, is about the commercial catch already counted).",
+      "note": "Step 8e.6 (owner's instruction: where there is no willingness-to-pay evidence, value what people consume). The gross value is every fish and invertebrate the meadow's own production can support at a sustainable catch, wherever and by whomever it is caught (commercial, artisanal, recreational, after the fish leave the meadow); the prey in between are the trophic steps, not valued again. It is booked net of the commercial fisheries already in the ledger (Fish Populations, Marine Invertebrates: 35 EUR/ha/yr, Campagne et al. 2015), which keep their entries. Not counted twice with carbon: the chain uses only the production that is not buried, gaia.carbon values the buried part. Coastal protection values the leaves' physical role (banquettes), not their food. Conservative: roots and epiphytes are left out. Range over the links' ranges: gross 57.71-1,872.96, net 22.71-1,837.96 EUR/ha/yr. Transfer efficiency since Step 8f.1: 14.3%, the median of five Western Mediterranean food-web models (11.8%, the global median, before).",
       "production_function": {
         "model": "trophic_transfer",
         "parameters": {
@@ -891,15 +891,15 @@
             "status": "verified"
           },
           "transfer_efficiency": {
-            "value": 0.118,
+            "value": 0.143,
             "range": [
-              0.1,
-              0.1425
+              0.122,
+              0.218
             ],
             "unit": "fraction per trophic level",
-            "label": "trophic transfer efficiency per level",
-            "source": "Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read): transfer efficiencies of a compilation of ecosystem models, median 11.8% (mean 11.92%, 91 models); temperate and high-latitude models mean 14.25% (39 models); 10% the nominal value of Pauly & Christensen (1995). No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
-            "status": "verified"
+            "label": "trophic transfer efficiency per level (Western Mediterranean food-web models)",
+            "source": "Sánchez-Zulueta, Valls, Guijarro, Ángeles Torres, Ángeles Zapata, Coll, Corrales, Andonegi, Díaz-Valdés, Massutí & Ordines (2023), Frontiers in Marine Science 10:1166674, doi:10.3389/fmars.2023.1166674 (full text read), Table 3, mean transfer efficiency of five Western Mediterranean Ecopath models: Balearic Islands 21.80%, Gulf of Alicante 13.9% (García-Rodríguez et al. 2021), South Catalan Sea 12.2% (Coll et al. 2006, doi:10.1016/j.jmarsys.2005.09.001), north-western Mediterranean 14.3% (Corrales et al. 2015, doi:10.1016/j.jmarsys.2015.03.006, the model that covers the Catalan coast), Gulf of Lions 19.7% (Banaru et al. 2013); value = their median, 14.3% (= the north-western Mediterranean model), range = their minimum and maximum (12.2-21.8%). The original model papers were not read (closed access); their values are as tabulated in the 2023 comparison. Cross-check: Coll, Libralato, Tudela, Palomera & Pranovi (2008), PLoS ONE 3:e3881, doi:10.1371/journal.pone.0003881 (full text read), Methods (e) 'Data sources': temperate and high-latitude ecosystem models mean 14.25% (sd 5.95, median 13.7, n = 39); all 91 models median 11.8%. No P. oceanica-specific Ecopath efficiency could be read (Valls et al. 2012 and Prato et al. 2014, Port-Cros, behind bot checks)",
+            "status": "derived"
           },
           "catch_trophic_level": {
             "value": 3.1,

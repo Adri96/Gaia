@@ -74,8 +74,15 @@ def test_what_is_sampled(posidonia_mc):
     assert "discount.rate_schedule[year 0]" in reasons["normative (reported as a sensitivity)"]
 
 
-def test_tornado_ranks_carbon_release_first(posidonia_mc):
-    assert posidonia_mc.tornado[0]["name"] == "carbon.soil_release_fraction"
+# Step 8f.1: the meadow's food value, sampled as one aggregate between the
+# ends of every link of its production function at once, now spans the
+# widest range and leads the ranking, ahead of the carbon release
+TOP_DRIVER = "agent[Posidonia Meadow].annual_value_per_ha"
+
+
+def test_tornado_ranks_the_top_driver_first(posidonia_mc):
+    assert posidonia_mc.tornado[0]["name"] == TOP_DRIVER
+    assert "carbon.soil_release_fraction" in [r["name"] for r in posidonia_mc.tornado[:3]]
     swings = [r["swing"] for r in posidonia_mc.tornado]
     assert swings == sorted(swings, reverse=True)
 
@@ -142,7 +149,7 @@ def test_json_block(posidonia_mc):
     d = uncertainty_to_dict(posidonia_mc)
     assert d["draws"] == 200 and d["seed"] == 7
     assert set(d["headlines"]["net_social_cost"]) == {"unit", "base", "p5", "p50", "p95", "mean"}
-    assert d["tornado_net_social_cost"][0]["name"] == "carbon.soil_release_fraction"
+    assert d["tornado_net_social_cost"][0]["name"] == TOP_DRIVER
     assert uncertainty_to_dict(None) is None
     json.dumps(d, allow_nan=False)
 
