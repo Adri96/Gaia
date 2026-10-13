@@ -142,3 +142,76 @@ def test_the_price_is_fixed_in_every_monte_carlo_draw():
     names = {s.name for s in u.sampled}
     assert not any(n.endswith("first_sale_price") for n in names)
     assert all(b["draws_at_or_below_zero"] == 0 for b in u.production.values())
+
+
+# ── Steps 8i.2 / 8i.3: one anchor; the fisheries values' Sète price basis ────
+
+FISHERIES = ("Fish Populations", "Marine Invertebrates")
+FISH_SERVICE = "Commercial fisheries: meadow-associated fish"
+INVERTEBRATE_SERVICE = "Commercial fisheries: meadow-associated invertebrates (sea urchin, cuttlefish)"
+VALID_DEPTHS = DEPTHS + [((41.0, 41.0), None), ((42.5, 42.5), None), ((43.0, 43.0), None), ((44.0, 44.0), None),
+                         ((0.0, 0.0), None), ((0.0, 44.0), None), ((43.0, 43.0), (44.0, 44.0))]
+
+
+def test_the_white_fish_price_is_the_one_anchor():
+    """Step 8i.2 (the owner's decision): no catch-weighted price; the
+    white-fish price is the only market price declared."""
+    doc = load_case("posidonia").document
+    assert set(doc["market_prices"]) == {ANCHOR}
+    assert "8i.2" in doc["market_prices"][ANCHOR]["note"]
+
+
+def test_the_sete_price_basis_is_flagged_in_the_case_file():
+    """Step 8i.3: Campagne et al. give the quantity (242,551 kg over 27,220
+    ha) but no price per species; the values stay at Sète prices and the
+    mismatch with the Catalan anchor is flagged on both fisheries entries
+    and agents."""
+    case = load_case("posidonia")
+    doc = case.document
+    entries = {e["agent"]: e for e in doc["service_ledger"] if e["agent"] in FISHERIES}
+    agents = {a["name"]: a for a in doc["agents"] if a["name"] in FISHERIES}
+    for name in FISHERIES:
+        for note in (entries[name]["note"], agents[name]["annual_value_per_ha"]["note"]):
+            assert "PRICE BASIS FLAGGED (Step 8i.3" in note and "Sète" in note and "242,551 kg" in note
+    ledger = {e["service"]: e["value"] for e in case.service_ledger}
+    assert ledger[FISH_SERVICE] + ledger[INVERTEBRATE_SERVICE] == pytest.approx(35.0, rel=1e-12)
+
+
+def test_catalan_repricing_would_bring_the_meadow_to_zero_and_is_rejected():
+    """Why Step 8i.3 did not re-price: Campagne et al.'s 242,551 kg over
+    27,220 ha (§3.2.4) at the Catalan 2014 first-sale prices by group
+    (ge3m-4jgm: white fish, cephalopods, other invertebrates; kg split by
+    species count, 14/16, 1/16, 1/16) exceed the meadow chain's lowest gross
+    value, so the meadow net of them could reach €0: parsing rejects it
+    (the validation is not weakened)."""
+    kg_ha = 242_551 / 27_220
+    white = 41_056_589 / 8_034_993
+    cephalopods = 13_650_607 / 2_709_845
+    other_invertebrates = 337_578 / 14_211
+    fish = kg_ha * 14 / 16 * white
+    invertebrates = kg_ha / 16 * (cephalopods + other_invertebrates)
+    assert (round(fish, 2), round(invertebrates, 2)) == (39.84, 16.03)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    assert doc["market_prices"][ANCHOR]["value"] == pytest.approx(white, rel=1e-12)
+    for entry in doc["service_ledger"]:
+        if entry["service"] == FISH_SERVICE:
+            entry["value"] = fish
+        elif entry["service"] == INVERTEBRATE_SERVICE:
+            entry["value"] = invertebrates
+    meadow = next(e for e in doc["service_ledger"] if e.get("net_of"))
+    meadow["value"] = meadow["gross"] - fish - invertebrates
+    with pytest.raises(ValueError, match="could bring the agent to €0"):
+        case_from_dict(doc)
+
+
+@pytest.mark.parametrize("depth", VALID_DEPTHS)
+def test_every_agent_is_positive_at_every_valid_depth(depth):
+    """Every agent, the fisheries agents and the meadow net of their catch
+    included, carries a positive value at every valid depth and site limit
+    (Core Valuation Principles (b))."""
+    at = _at(load_case("posidonia"), depth)
+    assert all(e["value"] > 0.0 for e in at.service_ledger)
+    eco = at.build_ecosystem(site_intensity="none")
+    values = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
+    assert all(v > 0.0 for v in values.values())
+    assert all(values[name] > 0.0 for name in FISHERIES)

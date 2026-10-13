@@ -317,7 +317,11 @@ value = gross − their values). € 2014-2017/ha/yr:
 - Water Quality: water purification 60 (Campagne et al. 2015).
 - Fish Populations and Marine Invertebrates: Campagne et al.'s fisheries
   contribution (35) split by species count, 14/16 fish (30.625) and 2/16
-  invertebrates, sea urchin and cuttlefish (4.375).
+  invertebrates, sea urchin and cuttlefish (4.375). Their price basis is
+  flagged (Step 8i.3): 2010 Sète auction prices (€3.69/kg implied), not
+  the Catalan first-sale prices of the meadow's chain; at Catalan prices
+  the catch would be €55.88/ha/yr, above the meadow chain's lowest gross
+  value (€38.83), so it is not re-priced (the meadow would reach €0).
 - Human Communities and Epiphytes & Algae: the bioindicator use (1.5)
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
