@@ -704,7 +704,8 @@ def _parse_site_limit(raw: Any, path: str, deepest: float) -> Dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError(f"{path}.depth_limit: expected an object")
     rest = {k: v for k, v in raw.items() if k not in ("truncated_below", "coupled")}
-    site = _parse_parameters({"depth_limit": rest}, ("depth_limit",), path)["depth_limit"]
+    site = _parse_parameters({"depth_limit": rest}, ("depth_limit",), path,
+                             STATUSES + (USER_STATUS,))["depth_limit"]
     if "truncated_below" in raw:
         floor = _positive(raw["truncated_below"], f"{path}.depth_limit.truncated_below")
         if not (site.get("range") and site["range"][0] < floor < site["range"][1]):
@@ -776,6 +777,52 @@ def site_depth_limit(documented: Dict[str, Any], margin: float, deepest: float) 
     return out
 
 
+def given_site_depth_limit(low: float, high: float, margin: float, deepest: float,
+                           source: str = "user-supplied (--depth-limit-m)") -> Dict[str, Any]:
+    """The site's depth limit given by the project (Step 8g.10, e.g.
+    ``--depth-limit-m``: water clarity varies, from about 15 m at the Medes
+    Islands to 44 m in the clearest waters), one depth (low = high: fixed)
+    or a range (uniform), as a raw parameter (``project_depth.depth_limit``).
+    It replaces the regional depth limit at the project's site, conditioned
+    like it (Step 8g.7) on lying below the meadow: a range is truncated
+    below the deepest depth + the margin, or + half the distance to its
+    deepest end when that is closer (it is the user's statement: never
+    extended beyond it).
+
+    Raises:
+        ValueError: For a limit <= 0 or a reversed range, or a project depth
+            at or below the deepest limit given (a meadow cannot live where
+            its production is zero).
+    """
+    if not (math.isfinite(low) and math.isfinite(high) and 0.0 < low <= high):
+        raise ValueError(f"the site's depth limit must be > 0 m (one depth or a range low-high), "
+                         f"got {low:g}-{high:g}")
+    given = f"{low:g} m" if low == high else f"{low:g}-{high:g} m"
+    if not deepest < high:
+        raise ValueError(
+            f"a depth of {deepest:g} m is at or below the site's depth limit given ({given}, "
+            f"--depth-limit-m), where the meadow's production reaches zero: a meadow cannot live there. "
+            f"Give a depth shallower than {high:g} m, or the site's own deeper limit"
+        )
+    out: Dict[str, Any] = {
+        "unit": "m",
+        "label": "depth limit of the site (where the plant's net production reaches zero), given by the project",
+        "source": f"{source}: {given}, the site's own lower limit (it replaces the regional 30-44 m)",
+        "status": USER_STATUS,
+    }
+    if low == high:
+        out.update(value=high, distribution="fixed",
+                   distribution_basis="One depth given: not sampled")
+        return out
+    floor = max(low, deepest + min(margin, (high - deepest) / 2.0))
+    out.update(value=(floor + high) / 2.0, range=[floor, high], distribution="uniform",
+               distribution_basis=(
+                   "Uniform over the range given" + (
+                       f", truncated below {floor:g} m (a meadow at {deepest:g} m proves the limit lies deeper)"
+                       if floor > low else "")))
+    return out
+
+
 def _parse_depth_spec(raw: Any, path: str, shallowest_limit: float, regional: bool) -> Dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: expected an object")
@@ -839,7 +886,8 @@ def _list_of(raw: Any, path: str) -> list:
     return raw
 
 
-def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str) -> Dict[str, Dict[str, Any]]:
+def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str,
+                      statuses: Tuple[str, ...] = STATUSES) -> Dict[str, Dict[str, Any]]:
     missing = [n for n in names if n not in raw]
     if missing:
         raise ValueError(f"{path}: missing {missing[0]!r} (required: {', '.join(names)})")
@@ -859,8 +907,8 @@ def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str) ->
         for key in ("unit", "label", "source", "status"):
             if not isinstance(p.get(key), str) or not p[key]:
                 raise ValueError(f"{ppath}.{key}: required, a non-empty string")
-        if p["status"] not in STATUSES:
-            raise ValueError(f"{ppath}.status: expected one of {list(STATUSES)}, got {p['status']!r}")
+        if p["status"] not in statuses:
+            raise ValueError(f"{ppath}.status: expected one of {list(statuses)}, got {p['status']!r}")
         value = _positive(p.get("value"), f"{ppath}.value")
         out: Dict[str, Any] = {k: p[k] for k in ("unit", "label", "source", "status")}
         out["value"] = value
@@ -941,7 +989,9 @@ def _non_negative(raw: Any, path: str) -> float:
 
 
 def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
-                       source: str = "user-supplied (--depth-m)") -> Dict[str, Any]:
+                       source: str = "user-supplied (--depth-m)",
+                       depth_limit: Optional[Tuple[float, float]] = None,
+                       limit_source: str = "user-supplied (--depth-limit-m)") -> Dict[str, Any]:
     """A copy of a case document whose depth-dependent production functions
     are taken at the project depth [from_m, to_m] (a single depth when
     from_m = to_m): each such ledger entry's gross and net value (net of
@@ -949,11 +999,14 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
     annual_value_per_ha and range, are recomputed. Any depth >= 0 is valued:
     a meadow that lives there proves its site's depth limit lies deeper, so
     the site's depth limit is the regional one conditioned on it
-    (``site_depth_limit``, Step 8g.7).
+    (``site_depth_limit``, Step 8g.7), or the site's own limit when the
+    project gives it (``depth_limit``, one depth (low, low) or a range (low,
+    high); ``given_site_depth_limit``, Step 8g.10).
 
     Raises:
-        ValueError: Without a depth-dependent production function, or for a
-            negative depth.
+        ValueError: Without a depth-dependent production function, for a
+            negative depth, or for a depth at or below the site's depth limit
+            given.
     """
     if not (math.isfinite(from_m) and math.isfinite(to_m) and 0.0 <= from_m <= to_m):
         raise ValueError(f"the project depth must be >= 0 m (a single depth or a range low-high), "
@@ -970,8 +1023,12 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
         path = f"$.service_ledger[{i}].production_function"
         old = parse_production_function(raw, path)
         depth = old["depth"]
-        site = site_depth_limit(old["parameters"][DEPTH_PREFIX + "depth_limit"], depth["margin"]["value"],
-                                float(to_m))
+        if depth_limit is None:
+            site = site_depth_limit(old["parameters"][DEPTH_PREFIX + "depth_limit"], depth["margin"]["value"],
+                                    float(to_m))
+        else:
+            site = given_site_depth_limit(float(depth_limit[0]), float(depth_limit[1]), depth["margin"]["value"],
+                                          float(to_m), limit_source)
         raw["depth_production"]["project_depth"] = {"from_m": float(from_m), "to_m": float(to_m), "source": source,
                                                     "depth_limit": site}
         new = parse_production_function(raw, path)
@@ -1134,7 +1191,8 @@ def format_depth(block: Dict[str, Any]) -> List[str]:
     if site is not None:
         low, high = site["support"]
         span = f", {low:g}–{high:g} m in the uncertainty analysis" if low < high else ""
-        site_text = f"; the site's depth limit {site['value']:g} m{span}"
+        given = ", given" if site["status"] == USER_STATUS else ""
+        site_text = f"; the site's depth limit {site['value']:g} m{given}{span}"
     lines = [
         f"    Depth → production ({block['model']}): {block['formula']}",
         f"      P_ref = {_num(h['npp_at_reference_depth']['value'])} {unit} at z_ref = "

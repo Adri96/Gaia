@@ -330,14 +330,45 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"{margin:g} m below the deepest depth given (never valued at €0)"
         ).replace("%", "%%"),
     )
+    parser.add_argument(
+        "--depth-limit-m",
+        dest="depth_limit_m",
+        type=parse_depth,
+        default=None,
+        metavar="M or LOW-HIGH",
+        help=(
+            f"Project input: the site's own depth limit, where the {block['agent']} ends (its "
+            f"production reaches zero), in metres: one depth (e.g. 15) or a range (e.g. 13-17). "
+            f"Water clarity varies: meadows end at about 15 m in turbid water (Medes Islands) and "
+            f"reach 44 m in the clearest. It replaces the regional limit ({limit['value']:g} m{span}); "
+            f"the depth given with --depth-m (default: {block['depth_label']}) must be shallower"
+        ).replace("%", "%%"),
+    )
 
 
 def apply_depth(case, args: argparse.Namespace):
-    """The case at the project's depth (``--depth-m``), or the case itself."""
+    """The case at the project's depth (``--depth-m``) and the site's depth
+    limit (``--depth-limit-m``, Step 8g.10; without ``--depth-m`` at the
+    regional mean depth), or the case itself.
+
+    Raises:
+        ValueError: A site's depth limit without a project depth when the
+            regional depth is a distribution, not a mean.
+    """
     depth = getattr(args, "depth_m", None)
-    if depth is None:
+    limit = getattr(args, "depth_limit_m", None)
+    if depth is None and limit is None:
         return case
-    return case.with_project_depth(*depth)
+    if depth is not None:
+        return case.with_project_depth(*depth, depth_limit=limit)
+    bands = case.depth_production["regional_depth"]["bands"]
+    if len(bands) != 1 or bands[0]["from_m"] != bands[0]["to_m"]:
+        raise ValueError("--depth-limit-m needs the meadow's depth too: give --depth-m")
+    try:
+        return case.with_project_depth(bands[0]["from_m"], bands[0]["to_m"], depth_limit=limit)
+    except ValueError as exc:
+        raise ValueError(f"{exc} (without --depth-m the meadow is taken at the regional mean depth, "
+                         f"{bands[0]['from_m']:g} m)") from None
 
 
 SIZE_DESTS: tuple = ("area_ha", "total_units")

@@ -407,7 +407,10 @@ value = gross − their values). € 2014-2017/ha/yr:
   (`depth_limit_margin`, the Medes meadow 2 m above its 15 m lower limit;
   truncated, or beyond 40 m extended to [z + 2, z + 4] m; drawn
   comonotone with the regional limit), keeping P_ref and k; only a
-  negative depth is rejected. At a project depth the €35 netted out scales with the
+  negative depth is rejected. `--depth-limit-m` (Step 8g.10) gives the
+  site's own limit (one depth, or a range sampled uniformly, truncated
+  below the meadow); it replaces the regional one at the site, and a
+  depth at or below it is rejected. At a project depth the €35 netted out scales with the
   plant's NPP there / NPP at 15 m (exactly €35 in the regional run),
   recomputed in every Monte Carlo draw; decided by the owner (Step 8g.8,
   review of #11, question 1), with the 15 m base and the 40 m (30–44)

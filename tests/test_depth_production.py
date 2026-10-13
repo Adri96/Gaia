@@ -515,3 +515,91 @@ def test_deeper_epiphytes_are_worth_less_and_never_zero():
     case = load_case("posidonia")
     values = [_epiphyte_entry(case.with_project_depth(z, z))["value"] for z in (1, 5, 15, 25, 30, 35, 40, 43, 50)]
     assert all(a > b > 0.0 for a, b in zip(values, values[1:]))
+
+
+# ── Step 8g.10: the site's own depth limit (--depth-limit-m) ─────────────────
+
+
+def test_a_given_site_limit_replaces_the_regional_one():
+    """One depth: fixed; the curve keeps P_ref and k and reaches zero there;
+    the €35's basis keeps the regional limit; every agent > €0."""
+    from gaia.production import deepest_allowed
+
+    case = load_case("posidonia")
+    at = case.with_project_depth(10.0, 10.0, depth_limit=(15.0, 15.0))
+    spec = _meadow_entry(at)["production_function"]
+    site = spec["parameters"]["depth.site_depth_limit"]
+    assert (site["value"], site["distribution"], site["status"]) == (15.0, "fixed", "user-supplied")
+    assert deepest_allowed(spec) == 15.0
+    p, k, z_max, z_ref = _hyper(case)
+    npp = depth_npp(10.0, p, k, z_max, z_ref, 15.0)
+    assert central(spec)["npp_dry_weight"] == pytest.approx(npp, rel=1e-12)
+    assert npp < depth_npp(10.0, p, k, z_max, z_ref)      # a turbid site produces less
+    scale = npp / depth_npp(15.0, p, k, z_max, z_ref)
+    assert net_of_scale(spec) == pytest.approx(scale, rel=1e-12)
+    assert _epiphyte_entry(at)["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    eco = at.build_ecosystem(area_ha=50.0, site_intensity="none")
+    assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
+
+
+@pytest.mark.parametrize("limit, depth", [((15.0, 15.0), (14.9, 14.9)), ((8.0, 8.0), (5.0, 5.0)),
+                                          ((3.0, 3.0), (0.0, 2.0)), ((13.0, 17.0), (12.0, 12.0)),
+                                          ((13.0, 17.0), (16.0, 16.0)), ((44.0, 50.0), (45.0, 45.0)),
+                                          ((20.0, 30.0), (5.0, 15.0))])
+def test_every_depth_above_a_given_limit_is_valued(limit, depth):
+    from gaia.uncertainty import run_uncertainty
+
+    at = load_case("posidonia").with_project_depth(*depth, depth_limit=limit)
+    site = _site(at)
+    low, high = site.get("range") or (site["value"], site["value"])
+    assert depth[1] < low <= high == limit[1]
+    if limit[0] < limit[1]:
+        # a range is truncated below the meadow (+ the margin, or half-way)
+        assert low == max(limit[0], depth[1] + min(2.0, (limit[1] - depth[1]) / 2.0))
+        assert site["distribution"] == "uniform" and not site["coupled"]
+    for entry in at.service_ledger:
+        if entry["production_function"] is not None:
+            assert entry["value"] > 0.0
+            booked = 35.0 if entry["net_of"] else 0.0
+            assert net_range(entry["production_function"], booked)[0] > 0.0
+    eco = at.build_ecosystem(site_intensity="none")
+    assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
+    u = run_uncertainty(at, 10, draws=30, seed=2, tornado=False, normative=False,
+                        build_kwargs=dict(site_intensity="none"))
+    assert all(b["draws_at_or_below_zero"] == 0 for b in u.production.values())
+
+
+@pytest.mark.parametrize("limit, depth", [((15.0, 15.0), (15.0, 15.0)), ((15.0, 15.0), (10.0, 20.0)),
+                                          ((13.0, 17.0), (17.0, 17.0)), ((30.0, 30.0), (35.0, 35.0))])
+def test_a_depth_at_or_below_the_given_limit_is_rejected(limit, depth):
+    with pytest.raises(ValueError, match="at or below the site's depth limit given"):
+        load_case("posidonia").with_project_depth(*depth, depth_limit=limit)
+
+
+@pytest.mark.parametrize("limit", [(0.0, 0.0), (20.0, 10.0), (-5.0, 10.0), (float("nan"), 10.0)])
+def test_an_impossible_site_limit_is_rejected(limit):
+    with pytest.raises(ValueError, match="site's depth limit must be > 0 m"):
+        load_case("posidonia").with_project_depth(5.0, 5.0, depth_limit=limit)
+
+
+def test_cli_site_depth_limit(capsys):
+    argv = ["run", "posidonia", "--area-ha", "50", "--dive-intensity", "none"]
+    assert main([*argv, "--depth-limit-m", "15", "--depth-m", "10", "--format", "json", "--summary-only"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    block = out["production_functions"][MEADOW]["depth_production"]
+    assert block["site_depth_limit"]["value"] == 15.0 and block["deepest_allowed_m"] == 15.0
+    assert all(v > 0.0 for v in out["summary"]["agent_externality_eur_yr"].values())
+    assert main([*argv, "--depth-limit-m", "13-17", "--depth-m", "12"]) == 0
+    assert "the site's depth limit 15.5 m, given, 14–17 m in the uncertainty analysis" in " ".join(
+        capsys.readouterr().out.split())
+    # without --depth-m, the regional mean depth (15 m)
+    assert main([*argv, "--depth-limit-m", "20", "--format", "json", "--summary-only"]) == 0
+    block = json.loads(capsys.readouterr().out)["production_functions"][MEADOW]["depth_production"]
+    assert block["depth_bands"] == [{"from_m": 15.0, "to_m": 15.0, "share": 1.0}]
+    assert main([*argv, "--depth-limit-m", "15"]) == 1
+    err = capsys.readouterr().err
+    assert "at or below the site's depth limit given" in err and "regional mean depth, 15 m" in err
+    assert main([*argv, "--depth-limit-m", "30", "--depth-m", "35"]) == 1
+    assert "Give a depth shallower than 30 m" in capsys.readouterr().err
+    assert main(["run", "posidonia", "--help"]) == 0
+    assert "--depth-limit-m" in capsys.readouterr().out

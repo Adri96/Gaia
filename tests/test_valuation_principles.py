@@ -143,6 +143,8 @@ def test_every_agent_is_positive_at_every_depth(name):
     ["--depth-m", "35", "--dive-intensity", "none"],
     ["--depth-m", "30-40", "--area-ha", "50", "--dive-intensity", "none"],
     ["--depth-m", "44", "--dive-site-share", "0", "--with-pricing"],
+    ["--depth-m", "10", "--depth-limit-m", "15", "--dive-intensity", "none"],
+    ["--depth-m", "14.9", "--depth-limit-m", "13-15", "--area-ha", "50", "--dive-intensity", "none"],
     ["--depth-m", "0-29", "--dive-site-share", "0", "--matte-fate", "buried"],
     ["--depth-m", "25", "--area-ha", "300", "--units", "30", "--dive-intensity", "none", "--with-pricing"],
     ["--dive-intensity", "none"],
@@ -201,7 +203,12 @@ def test_random_inputs_never_bring_an_agent_to_zero():
         built = case
         if case.depth_production is not None and rng.random() < 0.5:
             a = rng.uniform(0.0, 50.0)
-            built = case.with_project_depth(a, rng.choice([a, rng.uniform(a, 50.0)]))
+            b = rng.choice([a, rng.uniform(a, 50.0)])
+            limit = None
+            if rng.random() < 0.5:   # the site's own depth limit (Step 8g.10)
+                high = rng.uniform(b + 1e-3, 60.0)
+                limit = (rng.choice([high, rng.uniform(0.5, high)]), high)
+            built = case.with_project_depth(a, b, depth_limit=limit)
         eco = built.build_ecosystem(**kwargs)
         label = f"{name} {kwargs}"
         _assert_every_agent_positive(eco, label)
