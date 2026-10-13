@@ -96,6 +96,13 @@ their values; a production_function (gaia.production) derives the gross
 from primary production (Step 8g.1: its main producer's NPP may come from a
 depth function, ``depth_production``, at the regional or the project's
 depth; at a project depth the services it is net of scale with that NPP).
+Market prices (Step 8h.4): the top-level ``market_prices`` block names the
+case's sourced prices ({name: {value*, unit*, label*, source*, status*,
+distribution, distribution_basis, range, note}}); a chain's price
+(``first_sale_price``) references one as {"market_price": "<name>"}, so
+one price anchors every chain and no depth or site input changes it
+(gaia.production, ``parse_market_prices``); with the block declared, a
+price typed into a chain is rejected.
 Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
 it is net of, a chain that does not give its gross, a chain whose lowest
@@ -251,7 +258,7 @@ _TOP_LEVEL = (
     "gaia_schema", "name", "description", "calibration_regime", "damage_model", "resource",
     "provenance_defaults", "agent_defaults", "damage_curves", "agents",
     "interactions", "carbon", "resilience", "substrate", "discount", "pricing",
-    "restoration", "recovery", "succession", "service_ledger", "run",
+    "restoration", "recovery", "succession", "service_ledger", "market_prices", "run",
 )
 
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
@@ -1092,6 +1099,26 @@ class Case:
                 return dict(depth_block(spec), agent=entry["agent"], producer=spec["producer"])  # type: ignore[arg-type]
         return None
 
+    def depth_warnings(self) -> List[str]:
+        """Warnings (Step 8h.2) when the project's depth, or the site's depth
+        limit it gives, lies beyond the deepest depth limit documented for a
+        depth-dependent producer (gaia.production.extrapolation_warnings):
+        still valued, an extrapolation. Each message once; empty without a
+        project depth or within the documented range."""
+        from gaia.production import extrapolation_warnings
+
+        out: List[str] = []
+        entries = [e for e in self.service_ledger
+                   if e["production_function"] is not None and e["production_function"].get("depth") is not None]
+        # named after the first depth-dependent agent (for Posidonia the
+        # meadow): the producers that share its depth limit give the same message
+        who = f"the {entries[0]['agent']}" if entries else ""
+        for entry in entries:
+            for message in extrapolation_warnings(entry["production_function"], who=who):
+                if message not in out:
+                    out.append(message)
+        return out
+
     def with_project_depth(self, from_m: float, to_m: Optional[float] = None,
                            depth_limit: Optional[Tuple[float, float]] = None) -> "Case":
         """This case with its depth-dependent production functions taken at
@@ -1371,8 +1398,12 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
             for k in _SUCCESSION_FIELDS
         }
 
+    # Step 8h.4: the market prices every production function's chain references
+    from gaia.production import parse_market_prices
+
+    market_prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
     ledger = tuple(
-        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names))
+        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names), market_prices)
         for i, e in enumerate(_list(doc.get("service_ledger", []), "$.service_ledger"))
     )
     seen: Dict[str, int] = {}
@@ -1624,7 +1655,8 @@ _LEDGER_SECTIONS = ("provisioning", "regulation and maintenance", "cultural")
 _LEDGER_KINDS = ("use", "non-use")
 
 
-def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
+def _parse_ledger_entry(raw: Any, path: str, agents: set,
+                        market_prices: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     """One service_ledger entry: a final service, its owner and its value."""
     obj = _object(
         raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
@@ -1678,7 +1710,7 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set) -> Dict[str, Any]:
     if "production_function" in obj:
         from gaia.production import gross_value, central, parse_production_function
 
-        spec = parse_production_function(obj["production_function"], _key(path, "production_function"))
+        spec = parse_production_function(obj["production_function"], _key(path, "production_function"), market_prices)
         result = gross_value(central(spec))
         stated = out["gross"] if out["gross"] is not None else out["value"]
         if not math.isclose(result, stated, rel_tol=1e-9):

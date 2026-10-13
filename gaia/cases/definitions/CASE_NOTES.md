@@ -332,7 +332,12 @@ value = gross − their values). € 2014-2017/ha/yr:
   (the same five links, drawn once for both chains in the Monte Carlo) =
   €82.20 gross, net of nothing (range €8.58–428.28). Total unchanged:
   the meadow's chain loses the same €82.20. With the bioindicator share,
-  the agent carries €82.41/ha/yr (€0.21 before).
+  the agent carries €82.41/ha/yr (€0.21 before). Since Step 8h.1 (the
+  owner's decision) the 22.8 g C/m²/yr sits at its measured depth, 10 m
+  (Champenois & Borges 2021, Fig. 6: a budget of "a Posidonia oceanica
+  seagrass meadow at 10 m depth"; Bay 1984 not read, flagged), on the
+  plant's depth curve: at the regional 15 m it is 14.5 g C/m²/yr, €52.33
+  gross (range €4.36–320.62), and the agent carries €52.55/ha/yr.
 - Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
   production supports, a production function (gaia/production.py), over
   two producers (Step 8f.2; the leaf epiphytes, a third one, have their
@@ -363,6 +368,8 @@ value = gross − their values). € 2014-2017/ha/yr:
     × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 61.2 kg/ha/yr
       (Zhou et al. 2012)
     × €5.11/kg, Catalan white-fish first-sale price 2014  = €312.49 gross
+      (one market-price anchor, $.market_prices, for this chain and
+      the epiphytes'; depth never changes it, Step 8h.4)
     − 35.00, the commercial catch booked to Fish          = €277.49 net
       Populations and Marine Invertebrates (net_of)
   Of the gross, the plant gives €311.49, the roots €1.00. Range over the
@@ -382,8 +389,9 @@ value = gross − their values). € 2014-2017/ha/yr:
   production follows depth: their own depth function with the plant's
   decline rate and depth limit (one light field, drawn once; inferred,
   their biomass "decreases with increasing depth", Lepoint et al. 1999,
-  doi:10.1023/A:1003557303904, abstract), scaled from the regional 15 m
-  (unchanged there, €82.20): €199 at 5 m, €30 at 25 m, €1.89 at 40 m.
+  doi:10.1023/A:1003557303904, abstract), anchored since Step 8h.1 at
+  their measured 10 m (€82.20 there; €52.33 at the regional 15 m): €127
+  at 5 m, €19 at 25 m, €1.20 at 40 m (€199, €30, €1.89 before Step 8h.1).
   The roots do not depend on depth.
   The plant's production by depth (Step 8g.1): a light-limited
   exponential shared by marine primary producers, NPP(z) = P_ref ·
@@ -480,7 +488,7 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €1,178.35/ha/yr (€1,151.25 before Step 8g.4, €1,293.15 before Step 8g.1, €1,209.95 before Step 8f.2, €1,068.40 before
+Total €1,148.49/ha/yr (€1,178.35 before Step 8h.1, €1,151.25 before Step 8g.4, €1,293.15 before Step 8g.1, €1,209.95 before Step 8f.2, €1,068.40 before
 Step 8f.1, €818.66 before Step 8e.6, €284.83 before Step 8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total

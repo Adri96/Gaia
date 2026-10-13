@@ -26,6 +26,7 @@ from gaia.production import (
     mean_depth_npp,
     net_of_scale,
     net_range,
+    parse_market_prices,
     parse_production_function,
     profile_npp,
     with_project_depth,
@@ -134,7 +135,8 @@ def test_a_case_file_supplies_the_hyperparameters_of_another_producer():
     depth["regional_depth"] = {"distribution": [{"from_m": 0.0, "to_m": 5.0, "share": 0.5},
                                                 {"from_m": 5.0, "to_m": 15.0, "share": 0.5}],
                                "source": "test", "status": "inferred"}
-    spec = parse_production_function(pf, "pf")
+    prices = parse_market_prices(raw["market_prices"])
+    spec = parse_production_function(pf, "pf", prices)
     v = central(spec)
     assert v["npp_carbon"] == pytest.approx(
         profile_npp([(0.0, 5.0, 0.5), (5.0, 15.0, 0.5)], 200.0, 0.15, 25.0, 10.0), rel=1e-12)
@@ -142,12 +144,12 @@ def test_a_case_file_supplies_the_hyperparameters_of_another_producer():
     # a regional band at or below the shallowest depth limit is rejected
     depth["regional_depth"]["distribution"][1]["to_m"] = 20.0
     with pytest.raises(ValueError, match="depth limit"):
-        parse_production_function(pf, "pf")
+        parse_production_function(pf, "pf", prices)
     # the NPP it derives cannot also be given
     depth["regional_depth"]["distribution"][1]["to_m"] = 15.0
     pf["parameters"]["npp_carbon"] = dict(hyper["npp_at_reference_depth"])
     with pytest.raises(ValueError, match="derived from depth_production"):
-        parse_production_function(pf, "pf")
+        parse_production_function(pf, "pf", prices)
 
 
 # ── A project depth ──────────────────────────────────────────────────────────
@@ -477,10 +479,16 @@ def _epiphyte_entry(case):
     return next(e for e in case.service_ledger if e["agent"] == EPIPHYTES and e["production_function"] is not None)
 
 
+EPIPHYTE_FOOD = 52.331919974541826
+"""The epiphytes' food at the regional mean depth, 15 m: their annual
+production measured at 10 m, anchored there on the plant's curve (Step 8h.1;
+82.20 before, the 10 m figure used at 15 m)."""
+
+
 def test_the_epiphytes_share_the_plants_light_field():
     """Their depth function borrows the plant's decline rate and depth
-    limit (identical, so the Monte Carlo draws them once) and is scaled from
-    the regional mean depth, where their value is unchanged."""
+    limit (identical, so the Monte Carlo draws them once) and is anchored at
+    the depth their production was measured, 10 m (Step 8h.1)."""
     case = load_case("posidonia")
     epi = _epiphyte_entry(case)["production_function"]
     meadow = _meadow_entry(case)["production_function"]
@@ -489,9 +497,27 @@ def test_the_epiphytes_share_the_plants_light_field():
         assert (a["value"], a["range"], a["distribution"]) == (b["value"], b["range"], b["distribution"])
         assert a["status"] == "inferred" and a["source"].startswith("Inferred")
     assert "doi:10.1023/A:1003557303904" in epi["parameters"]["depth.decline_rate"]["source"]
-    assert epi["depth"]["reference_depth_m"] == 15.0 and epi["depth"]["regional"]["bands"] == [(15.0, 15.0, 1.0)]
-    assert _epiphyte_entry(case)["value"] == pytest.approx(82.19699951512872, rel=1e-12)
-    assert central(epi)["npp_carbon"] == pytest.approx(22.8209, rel=1e-12)
+    assert epi["depth"]["reference_depth_m"] == 10.0 and epi["depth"]["regional"]["bands"] == [(15.0, 15.0, 1.0)]
+    assert _epiphyte_entry(case)["value"] == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
+    p, k, z_max, z_ref = _hyper(case)
+    measured = epi["parameters"]["depth.npp_at_reference_depth"]["value"]
+    assert measured == pytest.approx(22.8209, rel=1e-12)
+    assert central(epi)["npp_carbon"] == pytest.approx(
+        measured * depth_npp(15.0, p, k, z_max, z_ref) / depth_npp(10.0, p, k, z_max, z_ref), rel=1e-12)
+
+
+def test_the_epiphytes_measured_value_sits_at_its_measured_depth():
+    """Step 8h.1: at 10 m, where it was measured (Champenois & Borges 2021,
+    Fig. 6, from Bay 1984), the epiphytes' production is the measured figure,
+    and their food the 82.20 the case used at 15 m before; at 15 m it is the
+    plant's curve, about a third lower, and > 0 at every depth."""
+    case = load_case("posidonia")
+    at10 = _epiphyte_entry(case.with_project_depth(10.0, 10.0))
+    assert central(at10["production_function"])["npp_carbon"] == pytest.approx(22.8209, rel=1e-12)
+    assert at10["value"] == pytest.approx(82.19699951512872, rel=1e-9)
+    assert 50.0 < _epiphyte_entry(case)["value"] < 55.0
+    assert "10 m depth" in _epiphyte_entry(case)["production_function"]["parameters"][
+        "depth.npp_at_reference_depth"]["source"]
 
 
 @pytest.mark.parametrize("depth", GRID + [(50.0, 50.0)])
@@ -500,7 +526,7 @@ def test_the_epiphytes_food_scales_with_the_plants_production(depth):
     at = case.with_project_depth(*depth)
     scale = net_of_scale(_meadow_entry(at)["production_function"])
     epi = _epiphyte_entry(at)
-    assert epi["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    assert epi["value"] == pytest.approx(EPIPHYTE_FOOD * scale, rel=1e-9)
     assert epi["value"] > 0.0 and net_range(epi["production_function"])[0] > 0.0
     # the roots do not depend on depth
     roots = {k: v for k, v in central(_meadow_entry(at)["production_function"]).items() if k.startswith("roots.")}
@@ -537,7 +563,7 @@ def test_a_given_site_limit_replaces_the_regional_one():
     assert npp < depth_npp(10.0, p, k, z_max, z_ref)      # a turbid site produces less
     scale = npp / depth_npp(15.0, p, k, z_max, z_ref)
     assert net_of_scale(spec) == pytest.approx(scale, rel=1e-12)
-    assert _epiphyte_entry(at)["value"] == pytest.approx(82.19699951512872 * scale, rel=1e-9)
+    assert _epiphyte_entry(at)["value"] == pytest.approx(EPIPHYTE_FOOD * scale, rel=1e-9)
     eco = at.build_ecosystem(area_ha=50.0, site_intensity="none")
     assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
 
@@ -603,3 +629,78 @@ def test_cli_site_depth_limit(capsys):
     assert "Give a depth shallower than 30 m" in capsys.readouterr().err
     assert main(["run", "posidonia", "--help"]) == 0
     assert "--depth-limit-m" in capsys.readouterr().out
+
+
+# ── Step 8h.2: beyond the deepest documented limit, valued with a warning ────
+
+
+def _documented_deepest(case):
+    return _meadow_entry(case)["production_function"]["parameters"]["depth.depth_limit"]["range"][1]
+
+
+@pytest.mark.parametrize("depth, limit, n", [
+    ((45.0, 45.0), None, 1), ((50.0, 50.0), None, 1), ((40.0, 50.0), None, 1),
+    ((12.0, 12.0), (45.0, 45.0), 1), ((12.0, 12.0), (13.0, 50.0), 1), ((46.0, 46.0), (50.0, 50.0), 2),
+])
+def test_beyond_the_deepest_documented_limit_is_valued_with_a_warning(depth, limit, n):
+    """The owner's decision (Step 8h.2): a project depth, or the deep end of
+    a band, or a site's depth limit given, beyond the deepest limit documented
+    (the case's depth limit range, 44 m for Posidonia) is still valued, every
+    agent > €0, with a warning that the value is an extrapolation."""
+    from gaia.production import deepest_documented
+
+    case = load_case("posidonia")
+    documented = _documented_deepest(case)
+    assert deepest_documented(_meadow_entry(case)["production_function"]) == documented == 44.0
+    at = case.with_project_depth(*depth, depth_limit=limit)
+    messages = at.depth_warnings()
+    assert len(messages) == n
+    assert all(f"{documented:g} m" in m and "extrapolation" in m and "> €0" in m for m in messages)
+    if depth[1] > documented:
+        assert f"{depth[1]:g} m" in messages[0] and "project depth" in messages[0]
+    if limit is not None and limit[1] > documented:
+        assert "--depth-limit-m" in messages[-1] and f"{limit[1]:g} m" in messages[-1]
+    for entry in at.service_ledger:
+        if entry["production_function"] is not None:
+            assert entry["value"] > 0.0
+    eco = at.build_ecosystem(site_intensity="none")
+    assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
+
+
+@pytest.mark.parametrize("depth, limit", [
+    (None, None), ((15.0, 15.0), None), ((43.0, 43.0), None), ((44.0, 44.0), None), ((30.0, 44.0), None),
+    ((10.0, 10.0), (15.0, 15.0)), ((12.0, 12.0), (13.0, 44.0)), ((30.0, 30.0), (44.0, 44.0)),
+])
+def test_within_the_documented_range_there_is_no_warning(depth, limit):
+    case = load_case("posidonia")
+    at = case if depth is None else case.with_project_depth(*depth, depth_limit=limit)
+    assert at.depth_warnings() == []
+
+
+def test_cli_warns_beyond_the_documented_limit_on_stderr_and_in_json(capsys):
+    from gaia.production import DepthExtrapolationWarning
+
+    argv = ["run", "posidonia", "--area-ha", "50", "--dive-intensity", "none", "--format", "json", "--summary-only"]
+    with pytest.warns(DepthExtrapolationWarning, match=r"The project depth 50 m lies beyond .* 44 m"):
+        assert main([*argv, "--depth-m", "50"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert len(out["warnings"]) == 1 and "extrapolation" in out["warnings"][0]
+    assert all(v > 0.0 for v in out["summary"]["agent_externality_eur_yr"].values())
+    # within the documented range: no warning, no "warnings" block
+    import warnings as _warnings
+
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("error", DepthExtrapolationWarning)
+        assert main([*argv, "--depth-m", "40"]) == 0
+    assert "warnings" not in json.loads(capsys.readouterr().out)
+
+
+def test_cli_prints_the_extrapolation_warning_to_stderr():
+    import subprocess
+
+    out = subprocess.run(
+        [sys.executable, "-m", "gaia", "run", "posidonia", "--dive-intensity", "none", "--depth-m", "12",
+         "--depth-limit-m", "48", "--summary-only", "--format", "json"],
+        capture_output=True, text=True, cwd=ROOT, check=True)
+    assert "Warning (DepthExtrapolationWarning): The site's depth limit given (--depth-limit-m, 48 m)" in out.stderr
+    assert json.loads(out.stdout)["warnings"]

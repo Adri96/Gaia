@@ -15,7 +15,7 @@ import pytest
 from gaia.cases import load_case
 from gaia.cli import main
 from gaia.ecosystem_io import case_from_dict
-from gaia.production import central, gross_range, gross_value, parse_production_function
+from gaia.production import central, gross_range, gross_value, parse_market_prices, parse_production_function
 from gaia.uncertainty import (
     InvariantError,
     Sampled,
@@ -196,7 +196,7 @@ def test_generic_without_net_of():
     food["value"] = gross
     meadow = next(a for a in doc["agents"] if a["name"] == MEADOW)
     weight = meadow["dependency_weight"]
-    spec = parse_production_function(food["production_function"], "pf")
+    spec = parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]))
     low, high = gross_range(spec)
     meadow["annual_value_per_ha"]["value"] = gross / weight
     meadow["annual_value_per_ha"]["range"] = [low / weight, high / weight]

@@ -33,10 +33,12 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8g.1: the plant's NPP from its depth function at the regional mean
 # depth, 15 m (318 g DW/m²/yr; it was a fixed 476); Step 8g.2: the leaf
 # epiphytes' food moved to the Epiphytes & Algae agent (total unchanged);
-# Step 8g.4: the plant's shoot-only share not buried, 81.1% (74% before)
+# Step 8g.4: the plant's shoot-only share not buried, 81.1% (74% before);
+# Step 8h.1: the epiphytes' production anchored at its measured depth, 10 m,
+# and taken at 15 m on the plant's curve (82.20 before, the 10 m figure at 15 m)
 MEADOW_FOOD_NET = 277.49275506563924
-EPIPHYTE_FOOD = 82.19699951512872
-LEDGER_TOTAL = 1178.3533331729495    # €/ha/yr of the reference meadow
+EPIPHYTE_FOOD = 52.331919974541826
+LEDGER_TOTAL = 1148.4882536323626    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -1048,11 +1050,16 @@ def test_meadow_food_value_is_the_primary_production_chain():
     # Step 8g.2: the leaf epiphytes' food, on the same chain to the catch
     epi = next(e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae" and e["production_function"])
     epi_params = epi["production_function"]["parameters"]
-    # Step 8g.9: their NPP from their depth function, at the regional 15 m
+    # Step 8g.9: their NPP from their depth function, at the regional 15 m;
+    # Step 8h.1: the measured figure anchored at its depth, 10 m, on the
+    # plant's curve
     assert epi_params["npp_carbon"]["status"] == "derived"
     assert epi_params["depth.npp_at_reference_depth"]["status"] == "secondary"
     assert epi_params["food_web_share"]["status"] == "inferred"
-    epi_gross = (1.9 * 12.011 * 1.0 * 10 * 0.143 ** (3.1 - 1) * 9 * (0.87 / 1.87) * (41_056_589 / 8_034_993))
+    k, z_max = epi_params["depth.decline_rate"]["value"], epi_params["depth.depth_limit"]["value"]
+    at_15 = (math.exp(-k * 15.0) - math.exp(-k * z_max)) / (math.exp(-k * 10.0) - math.exp(-k * z_max))
+    epi_gross = (1.9 * 12.011 * at_15 * 1.0 * 10 * 0.143 ** (3.1 - 1) * 9 * (0.87 / 1.87)
+                 * (41_056_589 / 8_034_993))
     assert epi["value"] == pytest.approx(epi_gross, rel=1e-12) == pytest.approx(EPIPHYTE_FOOD, rel=1e-12)
     assert not epi["net_of"]
     for link in ("transfer_efficiency", "catch_trophic_level", "wet_weight_per_carbon",
@@ -1099,7 +1106,8 @@ def test_epiphyte_production_is_not_counted_twice():
     assert [e["agent"] for e in chains] == ["Posidonia Meadow", "Epiphytes & Algae"]
     meadow, epiphytes = chains
     assert all(p["name"] != "epiphytes" for p in meadow["production_function"]["producers"])
-    # the former single chain (Step 8g.1): 367.59 gross, 332.59 net
+    # the former single chain (Step 8g.1): 367.59 gross, 332.59 net, with the
+    # epiphytes' 82.20 (52.33 since Step 8h.1, anchored at their measured depth)
     assert meadow["gross"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + 35.0 + EPIPHYTE_FOOD, rel=1e-12)
     assert meadow["value"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + EPIPHYTE_FOOD, rel=1e-12)
     # every other provisioning entry is commercial catch, netted out once
@@ -1145,7 +1153,8 @@ def test_ledger_enforces_the_subtraction():
     with pytest.raises(ValueError, match="needs gross"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["production_function"]["parameters"]["first_sale_price"]["value"] = 9.0
+    # the chain's price is the case's market-price anchor (Step 8h.4)
+    doc["market_prices"]["white_fish_first_sale_catalonia_2014"]["value"] = 9.0
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
@@ -1196,7 +1205,7 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     assert "€312/ha/yr" in flat and "= €277/ha/yr" in flat
     # Step 8g.2: the epiphytes' own chain, on their own line
     epi_line = " ".join(text[text.index("Epiphytes & Algae:"):text.index("Marine Invertebrates:")].split())
-    assert "Primary production → food: NPP 22.8 g C/m²/yr" in epi_line and "= €82.2/ha/yr" in epi_line
+    assert "Primary production → food: NPP 14.5 g C/m²/yr at 15 m" in epi_line and "= €52.3/ha/yr" in epi_line
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's
