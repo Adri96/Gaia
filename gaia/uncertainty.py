@@ -30,6 +30,20 @@ The distribution of a parameter:
     - clipped to [0, 1] for ratios, fractions, shares and health
       thresholds (and kept inside (0, 1) where 0 or 1 is invalid).
 
+Production functions (Step 8f.3). An agent whose value is derived from a
+production function (gaia.production; a service-ledger entry with a
+``production_function``) is not sampled as one aggregate between the ends
+of its range: every link of the chain is sampled on its own, from its own
+range and distribution (triangular, uniform, or lognormal truncated to the
+range; "fixed" links are not sampled), and each draw recomputes the chain,
+the gross value, the net value (gross − the services it is net of, at
+their booked values) and the agent's value (its documented value + the
+change of the net value / its documented weight). Parsing guarantees that
+the chain's lowest value exceeds what it is net of, so no draw can bring
+the agent to €0; a draw that did would stop the run (``InvariantError``),
+never be clipped or redrawn. The draws of each production function are
+summarised (P5 / P50 / P95 of the gross and net €/ha/yr).
+
 Each draw sets every sampled parameter at its JSON path in a copy of the
 document, re-parses it (gaia.ecosystem_io.case_from_dict, with the same
 validation as any case file) and runs the extraction. Dependency weights
@@ -52,6 +66,7 @@ import dataclasses
 import math
 import random
 import re
+import statistics
 import textwrap
 import warnings
 from dataclasses import dataclass, field
@@ -108,7 +123,9 @@ class Sampled:
         path: JSON path of its number in the case document.
         value: The documented value (the mode).
         low, high: The range sampled.
-        kind: "triangular" or "uniform".
+        kind: "triangular", "uniform" or "lognormal" (median at the value,
+            the range read as its central 95%, truncated at the range
+            ends; Step 8f.3, production-function links).
         documented: True when the range comes from the document, False
             when it was set by the confidence (DEFAULT_RELATIVE_SPREAD).
         confidence: The parameter's confidence.
@@ -130,6 +147,14 @@ class Sampled:
             return a
         if self.kind == "uniform":
             return a + q * (b - a)
+        if self.kind == "lognormal":
+            mu = math.log(c)
+            sigma = max(math.log(b / c), math.log(c / a)) / _Z95
+            normal = statistics.NormalDist()
+            fa = normal.cdf((math.log(a) - mu) / sigma)
+            fb = normal.cdf((math.log(b) - mu) / sigma)
+            p = min(max(fa + q * (fb - fa), 1e-15), 1.0 - 1e-15)
+            return min(max(math.exp(mu + sigma * normal.inv_cdf(p)), a), b)
         f = (c - a) / (b - a)
         if q < f:
             return a + math.sqrt(q * (b - a) * (c - a))
@@ -140,7 +165,17 @@ class Sampled:
             return self.low
         if self.kind == "uniform":
             return rng.uniform(self.low, self.high)
+        if self.kind == "lognormal":
+            return self.quantile(rng.random())
         return rng.triangular(self.low, self.high, self.value)
+
+
+_Z95 = statistics.NormalDist().inv_cdf(0.975)
+
+
+class InvariantError(RuntimeError):
+    """A Monte Carlo draw broke the Core Valuation Principles (an agent at
+    €0). Never caught as a validation failure: the run stops."""
 
 
 def _clip(name: str, unit: str, low: float, high: float) -> Tuple[float, float]:
@@ -178,6 +213,97 @@ def sampled_parameters(params: Sequence[Param], paths: Dict[str, str]) -> List[S
             kind="uniform" if p.distribution == "uniform" else "triangular",
             documented=documented, confidence=p.confidence.value,
         ))
+    return out
+
+
+# ── Production functions (Step 8f.3) ─────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class _ProductionEntry:
+    """A service-ledger entry whose value a production function derives."""
+
+    index: int            # its position in $.service_ledger
+    agent: str
+    agent_index: int      # its owner's position in $.agents
+    field: str            # the agent field it feeds: annual_value_per_ha or site_value_per_ha
+    weight: float         # the owner's documented dependency weight
+    net: float            # the documented net value (€/ha/yr)
+    agent_value: float    # the owner's documented value in ``field``
+
+
+def production_entries(case) -> List[_ProductionEntry]:
+    """The case's service-ledger entries derived from a production function."""
+    doc = case.document
+    if doc is None:
+        return []
+    agents = [a.get("name") for a in doc.get("agents", [])]
+    out: List[_ProductionEntry] = []
+    for i, entry in enumerate(case.service_ledger):
+        if entry["production_function"] is None:
+            continue
+        field_ = "site_value_per_ha" if entry["site_restricted"] else "annual_value_per_ha"
+        j = agents.index(entry["agent"])
+        raw = doc["agents"][j].get(field_)
+        if raw is None:
+            raise ValueError(
+                f"uncertainty: agent {entry['agent']!r} owns a production function but sets no {field_}"
+            )
+        weight = next(a.weight for a in case.agents if a.name == entry["agent"])
+        out.append(_ProductionEntry(
+            index=i, agent=entry["agent"], agent_index=j, field=field_, weight=weight,
+            net=entry["value"], agent_value=float(raw["value"] if isinstance(raw, dict) else raw),
+        ))
+    return out
+
+
+def production_sampled(case, entries: Sequence[_ProductionEntry]) -> List[Sampled]:
+    """Each sampled link of each production function, with its own range
+    and distribution (named "production[<agent>].<link>")."""
+    out: List[Sampled] = []
+    for e in entries:
+        spec = case.service_ledger[e.index]["production_function"]
+        for name, p in spec["parameters"].items():
+            if p["distribution"] == "fixed" or not p.get("range"):
+                continue
+            low, high = p["range"]
+            out.append(Sampled(
+                name=f"production[{e.agent}].{name}",
+                path=f"$.service_ledger[{e.index}].production_function.{spec['paths'][name]}",
+                value=p["value"], low=low, high=high, kind=p["distribution"],
+                documented=True, confidence=p["status"],
+            ))
+    return out
+
+
+def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry]) -> Dict[str, Tuple[float, float]]:
+    """Recompute, in a perturbed copy of the document, each production
+    function's gross and net value and its owner's value; returns
+    {agent: (gross, net)}.
+
+    Raises:
+        InvariantError: A net value <= 0 (an agent at €0).
+    """
+    from gaia.production import central, gross_value, parse_production_function
+
+    ledger = doc["service_ledger"]
+    booked = {e["service"]: e["value"] for e in ledger}
+    out: Dict[str, Tuple[float, float]] = {}
+    for e in entries:
+        entry = ledger[e.index]
+        spec = parse_production_function(entry["production_function"], f"$.service_ledger[{e.index}].production_function")
+        gross = gross_value(central(spec))
+        net = gross - sum(booked[s] for s in entry.get("net_of", []))
+        if not net > 0.0:
+            raise InvariantError(
+                f"uncertainty: a draw of {e.agent}'s production function gives {net:.6g} €/ha/yr net: "
+                f"an agent at €0 (PROJECT_DEFINITION.md, Core Valuation Principles (b)); fix the model or the ranges"
+            )
+        if "gross" in entry:
+            entry["gross"] = gross
+        entry["value"] = net
+        _set_at_path(doc, f"$.agents[{e.agent_index}].{e.field}", e.agent_value + (net - e.net) / e.weight)
+        out[e.agent] = (gross, net)
     return out
 
 
@@ -273,6 +399,10 @@ class UncertaintyResult:
             swing}, by decreasing swing of the net social cost.
         normative: Rows {name, description, pv_externality, net_social_cost}.
         not_sampled: Parameters left out and why, {reason: [names]}.
+        production: {agent: summary of its production function's draws}
+            (Step 8f.3): "service", "links" (the names sampled), "base"
+            {"gross", "net"}, "gross" and "net" {"p5", "p50", "p95",
+            "mean", "min", "max"} in €/ha/yr, "draws_at_or_below_zero".
     """
 
     draws: int
@@ -284,16 +414,22 @@ class UncertaintyResult:
     tornado: List[Dict[str, Any]] = field(default_factory=list)
     normative: List[Dict[str, Any]] = field(default_factory=list)
     not_sampled: Dict[str, List[str]] = field(default_factory=dict)
+    production: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
+
+_DERIVED = "derived in each draw from its production function, whose links are sampled one by one"
 
 
 def _not_sampled(params: Sequence[Param], sampled: Sequence[Sampled],
-                 paths: Dict[str, str]) -> Dict[str, List[str]]:
+                 paths: Dict[str, str], derived: Sequence[str] = ()) -> Dict[str, List[str]]:
     taken = {s.name for s in sampled}
     reasons: Dict[str, List[str]] = {}
     for p in params:
         if p.name in taken:
             continue
-        if p.name.startswith(("discount.", "carbon_price.")):
+        if p.name in derived:
+            why = _DERIVED
+        elif p.name.startswith(("discount.", "carbon_price.")):
             why = "normative (reported as a sensitivity)"
         elif p.name.startswith("model."):
             why = "model-wide constant (not in the document; not varied)"
@@ -389,7 +525,12 @@ def run_uncertainty(
 
     base_eco = case.build_ecosystem(**kwargs)
     params = list(base_eco.provenance)
-    sampled = sampled_parameters(params, case.param_paths)
+    # Step 8f.3: an agent value derived from a production function is not
+    # sampled as one aggregate; its links are, one by one
+    entries = production_entries(case)
+    derived = [f"agent[{e.agent}].{e.field}" for e in entries]
+    sampled = [s for s in sampled_parameters(params, case.param_paths) if s.name not in derived]
+    sampled += production_sampled(case, entries)
     by_name = {s.name: s for s in sampled}
     weight_paths = {
         name: path for name, path in case.param_paths.items()
@@ -399,10 +540,12 @@ def run_uncertainty(
 
     def build_case(values: Dict[str, float]):
         doc = _with_values(case.document, values, by_name, weight_paths)
-        return case_from_dict(doc, origin=case.origin)
+        produced = _rederive_production(doc, entries) if entries else {}
+        return case_from_dict(doc, origin=case.origin), produced
 
     rng = random.Random(seed)
     samples: Dict[str, List[float]] = {h: [] for h, _ in HEADLINES}
+    produced_draws: Dict[str, List[Tuple[float, float]]] = {e.agent: [] for e in entries}
     redraws = 0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", CalibrationWarning)
@@ -410,7 +553,8 @@ def run_uncertainty(
         while len(samples["net_social_cost"]) < draws:
             values = {s.name: s.draw(rng) for s in sampled}
             try:
-                row = evaluate(build_case(values))
+                drawn, produced = build_case(values)
+                row = evaluate(drawn)
             except ValueError:
                 redraws += 1
                 if redraws > 10 * draws:
@@ -421,20 +565,23 @@ def run_uncertainty(
                 continue
             for key, value in row.items():
                 samples[key].append(value)
+            for agent, pair in produced.items():
+                produced_draws[agent].append(pair)
 
         summary: Dict[str, Dict[str, float]] = {}
         for key, values_ in samples.items():
             ordered = sorted(values_)
             summary[key] = {f"p{p}": _percentile(ordered, p) for p in PERCENTILES}
             summary[key]["mean"] = sum(ordered) / len(ordered)
+        production = _production_summary(case, entries, sampled, produced_draws)
 
         rows: List[Dict[str, Any]] = []
         if tornado:
             for s in sampled:
                 lo_v, hi_v = s.quantile(0.05), s.quantile(0.95)
                 try:
-                    lo = evaluate(build_case({s.name: lo_v}))
-                    hi = evaluate(build_case({s.name: hi_v}))
+                    lo = evaluate(build_case({s.name: lo_v})[0])
+                    hi = evaluate(build_case({s.name: hi_v})[0])
                 except ValueError:
                     continue
                 rows.append({
@@ -466,8 +613,35 @@ def run_uncertainty(
     return UncertaintyResult(
         draws=draws, seed=seed, redraws=redraws, base=base, summary=summary,
         sampled=sampled, tornado=rows, normative=norm_rows,
-        not_sampled=_not_sampled(params, sampled, case.param_paths),
+        not_sampled=_not_sampled(params, sampled, case.param_paths, derived),
+        production=production,
     )
+
+
+def _summarise(values: Sequence[float]) -> Dict[str, float]:
+    ordered = sorted(values)
+    out = {f"p{p}": _percentile(ordered, p) for p in PERCENTILES}
+    out.update(mean=sum(ordered) / len(ordered), min=ordered[0], max=ordered[-1])
+    return out
+
+
+def _production_summary(case, entries: Sequence[_ProductionEntry], sampled: Sequence[Sampled],
+                        produced: Dict[str, List[Tuple[float, float]]]) -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
+    for e in entries:
+        entry = case.service_ledger[e.index]
+        pairs = produced[e.agent]
+        prefix = f"production[{e.agent}]."
+        out[e.agent] = {
+            "service": entry["service"],
+            "links": [s.name[len(prefix):] for s in sampled if s.name.startswith(prefix)],
+            "base": {"gross": entry["gross"] if entry["gross"] is not None else entry["value"],
+                     "net": entry["value"]},
+            "gross": _summarise([g for g, _ in pairs]),
+            "net": _summarise([n for _, n in pairs]),
+            "draws_at_or_below_zero": sum(1 for _, n in pairs if not n > 0.0),
+        }
+    return out
 
 
 # ── Output ───────────────────────────────────────────────────────────────────
@@ -476,7 +650,10 @@ METHOD: str = (
     "Monte Carlo over the case's recorded parameters (gaia.uncertainty): each "
     "sampled from its documented range, or from a range set by its confidence "
     "(high ±10%, medium ±25%, low ×/÷2, placeholder ×/÷3), triangular with the "
-    "documented value as mode unless stated; normative choices (discounting, "
+    "documented value as mode unless stated; a value derived from a "
+    "production function is not sampled as one aggregate: each link of the "
+    "chain is sampled from its own range and distribution and every draw "
+    "recomputes the chain and the net value (Step 8f.3); normative choices (discounting, "
     "carbon price) are sensitivities, not sampled; model-wide constants are "
     "not varied. P5/P50/P95 of the draws; tornado: one parameter at a time at "
     "its own P5 and P95, the others at their documented values. Replaces the "
@@ -517,6 +694,18 @@ def uncertainty_to_dict(u: Optional[UncertaintyResult], top: int = 15) -> Option
             for row in u.normative
         ],
         "not_sampled": u.not_sampled,
+        "production_functions": {
+            agent: {
+                "service": block["service"],
+                "unit": "€/ha/yr",
+                "links_sampled": block["links"],
+                "base": {k: round(v, 2) for k, v in block["base"].items()},
+                "gross": {k: round(v, 2) for k, v in block["gross"].items()},
+                "net": {k: round(v, 2) for k, v in block["net"].items()},
+                "draws_at_or_below_zero": block["draws_at_or_below_zero"],
+            }
+            for agent, block in u.production.items()
+        } or None,
     }
 
 
@@ -545,6 +734,19 @@ def format_uncertainty(u: Optional[UncertaintyResult], top: int = 10) -> str:
             f"  {label:<28} {_short(s['p5']):>11} {_short(s['p50']):>11} "
             f"{_short(s['p95']):>11} {_short(u.base[key]):>11}"
         )
+    for agent, block in u.production.items():
+        lines.append("")
+        lines.extend(textwrap.wrap(
+            f"{agent}, {block['service'].split(':')[0].lower()} (€/ha/yr; each of its "
+            f"{len(block['links'])} uncertain links sampled on its own, the chain recomputed):",
+            width=65, initial_indent="  ", subsequent_indent="  "))
+        lines.append(f"  {'':<28} {'P5':>11} {'P50':>11} {'P95':>11} {'base':>11}")
+        for key, label in (("gross", "  gross"), ("net", "  net (the agent's value)")):
+            s = block[key]
+            cells = [s["p5"], s["p50"], s["p95"], block["base"][key]]
+            lines.append(f"  {label:<28} " + " ".join(f"{f'€{v:,.0f}':>11}" for v in cells))
+        lines.append(f"    lowest draw €{block['net']['min']:,.2f} net; draws at or below €0: "
+                     f"{block['draws_at_or_below_zero']}")
     if u.tornado:
         lines.append("")
         lines.append("  Sensitivity (net social cost, each parameter at its P5 / P95):")

@@ -1,20 +1,22 @@
 """
 Gaia — production functions: from primary production to what people eat
-(Step 8e.6; PROJECT_DEFINITION.md, "Core Valuation Principles", (d), (e)).
+(Step 8e.6, 8f; PROJECT_DEFINITION.md, "Core Valuation Principles", (d), (e)).
 
 Where no stated-preference value exists, a foundation species is valued
 through the food its primary production supports. The "trophic_transfer"
-model follows the energy from the plant to the catch:
+model follows the energy from the primary producers to the catch:
 
-    NPP (g dry weight/m²/yr)
-      × carbon_fraction                       → g C/m²/yr
-      × 10                                    → kg C/ha/yr
-      × food_web_share                        → kg C/ha/yr entering the food web
-      × transfer_efficiency^(catch_trophic_level − 1)
-                                              → kg C/ha/yr of consumer production
-      × wet_weight_per_carbon                 → kg (wet)/ha/yr of fish produced
-      × sustainable_catch_share               → kg/ha/yr that can be caught
-      × first_sale_price                      → €/ha/yr
+    Σ over the producers:
+      NPP (g dry weight/m²/yr) × carbon_fraction   (or NPP in g C/m²/yr)
+        × food_web_share                    → g C/m²/yr entering the food web
+      (the share not buried: carbon has one owner, decision D3; the
+      buried part is valued by gaia.carbon)
+    × 10                                    → kg C/ha/yr entering the food web
+    × transfer_efficiency^(catch_trophic_level − 1)
+                                            → kg C/ha/yr of consumer production
+    × wet_weight_per_carbon                 → kg (wet)/ha/yr of fish produced
+    × sustainable_catch_share               → kg/ha/yr that can be caught
+    × first_sale_price                      → €/ha/yr
 
 (the primary-production-required relation of Pauly & Christensen 1995,
 inverted, with a sustainable exploitation rate). The result is the GROSS
@@ -22,16 +24,37 @@ value of the food supported; the service ledger books it net of the catch
 already counted in other entries (``net_of``), so nothing is counted twice.
 
 A ledger entry carries the model as ``production_function``:
-{"model": "trophic_transfer", "parameters": {<name>: {"value"*, "unit"*,
+{"model": "trophic_transfer", "producer": "<the main producer, e.g. the
+plant's leaves and rhizomes>", "parameters": {<name>: {"value"*, "unit"*,
 "label"*, "source"*, "status"* ("verified" | "derived" | "secondary" |
-"inferred"), "range": [low, high]}}, "comparison": {"metric"*, "unit"*,
-"rows"*: [{"ecosystem"*, "value" | "low" and "high", "source"*,
-"note"}]}}. Parsing checks that the entry's ``gross`` is the chain's
-result. No third-party dependencies.
+"inferred"), "range": [low, high], "distribution", "distribution_basis"}},
+"producers": [{"name"*, "description"*,
+"parameters"*: {...}}], "comparison": {"metric"*, "unit"*, "rows"*:
+[{"ecosystem"*, "value" | "low" and "high", "source"*, "note"}]}}.
+
+``parameters`` holds the eight links of the chain (``PARAMETERS``), the
+first three of them for the main producer. ``producers`` (Step 8f.2,
+optional) adds other primary producers whose production enters the same
+food web (for Posidonia: the roots, and the epiphytes on the leaves), each
+with ``npp_dry_weight`` and ``carbon_fraction``, or ``npp_carbon``, and its
+own ``food_web_share``. Their parameters are named ``<name>.<parameter>``
+(e.g. "roots.npp_dry_weight") in the parsed form. Parsing checks that the
+entry's ``gross`` is the chain's result.
+
+Uncertainty (Step 8f.3): each link has its own distribution for the Monte
+Carlo (gaia.uncertainty), which samples the links one by one and recomputes
+the chain, the gross and the net value in every draw: "triangular" (the
+default with a range; mode at the value), "uniform", "lognormal" (median at
+the value, the range read as its central 95% and truncated at the range
+ends) or "fixed" (the default without a range: not sampled), with an
+optional "distribution_basis" saying why. Every distribution stays inside
+the documented range, so the chain's lowest value is ``gross_range``'s low
+end, and parsing of the ledger requires it to exceed what the entry is net
+of (no draw can bring the agent to €0). No third-party dependencies.
 """
 
-import itertools
 import math
+import re
 from typing import Any, Dict, List, Tuple
 
 MODEL = "trophic_transfer"
@@ -48,30 +71,70 @@ PARAMETERS: Tuple[str, ...] = (
     "first_sale_price",
 )
 
+# the parameter sets an additional producer may give
+PRODUCER_PARAMETERS: Tuple[Tuple[str, ...], ...] = (
+    ("npp_dry_weight", "carbon_fraction", "food_web_share"),
+    ("npp_carbon", "food_web_share"),
+)
+
 STATUSES: Tuple[str, ...] = ("verified", "derived", "secondary", "inferred")
+
+DISTRIBUTIONS: Tuple[str, ...] = ("triangular", "uniform", "lognormal", "fixed")
+"""How the Monte Carlo samples a link (Step 8f.3; see the module docstring)."""
 
 # parameters that must lie in (0, 1]
 _FRACTIONS = ("carbon_fraction", "food_web_share", "transfer_efficiency", "sustainable_catch_share")
 
+_PRODUCER_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
+_DEFAULT_PRODUCER = "the plant"
 
-def chain(values: Dict[str, float]) -> List[Tuple[str, float, str]]:
+
+def _producer_names(values: Dict[str, float]) -> List[str]:
+    """Names of the additional producers in ``values``, in order."""
+    return list(dict.fromkeys(k.split(".", 1)[0] for k in values if "." in k))
+
+
+def producer_carbon(values: Dict[str, float]) -> List[Tuple[str, float, float]]:
+    """[(producer, net primary production in g C/m²/yr, share entering the
+    food web)], the main producer ("") first."""
+    out = [("", values["npp_dry_weight"] * values["carbon_fraction"], values["food_web_share"])]
+    for name in _producer_names(values):
+        if f"{name}.npp_carbon" in values:
+            carbon = values[f"{name}.npp_carbon"]
+        else:
+            carbon = values[f"{name}.npp_dry_weight"] * values[f"{name}.carbon_fraction"]
+        out.append((name, carbon, values[f"{name}.food_web_share"]))
+    return out
+
+
+def chain(values: Dict[str, float], producer: str = _DEFAULT_PRODUCER) -> List[Tuple[str, float, str]]:
     """The steps of the chain, [(what, value, unit)], the last one in €/ha/yr."""
-    npp_c = values["npp_dry_weight"] * values["carbon_fraction"]
-    web = npp_c * 10.0 * values["food_web_share"]
-    steps = values["catch_trophic_level"] - 1.0
-    consumers_c = web * values["transfer_efficiency"] ** steps
+    producers = producer_carbon(values)
+    steps: List[Tuple[str, float, str]] = []
+    if len(producers) == 1:
+        steps.append(("net primary production", values["npp_dry_weight"], "g DW/m²/yr"))
+        steps.append(("net primary production, carbon", producers[0][1], "g C/m²/yr"))
+    else:
+        steps.append((f"net primary production, {producer}", values["npp_dry_weight"], "g DW/m²/yr"))
+        steps.append((f"net primary production, {producer}, carbon", producers[0][1], "g C/m²/yr"))
+        for name, carbon, _ in producers[1:]:
+            steps.append((f"net primary production, {name.replace('_', ' ')}, carbon", carbon, "g C/m²/yr"))
+        steps.append(("net primary production, all producers, carbon",
+                      sum(c for _, c, _ in producers), "g C/m²/yr"))
+    web = 10.0 * sum(c * share for _, c, share in producers)
+    levels = values["catch_trophic_level"] - 1.0
+    consumers_c = web * values["transfer_efficiency"] ** levels
     fish = consumers_c * values["wet_weight_per_carbon"]
     catch = fish * values["sustainable_catch_share"]
     euros = catch * values["first_sale_price"]
-    return [
-        ("net primary production", values["npp_dry_weight"], "g DW/m²/yr"),
-        ("net primary production, carbon", npp_c, "g C/m²/yr"),
-        ("entering the food web", web, "kg C/ha/yr"),
+    steps.extend([
+        ("entering the food web (not buried)", web, "kg C/ha/yr"),
         (f"consumer production at trophic level {values['catch_trophic_level']:g}", consumers_c, "kg C/ha/yr"),
         ("fish and invertebrates produced", fish, "kg/ha/yr"),
         ("sustainable catch", catch, "kg/ha/yr"),
         ("food value at first-sale prices", euros, "€/ha/yr"),
-    ]
+    ])
+    return steps
 
 
 def gross_value(values: Dict[str, float]) -> float:
@@ -80,49 +143,105 @@ def gross_value(values: Dict[str, float]) -> float:
 
 
 def central(spec: Dict[str, Any]) -> Dict[str, float]:
-    """{parameter: documented value} of a parsed production function."""
+    """{parameter: documented value} of a parsed production function
+    (additional producers' parameters as "<name>.<parameter>")."""
     return {name: p["value"] for name, p in spec["parameters"].items()}
 
 
 def gross_range(spec: Dict[str, Any]) -> Tuple[float, float]:
-    """(lowest, highest) gross value over every combination of the
-    parameters' range ends (each parameter at its value without a range)."""
+    """(lowest, highest) gross value over the parameters' ranges (each
+    parameter at its value without a range). The chain rises with every
+    parameter but the catch's trophic level (a transfer efficiency is at
+    most 1), so the ends are the corners where every link is at its least
+    and at its most favourable end."""
     params = spec["parameters"]
-    choices = [p["range"] if p.get("range") else (p["value"],) for p in (params[n] for n in PARAMETERS)]
-    results = [gross_value(dict(zip(PARAMETERS, combo))) for combo in itertools.product(*choices)]
-    return min(results), max(results)
+
+    def end(favourable: bool) -> Dict[str, float]:
+        out = {}
+        for name, p in params.items():
+            low, high = p["range"] if p.get("range") else (p["value"], p["value"])
+            rising = name != "catch_trophic_level"
+            out[name] = high if favourable == rising else low
+        return out
+
+    return gross_value(end(False)), gross_value(end(True))
 
 
 def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
     """Validate a ledger entry's ``production_function`` block (see the
-    module docstring); returns it with numbers as floats.
+    module docstring); returns it with numbers as floats, the parameters
+    flat ({name: parameter}, additional producers' as "<name>.<parameter>")
+    and each parameter's JSON path relative to the block (``paths``).
 
     Raises:
         ValueError: Naming the JSON path of the first problem.
     """
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: expected an object")
-    unknown = set(raw) - {"model", "parameters", "comparison"}
+    unknown = set(raw) - {"model", "producer", "parameters", "producers", "comparison"}
     if unknown:
         raise ValueError(f"{path}: unknown key {sorted(unknown)[0]!r}")
     if raw.get("model") != MODEL:
         raise ValueError(f"{path}.model: expected {MODEL!r}, got {raw.get('model')!r}")
+    producer = raw.get("producer", _DEFAULT_PRODUCER)
+    if not isinstance(producer, str) or not producer:
+        raise ValueError(f"{path}.producer: a non-empty string")
     params_raw = raw.get("parameters")
     if not isinstance(params_raw, dict):
         raise ValueError(f"{path}.parameters: expected an object")
-    missing = [n for n in PARAMETERS if n not in params_raw]
+    params = _parse_parameters(params_raw, PARAMETERS, f"{path}.parameters")
+    paths = {name: f"parameters.{name}" for name in params}
+    producers: List[Dict[str, Any]] = []
+    producers_raw = raw.get("producers", [])
+    if not isinstance(producers_raw, list):
+        raise ValueError(f"{path}.producers: expected a list")
+    for i, prod in enumerate(producers_raw):
+        ppath = f"{path}.producers[{i}]"
+        if not isinstance(prod, dict) or set(prod) - {"name", "description", "parameters"}:
+            raise ValueError(f"{ppath}: expected an object with name, description and parameters")
+        name = prod.get("name")
+        if not isinstance(name, str) or not _PRODUCER_NAME.match(name):
+            raise ValueError(f"{ppath}.name: lower-case letters, digits and _, got {name!r}")
+        if any(p["name"] == name for p in producers):
+            raise ValueError(f"{ppath}.name: {name!r} is listed twice")
+        if not isinstance(prod.get("description"), str) or not prod["description"]:
+            raise ValueError(f"{ppath}.description: required, a non-empty string")
+        given = prod.get("parameters")
+        if not isinstance(given, dict):
+            raise ValueError(f"{ppath}.parameters: expected an object")
+        expected = next((s for s in PRODUCER_PARAMETERS if set(s) == set(given)), None)
+        if expected is None:
+            raise ValueError(
+                f"{ppath}.parameters: give " + " or ".join(", ".join(s) for s in PRODUCER_PARAMETERS)
+                + f", got {', '.join(sorted(given)) or 'none'}"
+            )
+        parsed = _parse_parameters(given, expected, f"{ppath}.parameters")
+        for key, p in parsed.items():
+            params[f"{name}.{key}"] = p
+            paths[f"{name}.{key}"] = f"producers[{i}].parameters.{key}"
+        producers.append({"name": name, "description": prod["description"]})
+    spec: Dict[str, Any] = {"model": MODEL, "producer": producer, "parameters": params,
+                            "producers": producers, "paths": paths, "comparison": None}
+    if "comparison" in raw:
+        spec["comparison"] = _parse_comparison(raw["comparison"], f"{path}.comparison")
+    return spec
+
+
+def _parse_parameters(raw: Dict[str, Any], names: Tuple[str, ...], path: str) -> Dict[str, Dict[str, Any]]:
+    missing = [n for n in names if n not in raw]
     if missing:
-        raise ValueError(f"{path}.parameters: missing {missing[0]!r} (required: {', '.join(PARAMETERS)})")
-    extra = [n for n in params_raw if n not in PARAMETERS]
+        raise ValueError(f"{path}: missing {missing[0]!r} (required: {', '.join(names)})")
+    extra = [n for n in raw if n not in names]
     if extra:
-        raise ValueError(f"{path}.parameters: unknown parameter {extra[0]!r}")
+        raise ValueError(f"{path}: unknown parameter {extra[0]!r}")
     params: Dict[str, Dict[str, Any]] = {}
-    for name in PARAMETERS:
-        ppath = f"{path}.parameters.{name}"
-        p = params_raw[name]
+    for name in names:
+        ppath = f"{path}.{name}"
+        p = raw[name]
         if not isinstance(p, dict):
             raise ValueError(f"{ppath}: expected an object")
-        bad = set(p) - {"value", "unit", "label", "source", "status", "range"}
+        bad = set(p) - {"value", "unit", "label", "source", "status", "range", "distribution",
+                        "distribution_basis"}
         if bad:
             raise ValueError(f"{ppath}: unknown key {sorted(bad)[0]!r}")
         for key in ("unit", "label", "source", "status"):
@@ -146,12 +265,21 @@ def parse_production_function(raw: Any, path: str) -> Dict[str, Any]:
                 raise ValueError(f"{ppath}.range: must contain the value {value}, got [{low}, {high}]")
             if name in _FRACTIONS and high > 1.0:
                 raise ValueError(f"{ppath}.range: a share, must be in (0, 1]")
+            if name == "catch_trophic_level" and low < 1.0:
+                raise ValueError(f"{ppath}.range: a trophic level is >= 1")
             out["range"] = (low, high)
+        distribution = p.get("distribution", "triangular" if "range" in out else "fixed")
+        if distribution not in DISTRIBUTIONS:
+            raise ValueError(f"{ppath}.distribution: expected one of {list(DISTRIBUTIONS)}, got {distribution!r}")
+        if distribution != "fixed" and ("range" not in out or out["range"][0] == out["range"][1]):
+            raise ValueError(f"{ppath}.distribution: {distribution!r} needs a range [low, high] with low < high")
+        out["distribution"] = distribution
+        basis = p.get("distribution_basis", "")
+        if not isinstance(basis, str):
+            raise ValueError(f"{ppath}.distribution_basis: a string")
+        out["distribution_basis"] = basis
         params[name] = out
-    spec: Dict[str, Any] = {"model": MODEL, "parameters": params, "comparison": None}
-    if "comparison" in raw:
-        spec["comparison"] = _parse_comparison(raw["comparison"], f"{path}.comparison")
-    return spec
+    return params
 
 
 def _parse_comparison(raw: Any, path: str) -> Dict[str, Any]:
@@ -203,15 +331,21 @@ def _num(value: float) -> str:
 
 def chain_text(spec: Dict[str, Any], gross: float, counted: float, net: float, counted_in: str) -> str:
     """The NPP → € chain in one line of words (for the report's agent line)."""
-    steps = chain(central(spec))
-    npp_dw, npp_c, web, _, fish, catch, euros = (v for _, v, _ in steps)
+    values = central(spec)
+    producers = producer_carbon(values)
+    steps = chain(values)
+    web, _, fish, catch, _ = (v for _, v, _ in steps[-5:])
     p = spec["parameters"]
+    npp = f"NPP {_num(producers[0][1])} g C/m²/yr ({_num(values['npp_dry_weight'])} g dry weight)"
+    if len(producers) > 1:
+        others = " + ".join(f"{name.replace('_', ' ')} {_num(c)}" for name, c, _ in producers[1:])
+        npp += f" + {others} = {_num(sum(c for _, c, _ in producers))} g C/m²/yr"
     return (
-        f"Primary production → food: NPP {_num(npp_c)} g C/m²/yr ({_num(npp_dw)} g dry weight) "
-        f"→ {_num(web)} kg C/ha/yr into the food web → {_num(fish)} kg fish and invertebrates/ha/yr "
-        f"(trophic level {p['catch_trophic_level']['value']:g}) → {_num(catch)} kg/ha/yr sustainable catch "
-        f"× €{p['first_sale_price']['value']:.2f}/kg = €{_num(gross)}/ha/yr; minus €{_num(counted)} "
-        f"already counted ({counted_in}) = €{_num(net)}/ha/yr"
+        f"Primary production → food: {npp} "
+        f"→ {_num(web)} kg C/ha/yr into the food web (not buried) → {_num(fish)} kg fish and "
+        f"invertebrates/ha/yr (trophic level {p['catch_trophic_level']['value']:g}) → {_num(catch)} kg/ha/yr "
+        f"sustainable catch × €{p['first_sale_price']['value']:.2f}/kg = €{_num(gross)}/ha/yr; minus "
+        f"€{_num(counted)} already counted ({counted_in}) = €{_num(net)}/ha/yr"
     )
 
 
@@ -222,11 +356,14 @@ def production_block(spec: Dict[str, Any], gross: float, counted: float, net: fl
     low, high = gross_range(spec)
     return {
         "model": spec["model"],
+        "producer": spec["producer"],
         "parameters": {
             name: dict(p, range=list(p["range"]) if p.get("range") else None)
             for name, p in spec["parameters"].items()
         },
-        "chain": [{"step": what, "value": value, "unit": unit} for what, value, unit in chain(central(spec))],
+        "producers": [dict(p) for p in spec["producers"]],
+        "chain": [{"step": what, "value": value, "unit": unit}
+                  for what, value, unit in chain(central(spec), spec["producer"])],
         "gross_eur_per_ha_yr": gross,
         "gross_range_eur_per_ha_yr": [low, high],
         "net_of": list(net_of),

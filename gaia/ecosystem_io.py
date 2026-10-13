@@ -95,8 +95,10 @@ names of the entries it would otherwise count again) books value = gross −
 their values; a production_function (gaia.production) derives the gross
 from primary production. Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
-it is net of, a chain that does not give its gross, and an agent with no
-entry that applies on every hectare. ``Case.ledger_check()`` lists the
+it is net of, a chain that does not give its gross, a chain whose lowest
+value (every link at its least favourable end, Step 8f.3) does not exceed
+what it is net of, and an agent with no entry that applies on every
+hectare. ``Case.ledger_check()`` lists the
 agents whose weight × annual_value_per_ha (and weight ×
 site_value_per_ha) differs from the sum of their ledger values (the
 shipped files have none; it is not enforced on parse, so the Monte Carlo
@@ -1177,7 +1179,9 @@ class Case:
                          f"{block['already_counted_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             lines.append(f"    {'= value of this agent:':<52} {block['net_eur_per_ha_yr']:>12,.2f} €/ha/yr")
             low, high = block["gross_range_eur_per_ha_yr"]
-            lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr.")
+            lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr (every link at")
+            lines.append("    its least or most favourable end at once). The Monte Carlo (--uncertainty)")
+            lines.append("    samples each link on its own and recomputes the chain in every draw.")
             unverified = [p["label"] for p in block["parameters"].values() if p["status"] != "verified"]
             if unverified:
                 lines.extend(textwrap.wrap(
@@ -1362,6 +1366,19 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
                 f"{entry['gross']:.6g} − {counted:.6g} = {entry['gross'] - counted:.6g}, got {entry['value']:.6g} "
                 f"(otherwise the subtracted services would be counted twice)"
             )
+        if entry["production_function"] is not None:
+            # Step 8f.3: the Monte Carlo samples each link inside its range,
+            # so the lowest value of the chain bounds every draw from below
+            from gaia.production import gross_range
+
+            lowest = gross_range(entry["production_function"])[0]
+            if not lowest - counted > 0.0:
+                raise ValueError(
+                    f"$.service_ledger[{i}].production_function: with every link at its least favourable "
+                    f"end the chain gives {lowest:.6g} €/ha/yr, not above the {counted:.6g} it is net of: "
+                    f"a Monte Carlo draw could bring the agent to €0 (PROJECT_DEFINITION.md, Core "
+                    f"Valuation Principles (b)); fix the model or the ranges"
+                )
     if ledger:
         # The Core Valuation Principles (PROJECT_DEFINITION.md), (b), (c):
         # every agent owns at least one final service that applies on every

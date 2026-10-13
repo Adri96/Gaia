@@ -27,9 +27,11 @@ THRESHOLD_UNITS = 1_000      # 20% of 5,000 ha
 REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 
 # Step 8e.6: the meadow's own value on every hectare, the food its primary
-# production supports net of the commercial catch already counted (35)
-MEADOW_FOOD_NET = 249.73947706897167
-LEDGER_TOTAL = 1068.403055661153    # €/ha/yr of the reference meadow
+# production supports net of the commercial catch already counted (35);
+# Step 8f.1: at the Western Mediterranean transfer efficiency, 14.3%;
+# Step 8f.2: with the production of the roots and of the leaf epiphytes
+MEADOW_FOOD_NET = 474.4848156047374
+LEDGER_TOTAL = 1293.1483941969188    # €/ha/yr of the reference meadow
 
 
 # ── Structure invariants ───────────────────────────────────────────────────────
@@ -620,7 +622,8 @@ def test_site_share_is_a_recorded_project_input():
                           tornado=False, normative=False)
     names = {s.name for s in res.sampled}
     assert "agent[Posidonia Meadow].site_share" not in names
-    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    # the meadow's values are still sampled: diving as one value, food link by link (Step 8f.3)
+    assert {"agent[Posidonia Meadow].site_value_per_ha", "production[Posidonia Meadow].transfer_efficiency"} <= names
     with pytest.raises(ValueError, match="site share must be in"):
         case.build_ecosystem(site_share=1.5)
     with pytest.raises(ValueError, match="no site-restricted agent"):
@@ -794,7 +797,8 @@ def test_intensity_is_a_recorded_project_input_not_sampled():
                           tornado=False, normative=False)
     names = {s.name for s in res.sampled}
     assert "agent[Posidonia Meadow].site_intensity" not in names
-    assert "agent[Posidonia Meadow].annual_value_per_ha" in names
+    # the meadow's values are still sampled: diving as one value, food link by link (Step 8f.3)
+    assert {"agent[Posidonia Meadow].site_value_per_ha", "production[Posidonia Meadow].transfer_efficiency"} <= names
     with pytest.raises(ValueError, match="unknown dive-intensity level"):
         case.build_ecosystem(site_intensity="extreme")
     with pytest.raises(ValueError, match="no site intensity levels"):
@@ -941,7 +945,11 @@ def test_meadow_food_value_is_the_primary_production_chain():
     case = load_case("posidonia")
     entry = next(e for e in case.service_ledger if e["production_function"] is not None)
     assert entry["agent"] == "Posidonia Meadow" and not entry["site_restricted"]
-    gross = (476.0 * 0.336 * 10 * 0.74 * 0.118 ** (3.1 - 1) * 9
+    # g C/m²/yr entering the food web: the plant (74% not buried), its
+    # roots (4% decomposed within a year, the rest buried) and the leaf
+    # epiphytes (1.9 mol C/m²/yr, none buried)
+    web = 476.0 * 0.336 * 0.74 + 17.0 * 0.409 * 0.04 + 1.9 * 12.011 * 1.0
+    gross = (web * 10 * 0.143 ** (3.1 - 1) * 9
              * (0.87 / 1.87) * (41_056_589 / 8_034_993))
     assert entry["gross"] == pytest.approx(gross, rel=1e-12)
     counted = {e["service"]: e["value"] for e in case.service_ledger if e["service"] in entry["net_of"]}
@@ -957,10 +965,56 @@ def test_meadow_food_value_is_the_primary_production_chain():
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
     assert params["wet_weight_per_carbon"]["status"] == "secondary"
-    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "transfer_efficiency", "first_sale_price"):
+    for name in ("npp_dry_weight", "carbon_fraction", "food_web_share", "first_sale_price"):
         assert params[name]["status"] == "verified"
+    # Step 8f.1: the median of five Western Mediterranean food-web models
+    te = params["transfer_efficiency"]
+    assert (te["value"], te["range"], te["status"]) == (0.143, (0.122, 0.218), "derived")
+    assert "doi:10.3389/fmars.2023.1166674" in te["source"] and "14.25%" in te["source"]
     for p in params.values():
         assert "doi:" in p["source"] or "ge3m-4jgm" in p["source"]
+    # Step 8f.2: two more producers, each link sourced and flagged
+    pf = entry["production_function"]
+    assert [p["name"] for p in pf["producers"]] == ["roots", "epiphytes"]
+    assert (params["roots.npp_dry_weight"]["value"], params["roots.npp_dry_weight"]["range"]) == (17.0, (11.0, 23.0))
+    assert params["roots.carbon_fraction"]["status"] == "verified"
+    assert params["roots.food_web_share"]["status"] == "secondary"
+    assert params["epiphytes.npp_carbon"]["status"] == "secondary"
+    assert params["epiphytes.food_web_share"]["status"] == "inferred"
+    assert params["npp_dry_weight"]["range"] == (238.0, 989.3)    # up to Cala Jonquet, Cap de Creus
+
+
+def test_roots_feed_the_food_web_only_through_what_is_not_buried():
+    """Decision D3, carbon has one owner: the chain takes only the roots'
+    production decomposed within its first year; the rest is buried in
+    the matte, where gaia.carbon values it."""
+    from gaia.cases import load_case
+    from gaia.production import central, producer_carbon
+
+    entry = next(e for e in load_case("posidonia").service_ledger if e["production_function"] is not None)
+    shares = {name or "plant": share for name, _, share in producer_carbon(central(entry["production_function"]))}
+    assert shares["roots"] < 0.06 < shares["plant"] < shares["epiphytes"] == 1.0
+    low, high = entry["production_function"]["parameters"]["roots.food_web_share"]["range"]
+    assert low > 0.0 and high < 0.06
+
+
+def test_epiphyte_production_is_not_counted_twice():
+    """The Epiphytes & Algae agent owns the epiphyte metric of the
+    bioindicator service (monitoring, a cultural service); the food the
+    epiphytes' production supports is a provisioning service, booked once,
+    in the meadow's production function. No other entry values food."""
+    from gaia.cases import load_case
+
+    case = load_case("posidonia")
+    epiphyte_entries = [e for e in case.service_ledger if e["agent"] == "Epiphytes & Algae"]
+    assert [(e["section"], e["split_of"]) for e in epiphyte_entries] == [("cultural", "Use as bioindicator (1.5 EUR/ha/yr)")]
+    food = [e for e in case.service_ledger if e["section"] == "provisioning"]
+    with_epiphytes = [e for e in food if e["production_function"] is not None
+                      and any(p["name"] == "epiphytes" for p in e["production_function"]["producers"])]
+    assert len(with_epiphytes) == 1
+    # every other provisioning entry is commercial catch, which the food entry is net of
+    others = {e["service"] for e in food} - {with_epiphytes[0]["service"]}
+    assert others == set(with_epiphytes[0]["net_of"])
 
 
 def test_meadow_range_is_the_chain_at_its_ends():
@@ -1007,6 +1061,24 @@ def test_ledger_enforces_the_subtraction():
     food(doc)["production_function"]["parameters"]["transfer_efficiency"]["status"] = "guessed"
     with pytest.raises(ValueError, match="status"):
         case_from_dict(doc)
+    # Step 8f.2: an additional producer gives its NPP in dry weight with its
+    # carbon content, or in carbon, and its own share not buried
+    doc = copy.deepcopy(load_case("posidonia").document)
+    del food(doc)["production_function"]["producers"][0]["parameters"]["carbon_fraction"]
+    with pytest.raises(ValueError, match="producers\\[0\\].parameters: give npp_dry_weight"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["production_function"]["producers"][1]["name"] = "roots"
+    with pytest.raises(ValueError, match="listed twice"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["production_function"]["producers"][1]["parameters"]["food_web_share"]["range"] = [0.74, 1.2]
+    with pytest.raises(ValueError, match="a share"):
+        case_from_dict(doc)
+    doc = copy.deepcopy(load_case("posidonia").document)
+    food(doc)["production_function"]["producers"][1]["parameters"]["npp_carbon"]["value"] = 40.0
+    with pytest.raises(ValueError, match="the chain gives"):
+        case_from_dict(doc)
 
 
 def test_productivity_is_visible_in_text_and_json(capsys):
@@ -1023,7 +1095,8 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     text = case.report(result)
     meadow_line = text[text.index("Posidonia Meadow:"):text.index("Coralligenous & Red Coral:")]
     flat = " ".join(meadow_line.split())
-    assert "NPP 160 g C/m²/yr" in flat and "€285/ha/yr" in flat and "= €250/ha/yr" in flat
+    assert "NPP 160 g C/m²/yr" in flat and "+ roots 6.95 + epiphytes 22.8 = 190 g C/m²/yr" in flat
+    assert "€509/ha/yr" in flat and "= €474/ha/yr" in flat
     assert "Carbon: 1,199 tCO2/ha held in the matte" in flat and "valued once, in the carbon accounting, and not added to this line" in flat
     assert "Primary Production → Food → €" in text and "Coral reefs" in text
     # the carbon is shown, not added: the run's annual externality is the ledger's

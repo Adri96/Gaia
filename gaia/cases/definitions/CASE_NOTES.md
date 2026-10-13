@@ -312,22 +312,56 @@ value = gross − their values). € 2014-2017/ha/yr:
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
 - Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
-  production supports, a production function (gaia/production.py):
-    net primary production (blades, sheaths, rhizomes)   476 g DW/m²/yr
-                                                          (Pergent et al. 1994)
-    × 33.6% carbon (Duarte 1990)                          = 159.9 g C/m²/yr
-    × 10 kg/ha per g/m² × 74% not buried in the matte     = 1,183.5 kg C/ha/yr
-      (Mateo & Romero 1997, Medes Islands)
-    × 0.118^(3.1 − 1): transfer efficiency 11.8% per      = 13.31 kg C/ha/yr
-      level (Coll et al. 2008) to the catch's trophic
-      level 3.1 (Francour 1997's dominant species, FishBase)
-    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 119.8 kg/ha/yr
-    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 55.7 kg/ha/yr
+  production supports, a production function (gaia/production.py), over
+  three producers (Step 8f.2), each feeding the food web only with the
+  production that is not buried (decision D3):
+    plant: blades, sheaths, rhizomes 476 g DW/m²/yr       (Pergent et al. 1994;
+      × 33.6% carbon (Duarte 1990) = 159.9 g C/m²/yr       range 238–989.3, up to
+      × 74% not buried (Mateo & Romero 1997, Medes)        Cala Jonquet, Cebrián
+                                   = 118.4 g C/m²/yr       et al. 1997)
+    roots: 17 g DW/m²/yr (Mateo & Romero 1997, Medes, 11 at 13 m, 23 at 5 m)
+      × 40.9% carbon (ibid., living roots) = 6.95 g C/m²/yr
+      × 4% decomposed within the year, the rest buried in the matte
+        (0.00015/d, Mateo 1995 as cited by Cebrián et al. 1997: 2.7–5.3%)
+                                   = 0.28 g C/m²/yr
+    leaf epiphytes: 1.9 mol C/m²/yr (Bay 1984, Corsica, as reported by
+      Champenois & Borges 2021, Fig. 6) = 22.8 g C/m²/yr, range ×/÷2
+      × 100% not buried (inferred: grazed, absent from the litter;
+        lower end 74%)             = 22.8 g C/m²/yr
+    × 10 kg/ha per g/m²: into the food web                = 1,414.5 kg C/ha/yr
+    × 0.143^(3.1 − 1): transfer efficiency 14.3% per      = 23.81 kg C/ha/yr
+      level (Step 8f.1: the median of five Western
+      Mediterranean Ecopath models, 12.2–21.8%, tabulated by
+      Sánchez-Zulueta et al. 2023; the north-western
+      Mediterranean model's own value; temperate models
+      average 14.25%, Coll et al. 2008) to the catch's
+      trophic level 3.1 (Francour 1997's dominant species,
+      FishBase)
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 214.3 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 99.7 kg/ha/yr
       (Zhou et al. 2012)
-    × €5.11/kg, Catalan white-fish first-sale price 2014  = €284.74 gross
-    − 35.00, the commercial catch booked to Fish          = €249.74 net
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €509.48 gross
+    − 35.00, the commercial catch booked to Fish          = €474.48 net
       Populations and Marine Invertebrates (net_of)
-  Range over the links' ends: €0.10–731.98 net (€35.10–766.98 gross).
+  Of the gross, the plant gives €426.29, the roots €1.00, the epiphytes
+  €82.20. Range over the links' ends: €31.41–2,993.09 net (€66.41–
+  3,028.09 gross). Before Step 8f.2 roots and epiphytes were left out
+  (€426.29 gross, €391.29 net); before Step 8f.1 the transfer efficiency
+  was 11.8%, the median of a global compilation (Coll et al. 2008):
+  €284.74 gross, €249.74 net.
+  The epiphytes' food is not counted twice: the Epiphytes & Algae agent
+  owns the epiphyte metric of the bioindicator service (monitoring, a
+  cultural service), not food, and no other entry values their
+  production.
+  Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
+  (its `distribution` and `distribution_basis` in the case file:
+  lognormal for the plant's and the epiphytes' NPP, triangular for the
+  shares, the transfer efficiency and the trophic level, uniform for the
+  roots; the carbon contents, ×9 and the price fixed) and every draw
+  recomputes gross − net_of; the meadow's agent value is derived, not
+  sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
+  P5 215, P50 490, P95 1,085 (base 474, lowest draw 79). The €31.41 floor
+  above bounds every draw; parsing requires it to be > 0.
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
   and the matte's carbon on the meadow's line (the carbon as an
@@ -359,7 +393,7 @@ value = gross − their values). € 2014-2017/ha/yr:
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
   'none' zeroes the diving service, never an agent: the meadow keeps its
-  own €249.74/ha/yr on every hectare (above), and every other agent keeps
+  own €474.48/ha/yr on every hectare (above), and every other agent keeps
   its value. (Before Step 8e.6 the diving service was the meadow's only
   entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
@@ -378,8 +412,8 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €1,068.40/ha/yr (€818.66 before Step 8e.6, €284.83 before Step
-8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
+Total €1,293.15/ha/yr (€1,209.95 before Step 8f.2, €1,068.40 before
+Step 8f.1, €818.66 before Step 8e.6, €284.83 before Step 8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total
 remains a lower bound. Full table and caveats:
