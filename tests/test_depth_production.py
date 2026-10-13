@@ -412,3 +412,57 @@ def test_random_depths_and_draws_never_reach_zero():
         assert all(net > 0.0 for _, net in produced.values())
         case_from_dict(doc)
         assert not math.isnan(sum(n for _, n in produced.values()))
+
+
+# ── Step 8g.8: the €35 net_of scales with depth (the owner's answer 1) ───────
+
+
+@pytest.mark.parametrize("depth", [(5.0, 5.0), (25.0, 25.0), (35.0, 35.0), (43.0, 43.0), (30.0, 40.0)])
+def test_the_scaled_net_of_is_the_same_rule_in_the_point_estimate_and_every_draw(depth):
+    """At a project depth the €35 subtracted is 35 × NPP(project, the site's
+    limit) / NPP(15 m, the regional limit): in the point estimate at the
+    central hyperparameters, in every Monte Carlo draw at that draw's (the
+    factor moves with the chain, so the net value never reaches €0)."""
+    from gaia.uncertainty import (
+        _draw_all,
+        _rederive_production,
+        _with_values,
+        production_entries,
+        production_sampled,
+    )
+
+    at = load_case("posidonia").with_project_depth(*depth)
+    entry = _meadow_entry(at)
+    spec = entry["production_function"]
+    p, k, z_max, z_ref = _hyper(load_case("posidonia"))
+    site = central(spec)["depth.site_depth_limit"]
+    expected = mean_depth_npp(*depth, p, k, z_max, z_ref, site) / depth_npp(15.0, p, k, z_max, z_ref)
+    assert entry["gross"] - entry["value"] == pytest.approx(35.0 * expected, rel=1e-12)
+    entries = production_entries(at)
+    sampled = production_sampled(at, entries)
+    by_name = {s.name: s for s in sampled}
+    rng = random.Random(11)
+    scales = []
+    for _ in range(25):
+        doc = _with_values(at.document, _draw_all(sampled, rng), by_name, {})
+        produced = _rederive_production(doc, entries)
+        drawn = case_from_dict(doc)
+        d_entry = _meadow_entry(drawn)
+        d_spec = d_entry["production_function"]
+        v = central(d_spec)
+        scale = mean_depth_npp(*depth, v["depth.npp_at_reference_depth"], v["depth.decline_rate"],
+                               v["depth.depth_limit"], z_ref, v["depth.site_depth_limit"]) / depth_npp(
+            15.0, v["depth.npp_at_reference_depth"], v["depth.decline_rate"], v["depth.depth_limit"], z_ref)
+        assert net_of_scale(d_spec) == pytest.approx(scale, rel=1e-12)
+        gross, net = produced[MEADOW]
+        assert gross - net == pytest.approx(35.0 * scale, rel=1e-9) and net > 0.0
+        scales.append(scale)
+    assert max(scales) > min(scales)   # recomputed in each draw, not a fixed factor
+
+
+def test_the_regional_run_and_the_base_depth_subtract_exactly_35():
+    """The owner's answers 1 and 2: scaled from the 15 m base; at 15 m, and
+    in the regional run, exactly the booked €35."""
+    for case in (load_case("posidonia"), load_case("posidonia").with_project_depth(15.0, 15.0)):
+        entry = _meadow_entry(case)
+        assert entry["gross"] - entry["value"] == pytest.approx(35.0, rel=1e-12)

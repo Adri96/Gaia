@@ -402,7 +402,10 @@ value = gross − their values). € 2014-2017/ha/yr:
   truncated, or beyond 40 m extended to [z + 2, z + 4] m; drawn
   comonotone with the regional limit), keeping P_ref and k; only a
   negative depth is rejected. At a project depth the €35 netted out scales with the
-  plant's NPP there / NPP at 15 m (exactly €35 in the regional run).
+  plant's NPP there / NPP at 15 m (exactly €35 in the regional run),
+  recomputed in every Monte Carlo draw; decided by the owner (Step 8g.8,
+  review of #11, question 1), with the 15 m base and the 40 m (30–44)
+  depth limit (questions 2 and 3).
   Monte Carlo (Step 8f.3): each uncertain link is sampled on its own
   (its `distribution` and `distribution_basis` in the case file:
   lognormal for the epiphytes' NPP and the depth function's P_ref,
