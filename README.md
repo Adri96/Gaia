@@ -39,8 +39,8 @@ Default run of each case (extraction):
 |---|---|---|---|---|---|---|
 | Oak Valley Forest (temperate): `gaia run forest` | 5,000 of 10,000 (50%) | 500,000 | 101,899 | 10,704,259 | 10.6% | 24 of 27 |
 | Costa Brava Holm Oak Forest (Mediterranean): `gaia run costa_brava` | 4,000 of 10,000 (40%) | 240,000 | 127,048 | 9,133,733 | 20.2% | 51 of 55 |
-| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 40,933 | 10,345,456 | 98.9% | 50 of 61 |
-| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 116,000 | 34,933,804 | 80.0% | 66 of 71 |
+| Posidonia oceanica, Catalan coast (marine; the v1.0 case): `gaia run posidonia` | 50 of 4,582 (1%) | 125,000 | 53,420 | 11,514,163 | 98.9% | 52 of 63 |
+| Central Amazon (tropical): `gaia run amazon_forest` | 80,000 of 400,000 (20%) | 120,000 | 520,458 | 60,350,545 | 80.0% | 66 of 71 |
 <!-- END:example -->
 
 The forest case in full (the same run as the first row):
@@ -322,17 +322,17 @@ The JSON output starts with the calibration status:
   "mode": "extraction",
   "calibration": {
     "status": "illustrative",
-    "statement": "ILLUSTRATIVE: 50 of 61 recorded parameters are placeholders (29) or low-confidence (21). Results are not real-world estimates.",
+    "statement": "ILLUSTRATIVE: 52 of 63 recorded parameters are placeholders (29) or low-confidence (23). Results are not real-world estimates.",
     "calibration_regime": "B",
-    "n_params": 61,
+    "n_params": 63,
     "n_placeholder": 29,
-    "n_low": 21,
+    "n_low": 23,
     "n_medium": 11
   },
   "summary": {
-    "annual_externality_eur_yr": 40933.18,
-    "pv_externality_eur_pv": 10345455.73,
-    "net_social_cost_eur_pv": 10220455.73
+    "annual_externality_eur_yr": 53420.15,
+    "pv_externality_eur_pv": 11514163.36,
+    "net_social_cost_eur_pv": 11389163.36
   }
 }
 ```
@@ -375,7 +375,7 @@ A yearly flow is never added to, or compared with, a one-off amount. Revenue is 
 - `restoration_cost_ratio` = (foregone revenue + restoration cost) / foregone revenue = 1 + restoration cost per unit / unit value. It is a ratio of two input prices, with no ecology in it.
 - `destroy_then_restore_penalty` is the PV cost to society of cutting k units and restoring them, compared with never cutting them: restoration cost + maturation gap (temporary) + substrate loss (permanent) + recovery shortfall (permanent, when replanting is partial) + carbon not recovered. It is reported in € PV and per € of foregone revenue.
 
-**Uncertainty (`--uncertainty [N]`).** A seeded Monte Carlo over the case's own parameter ranges (`gaia/uncertainty.py`, any case file, extraction). A parameter is sampled from its documented `range` / `relative_range`, or from a range set by its confidence (high ±10%, medium ±25%, low ×/÷2, placeholder ×/÷3). The output gives P5/P50/P95 of the annual externality, its present value and the net social cost; a tornado ranking (each parameter at its own P5 and P95); and the normative choices as separate sensitivities (carbon price, discount rate, scarcity, horizon), which are not sampled. It replaced the former heuristic band `cost × (1 ± (1 − model confidence))` (finding S7). Model-wide constants are not varied.
+**Uncertainty (`--uncertainty [N]`).** A seeded Monte Carlo over the case's own parameter ranges (`gaia/uncertainty.py`, any case file, extraction). A parameter is sampled from its documented `range` / `relative_range`, or from a range set by its confidence (high ±10%, medium ±25%, low ×/÷2, placeholder ×/÷3). The output gives P5/P50/P95 of the annual externality, its present value and the net social cost; a tornado ranking (each parameter at its own P5 and P95); and the normative choices as separate sensitivities (carbon price, discount rate, scarcity, horizon), which are not sampled. It replaced the former heuristic band `cost × (1 ± (1 − model confidence))` (finding S7). Model-wide constants are not varied. A draw that breaks validation (e.g. an agent's incoming edge strengths above the cap) is drawn again and counted, never rescaled; since Step 8e.4 the edges of every shipped case have ranges that keep the cap (×0.5 to ×1.5, or only up to the cap for an agent near it), so every case gives valid P5/P50/P95 (1,000 draws: about 4 s for Posidonia, 14 s for the forests, 4 min for the default 80,000-tree Amazon run).
 
 **Benchmarks.** A case file may list published per-hectare values (`run.benchmarks`). An extraction report then shows where Gaia's per-hectare figures fall among them (`gaia/benchmarks.py`).
 
@@ -435,10 +435,11 @@ The 0.9 command lines — `gaia <case>` and `python -m gaia.cases.<case>`, with 
 | `--units N` | Units to extract (extract mode) or to replant (restore mode) |
 | `--threshold RATIO` | Safe extraction threshold, which also places the inflection of every damage curve (for Posidonia, where the remaining meadow starts to degrade) |
 | `--unit-value EUROS` | One-off revenue per unit extracted |
-| `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares |
+| `--area-ha HA` | Area of the reference resource (default: units / the case's reference density). For Posidonia it is the reference resource itself, e.g. the meadow a project affects, and sets the number of hectares; it then requires `--dive-intensity` and/or `--dive-site-share` (Step 8e.3) |
 | `--resource-name NAME` | Name of the reference resource in the outputs |
 | `--carbon-release-fraction F`, `--carbon-release-half-life YEARS` | Project inputs: share of the soil carbon released, and the half-life of its release (0: all at once) |
-| `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share) |
+| `--dive-site-share F` | Posidonia: share (0–1) of the affected meadow within reach of dive sites, where the meadow's diving value applies (1 at a dive site, 0 far from any; default 0.031, the regional share, or 1 when `--dive-intensity` is given alone) |
+| `--dive-intensity {none,low,medium,high}` | Posidonia: how much the meadow near the dive sites is dived, in dives per hectare of meadow a year; it sets the meadow's diving value per hectare near the sites (€34.71 a dive). **none**: no dive site within reach, 0 for the diving service only (the meadow keeps its own €250/ha/yr). **low**: like Banyuls-Cerbère, 66 dives/ha/yr, €2,298/ha/yr. **medium**: like Portofino, 566, €19,663. **high**: like the Medes Islands, 5,581, €193,730 (only a small meadow at a heavily dived site; give the share near it). Default: the Costa Brava average, 421.5, €14,630 |
 | `--matte-fate {exposed,excavated,buried}` | Posidonia: what the project does to the matte, a preset of the two inputs above (which still override it). **exposed** (default): the meadow dies but the matte stays uncovered and erodes, 0.63 released with a 10-year half-life. **excavated**: dug out or dredged, 0.96 released in the year of the works (IPCC 2013). **buried**: covered by fill and kept without oxygen, 0.125 (inferred, no source) |
 | `--mode {extract,restore}` | Simulation mode |
 | `--units-lost N` | [restore] Units missing at the start (default: `--units`) |
@@ -500,17 +501,18 @@ What the values rest on. The authoritative, per-parameter list is in each output
 
 - **Forest and Costa Brava**: every agent shares a global biome mean from de Groot et al. (2012) and Costanza et al. (2014), minus climate regulation (carbon is valued separately). The figures are partly from memory and have no currency or price-year conversion: *low* confidence. The dependency weights split the biome value between agents. Both cases were once back-solved so that the externality crossed the revenue at a chosen depletion; that tuning is gone.
 - **Posidonia** (the v1.0 case, Step 8):
-  - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money without double counting. €819/ha/yr in total:
+  - **Euro values: a service ledger** (Step 8c.2). Each final service is counted once and owned by one agent, so every agent costs money, under any input, without double counting. €1,068/ha/yr in total:
+    - **the meadow's own value, from its primary production** (Step 8e.6): the fish and invertebrates its net primary production supports (160 g C/m²/yr → 120 kg/ha/yr produced → 56 kg/ha/yr sustainable catch × €5.11/kg = €285/ha/yr), net of the €35 of commercial catch already counted under fish and invertebrates: **€250/ha/yr on every hectare**, whatever the diving. Every link is sourced in the case file; the report shows the chain on the meadow's line and compares the meadow's productivity with coral reefs, cropland and tropical forest;
     - coastal protection, water purification, fisheries and bioindicator/knowledge (Campagne et al. 2015), with fisheries split between fish and invertebrates and the bioindicator use split with the epiphytes;
-    - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
+    - the meadow's diving amenity, **only near dive sites** (Zunino et al. 2020: Medes dives over the 142.35 ha of meadow near Costa Brava dive sites; the project states its share with `--dive-site-share`, default the regional 0.031, and how much it is dived with `--dive-intensity {none,low,medium,high}`, default the Costa Brava average), and coralligenous diving (Rodrigues et al. 2016, Medes Islands);
     - the non-use values of megafauna and seabirds (Börger et al. 2014, a benefit transfer).
 
-    Beach tourism and the meadow's own existence value are not valued, so the total is still a lower bound, ~11× below the Mediterranean seagrass meta-regression.
+    Beach tourism and the meadow's own existence value are not valued (no willingness-to-pay study for the meadow was found), so the total is still a lower bound, ~8× below the Mediterranean seagrass meta-regression.
   - **Small losses are priced linearly** (damage model `area_loss`): below the 20% threshold each hectare costs its average value; past it the remaining meadow degrades. The reference resource is the regional stock unless the user enters the meadow a project affects (`--area-ha`).
   - **Carbon.** Burial from Balearic cores and the top-metre matte stock from Corsican cores, with a 25–100% loss on conversion released over time (half-life 10 yr). Both the fraction and the half-life are project inputs, most simply set with `--matte-fate`: the matte left **exposed** (the default: 0.63, half-life 10 yr), **excavated** (0.96, at once; IPCC 2013) or **buried** under fill (0.125, inferred). Carbon is as large as the services for the default project.
   - **Uncertainty.** Every parameter has a documented range or a flag; `--uncertainty` gives P5/P50/P95. Sources: `docs/POSIDONIA_LITERATURE_REVIEW.md`.
-- **Amazon**: the agent value is the sum of the non-carbon anchors of its spec (`gaia/cases/definitions/AMAZON_FOREST.md`). Several of those anchors' sources are unverified. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
-- **All cases**: small losses priced linearly (damage model `area_loss`, Steps 8c.3 and 8d.1): below the safe threshold each unit lost costs its average value, past it the remaining resource degrades along placeholder curves (steepness 12; Costa Brava's fire agent exponential), which start at the threshold. Placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
+- **Amazon**: the agent value is de Groot et al.'s (2012, Table 2) tropical-forest value without climate regulation, Int$3,220/ha/yr, converted at Spain's 2007 PPP rate for household consumption (World Bank, 0.808165 €/Int$): €2,602/ha/yr in 2007 euros, no income adjustment (Step 8e.5; it replaced €580, the sum of its spec's partly unverified anchors). A global mean, not a Central Amazon valuation: *low* confidence. The 20% threshold is a basin-scale tipping point applied to a 1,000 ha patch, a known scale mismatch.
+- **All cases**: every agent carries a positive euro value under any input, preset or flag (PROJECT_DEFINITION.md, Core Valuation Principles): validation and case parsing reject an agent at €0, and a test runs every case under every preset and flag (Step 8e.7). Small losses priced linearly (damage model `area_loss`, Steps 8c.3 and 8d.1): below the safe threshold each unit lost costs its average value, past it the remaining resource degrades along placeholder curves (steepness 12; Costa Brava's fire agent exponential), which start at the threshold. Placeholder edges (15 of them rescaled mechanically to the in-degree cap), placeholder substrate profiles and restoration costs.
 
 ---
 

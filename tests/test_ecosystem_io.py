@@ -137,8 +137,12 @@ def test_canonical_form_shares_curves_and_provenance():
     fire = next(a for a in d["agents"] if a["name"].startswith("Fire"))
     assert fire["damage"] == "threshold_exponential"
     assert "agent[*].dependency_weight" in d["provenance_defaults"]
-    retuned = [e for e in d["interactions"] if isinstance(e["strength"], dict)]
+    retuned = [e for e in d["interactions"]
+               if isinstance(e["strength"], dict) and "Step 3.8" in e["strength"]["note"]]
     assert len(retuned) == 3  # the in-degree-cap edges keep their own note
+    # Step 8e.4: edges near the cap carry their own Monte Carlo range
+    ranged = [e for e in d["interactions"] if isinstance(e["strength"], dict)]
+    assert len(ranged) == 7 and all("relative_range" in e["strength"] for e in ranged)
     assert all("divided by 1.35" in e["strength"]["note"] for e in retuned)
 
 

@@ -37,8 +37,11 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | logistic steepness      | 12.0          | dimensionless | Placeholder | Low      |
     | dependency weights      | 0.20/0.30/... | ratio      | Placeholder  | Low        |
 
-Agent values are yearly flows per hectare (decisions D1, D2): every agent
-uses the biome-level value below, and the dependency weights split it, so
+Agent values are yearly flows per hectare (decisions D1, D2). In every
+case every agent carries a value > 0 under any input, preset or flag
+(PROJECT_DEFINITION.md, Core Valuation Principles (b); a validated
+invariant since Step 8e.7, tests/test_valuation_principles.py). Here every
+agent uses the biome-level value below, and the dependency weights split it, so
 sum(weight × value) = €2,848/ha/yr × area_ha at full damage
 (€113,920/yr for the 40 ha reference forest).
 
@@ -229,6 +232,30 @@ Insects, pollination 31. The other nine prices are derived. The former
 unsourced Watershed anchor (€2.50/m³ × 100 m³/ha/yr) and the eight
 placeholders are dropped: reachability makes them unnecessary.
 
+**Monte Carlo ranges (Step 8e.4).** Until Step 8e the Monte Carlo
+rejected almost every draw (2 of 300 passed): the edges into Understory
+& Matorral sit at the in-degree cap (0.999 with the keystone boosts),
+those into Canopy Trees and Soil Microbiome near it (0.85, 0.80), so the
+placeholder ×/÷3 pushed them above it; a third of the draws of the fire
+curve's base fell at or below 1. The ranges were narrowed the way
+Posidonia's were, each a judgement for an unfitted parameter:
+- edge strengths: ×0.5 to ×1.5 (Posidonia's range), except that edges
+  into an agent whose incoming strengths exceed 1/1.5 of the cap rise
+  only to the cap: ×0.5 to ×1/(the target's worst-case in-degree), i.e.
+  ×1.0 into Understory & Matorral, ×1.176 into Canopy Trees, ×1.25 into
+  Soil Microbiome. The documented strength is then the top of the range,
+  because the cap is structural: those edges can only be weaker together.
+  Drawn values are never rescaled;
+- the fire curve's base: ×0.75 to ×1.5 (1.5–3), since it must stay > 1;
+- the logistic steepness: 6–18, uniform (as Posidonia, instead of 4–36);
+- the keystone thresholds: ±0.15, uniform (0.15–0.45 for the fungi,
+  0.25–0.55 for the pollinators; the ×/÷3 range reached 0.9–1.0, where
+  the boost fires at almost any damage).
+No draw is rejected now. Default run (1,000 draws, seed 20261012), PV of
+externality €9.13 M (P5 / P50 / P95 €5.63 / 9.45 / 15.29 M); annual
+externality €127,048 (63,778 / 122,976 / 215,806). The agent value
+(×/÷2) and the safe threshold drive it. No number changes.
+
 ## Posidonia oceanica meadows of Catalonia (`posidonia`)
 
 The v1.0 case (decision D6). Since Step 8.2 every parameter is sourced or
@@ -243,9 +270,14 @@ is the hectare, so 4,582 units. The default run destroys an illustrative
 50 ha (about 1.1% of the stock), the scale of a port or marina project (the
 first user, `PROJECT_DEFINITION.md` v1.0). Since Step 8c.4 the reference is
 an input: the user replaces it with the specific meadow the project
-affects, `gaia run posidonia --area-ha 300 --resource-name "…"` (or
-`resource.total_units`/`area_ha` and `resource.name` in a copy of the
-file), recorded as user-supplied. The reference sets the depletion
+affects, `gaia run posidonia --area-ha 300 --resource-name "…"
+--dive-intensity low` (or `resource.total_units`/`area_ha` and
+`resource.name` in a copy of the file), recorded as user-supplied. Since
+Step 8e.3 a run with `--area-ha` must also state the diving input,
+`--dive-intensity` and/or `--dive-site-share` (`--dive-intensity none`
+when no dive site is within reach): the regional averages describe a
+meadow of unknown location, not a named one, so the run stops with a
+plain error otherwise. The reference sets the depletion
 fraction: below the safe threshold the cost per hectare does not depend on
 it (Step 8c.3), above it the remaining meadow degrades. Before Step 8 the
 case used 5,000 ha, more than the whole Catalan stock, and 2,000 ha
@@ -255,14 +287,19 @@ destroyed.
 revenue is one-off (€2,500/ha, a project-specific placeholder the user
 replaces with `--unit-value`), and they meet only through present values.
 
-**Agent values: the service ledger (Step 8c.2).** The owner's rule:
-every agent costs money, and no service is counted twice. The case file's
+**Agent values: the service ledger (Step 8c.2).** The owner's rule
+(PROJECT_DEFINITION.md, Core Valuation Principles): every agent costs
+money, under any input, and no service is counted twice. The case file's
 `service_ledger` books each final ecosystem service once, to the one
 agent that is its best owner, with its €/ha/yr, method, source and
 benefit-transfer method; each agent's `annual_value_per_ha` is its
-ledger total / dependency_weight, so weight × value is the sourced
-figure and the owner's weights keep their role in the health index
-(`Case.ledger_check()` and a test hold the two together). € 2014-2017/ha/yr:
+ledger total on every hectare / dependency_weight, and the meadow's
+`site_value_per_ha` its diving value near dive sites / dependency_weight
+(Step 8e.6), so weight × value is the sourced figure and the owner's
+weights keep their role in the health index (`Case.ledger_check()` and a
+test hold the two together). A value that overlaps services counted
+elsewhere is booked net of them (`gross`, `net_of`; parsing enforces
+value = gross − their values). € 2014-2017/ha/yr:
 
 - Coastal Protection: protection from coastal erosion 188 (Campagne et
   al. 2015).
@@ -274,7 +311,29 @@ figure and the owner's weights keep their role in the health index
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
   plus knowledge 0.33 to Human Communities.
-- Posidonia Meadow: the meadow's diving amenity, only near dive sites
+- Posidonia Meadow, on every hectare (Step 8e.6): the food its primary
+  production supports, a production function (gaia/production.py):
+    net primary production (blades, sheaths, rhizomes)   476 g DW/m²/yr
+                                                          (Pergent et al. 1994)
+    × 33.6% carbon (Duarte 1990)                          = 159.9 g C/m²/yr
+    × 10 kg/ha per g/m² × 74% not buried in the matte     = 1,183.5 kg C/ha/yr
+      (Mateo & Romero 1997, Medes Islands)
+    × 0.118^(3.1 − 1): transfer efficiency 11.8% per      = 13.31 kg C/ha/yr
+      level (Coll et al. 2008) to the catch's trophic
+      level 3.1 (Francour 1997's dominant species, FishBase)
+    × 9 kg wet weight per kg C (Pauly & Christensen 1995) = 119.8 kg/ha/yr
+    × 0.465 sustainable share, F/(F+M) at F_MSY = 0.87 M  = 55.7 kg/ha/yr
+      (Zhou et al. 2012)
+    × €5.11/kg, Catalan white-fish first-sale price 2014  = €284.74 gross
+    − 35.00, the commercial catch booked to Fish          = €249.74 net
+      Populations and Marine Invertebrates (net_of)
+  Range over the links' ends: €0.10–731.98 net (€35.10–766.98 gross).
+  Carbon is not counted twice: the chain uses the production that is not
+  buried, gaia.carbon values the buried part. The report shows the chain
+  and the matte's carbon on the meadow's line (the carbon as an
+  attribution, not added). No willingness-to-pay value for the meadow's
+  existence was found, so none is added.
+- Posidonia Meadow, near dive sites only: the meadow's diving amenity
   (Step 8d.4): €34.71 per dive for a total loss of cover (Zunino et al.
   2020) × ~60,000 Medes Islands dives a year ÷ 142.35 ha of meadow within
   reach of dive sites (the P. oceanica cover of the five coastal Natura
@@ -284,6 +343,25 @@ figure and the owner's weights keep their role in the health index
   dive sites (`site_share`; `--dive-site-share F`, a project input). The
   default share is the regional one, 142.35 / 4,582 = 0.0311, which gives
   back the former regional average, 454.52.
+  Dive-activity intensity (Step 8e.2): the near-site value is stated at
+  the Costa Brava's average intensity, 60,000 / 142.35 = 421.5 dives per
+  hectare of meadow near dive sites a year (`site_intensity`). A project
+  states the intensity at its meadow with `--dive-intensity` (the levels
+  of `site_intensity_levels`), which scales the near-site value by
+  level / 421.5; the share then says what part of the affected meadow is
+  near the dive sites (1 when the intensity is given alone):
+    none   0 dives/ha/yr              €0/ha/yr      (no dive site within reach;
+                                                     the diving service only)
+    low    14,000 / 211.45 = 66.2     €2,298        Banyuls-Cerbère (Lloret 2006
+           slides, grey literature) over Natura 2000 FR9101482's meadow
+    medium 40,000 / 70.61 = 566.5     €19,663       Portofino (Betti et al. 2023,
+           doi:10.1002/aqc.3918) over Natura 2000 IT1332674's meadow
+    high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
+           the park's study) over Natura 2000 ES5120016's meadow
+  'none' zeroes the diving service, never an agent: the meadow keeps its
+  own €249.74/ha/yr on every hectare (above), and every other agent keeps
+  its value. (Before Step 8e.6 the diving service was the meadow's only
+  entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
   for the local extinction of gorgonians (Rodrigues et al. 2016, Medes
   Islands) × 60,000 dives ÷ 190,000 ha of mapped seabed = 18.95 (the
@@ -300,8 +378,8 @@ Every value is a unit-value benefit transfer at face value: no income
 adjustment to Catalonia and no price-year adjustment (the owner's
 decision, Step 8d.5; a known limitation in the methods note §8).
 
-Total €818.66/ha/yr (€284.83 before). Splits move value between agents
-and leave totals unchanged. The diving and non-use entries are benefit
+Total €1,068.40/ha/yr (€818.66 before Step 8e.6, €284.83 before Step
+8c.2). Splits move value between agents and leave totals unchanged. The diving and non-use entries are benefit
 transfers with low confidence and wide Monte Carlo ranges. Beach tourism
 and the meadow's own existence value are still not valued, so the total
 remains a lower bound. Full table and caveats:
@@ -474,21 +552,42 @@ Parameter documentation (per ROADMAP.md Verification & Scientific Validation Str
     | logistic steepness            | 12.0          | –       | Placeholder   | Low        |
     | dependency weight sum         | 1.00          | –       | Verified ✓    | High       |
 
-Agent values (decisions D1, D2):
-    Every agent uses €580/ha/yr and the dependency weights split it, so
-    sum(weight × value) = €580/ha/yr × area_ha at full damage (€580,000/yr
-    for the 1,000 ha reference area) [PLACEHOLDER].
+Agent values (decisions D1, D2; re-based in Step 8e.5):
+    Every agent uses €2,602.29/ha/yr and the dependency weights split it,
+    so sum(weight × value) = €2,602.29/ha/yr × area_ha at full damage
+    (€2.60 M/yr for the 1,000 ha reference area) [low].
 
-    €580/ha/yr is the sum of the non-carbon spec §8 anchors for 1,000 ha:
+    Since Step 8e.5 (the owner's answer) the value is de Groot et al.
+    (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005,
+    Table 2 (read in full), tropical forest: total economic value
+    Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr
+    (2007 international dollars; climate regulation is left out because
+    carbon is valued by gaia.carbon, decision D3). Converted to euros with
+    the World Bank's PPP conversion factor for household (private)
+    consumption, PA.NUS.PRVT.PP — the series de Groot et al. used — for
+    Spain, 2007: 0.808165 € per Int$ (World Development Indicators API,
+    read). 3,220 × 0.808165 = €2,602.29/ha/yr, in 2007 euros at Spanish
+    purchasing power. Why PPP and Spain: an international dollar has the
+    purchasing power of a US dollar in the US and must be converted with
+    a country's PPP rate, not the market rate (de Groot et al., footnote
+    5); Gaia's euro figures are for its Catalan user; the series has no
+    2007 euro-area value. At the 2007 market rate (0.7297 €/US$) it would
+    be €2,350. No price-year (inflation) and no income adjustment, the
+    owner's rule for benefit transfers (Step 8d.5). Low confidence: a
+    global mean of 96 estimates, not a Central Amazon valuation (the
+    totals of the service medians are less than half the means, Table 3).
+    The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27)
+    are parts of the 3,220 and are still used as € at face value.
+
+    Before Step 8e.5, €580/ha/yr was the sum of the non-carbon spec §8 anchors for 1,000 ha:
     water cycling €150k + fisheries €20k + biodiversity/habitat €410k =
     €580k/yr. Carbon is valued only by gaia.carbon (decision D3), so the
     carbon anchors (stock protection €508k, sequestration €88k, REDD+) are
     gone. The former €840/ha/yr had no derivation of its own (the anchors,
     carbon included, summed to ~€1,160/ha/yr), so the agent value was
     brought to the documented anchors, not the reverse — see
-    definitions/AMAZON_FOREST.md §8. For scale, de Groot et
-    al. (2012) report a global tropical-forest mean of Int$5,264/ha/yr
-    (2007), of which climate regulation is Int$2,044.
+    definitions/AMAZON_FOREST.md §8. Several of those anchors' sources were
+    unverified (audit S4), which is why the value was re-based.
 
     Revenue (€1.50/tree) is one-off; it is compared with the present value of
     the yearly externality, never with the €/yr figure.
@@ -526,7 +625,7 @@ PROJECT_DEFINITION.md, "Critical Modelling Assumption"):
 "area_loss"`, as Posidonia; `threshold_logistic` curves). The default run
 destroys exactly the 20% threshold (80,000 of 400,000 trees), so it now
 costs exactly the linear transfer, 20% × €580/ha/yr × 1,000 ha =
-€116,000/yr (was €177,757, of which the logistic's damage inside the
+€116,000/yr (€520,458 since Step 8e.5, at €2,602.29/ha/yr) (was €177,757, of which the logistic's damage inside the
 "safe" zone, amplified for consumers and spread by 34 edges, made the
 excess); PV €34.93 M instead of €38.81 M (the carbon release is
 unchanged). **The CalibrationWarning is gone.** What remains: the
@@ -540,5 +639,27 @@ reference): Canopy Trees, food 200; Pollinators, pollination 30; Aquatic
 System, water 27. The network has no root (every agent is reached from
 Canopy Trees), so the other eight prices are derived. The former spec §8
 anchors (rainfall recycling €150k, fisheries €20k, biodiversity €410k:
-sources unverified, audit S4) and the eight placeholders are dropped; the
-static agent value (€580/ha/yr) still rests on the spec's §8 sum.
+sources unverified, audit S4) and the eight placeholders are dropped. Since
+Step 8e.5 the static agent value rests on de Groot et al. too (above).
+
+**Monte Carlo ranges (Step 8e.4).** Until Step 8e the Monte Carlo
+rejected every draw: the twelve edges into Canopy Trees and Understory
+were rescaled to the in-degree cap in Step 3.8 (0.996 and 0.995 with the
+keystone boosts), so any upward draw broke it. The ranges were narrowed
+the way Posidonia's were:
+- edge strengths: ×0.5 to ×1.5, except that edges into an agent whose
+  incoming strengths exceed 1/1.5 of the cap rise only to the cap
+  (×1.004 into Canopy Trees, ×1.005 into Understory, ×1.333 into
+  Epiphytes & Bromeliads): the documented strengths of the twelve
+  rescaled edges are the top of their range, since the cap is structural.
+  Drawn values are never rescaled;
+- the logistic steepness: 6–18, uniform;
+- the keystone thresholds: ±0.15, uniform (0.10–0.40 for the fungi,
+  0.20–0.50 for the pollinators).
+No draw is rejected now. Default run (1,000 draws, seed 20261012; about
+4 minutes for the 80,000-tree run), at the Step 8e.4 value of €580/ha/yr:
+PV of externality €34.93 M (P5 / P50 / P95 €32.83 / 39.76 / 50.96 M);
+since the Step 8e.5 value of €2,602.29/ha/yr: €60.35 M (53.71 / 71.40 /
+120.05 M), annual externality €520,458 (388,616 / 655,670 / 1,406,023).
+The safe threshold (the run sits exactly at it), the agent value and the
+carbon stock drive it.

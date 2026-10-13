@@ -269,7 +269,9 @@ For the 1,000 ha reference area:
 | **Biodiversity / habitat** | €410,000/yr | $410/ha/yr meta-analysis mean × 1,000 ha (conservative, only local values) | MEDIUM |
 | ~~REDD+ avoided deforestation~~ | ~~€5,400/yr~~ | Removed (Step 3.4): carbon (54 t CO₂/ha × $10/t × 1% risk) | – |
 
-**Total annual ecosystem service value: €580/ha/yr** (€580,000/yr for 1,000 ha) = water cycling + fisheries + biodiversity/habitat, the figure the agent rates (`annual_value_per_ha`, scaled by `area_ha`) use.
+**Total annual ecosystem service value: €580/ha/yr** (€580,000/yr for 1,000 ha) = water cycling + fisheries + biodiversity/habitat, the figure the agent rates (`annual_value_per_ha`, scaled by `area_ha`) used until Step 8e.5.
+
+> **Re-based on de Groot et al. 2012 (Step 8e.5, the owner's answer).** Several of these anchors' sources are unverified (audit S4). The agent rates now use de Groot et al. (2012), *Ecosystem Services* 1:50–61, doi:10.1016/j.ecoser.2012.07.005, Table 2, tropical forest without climate regulation: Int$5,264 − 2,044 = Int$3,220/ha/yr (2007), converted at Spain's 2007 PPP factor for household consumption (World Bank PA.NUS.PRVT.PP, 0.808165 €/Int$): **€2,602.29/ha/yr** (2007 euros, no income or price-year adjustment). Derivation: `CASE_NOTES.md`.
 
 > **Area correction (audit C6).** This section was first written for 10,000 ha with 400,000 trees (40 trees/ha), while the per-tree carbon assumes 400 trees/ha. The reference area is now 1,000 ha and the area-proportional anchors above were scaled by 1/10. Two lines of the original table were not area-consistent: the biodiversity line ($410/ha/yr → €410k) was already a 1,000 ha figure, and the REDD+ line (€540k) was 10× its own formula.
 >
@@ -292,7 +294,7 @@ AmazonRainforest = EcosystemConfig(
     initial_population=400_000,  # 400 trees/ha × 1,000 ha (terra firme: ~400-600 stems/ha)
     carrying_capacity=None,  # DERIVED from substrate in v0.5+
     threshold=0.20,  # Amazon tipping point (Lovejoy & Nobre)
-    annual_value_per_ha=580.0,  # €/ha/yr: non-carbon §8 anchors, × area_ha
+    annual_value_per_ha=2602.29,  # €/ha/yr: de Groot et al. 2012 without climate regulation, PPP € (Step 8e.5; was 580)
     # v0.5 substrate
     substrate_type="terrestrial_soil",  # Oxisol/Ferralsol, modelled as terrestrial soil
     substrate_capacity_function="threshold",

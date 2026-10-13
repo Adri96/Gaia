@@ -91,10 +91,10 @@
         {
           "confidence": "low",
           "name": "agents.annual_value_per_ha",
-          "note": "Every agent; the dependency weights split it. The anchors' sources are partly unverified (web pages and authorless citations in the literature review, audit S4). For scale, de Groot et al. (2012): tropical forest Int$5,264/ha/yr, of which climate regulation Int$2,044.",
-          "source": "sum of the non-carbon anchors of AMAZON_FOREST.md \u00a78 for 1,000 ha: water cycling \u20ac150k, fisheries \u20ac20k, biodiversity/habitat \u20ac410k (Brouwer et al. 2022 meta-analysis, $410/ha/yr)",
+          "note": "Every agent; the dependency weights split it (Step 8e.5, the owner's answer: re-based on de Groot et al. 2012). 3,220 x 0.808165 = EUR 2,602.29/ha/yr in 2007 euros at Spanish purchasing power: international dollars carry US purchasing power and must be converted with a country's PPP rate, not the market exchange rate (de Groot et al., footnote 5); Spain is the country of Gaia's euro figures (the Catalan Posidonia user); the euro area has no 2007 value in this series. At the 2007 market rate (0.7297 EUR/USD, PA.NUS.FCRF) it would be EUR 2,350. Not inflated to a later price year and no income adjustment (the owner's decision for benefit transfers, Step 8d.5). Climate regulation is left out because carbon is valued only by gaia.carbon (decision D3). Of the 3,220: provisioning 1,828 (food 200, water 27, raw materials 84, genetic 13, medicinal 1,504), regulating without climate 485, habitat 39, cultural (recreation) 867 (the rows sum to 3,219: rounding in Table 2). A global tropical-forest mean, not a Central Amazon valuation: the totals of the service medians (2,355 with climate) are less than half the means (Table 3), so low confidence and the default x/\u00f72 Monte Carlo range. It replaces EUR 580/ha/yr, the sum of the spec's partly unverified \u00a78 anchors (audit S4). The EXPERIMENTAL pricing anchors (food 200, pollination 30, water 27) are parts of the 3,220, still used as EUR at face value.",
+          "source": "de Groot et al. (2012), Ecosystem Services 1:50-61, doi:10.1016/j.ecoser.2012.07.005, Table 2 (read in full): tropical forest, total economic value Int$5,264/ha/yr minus climate regulation Int$2,044 = Int$3,220/ha/yr (2007 international dollars, 2007 price level; 96 estimates, Table 3); converted to euros with the World Bank's PPP conversion factor for household final consumption (PA.NUS.PRVT.PP, the 'private consumption' series de Groot et al. used), Spain, 2007: 0.808165 EUR per international $ (World Development Indicators, https://api.worldbank.org/v2/country/ESP/indicator/PA.NUS.PRVT.PP?date=2007&format=json, read 12 October 2026)",
           "unit": "\u20ac/ha/yr",
-          "value": 580.0
+          "value": 2602.2913
         },
         {
           "confidence": "low",
@@ -186,24 +186,39 @@
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "damage.threshold_logistic_steepness",
-          "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B).",
+          "note": "Degradation of the REMAINING resource past the safe threshold (damage model area_loss, Step 8d.1, as for Posidonia): zero up to the threshold, then a logistic with its inflection 15% into the post-threshold span, the same curve for every agent. The damage of each agent is D + (1 - D) x degradation, so its slope at small losses is exactly 1 (each hectare lost costs its average value) and the curve shapes only the threshold behaviour. Not fitted to field data (calibration regime B). Monte Carlo range 6-18, uniform (Step 8e.4, as Posidonia: a judgement; the placeholder x/\u00f73 gave 4-36).",
+          "range": [
+            6.0,
+            18.0
+          ],
           "source": null,
           "unit": "dimensionless",
           "value": 12.0
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "agent[Mycorrhizal Fungi].keystone_threshold",
-          "note": "",
+          "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.10-0.40, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/\u00f73 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+          "range": [
+            0.1,
+            0.4
+          ],
           "source": null,
           "unit": "health",
           "value": 0.25
         },
         {
           "confidence": "placeholder",
+          "distribution": "uniform",
           "name": "agent[Pollinators].keystone_threshold",
-          "note": "",
+          "note": "Health below which the agent's outgoing edges double; hand-set, no source. Monte Carlo range 0.20-0.50, uniform (Step 8e.4, Posidonia's +-0.15: a judgement; the placeholder x/\u00f73 reached 0.9-1.0, where the keystone boost would fire at almost any damage).",
+          "range": [
+            0.2,
+            0.5
+          ],
           "source": null,
           "unit": "health",
           "value": 0.35
@@ -211,7 +226,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mycorrhizal Fungi \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.095,
+            0.19076
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.19
@@ -219,7 +238,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mycorrhizal Fungi \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.086,
+            0.17285999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.172
@@ -227,7 +250,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.103,
+            0.20702999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.206
@@ -235,7 +262,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Epiphytes & Bromeliads].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.175,
+            0.46654999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.35
@@ -243,7 +274,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Herbivores].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.125,
+            0.375
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.25
@@ -251,7 +286,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Soil Decomposers].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.2
@@ -259,7 +298,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Mycorrhizal Fungi].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.15
@@ -267,7 +310,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Pollinators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.3
@@ -275,7 +322,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Seed Dispersers].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.2
@@ -283,7 +334,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Aquatic System].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.15
@@ -291,7 +346,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Canopy Trees \u2192 Mesopredators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -299,7 +358,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory \u2192 Herbivores].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.15
@@ -307,7 +370,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory \u2192 Epiphytes & Bromeliads].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.1,
+            0.2666
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.2
@@ -315,7 +382,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory \u2192 Pollinators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.15
@@ -323,7 +394,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory \u2192 Mycorrhizal Fungi].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -331,7 +406,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Understory \u2192 Soil Decomposers].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.075,
+            0.22499999999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.15
@@ -339,7 +418,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Soil Decomposers \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0355,
+            0.071284
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.071
@@ -347,7 +430,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Soil Decomposers \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.034,
+            0.06834
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.068
@@ -355,7 +442,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Soil Decomposers \u2192 Mycorrhizal Fungi].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.1,
+            0.30000000000000004
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.2
@@ -363,7 +454,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Pollinators \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.071,
+            0.142568
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.142
@@ -371,7 +466,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Pollinators \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0515,
+            0.10351499999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.103
@@ -379,7 +478,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Pollinators \u2192 Epiphytes & Bromeliads].strength",
-          "note": "",
+          "note": "Hand-set placeholder strength. Monte Carlo range (Step 8e.4): x0.5 to x1.333. The incoming strengths into Epiphytes & Bromeliads sum to 0.750 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.333 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.333), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.05,
+            0.1333
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -387,7 +490,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Seed Dispersers \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0475,
+            0.09538
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.095
@@ -395,7 +502,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Seed Dispersers \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.034,
+            0.06834
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.068
@@ -403,7 +514,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Seed Dispersers \u2192 Mesopredators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -411,7 +526,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Herbivores \u2192 Mesopredators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.3
@@ -419,7 +538,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Herbivores \u2192 Apex Predators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.175,
+            0.5249999999999999
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.35
@@ -427,7 +550,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Herbivores \u2192 Aquatic System].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -435,7 +562,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mesopredators \u2192 Apex Predators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.15,
+            0.44999999999999996
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.3
@@ -443,7 +574,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Mesopredators \u2192 Aquatic System].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -451,7 +586,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Aquatic System \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0355,
+            0.071284
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.071
@@ -459,7 +598,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Aquatic System \u2192 Mesopredators].strength",
-          "note": "",
+          "note": "Monte Carlo range (Step 8e.4, as Posidonia's): x0.5 to x1.5, a judgement for unfitted strengths, narrower than the placeholder x/\u00f73 that put almost every draw above the in-degree cap. Edges into an agent whose incoming strengths (keystone boosts included) exceed 1/1.5 of the cap rise at most to the cap: see their own range.",
+          "range": [
+            0.05,
+            0.15000000000000002
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.1
@@ -467,7 +610,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Epiphytes & Bromeliads \u2192 Canopy Trees].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.004. The incoming strengths into Canopy Trees sum to 0.996 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.004 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.004), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0475,
+            0.09538
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.095
@@ -475,7 +622,11 @@
         {
           "confidence": "placeholder",
           "name": "edge[Epiphytes & Bromeliads \u2192 Understory].strength",
-          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit.",
+          "note": "Spec \u00a73 value divided by 2.10 (into Canopy Trees) or 1.45 (into Understory) to the in-degree cap (Step 3.8, mechanical, ratios kept); not a fit. Monte Carlo range (Step 8e.4): x0.5 to x1.005. The incoming strengths into Understory sum to 0.995 of the in-degree cap of 1 (keystone boosts included), so the edges into it can rise only by x1.005 together before a draw breaks the cap; their documented values are therefore the top of their range (x1.005), not its middle. Drawn values are never rescaled.",
+          "range": [
+            0.0515,
+            0.10351499999999998
+          ],
           "source": "AMAZON_FOREST.md (case spec) \u00a73 interaction matrix (expert judgement)",
           "unit": "fraction of source damage",
           "value": 0.103
@@ -687,18 +838,18 @@
       "carbon_not_recovered_eur_pv": 244172.86,
       "foregone_revenue_eur": 1200.0,
       "horizon_years": 100,
-      "maturation_gap_eur_pv": 26523.83,
-      "penalty_ratio": 239.5203,
+      "maturation_gap_eur_pv": 119004.72,
+      "penalty_ratio": 316.6383,
       "recovery_shortfall_eur_pv": 0.0,
       "restoration_cost_eur_pv": 16710.21,
-      "substrate_loss_eur_pv": 17.44,
-      "total_eur_pv": 287424.34
+      "substrate_loss_eur_pv": 78.23,
+      "total_eur_pv": 379966.02
     },
     "ecosystem": {
       "agents": [
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.15,
           "description": "Emergent + canopy layer (400+ species/ha) \u2014 primary biomass, rainfall recycling",
           "is_keystone": false,
@@ -707,8 +858,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.08,
           "description": "Sub-canopy trees, palms, ferns, epiphytes \u2014 shade-tolerant reproduction, microclimate regulation",
           "is_keystone": false,
@@ -717,8 +868,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.15,
           "description": "Arbuscular + ectomycorrhizae \u2014 KEYSTONE nutrient gateway on P-depleted Oxisol, non-substitutable",
           "is_keystone": true,
@@ -727,8 +878,8 @@
           "trophic_level": 0
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "Termites, fungi, bacteria, dung beetles \u2014 organic matter breakdown, nutrient return",
           "is_keystone": false,
@@ -737,8 +888,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.09,
           "description": "Bees, butterflies, hummingbirds, bats \u2014 reproduction for 90%+ of canopy species",
           "is_keystone": true,
@@ -747,8 +898,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.08,
           "description": "Monkeys, toucans, agoutis, tapirs \u2014 forest regeneration, genetic connectivity",
           "is_keystone": false,
@@ -757,8 +908,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.07,
           "description": "Capybaras, sloths, leafcutter ants, insects \u2014 energy transfer, population dynamics",
           "is_keystone": false,
@@ -767,8 +918,8 @@
           "trophic_level": 1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.05,
           "description": "Snakes (boa, anaconda), caimans, ocelots, anteaters \u2014 mid-trophic regulation",
           "is_keystone": false,
@@ -777,8 +928,8 @@
           "trophic_level": 2
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.03,
           "description": "Jaguars, harpy eagles \u2014 top-down population control, KEYSTONE trophic role",
           "is_keystone": false,
@@ -787,8 +938,8 @@
           "trophic_level": 3
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "River fish (3,000+ species), river dolphins, aquatic plants \u2014 nutrient transport, fisheries",
           "is_keystone": false,
@@ -797,8 +948,8 @@
           "trophic_level": -1
         },
         {
-          "annual_value_eur_per_ha_yr": 580.0,
-          "annual_value_eur_yr": 5800.0,
+          "annual_value_eur_per_ha_yr": 2602.2913,
+          "annual_value_eur_yr": 26022.913,
           "dependency_weight": 0.1,
           "description": "Orchids, bromeliads, lichens (~25,000 species) \u2014 water retention, microhabitat creation",
           "is_keystone": false,
@@ -1073,7 +1224,7 @@
     },
     "gaia_version": "<gaia_version>",
     "maturation": {
-      "maturation_gap_eur_pv": 26523.83,
+      "maturation_gap_eur_pv": 119004.72,
       "timeline": [
         {
           "annual_carbon_absorbed": 0.0,
@@ -1095,882 +1246,882 @@
         },
         {
           "annual_carbon_absorbed": 0.048,
-          "annual_service_value_eur_yr": 11.6,
+          "annual_service_value_eur_yr": 52.05,
           "cumulative_carbon_absorbed": 0.048,
-          "cumulative_service_value_eur": 11.6,
+          "cumulative_service_value_eur": 52.05,
           "service_fraction": 0.01,
           "succession_phase": "pioneer",
           "year": 3
         },
         {
           "annual_carbon_absorbed": 0.096,
-          "annual_service_value_eur_yr": 23.2,
+          "annual_service_value_eur_yr": 104.09,
           "cumulative_carbon_absorbed": 0.144,
-          "cumulative_service_value_eur": 34.8,
+          "cumulative_service_value_eur": 156.14,
           "service_fraction": 0.02,
           "succession_phase": "pioneer",
           "year": 4
         },
         {
           "annual_carbon_absorbed": 0.144,
-          "annual_service_value_eur_yr": 34.8,
+          "annual_service_value_eur_yr": 156.14,
           "cumulative_carbon_absorbed": 0.288,
-          "cumulative_service_value_eur": 69.6,
+          "cumulative_service_value_eur": 312.27,
           "service_fraction": 0.03,
           "succession_phase": "pioneer",
           "year": 5
         },
         {
           "annual_carbon_absorbed": 0.192,
-          "annual_service_value_eur_yr": 46.4,
+          "annual_service_value_eur_yr": 208.18,
           "cumulative_carbon_absorbed": 0.48,
-          "cumulative_service_value_eur": 116.0,
+          "cumulative_service_value_eur": 520.46,
           "service_fraction": 0.04,
           "succession_phase": "pioneer",
           "year": 6
         },
         {
           "annual_carbon_absorbed": 0.24,
-          "annual_service_value_eur_yr": 58.0,
+          "annual_service_value_eur_yr": 260.23,
           "cumulative_carbon_absorbed": 0.72,
-          "cumulative_service_value_eur": 174.0,
+          "cumulative_service_value_eur": 780.69,
           "service_fraction": 0.05,
           "succession_phase": "pioneer",
           "year": 7
         },
         {
           "annual_carbon_absorbed": 0.2614,
-          "annual_service_value_eur_yr": 63.17,
+          "annual_service_value_eur_yr": 283.44,
           "cumulative_carbon_absorbed": 0.9814,
-          "cumulative_service_value_eur": 237.17,
+          "cumulative_service_value_eur": 1064.13,
           "service_fraction": 0.054459,
           "succession_phase": "intermediate",
           "year": 8
         },
         {
           "annual_carbon_absorbed": 0.3216,
-          "annual_service_value_eur_yr": 77.73,
+          "annual_service_value_eur_yr": 348.75,
           "cumulative_carbon_absorbed": 1.303,
-          "cumulative_service_value_eur": 314.9,
+          "cumulative_service_value_eur": 1412.87,
           "service_fraction": 0.067007,
           "succession_phase": "intermediate",
           "year": 9
         },
         {
           "annual_carbon_absorbed": 0.4147,
-          "annual_service_value_eur_yr": 100.22,
+          "annual_service_value_eur_yr": 449.68,
           "cumulative_carbon_absorbed": 1.7178,
-          "cumulative_service_value_eur": 415.13,
+          "cumulative_service_value_eur": 1862.55,
           "service_fraction": 0.0864,
           "succession_phase": "intermediate",
           "year": 10
         },
         {
           "annual_carbon_absorbed": 0.5347,
-          "annual_service_value_eur_yr": 129.22,
+          "annual_service_value_eur_yr": 579.75,
           "cumulative_carbon_absorbed": 2.2524,
-          "cumulative_service_value_eur": 544.34,
+          "cumulative_service_value_eur": 2442.3,
           "service_fraction": 0.111393,
           "succession_phase": "intermediate",
           "year": 11
         },
         {
           "annual_carbon_absorbed": 0.6756,
-          "annual_service_value_eur_yr": 163.26,
+          "annual_service_value_eur_yr": 732.5,
           "cumulative_carbon_absorbed": 2.928,
-          "cumulative_service_value_eur": 707.6,
+          "cumulative_service_value_eur": 3174.8,
           "service_fraction": 0.140741,
           "succession_phase": "intermediate",
           "year": 12
         },
         {
           "annual_carbon_absorbed": 0.8314,
-          "annual_service_value_eur_yr": 200.91,
+          "annual_service_value_eur_yr": 901.43,
           "cumulative_carbon_absorbed": 3.7594,
-          "cumulative_service_value_eur": 908.51,
+          "cumulative_service_value_eur": 4076.23,
           "service_fraction": 0.1732,
           "succession_phase": "intermediate",
           "year": 13
         },
         {
           "annual_carbon_absorbed": 0.9961,
-          "annual_service_value_eur_yr": 240.73,
+          "annual_service_value_eur_yr": 1080.09,
           "cumulative_carbon_absorbed": 4.7555,
-          "cumulative_service_value_eur": 1149.24,
+          "cumulative_service_value_eur": 5156.31,
           "service_fraction": 0.207526,
           "succession_phase": "intermediate",
           "year": 14
         },
         {
           "annual_carbon_absorbed": 1.1639,
-          "annual_service_value_eur_yr": 281.27,
+          "annual_service_value_eur_yr": 1261.98,
           "cumulative_carbon_absorbed": 5.9194,
-          "cumulative_service_value_eur": 1430.51,
+          "cumulative_service_value_eur": 6418.29,
           "service_fraction": 0.242474,
           "succession_phase": "intermediate",
           "year": 15
         },
         {
           "annual_carbon_absorbed": 1.3286,
-          "annual_service_value_eur_yr": 321.09,
+          "annual_service_value_eur_yr": 1440.63,
           "cumulative_carbon_absorbed": 7.248,
-          "cumulative_service_value_eur": 1751.6,
+          "cumulative_service_value_eur": 7858.92,
           "service_fraction": 0.2768,
           "succession_phase": "intermediate",
           "year": 16
         },
         {
           "annual_carbon_absorbed": 1.4844,
-          "annual_service_value_eur_yr": 358.74,
+          "annual_service_value_eur_yr": 1609.57,
           "cumulative_carbon_absorbed": 8.7324,
-          "cumulative_service_value_eur": 2110.34,
+          "cumulative_service_value_eur": 9468.49,
           "service_fraction": 0.309259,
           "succession_phase": "intermediate",
           "year": 17
         },
         {
           "annual_carbon_absorbed": 1.6253,
-          "annual_service_value_eur_yr": 392.78,
+          "annual_service_value_eur_yr": 1762.31,
           "cumulative_carbon_absorbed": 10.3578,
-          "cumulative_service_value_eur": 2503.13,
+          "cumulative_service_value_eur": 11230.8,
           "service_fraction": 0.338607,
           "succession_phase": "intermediate",
           "year": 18
         },
         {
           "annual_carbon_absorbed": 1.7453,
-          "annual_service_value_eur_yr": 421.78,
+          "annual_service_value_eur_yr": 1892.39,
           "cumulative_carbon_absorbed": 12.103,
-          "cumulative_service_value_eur": 2924.9,
+          "cumulative_service_value_eur": 13123.18,
           "service_fraction": 0.3636,
           "succession_phase": "intermediate",
           "year": 19
         },
         {
           "annual_carbon_absorbed": 1.8384,
-          "annual_service_value_eur_yr": 444.27,
+          "annual_service_value_eur_yr": 1993.32,
           "cumulative_carbon_absorbed": 13.9414,
-          "cumulative_service_value_eur": 3369.17,
+          "cumulative_service_value_eur": 15116.5,
           "service_fraction": 0.382993,
           "succession_phase": "intermediate",
           "year": 20
         },
         {
           "annual_carbon_absorbed": 1.8986,
-          "annual_service_value_eur_yr": 458.83,
+          "annual_service_value_eur_yr": 2058.62,
           "cumulative_carbon_absorbed": 15.84,
-          "cumulative_service_value_eur": 3828.0,
+          "cumulative_service_value_eur": 17175.12,
           "service_fraction": 0.395541,
           "succession_phase": "intermediate",
           "year": 21
         },
         {
           "annual_carbon_absorbed": 1.92,
-          "annual_service_value_eur_yr": 464.0,
+          "annual_service_value_eur_yr": 2081.83,
           "cumulative_carbon_absorbed": 17.76,
-          "cumulative_service_value_eur": 4292.0,
+          "cumulative_service_value_eur": 19256.96,
           "service_fraction": 0.4,
           "succession_phase": "intermediate",
           "year": 22
         },
         {
           "annual_carbon_absorbed": 2.0439,
-          "annual_service_value_eur_yr": 493.93,
+          "annual_service_value_eur_yr": 2216.13,
           "cumulative_carbon_absorbed": 19.8039,
-          "cumulative_service_value_eur": 4785.93,
+          "cumulative_service_value_eur": 21473.08,
           "service_fraction": 0.425803,
           "succession_phase": "climax",
           "year": 23
         },
         {
           "annual_carbon_absorbed": 2.165,
-          "annual_service_value_eur_yr": 523.21,
+          "annual_service_value_eur_yr": 2347.47,
           "cumulative_carbon_absorbed": 21.9688,
-          "cumulative_service_value_eur": 5309.14,
+          "cumulative_service_value_eur": 23820.56,
           "service_fraction": 0.45104,
           "succession_phase": "climax",
           "year": 24
         },
         {
           "annual_carbon_absorbed": 2.2834,
-          "annual_service_value_eur_yr": 551.82,
+          "annual_service_value_eur_yr": 2475.87,
           "cumulative_carbon_absorbed": 24.2522,
-          "cumulative_service_value_eur": 5860.96,
+          "cumulative_service_value_eur": 26296.42,
           "service_fraction": 0.475709,
           "succession_phase": "climax",
           "year": 25
         },
         {
           "annual_carbon_absorbed": 2.3991,
-          "annual_service_value_eur_yr": 579.78,
+          "annual_service_value_eur_yr": 2601.31,
           "cumulative_carbon_absorbed": 26.6513,
-          "cumulative_service_value_eur": 6440.74,
+          "cumulative_service_value_eur": 28897.73,
           "service_fraction": 0.499811,
           "succession_phase": "climax",
           "year": 26
         },
         {
           "annual_carbon_absorbed": 2.5121,
-          "annual_service_value_eur_yr": 607.08,
+          "annual_service_value_eur_yr": 2723.8,
           "cumulative_carbon_absorbed": 29.1634,
-          "cumulative_service_value_eur": 7047.82,
+          "cumulative_service_value_eur": 31621.53,
           "service_fraction": 0.523346,
           "succession_phase": "climax",
           "year": 27
         },
         {
           "annual_carbon_absorbed": 2.6223,
-          "annual_service_value_eur_yr": 633.72,
+          "annual_service_value_eur_yr": 2843.34,
           "cumulative_carbon_absorbed": 31.7857,
-          "cumulative_service_value_eur": 7681.55,
+          "cumulative_service_value_eur": 34464.86,
           "service_fraction": 0.546314,
           "succession_phase": "climax",
           "year": 28
         },
         {
           "annual_carbon_absorbed": 2.7298,
-          "annual_service_value_eur_yr": 659.71,
+          "annual_service_value_eur_yr": 2959.92,
           "cumulative_carbon_absorbed": 34.5155,
-          "cumulative_service_value_eur": 8341.26,
+          "cumulative_service_value_eur": 37424.79,
           "service_fraction": 0.568715,
           "succession_phase": "climax",
           "year": 29
         },
         {
           "annual_carbon_absorbed": 2.8346,
-          "annual_service_value_eur_yr": 685.04,
+          "annual_service_value_eur_yr": 3073.56,
           "cumulative_carbon_absorbed": 37.3502,
-          "cumulative_service_value_eur": 9026.29,
+          "cumulative_service_value_eur": 40498.34,
           "service_fraction": 0.590548,
           "succession_phase": "climax",
           "year": 30
         },
         {
           "annual_carbon_absorbed": 2.9367,
-          "annual_service_value_eur_yr": 709.71,
+          "annual_service_value_eur_yr": 3184.24,
           "cumulative_carbon_absorbed": 40.2869,
-          "cumulative_service_value_eur": 9736.0,
+          "cumulative_service_value_eur": 43682.58,
           "service_fraction": 0.611815,
           "succession_phase": "climax",
           "year": 31
         },
         {
           "annual_carbon_absorbed": 3.0361,
-          "annual_service_value_eur_yr": 733.72,
+          "annual_service_value_eur_yr": 3291.97,
           "cumulative_carbon_absorbed": 43.3229,
-          "cumulative_service_value_eur": 10469.71,
+          "cumulative_service_value_eur": 46974.56,
           "service_fraction": 0.632514,
           "succession_phase": "climax",
           "year": 32
         },
         {
           "annual_carbon_absorbed": 3.1327,
-          "annual_service_value_eur_yr": 757.07,
+          "annual_service_value_eur_yr": 3396.75,
           "cumulative_carbon_absorbed": 46.4557,
-          "cumulative_service_value_eur": 11226.78,
+          "cumulative_service_value_eur": 50371.31,
           "service_fraction": 0.652647,
           "succession_phase": "climax",
           "year": 33
         },
         {
           "annual_carbon_absorbed": 3.2266,
-          "annual_service_value_eur_yr": 779.77,
+          "annual_service_value_eur_yr": 3498.58,
           "cumulative_carbon_absorbed": 49.6823,
-          "cumulative_service_value_eur": 12006.55,
+          "cumulative_service_value_eur": 53869.89,
           "service_fraction": 0.672212,
           "succession_phase": "climax",
           "year": 34
         },
         {
           "annual_carbon_absorbed": 3.3178,
-          "annual_service_value_eur_yr": 801.8,
+          "annual_service_value_eur_yr": 3597.46,
           "cumulative_carbon_absorbed": 53.0001,
-          "cumulative_service_value_eur": 12808.35,
+          "cumulative_service_value_eur": 57467.35,
           "service_fraction": 0.69121,
           "succession_phase": "climax",
           "year": 35
         },
         {
           "annual_carbon_absorbed": 3.4063,
-          "annual_service_value_eur_yr": 823.18,
+          "annual_service_value_eur_yr": 3693.38,
           "cumulative_carbon_absorbed": 56.4064,
-          "cumulative_service_value_eur": 13631.53,
+          "cumulative_service_value_eur": 61160.73,
           "service_fraction": 0.709641,
           "succession_phase": "climax",
           "year": 36
         },
         {
           "annual_carbon_absorbed": 3.492,
-          "annual_service_value_eur_yr": 843.91,
+          "annual_service_value_eur_yr": 3786.36,
           "cumulative_carbon_absorbed": 59.8984,
-          "cumulative_service_value_eur": 14475.44,
+          "cumulative_service_value_eur": 64947.09,
           "service_fraction": 0.727505,
           "succession_phase": "climax",
           "year": 37
         },
         {
           "annual_carbon_absorbed": 3.575,
-          "annual_service_value_eur_yr": 863.97,
+          "annual_service_value_eur_yr": 3876.38,
           "cumulative_carbon_absorbed": 63.4734,
-          "cumulative_service_value_eur": 15339.41,
+          "cumulative_service_value_eur": 68823.47,
           "service_fraction": 0.744802,
           "succession_phase": "climax",
           "year": 38
         },
         {
           "annual_carbon_absorbed": 3.6553,
-          "annual_service_value_eur_yr": 883.38,
+          "annual_service_value_eur_yr": 3963.45,
           "cumulative_carbon_absorbed": 67.1288,
-          "cumulative_service_value_eur": 16222.79,
+          "cumulative_service_value_eur": 72786.92,
           "service_fraction": 0.761531,
           "succession_phase": "climax",
           "year": 39
         },
         {
           "annual_carbon_absorbed": 3.7329,
-          "annual_service_value_eur_yr": 902.12,
+          "annual_service_value_eur_yr": 4047.57,
           "cumulative_carbon_absorbed": 70.8617,
-          "cumulative_service_value_eur": 17124.91,
+          "cumulative_service_value_eur": 76834.5,
           "service_fraction": 0.777694,
           "succession_phase": "climax",
           "year": 40
         },
         {
           "annual_carbon_absorbed": 3.8078,
-          "annual_service_value_eur_yr": 920.22,
+          "annual_service_value_eur_yr": 4128.74,
           "cumulative_carbon_absorbed": 74.6695,
-          "cumulative_service_value_eur": 18045.13,
+          "cumulative_service_value_eur": 80963.23,
           "service_fraction": 0.793289,
           "succession_phase": "climax",
           "year": 41
         },
         {
           "annual_carbon_absorbed": 3.8799,
-          "annual_service_value_eur_yr": 937.65,
+          "annual_service_value_eur_yr": 4206.96,
           "cumulative_carbon_absorbed": 78.5494,
-          "cumulative_service_value_eur": 18982.78,
+          "cumulative_service_value_eur": 85170.19,
           "service_fraction": 0.808318,
           "succession_phase": "climax",
           "year": 42
         },
         {
           "annual_carbon_absorbed": 3.9493,
-          "annual_service_value_eur_yr": 954.42,
+          "annual_service_value_eur_yr": 4282.22,
           "cumulative_carbon_absorbed": 82.4988,
-          "cumulative_service_value_eur": 19937.2,
+          "cumulative_service_value_eur": 89452.41,
           "service_fraction": 0.822779,
           "succession_phase": "climax",
           "year": 43
         },
         {
           "annual_carbon_absorbed": 4.016,
-          "annual_service_value_eur_yr": 970.54,
+          "annual_service_value_eur_yr": 4354.53,
           "cumulative_carbon_absorbed": 86.5148,
-          "cumulative_service_value_eur": 20907.74,
+          "cumulative_service_value_eur": 93806.94,
           "service_fraction": 0.836673,
           "succession_phase": "climax",
           "year": 44
         },
         {
           "annual_carbon_absorbed": 4.08,
-          "annual_service_value_eur_yr": 986.0,
+          "annual_service_value_eur_yr": 4423.9,
           "cumulative_carbon_absorbed": 90.5948,
-          "cumulative_service_value_eur": 21893.74,
+          "cumulative_service_value_eur": 98230.84,
           "service_fraction": 0.85,
           "succession_phase": "climax",
           "year": 45
         },
         {
           "annual_carbon_absorbed": 4.1412,
-          "annual_service_value_eur_yr": 1000.8,
+          "annual_service_value_eur_yr": 4490.31,
           "cumulative_carbon_absorbed": 94.736,
-          "cumulative_service_value_eur": 22894.54,
+          "cumulative_service_value_eur": 102721.14,
           "service_fraction": 0.86276,
           "succession_phase": "climax",
           "year": 46
         },
         {
           "annual_carbon_absorbed": 4.1998,
-          "annual_service_value_eur_yr": 1014.95,
+          "annual_service_value_eur_yr": 4553.76,
           "cumulative_carbon_absorbed": 98.9358,
-          "cumulative_service_value_eur": 23909.49,
+          "cumulative_service_value_eur": 107274.91,
           "service_fraction": 0.874953,
           "succession_phase": "climax",
           "year": 47
         },
         {
           "annual_carbon_absorbed": 4.2556,
-          "annual_service_value_eur_yr": 1028.43,
+          "annual_service_value_eur_yr": 4614.27,
           "cumulative_carbon_absorbed": 103.1914,
-          "cumulative_service_value_eur": 24937.92,
+          "cumulative_service_value_eur": 111889.18,
           "service_fraction": 0.886578,
           "succession_phase": "climax",
           "year": 48
         },
         {
           "annual_carbon_absorbed": 4.3087,
-          "annual_service_value_eur_yr": 1041.26,
+          "annual_service_value_eur_yr": 4671.83,
           "cumulative_carbon_absorbed": 107.5,
-          "cumulative_service_value_eur": 25979.18,
+          "cumulative_service_value_eur": 116561.01,
           "service_fraction": 0.897637,
           "succession_phase": "climax",
           "year": 49
         },
         {
           "annual_carbon_absorbed": 4.359,
-          "annual_service_value_eur_yr": 1053.43,
+          "annual_service_value_eur_yr": 4726.43,
           "cumulative_carbon_absorbed": 111.8591,
-          "cumulative_service_value_eur": 27032.6,
+          "cumulative_service_value_eur": 121287.44,
           "service_fraction": 0.908129,
           "succession_phase": "climax",
           "year": 50
         },
         {
           "annual_carbon_absorbed": 4.4067,
-          "annual_service_value_eur_yr": 1064.94,
+          "annual_service_value_eur_yr": 4778.08,
           "cumulative_carbon_absorbed": 116.2657,
-          "cumulative_service_value_eur": 28097.55,
+          "cumulative_service_value_eur": 126065.52,
           "service_fraction": 0.918053,
           "succession_phase": "climax",
           "year": 51
         },
         {
           "annual_carbon_absorbed": 4.4516,
-          "annual_service_value_eur_yr": 1075.8,
+          "annual_service_value_eur_yr": 4826.78,
           "cumulative_carbon_absorbed": 120.7173,
-          "cumulative_service_value_eur": 29173.34,
+          "cumulative_service_value_eur": 130892.3,
           "service_fraction": 0.92741,
           "succession_phase": "climax",
           "year": 52
         },
         {
           "annual_carbon_absorbed": 4.4938,
-          "annual_service_value_eur_yr": 1085.99,
+          "annual_service_value_eur_yr": 4872.53,
           "cumulative_carbon_absorbed": 125.211,
-          "cumulative_service_value_eur": 30259.33,
+          "cumulative_service_value_eur": 135764.83,
           "service_fraction": 0.9362,
           "succession_phase": "climax",
           "year": 53
         },
         {
           "annual_carbon_absorbed": 4.5332,
-          "annual_service_value_eur_yr": 1095.53,
+          "annual_service_value_eur_yr": 4915.33,
           "cumulative_carbon_absorbed": 129.7443,
-          "cumulative_service_value_eur": 31354.87,
+          "cumulative_service_value_eur": 140680.16,
           "service_fraction": 0.944423,
           "succession_phase": "climax",
           "year": 54
         },
         {
           "annual_carbon_absorbed": 4.57,
-          "annual_service_value_eur_yr": 1104.41,
+          "annual_service_value_eur_yr": 4955.18,
           "cumulative_carbon_absorbed": 134.3143,
-          "cumulative_service_value_eur": 32459.28,
+          "cumulative_service_value_eur": 145635.34,
           "service_fraction": 0.952079,
           "succession_phase": "climax",
           "year": 55
         },
         {
           "annual_carbon_absorbed": 4.604,
-          "annual_service_value_eur_yr": 1112.64,
+          "annual_service_value_eur_yr": 4992.07,
           "cumulative_carbon_absorbed": 138.9183,
-          "cumulative_service_value_eur": 33571.91,
+          "cumulative_service_value_eur": 150627.41,
           "service_fraction": 0.959168,
           "succession_phase": "climax",
           "year": 56
         },
         {
           "annual_carbon_absorbed": 4.6353,
-          "annual_service_value_eur_yr": 1120.2,
+          "annual_service_value_eur_yr": 5026.01,
           "cumulative_carbon_absorbed": 143.5536,
-          "cumulative_service_value_eur": 34692.11,
+          "cumulative_service_value_eur": 155653.42,
           "service_fraction": 0.96569,
           "succession_phase": "climax",
           "year": 57
         },
         {
           "annual_carbon_absorbed": 4.6639,
-          "annual_service_value_eur_yr": 1127.11,
+          "annual_service_value_eur_yr": 5057.0,
           "cumulative_carbon_absorbed": 148.2175,
-          "cumulative_service_value_eur": 35819.22,
+          "cumulative_service_value_eur": 160710.43,
           "service_fraction": 0.971645,
           "succession_phase": "climax",
           "year": 58
         },
         {
           "annual_carbon_absorbed": 4.6898,
-          "annual_service_value_eur_yr": 1133.36,
+          "annual_service_value_eur_yr": 5085.04,
           "cumulative_carbon_absorbed": 152.9072,
-          "cumulative_service_value_eur": 36952.58,
+          "cumulative_service_value_eur": 165795.47,
           "service_fraction": 0.977032,
           "succession_phase": "climax",
           "year": 59
         },
         {
           "annual_carbon_absorbed": 4.7129,
-          "annual_service_value_eur_yr": 1138.95,
+          "annual_service_value_eur_yr": 5110.13,
           "cumulative_carbon_absorbed": 157.6201,
-          "cumulative_service_value_eur": 38091.53,
+          "cumulative_service_value_eur": 170905.6,
           "service_fraction": 0.981853,
           "succession_phase": "climax",
           "year": 60
         },
         {
           "annual_carbon_absorbed": 4.7333,
-          "annual_service_value_eur_yr": 1143.88,
+          "annual_service_value_eur_yr": 5132.27,
           "cumulative_carbon_absorbed": 162.3534,
-          "cumulative_service_value_eur": 39235.41,
+          "cumulative_service_value_eur": 176037.87,
           "service_fraction": 0.986106,
           "succession_phase": "climax",
           "year": 61
         },
         {
           "annual_carbon_absorbed": 4.751,
-          "annual_service_value_eur_yr": 1148.16,
+          "annual_service_value_eur_yr": 5151.45,
           "cumulative_carbon_absorbed": 167.1044,
-          "cumulative_service_value_eur": 40383.57,
+          "cumulative_service_value_eur": 181189.33,
           "service_fraction": 0.989792,
           "succession_phase": "climax",
           "year": 62
         },
         {
           "annual_carbon_absorbed": 4.766,
-          "annual_service_value_eur_yr": 1151.78,
+          "annual_service_value_eur_yr": 5167.69,
           "cumulative_carbon_absorbed": 171.8704,
-          "cumulative_service_value_eur": 41535.35,
+          "cumulative_service_value_eur": 186357.02,
           "service_fraction": 0.992911,
           "succession_phase": "climax",
           "year": 63
         },
         {
           "annual_carbon_absorbed": 4.7782,
-          "annual_service_value_eur_yr": 1154.74,
+          "annual_service_value_eur_yr": 5180.97,
           "cumulative_carbon_absorbed": 176.6486,
-          "cumulative_service_value_eur": 42690.08,
+          "cumulative_service_value_eur": 191537.99,
           "service_fraction": 0.995463,
           "succession_phase": "climax",
           "year": 64
         },
         {
           "annual_carbon_absorbed": 4.7878,
-          "annual_service_value_eur_yr": 1157.04,
+          "annual_service_value_eur_yr": 5191.3,
           "cumulative_carbon_absorbed": 181.4364,
-          "cumulative_service_value_eur": 43847.12,
+          "cumulative_service_value_eur": 196729.29,
           "service_fraction": 0.997448,
           "succession_phase": "climax",
           "year": 65
         },
         {
           "annual_carbon_absorbed": 4.7946,
-          "annual_service_value_eur_yr": 1158.68,
+          "annual_service_value_eur_yr": 5198.68,
           "cumulative_carbon_absorbed": 186.2309,
-          "cumulative_service_value_eur": 45005.81,
+          "cumulative_service_value_eur": 201927.97,
           "service_fraction": 0.998866,
           "succession_phase": "climax",
           "year": 66
         },
         {
           "annual_carbon_absorbed": 4.7986,
-          "annual_service_value_eur_yr": 1159.67,
+          "annual_service_value_eur_yr": 5203.11,
           "cumulative_carbon_absorbed": 191.0296,
-          "cumulative_service_value_eur": 46165.48,
+          "cumulative_service_value_eur": 207131.07,
           "service_fraction": 0.999716,
           "succession_phase": "climax",
           "year": 67
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 195.8284,
-          "cumulative_service_value_eur": 47325.2,
+          "cumulative_service_value_eur": 212334.41,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 68
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 200.6273,
-          "cumulative_service_value_eur": 48484.92,
+          "cumulative_service_value_eur": 217537.75,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 69
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 205.4261,
-          "cumulative_service_value_eur": 49644.65,
+          "cumulative_service_value_eur": 222741.09,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 70
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 210.225,
-          "cumulative_service_value_eur": 50804.37,
+          "cumulative_service_value_eur": 227944.42,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 71
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 215.0238,
-          "cumulative_service_value_eur": 51964.09,
+          "cumulative_service_value_eur": 233147.76,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 72
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 219.8227,
-          "cumulative_service_value_eur": 53123.81,
+          "cumulative_service_value_eur": 238351.1,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 73
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 224.6215,
-          "cumulative_service_value_eur": 54283.54,
+          "cumulative_service_value_eur": 243554.44,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 74
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 229.4204,
-          "cumulative_service_value_eur": 55443.26,
+          "cumulative_service_value_eur": 248757.78,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 75
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 234.2192,
-          "cumulative_service_value_eur": 56602.98,
+          "cumulative_service_value_eur": 253961.11,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 76
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 239.0181,
-          "cumulative_service_value_eur": 57762.7,
+          "cumulative_service_value_eur": 259164.45,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 77
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 243.8169,
-          "cumulative_service_value_eur": 58922.43,
+          "cumulative_service_value_eur": 264367.79,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 78
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 248.6158,
-          "cumulative_service_value_eur": 60082.15,
+          "cumulative_service_value_eur": 269571.13,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 79
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 253.4146,
-          "cumulative_service_value_eur": 61241.87,
+          "cumulative_service_value_eur": 274774.46,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 80
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 258.2135,
-          "cumulative_service_value_eur": 62401.59,
+          "cumulative_service_value_eur": 279977.8,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 81
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 263.0123,
-          "cumulative_service_value_eur": 63561.32,
+          "cumulative_service_value_eur": 285181.14,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 82
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 267.8112,
-          "cumulative_service_value_eur": 64721.04,
+          "cumulative_service_value_eur": 290384.48,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 83
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 272.61,
-          "cumulative_service_value_eur": 65880.76,
+          "cumulative_service_value_eur": 295587.82,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 84
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 277.4089,
-          "cumulative_service_value_eur": 67040.48,
+          "cumulative_service_value_eur": 300791.15,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 85
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 282.2078,
-          "cumulative_service_value_eur": 68200.21,
+          "cumulative_service_value_eur": 305994.49,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 86
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 287.0066,
-          "cumulative_service_value_eur": 69359.93,
+          "cumulative_service_value_eur": 311197.83,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 87
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 291.8055,
-          "cumulative_service_value_eur": 70519.65,
+          "cumulative_service_value_eur": 316401.17,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 88
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 296.6043,
-          "cumulative_service_value_eur": 71679.37,
+          "cumulative_service_value_eur": 321604.5,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 89
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 301.4032,
-          "cumulative_service_value_eur": 72839.1,
+          "cumulative_service_value_eur": 326807.84,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 90
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 306.202,
-          "cumulative_service_value_eur": 73998.82,
+          "cumulative_service_value_eur": 332011.18,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 91
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 311.0009,
-          "cumulative_service_value_eur": 75158.54,
+          "cumulative_service_value_eur": 337214.52,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 92
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 315.7997,
-          "cumulative_service_value_eur": 76318.26,
+          "cumulative_service_value_eur": 342417.86,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 93
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 320.5986,
-          "cumulative_service_value_eur": 77477.99,
+          "cumulative_service_value_eur": 347621.19,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 94
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 325.3974,
-          "cumulative_service_value_eur": 78637.71,
+          "cumulative_service_value_eur": 352824.53,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 95
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 330.1963,
-          "cumulative_service_value_eur": 79797.43,
+          "cumulative_service_value_eur": 358027.87,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 96
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 334.9951,
-          "cumulative_service_value_eur": 80957.15,
+          "cumulative_service_value_eur": 363231.21,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 97
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 339.794,
-          "cumulative_service_value_eur": 82116.88,
+          "cumulative_service_value_eur": 368434.54,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 98
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 344.5928,
-          "cumulative_service_value_eur": 83276.6,
+          "cumulative_service_value_eur": 373637.88,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 99
         },
         {
           "annual_carbon_absorbed": 4.7989,
-          "annual_service_value_eur_yr": 1159.72,
+          "annual_service_value_eur_yr": 5203.34,
           "cumulative_carbon_absorbed": 349.3917,
-          "cumulative_service_value_eur": 84436.32,
+          "cumulative_service_value_eur": 378841.22,
           "service_fraction": 1.0,
           "succession_phase": "climax",
           "year": 100
@@ -1986,10 +2137,10 @@
       "carbon_payback_years": null,
       "cost_eur_pv": 16710.21,
       "horizon_years": 100,
-      "net_present_value_eur_pv": 61913.7,
-      "roi": 4.7051,
-      "service_benefits_eur_pv": 46354.81,
-      "total_benefits_eur_pv": 78623.92
+      "net_present_value_eur_pv": 223539.43,
+      "roi": 14.3774,
+      "service_benefits_eur_pv": 207980.53,
+      "total_benefits_eur_pv": 240249.64
     },
     "restoration_cost": {
       "annual_maintenance_per_unit_eur_yr": 1.0,
@@ -2003,28 +2154,28 @@
     },
     "summary": {
       "agent_service_value_eur_yr": {
-        "Apex Predators": 34.79,
-        "Aquatic System": 115.97,
-        "Canopy Trees": 173.96,
-        "Epiphytes & Bromeliads": 115.97,
-        "Herbivores": 81.18,
-        "Mesopredators": 57.99,
-        "Mycorrhizal Fungi": 173.96,
-        "Pollinators": 104.38,
-        "Seed Dispersers": 92.78,
-        "Soil Decomposers": 115.97,
-        "Understory": 92.78
+        "Apex Predators": 156.1,
+        "Aquatic System": 520.33,
+        "Canopy Trees": 780.5,
+        "Epiphytes & Bromeliads": 520.33,
+        "Herbivores": 364.23,
+        "Mesopredators": 260.17,
+        "Mycorrhizal Fungi": 780.5,
+        "Pollinators": 468.3,
+        "Seed Dispersers": 416.27,
+        "Soil Decomposers": 520.33,
+        "Understory": 416.27
       },
-      "annual_damage_reversal_eur_yr": 1160.0,
-      "annual_recovered_value_eur_yr": 1159.72,
+      "annual_damage_reversal_eur_yr": 5204.58,
+      "annual_recovered_value_eur_yr": 5203.34,
       "depletion_after": 0.0,
       "depletion_before": 0.2,
       "final_ecosystem_health": 0.999952,
       "initial_ecosystem_health": 0.8,
-      "net_restoration_value_eur_pv": 61913.7,
-      "net_restoration_value_h100_eur_pv": 61913.7,
-      "net_restoration_value_h200_eur_pv": 107610.04,
-      "net_restoration_value_h50_eur_pv": 15783.8,
+      "net_restoration_value_eur_pv": 223539.43,
+      "net_restoration_value_h100_eur_pv": 223539.43,
+      "net_restoration_value_h200_eur_pv": 362522.92,
+      "net_restoration_value_h50_eur_pv": 82708.45,
       "num_steps": 800,
       "restoration_cost_ratio": 17.6667,
       "total_restoration_cost_eur": 20000.0,
@@ -2045,90 +2196,90 @@
       },
       {
         "annual_carbon_absorbed": 0.5346844444444444,
-        "annual_service_value": 129.2154074074074,
+        "annual_service_value": 579.7519491762964,
         "cumulative_carbon_absorbed": 2.2524444444444445,
-        "cumulative_service_value": 544.3407407407408,
+        "cumulative_service_value": 2442.2985756296302,
         "service_fraction": 0.1113925925925926,
         "succession_phase": "intermediate",
         "year": 11
       },
       {
         "annual_carbon_absorbed": 1.8985955555555556,
-        "annual_service_value": 458.8272592592593,
+        "annual_service_value": 2058.6244568503707,
         "cumulative_carbon_absorbed": 15.840000000000002,
-        "cumulative_service_value": 3828.000000000001,
+        "cumulative_service_value": 17175.122580000003,
         "service_fraction": 0.39554074074074075,
         "succession_phase": "intermediate",
         "year": 21
       },
       {
         "annual_carbon_absorbed": 2.936710775047259,
-        "annual_service_value": 709.7051039697543,
+        "annual_service_value": 3184.240375217392,
         "cumulative_carbon_absorbed": 40.2868809073724,
-        "cumulative_service_value": 9735.996219281664,
+        "cumulative_service_value": 43682.583203913055,
         "service_fraction": 0.6118147448015123,
         "succession_phase": "climax",
         "year": 31
       },
       {
         "annual_carbon_absorbed": 3.8077882797731566,
-        "annual_service_value": 920.2155009451795,
+        "annual_service_value": 4128.739296956523,
         "cumulative_carbon_absorbed": 74.66948960302457,
-        "cumulative_service_value": 18045.126654064272,
+        "cumulative_service_value": 80963.23465391307,
         "service_fraction": 0.793289224952741,
         "succession_phase": "climax",
         "year": 41
       },
       {
         "annual_carbon_absorbed": 4.406654064272211,
-        "annual_service_value": 1064.9413988657845,
+        "annual_service_value": 4778.082305652174,
         "cumulative_carbon_absorbed": 116.2657088846881,
-        "cumulative_service_value": 28097.54631379962,
+        "cumulative_service_value": 126065.51779956525,
         "service_fraction": 0.9180529300567107,
         "succession_phase": "climax",
         "year": 51
       },
       {
         "annual_carbon_absorbed": 4.71289224952741,
-        "annual_service_value": 1138.9489603024576,
+        "annual_service_value": 5110.132707826088,
         "cumulative_carbon_absorbed": 157.6201134215501,
-        "cumulative_service_value": 38091.527410207935,
+        "cumulative_service_value": 170905.60410913048,
         "service_fraction": 0.9818525519848772,
         "succession_phase": "climax",
         "year": 60
       },
       {
         "annual_carbon_absorbed": 4.798851931993798,
-        "annual_service_value": 1159.7225502318345,
+        "annual_service_value": 5203.337763589856,
         "cumulative_carbon_absorbed": 205.4261210133727,
-        "cumulative_service_value": 49644.64591156506,
+        "cumulative_service_value": 222741.08646076964,
         "service_fraction": 1.0,
         "succession_phase": "climax",
         "year": 70
       },
       {
         "annual_carbon_absorbed": 4.798851931993798,
-        "annual_service_value": 1159.7225502318345,
+        "annual_service_value": 5203.337763589856,
         "cumulative_carbon_absorbed": 253.41464033331064,
-        "cumulative_service_value": 61241.87141388338,
+        "cumulative_service_value": 274774.4640966683,
         "service_fraction": 1.0,
         "succession_phase": "climax",
         "year": 80
       },
       {
         "annual_carbon_absorbed": 4.798851931993798,
-        "annual_service_value": 1159.7225502318345,
+        "annual_service_value": 5203.337763589856,
         "cumulative_carbon_absorbed": 301.4031596532486,
-        "cumulative_service_value": 72839.09691620171,
+        "cumulative_service_value": 326807.84173256694,
         "service_fraction": 1.0,
         "succession_phase": "climax",
         "year": 90
       },
       {
         "annual_carbon_absorbed": 4.798851931993798,
-        "annual_service_value": 1159.7225502318345,
+        "annual_service_value": 5203.337763589856,
         "cumulative_carbon_absorbed": 349.3916789731866,
-        "cumulative_service_value": 84436.32241852004,
+        "cumulative_service_value": 378841.2193684656,
         "service_fraction": 1.0,
         "succession_phase": "climax",
         "year": 100
@@ -2136,29 +2287,29 @@
     ],
     "sums": {
       "annual_carbon_absorbed": 349.3916789731866,
-      "annual_service_value": 84436.32241852004,
+      "annual_service_value": 378841.2193684656,
       "cumulative_carbon_absorbed": 13416.61108824465,
-      "cumulative_service_value": 3242347.6796591245,
+      "cumulative_service_value": 14547470.962676093,
       "service_fraction": 72.79782608695652,
       "year": 5050.0
     }
   },
   "per_agent": {
-    "Apex Predators": 34.791676506955035,
-    "Aquatic System": 115.97225502318346,
-    "Canopy Trees": 173.95838253477518,
-    "Epiphytes & Bromeliads": 115.97225502318346,
-    "Herbivores": 81.18057851622844,
-    "Mesopredators": 57.98612751159173,
-    "Mycorrhizal Fungi": 173.95838253477518,
-    "Pollinators": 104.37502952086511,
-    "Seed Dispersers": 92.77780401854676,
-    "Soil Decomposers": 115.97225502318346,
-    "Understory": 92.77780401854676
+    "Apex Predators": 156.10013290769567,
+    "Aquatic System": 520.3337763589856,
+    "Canopy Trees": 780.5006645384783,
+    "Epiphytes & Bromeliads": 520.3337763589856,
+    "Herbivores": 364.23364345128994,
+    "Mesopredators": 260.1668881794928,
+    "Mycorrhizal Fungi": 780.5006645384783,
+    "Pollinators": 468.30039872308697,
+    "Seed Dispersers": 416.2670210871884,
+    "Soil Decomposers": 520.3337763589856,
+    "Understory": 416.2670210871884
   },
   "result": {
-    "annual_damage_reversal": 1160.0,
-    "annual_recovered_value": 1159.7225502318345,
+    "annual_damage_reversal": 5204.582600000001,
+    "annual_recovered_value": 5203.337763589854,
     "carbon_breakeven": {
       "breakeven_price": 172.07890415650274,
       "current_price": 166.3456487480301,
@@ -2174,21 +2325,21 @@
       "carbon_not_recovered": 244172.8617421079,
       "foregone_revenue": 1200.0,
       "horizon": 100,
-      "maturation_gap": 26523.831345142706,
-      "ratio": 239.5202843765282,
+      "maturation_gap": 119004.71646919339,
+      "ratio": 316.6383486224767,
       "recovery_shortfall": 0.0,
       "restoration_cost": 16710.21282120277,
-      "substrate_loss": 17.435343380451613,
-      "total": 287424.34125183383
+      "substrate_loss": 78.22731446803763,
+      "total": 379966.01834697207
     },
     "final_ecosystem_health": 0.999952163833075,
     "initial_ecosystem_health": 0.7999999999999999,
-    "maturation_gap_pv": 26523.831345142706,
-    "net_restoration_pv": 61913.70368543359,
+    "maturation_gap_pv": 119004.71646919339,
+    "net_restoration_pv": 223539.42751438546,
     "net_restoration_pv_by_horizon": {
-      "100": 61913.70368543359,
-      "200": 107610.04311134029,
-      "50": 15783.80103849401
+      "100": 223539.42751438546,
+      "200": 362522.92370067304,
+      "50": 82708.44582618133
     },
     "restoration_cost": {
       "annual_maintenance_per_unit": 1.0,
@@ -2201,10 +2352,10 @@
       "carbon_payback_years": null,
       "cost": 16710.21282120277,
       "horizon": 100,
-      "net_present_value": 61913.70368543359,
-      "roi": 4.705141541158251,
-      "service_benefits": 46354.80547277837,
-      "total_benefits": 78623.91650663636
+      "net_present_value": 223539.42751438546,
+      "roi": 14.377413555783516,
+      "service_benefits": 207980.52930173022,
+      "total_benefits": 240249.64033558822
     },
     "substrate_ceiling": 0.9997608191653746,
     "substrate_recovery_years": 1.1898026212230128,
@@ -2244,22 +2395,22 @@
       49.92158452076258
     ],
     "agent_service_values": [
-      43431.77853306345,
-      23163.615217633826,
-      43431.77853306345,
-      28954.51902204228,
-      26059.06711983807,
-      23163.615217633826,
-      20268.1633154296,
-      14477.25951102114,
-      8686.355706612681,
-      28954.51902204228,
-      28954.51902204228
+      194865.75762089263,
+      103928.40406447611,
+      194865.75762089263,
+      129910.50508059523,
+      116919.4545725356,
+      103928.40406447611,
+      90937.35355641662,
+      64955.25254029762,
+      38973.15152417852,
+      129910.50508059523,
+      129910.50508059523
     ],
-    "cumulative_service_value": 289545.19022042287,
+    "cumulative_service_value": 1299105.0508059515,
     "depletion_ratio": 79.89999999999999,
     "ecosystem_health": 689.9215845207625,
-    "marginal_service_value": 1159.7225502318345,
+    "marginal_service_value": 5203.337763589854,
     "recovery_ratio": 400.4999999999999,
     "restoration_cost_so_far": 8010000.0,
     "step": 320400.0,
@@ -2281,22 +2432,22 @@
         3.445260587794157e-08
       ],
       "agent_service_values": [
-        2.9973767113809163e-05,
-        1.598600912736489e-05,
-        2.9973767113809163e-05,
-        1.998251140920611e-05,
-        1.79842602682855e-05,
-        1.598600912736489e-05,
-        1.3987757986444278e-05,
-        9.991255704603055e-06,
-        5.994753422761833e-06,
-        1.998251140920611e-05,
-        1.998251140920611e-05
+        0.0001344835748077443,
+        7.172457323079697e-05,
+        0.0001344835748077443,
+        8.965571653849622e-05,
+        8.069014488464659e-05,
+        7.172457323079697e-05,
+        6.275900157694735e-05,
+        4.482785826924811e-05,
+        2.6896714961548862e-05,
+        8.965571653849622e-05,
+        8.965571653849622e-05
       ],
-      "cumulative_service_value": 0.00019982511409206112,
+      "cumulative_service_value": 0.000896557165384962,
       "depletion_ratio": 0.19975,
       "ecosystem_health": 0.8000000344526059,
-      "marginal_service_value": 0.00019982511409206112,
+      "marginal_service_value": 0.000896557165384962,
       "recovery_ratio": 0.00125,
       "restoration_cost_so_far": 25.0,
       "step": 1,
@@ -2317,22 +2468,22 @@
         0.0003226518638849131
       ],
       "agent_service_values": [
-        0.2807071215798744,
-        0.1497104648425997,
-        0.2807071215798744,
-        0.18713808105324964,
-        0.16842427294792464,
-        0.1497104648425997,
-        0.13099665673727473,
-        0.09356904052662482,
-        0.05614142431597488,
-        0.18713808105324964,
-        0.18713808105324964
+        1.2594512074747404,
+        0.671707310653195,
+        1.2594512074747404,
+        0.8396341383164937,
+        0.7556707244848443,
+        0.671707310653195,
+        0.5877438968215456,
+        0.41981706915824685,
+        0.25189024149494804,
+        0.8396341383164937,
+        0.8396341383164937
       ],
-      "cumulative_service_value": 1.871380810532496,
+      "cumulative_service_value": 8.396341383164938,
       "depletion_ratio": 0.17975,
       "ecosystem_health": 0.8003226518638848,
-      "marginal_service_value": 0.054348294228499405,
+      "marginal_service_value": 0.24384498834597323,
       "recovery_ratio": 0.10125,
       "restoration_cost_so_far": 2025.0,
       "step": 81,
@@ -2353,22 +2504,22 @@
         0.0018658596709339803
       ],
       "agent_service_values": [
-        1.6232979137125627,
-        0.8657588873133669,
-        1.6232979137125627,
-        1.0821986091417086,
-        0.9739787482275377,
-        0.8657588873133669,
-        0.757539026399196,
-        0.5410993045708543,
-        0.32465958274251255,
-        1.0821986091417086,
-        1.0821986091417086
+        7.283265583038539,
+        3.884408310953888,
+        7.283265583038539,
+        4.855510388692361,
+        4.369959349823124,
+        3.884408310953888,
+        3.398857272084652,
+        2.4277551943461804,
+        1.456653116607708,
+        4.855510388692361,
+        4.855510388692361
       ],
-      "cumulative_service_value": 10.821986091417088,
+      "cumulative_service_value": 48.555103886923604,
       "depletion_ratio": 0.15975,
       "ecosystem_health": 0.801865859670934,
-      "marginal_service_value": 0.18586874481848703,
+      "marginal_service_value": 0.8339389958328738,
       "recovery_ratio": 0.20125,
       "restoration_cost_so_far": 4025.0,
       "step": 161,
@@ -2389,22 +2540,22 @@
         0.00617844682621909
       ],
       "agent_service_values": [
-        5.375248738810608,
-        2.866799327365658,
-        5.375248738810608,
-        3.5834991592070726,
-        3.225149243286365,
-        2.866799327365658,
-        2.5084494114449507,
-        1.7917495796035363,
-        1.0750497477621217,
-        3.5834991592070726,
-        3.5834991592070726
+        24.117177635073826,
+        12.862494738706042,
+        24.117177635073826,
+        16.078118423382552,
+        14.470306581044294,
+        12.862494738706042,
+        11.254682896367786,
+        8.039059211691276,
+        4.823435527014765,
+        16.078118423382552,
+        16.078118423382552
       ],
-      "cumulative_service_value": 35.83499159207072,
+      "cumulative_service_value": 160.78118423382554,
       "depletion_ratio": 0.13975,
       "ecosystem_health": 0.8061784468262191,
-      "marginal_service_value": 0.46866288735604655,
+      "marginal_service_value": 2.1027540593095466,
       "recovery_ratio": 0.30125,
       "restoration_cost_so_far": 6025.0,
       "step": 241,
@@ -2425,22 +2576,22 @@
         0.015947062699360404
       ],
       "agent_service_values": [
-        13.873944548443552,
-        7.399437092503228,
-        13.873944548443552,
-        9.249296365629036,
-        8.32436672906613,
-        7.399437092503228,
-        6.474507455940325,
-        4.624648182814518,
-        2.77478890968871,
-        9.249296365629036,
-        9.249296365629036
+        62.24835378465014,
+        33.19912201848008,
+        62.24835378465014,
+        41.4989025231001,
+        37.349012270790084,
+        33.19912201848008,
+        29.04923176617007,
+        20.74945126155005,
+        12.44967075693003,
+        41.4989025231001,
+        41.4989025231001
       ],
-      "cumulative_service_value": 92.49296365629036,
+      "cumulative_service_value": 414.98902523100094,
       "depletion_ratio": 0.11975,
       "ecosystem_health": 0.8159470626993603,
-      "marginal_service_value": 0.9841297421291699,
+      "marginal_service_value": 4.4155039069206055,
       "recovery_ratio": 0.40125,
       "restoration_cost_so_far": 8025.0,
       "step": 321,
@@ -2461,22 +2612,22 @@
         0.034454292560975215
       ],
       "agent_service_values": [
-        29.975234528048436,
-        15.986791748292502,
-        29.975234528048436,
-        19.983489685365626,
-        17.98514071682906,
-        15.986791748292502,
-        13.988442779755939,
-        9.991744842682813,
-        5.995046905609688,
-        19.983489685365626,
-        19.983489685365626
+        134.49015866862078,
+        71.72808462326442,
+        134.49015866862078,
+        89.66010577908052,
+        80.69409520117247,
+        71.72808462326442,
+        62.76207404535637,
+        44.83005288954026,
+        26.898031733724157,
+        89.66010577908052,
+        89.66010577908052
       ],
-      "cumulative_service_value": 199.83489685365623,
+      "cumulative_service_value": 896.6010577908052,
       "depletion_ratio": 0.09975,
       "ecosystem_health": 0.8344542925609751,
-      "marginal_service_value": 1.7124509466325435,
+      "marginal_service_value": 7.683269310515016,
       "recovery_ratio": 0.50125,
       "restoration_cost_so_far": 10025.0,
       "step": 401,
@@ -2497,22 +2648,22 @@
         0.06273636915335314
       ],
       "agent_service_values": [
-        54.580641163417226,
-        29.10967528715586,
-        54.580641163417226,
-        36.38709410894482,
-        32.74838469805034,
-        29.10967528715586,
-        25.470965876261374,
-        18.19354705447241,
-        10.916128232683445,
-        36.38709410894482,
-        36.38709410894482
+        244.88746146203886,
+        130.6066461130874,
+        244.88746146203886,
+        163.25830764135924,
+        146.9324768772233,
+        130.6066461130874,
+        114.28081534895148,
+        81.62915382067962,
+        48.97749229240777,
+        163.25830764135924,
+        163.25830764135924
       ],
-      "cumulative_service_value": 363.87094108944814,
+      "cumulative_service_value": 1632.5830764135922,
       "depletion_ratio": 0.08,
       "ecosystem_health": 0.8627363691533532,
-      "marginal_service_value": 2.3950426969010437,
+      "marginal_service_value": 10.745859953920899,
       "recovery_ratio": 0.6,
       "restoration_cost_so_far": 12000.0,
       "step": 480,
@@ -2533,22 +2684,22 @@
         0.09856220200095624
       ],
       "agent_service_values": [
-        85.74911574083193,
-        45.732861728443694,
-        85.74911574083193,
-        57.16607716055462,
-        51.44946944449915,
-        45.732861728443694,
-        40.01625401238824,
-        28.58303858027731,
-        17.149823148166387,
-        57.16607716055462,
-        57.16607716055462
+        384.7313411638965,
+        205.19004862074482,
+        384.7313411638965,
+        256.48756077593106,
+        230.8388046983379,
+        205.19004862074482,
+        179.5412925431517,
+        128.24378038796553,
+        76.9462682327793,
+        256.48756077593106,
+        256.48756077593106
       ],
-      "cumulative_service_value": 571.6607716055462,
+      "cumulative_service_value": 2564.87560775931,
       "depletion_ratio": 0.06,
       "ecosystem_health": 0.8985622020009563,
-      "marginal_service_value": 2.7175409137017823,
+      "marginal_service_value": 12.19281565020674,
       "recovery_ratio": 0.7,
       "restoration_cost_so_far": 14000.0,
       "step": 560,
@@ -2569,22 +2720,22 @@
         0.13574221409371376
       ],
       "agent_service_values": [
-        118.09572626153096,
-        62.984387339483185,
-        118.09572626153096,
-        78.73048417435398,
-        70.85743575691858,
-        62.984387339483185,
-        55.11133892204779,
-        39.36524208717699,
-        23.619145252306193,
-        78.73048417435398,
-        78.73048417435398
+        529.861174168213,
+        282.592626223047,
+        529.861174168213,
+        353.2407827788087,
+        317.9167045009278,
+        282.592626223047,
+        247.26854794516612,
+        176.62039138940435,
+        105.9722348336426,
+        353.2407827788087,
+        353.2407827788087
       ],
-      "cumulative_service_value": 787.3048417435397,
+      "cumulative_service_value": 3532.407827788087,
       "depletion_ratio": 0.04,
       "ecosystem_health": 0.9357422140937137,
-      "marginal_service_value": 2.6199681843775124,
+      "marginal_service_value": 11.755035193935782,
       "recovery_ratio": 0.8,
       "restoration_cost_so_far": 16000.0,
       "step": 640,
@@ -2605,22 +2756,22 @@
         0.16991617881968982
       ],
       "agent_service_values": [
-        147.82707557313014,
-        78.84110697233608,
-        147.82707557313014,
-        98.55138371542009,
-        88.69624534387809,
-        78.84110697233608,
-        68.98596860079407,
-        49.275691857710044,
-        29.565415114626028,
-        98.55138371542009,
-        98.55138371542009
+        663.2570908075846,
+        353.7371150973785,
+        663.2570908075846,
+        442.17139387172307,
+        397.95425448455075,
+        353.7371150973785,
+        309.51997571020615,
+        221.08569693586153,
+        132.65141816151692,
+        442.17139387172307,
+        442.17139387172307
       ],
-      "cumulative_service_value": 985.513837154201,
+      "cumulative_service_value": 4421.713938717231,
       "depletion_ratio": 0.02,
       "ecosystem_health": 0.9699161788196898,
-      "marginal_service_value": 2.327345938592657,
+      "marginal_service_value": 10.442124289809726,
       "recovery_ratio": 0.9,
       "restoration_cost_so_far": 18000.0,
       "step": 720,
@@ -2641,22 +2792,22 @@
         0.19995216383307493
       ],
       "agent_service_values": [
-        173.95838253477518,
-        92.77780401854676,
-        173.95838253477518,
-        115.97225502318346,
-        104.37502952086511,
-        92.77780401854676,
-        81.18057851622844,
-        57.98612751159173,
-        34.791676506955035,
-        115.97225502318346,
-        115.97225502318346
+        780.5006645384783,
+        416.2670210871884,
+        780.5006645384783,
+        520.3337763589856,
+        468.30039872308697,
+        416.2670210871884,
+        364.23364345128994,
+        260.1668881794928,
+        156.10013290769567,
+        520.3337763589856,
+        520.3337763589856
       ],
-      "cumulative_service_value": 1159.7225502318345,
+      "cumulative_service_value": 5203.337763589854,
       "depletion_ratio": 0.0,
       "ecosystem_health": 0.999952163833075,
-      "marginal_service_value": 2.0421688158044162,
+      "marginal_service_value": 9.1626174870662,
       "recovery_ratio": 1.0,
       "restoration_cost_so_far": 20000.0,
       "step": 800,

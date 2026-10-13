@@ -114,7 +114,9 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
             "reference density). For a case counted in hectares (e.g. "
             "posidonia) it is the reference resource itself — e.g. the "
             "specific meadow a project affects instead of the regional stock — "
-            "and sets the number of units. Agent values are €/ha/yr, so holding "
+            "and sets the number of units (a case with site-restricted values, "
+            "e.g. posidonia's diving value, then requires their inputs: "
+            "--dive-intensity and/or --dive-site-share). Agent values are €/ha/yr, so holding "
             "the area fixed while changing the number of units changes per-unit "
             "figures but not the per-ha externality"
         ),
@@ -233,11 +235,80 @@ def add_site_argument(parser: argparse.ArgumentParser, case) -> None:
         metavar="F",
         help=(
             f"Project input: the share (0-1) of the affected resource within reach "
-            f"of {case.sites}. The value of {', '.join(agents)} applies only there: "
+            f"of {case.sites}. The site-restricted value of {', '.join(agents)} applies only "
+            f"there (its other services apply everywhere, so the agent never falls to €0): "
             f"1 if the project affects only resource at or next to {case.sites}, 0 if it is "
             f"far from any (default {share:.4g}, the regional share, i.e. the expected "
-            f"value for a site of unknown location)"
+            f"value for a site of unknown location; 1 when --{case.intensity_input or 'intensity'} "
+            f"is given alone)"
         ).replace("%", "%%"),
+    )
+    add_intensity_argument(parser, case)
+
+
+def add_intensity_argument(parser: argparse.ArgumentParser, case) -> None:
+    """Add ``--<activity>-intensity`` (e.g. ``--dive-intensity``) for a case
+    whose site-restricted agents define intensity levels (Step 8e.2),
+    explained in plain words in the help."""
+    levels = getattr(case, "intensity_levels", None)
+    if not levels:
+        return
+    default = case.default_site_intensity
+    unit = case.site_intensity_unit
+    near = sum(a.weight * a.site_value for a in case.agents if a.site_share is not None)
+    lines = []
+    for name, level in levels.items():
+        lines.append(
+            f"'{name}': {level['description']} [{level['value']:,.0f} {unit}: about "
+            f"€{near * level['value'] / default:,.0f}/ha/yr near the {case.sites}]"
+        )
+    parser.add_argument(
+        f"--{case.intensity_input}",
+        dest="site_intensity",
+        choices=list(levels),
+        default=None,
+        metavar="{" + ",".join(levels) + "}",
+        help=(
+            f"Project input: how intensely the affected resource near {case.sites} is used, "
+            f"in {unit}. It sets the value per hectare near the {case.sites} (the documented "
+            f"value × level / default; 'none' zeroes that service only, never an agent); "
+            f"--{case.site_input} sets the share of the affected "
+            f"resource near them (1 when only --{case.intensity_input} is given). Default: "
+            f"the regional average, {default:,.1f} {unit} (about €{near:,.0f}/ha/yr near the "
+            f"{case.sites}). Levels: " + " ".join(lines)
+        ).replace("%", "%%"),
+    )
+
+
+def require_site_input(case, args: argparse.Namespace) -> None:
+    """A project run must state the diving input (Step 8e.3).
+
+    With --area-ha the user names a specific project resource (e.g. the
+    meadow a project affects), whose site share and intensity the regional
+    averages do not describe; a case with site-restricted values (Posidonia:
+    the meadow's diving value) then needs --<site>-share and/or
+    --<activity>-intensity. The default regional run keeps its defaults.
+
+    Raises:
+        ValueError: With a plain message, when neither is given.
+    """
+    if getattr(args, "area_ha", None) is None or not getattr(case, "site_restricted_agents", []):
+        return
+    if getattr(args, "site_share", None) is not None or getattr(args, "site_intensity", None) is not None:
+        return
+    intensity = case.intensity_input
+    levels = case.intensity_levels or {}
+    site = case.sites[:-1] if case.sites.endswith("s") else case.sites
+    options = (
+        f"--{intensity} {{{','.join(levels)}}} (how intensely the resource near the "
+        f"{case.sites} is used) and/or " if intensity else ""
+    )
+    nothing = f"--{intensity} none" if "none" in levels else f"--{case.site_input} 0"
+    raise ValueError(
+        f"with --area-ha (a specific project site), the {case.sites} input is required: "
+        f"{options}--{case.site_input} F (the share, 0 to 1, of the affected resource "
+        f"within reach of {case.sites}). If no {site} is within reach, give {nothing}. "
+        f"Without --area-ha the run uses the regional averages."
     )
 
 
@@ -256,7 +327,8 @@ def add_uncertainty_arguments(parser: argparse.ArgumentParser) -> None:
             f"[extract mode] Monte Carlo over the case's parameter ranges: "
             f"P5/P50/P95 of the headline numbers, a sensitivity ranking and the "
             f"normative choices (N draws, default {DEFAULT_DRAWS:,} when given "
-            f"without N; about 4 s per 1,000 draws for Posidonia)"
+            f"without N; about 4 s per 1,000 draws for Posidonia, 4 min for the "
+            f"default 80,000-tree Amazon run)"
         ),
     )
     parser.add_argument(
@@ -291,6 +363,7 @@ def _uncertainty(case, args: argparse.Namespace, labels: Optional[Dict[str, str]
         "carbon_release_half_life": getattr(args, "carbon_release_half_life", None),
         "carbon_fate": getattr(args, "carbon_fate", None),
         "site_share": getattr(args, "site_share", None),
+        "site_intensity": getattr(args, "site_intensity", None),
     }
     if args.threshold != case.safe_threshold_ratio.value:
         overrides["safe_threshold_ratio"] = args.threshold
@@ -678,7 +751,9 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
             carbon_release_half_life=getattr(args, "carbon_release_half_life", None),
             carbon_fate=getattr(args, "carbon_fate", None),
             site_share=getattr(args, "site_share", None),
+            site_intensity=getattr(args, "site_intensity", None),
         )
+        require_site_input(case, args)
         apply_carbon_price_view(ecosystem, args.carbon_price)
         result: Any
         if args.mode == "restore":
@@ -701,6 +776,8 @@ def run_case(case, args: argparse.Namespace, labels: Optional[Dict[str, str]] = 
         uncertainty = _uncertainty(case, args, labels)
         text_report = case.report(result, appendix=format_uncertainty(uncertainty))
         extra = {
+            # Step 8e.6: the primary production → food → € chains
+            "production_functions": case.production_functions() or None,
             "benchmarks": case.benchmark_block(result),
             "uncertainty": uncertainty_to_dict(uncertainty),
         }
