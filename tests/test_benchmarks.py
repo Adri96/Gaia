@@ -23,7 +23,7 @@ def test_posidonia_comparison_figures():
     block = case.benchmark_block(result)
     eco = result.ecosystem
     full = sum(a.dependency_weight * a.annual_value(1.0) for a in eco.agents)
-    assert block["full_damage_eur_per_ha_yr"] == round(full, 2) == 1209.95  # the ledger (Step 8e.6: + the meadow's food production; 8f.1: TE 14.3%)
+    assert block["full_damage_eur_per_ha_yr"] == round(full, 2) == 1293.15  # the ledger (Step 8e.6: + the meadow's food production; 8f.1: TE 14.3%; 8f.2: roots, epiphytes)
     burial = eco.resource.carbon_profile.annual_absorption_tonnes * result.discount.carbon_price_at_year(0)
     assert block["carbon_burial_eur_per_ha_yr"] == round(burial, 2)
     assert block["hectares_lost"] == 50
@@ -43,7 +43,7 @@ def test_text_and_json_carry_the_block():
     from gaia.serialization import to_json
     d = json.loads(to_json(result, include_steps=False,
                            extra={"benchmarks": case.benchmark_block(result)}))
-    assert d["benchmarks"]["full_damage_eur_per_ha_yr"] == 1209.95
+    assert d["benchmarks"]["full_damage_eur_per_ha_yr"] == 1293.15
 
 
 def test_no_benchmarks_no_block():
