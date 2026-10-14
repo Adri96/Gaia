@@ -379,8 +379,11 @@ value = gross − their values). € 2014-2017/ha/yr:
   Of the gross, the plant gives €311.49, the roots €1.00. Range over the
   links' ends (and the depth function's shape over its ranges):
   €3.83–1,525.48 net (€38.83–1,560.48 gross): the lowest value still
-  exceeds the €35 it is net of, so moving the epiphytes needed no
-  rebalancing of net_of. Before Step 8g.4 the share was 74% (€285.39
+  exceeded the €35 it is net of, so moving the epiphytes needed no
+  rebalancing of net_of. Since Step 8i.5 the lowest is taken over the
+  links conditioned on the observed catch (catch_floor: the chain's
+  sustainable catch at 15 m must exceed Campagne et al.'s 8.91 kg/ha/yr
+  / 0.9, an inferred margin, = 9.90 kg): €15.59 net (€50.59 gross). Before Step 8g.4 the share was 74% (€285.39
   gross, €250.39 net). Before Step 8g.2 the epiphytes' €82.20 were in
   this chain (€367.59 gross, €332.59 net). Before Step 8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
   €509.48 gross, €474.48 net). Before Step 8f.2 roots and epiphytes were left out
@@ -440,8 +443,10 @@ value = gross − their values). € 2014-2017/ha/yr:
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
   P5 118, P50 254, P95 528 (base 277, lowest draw 47); the epiphytes'
   chain P5 33, P50 71, P95 158 (base 82; 32 / 72 / 151 before Step 8g.9,
-  the same distribution drawn in another order). The €3.83 floor above bounds
-  every draw; parsing requires it to be > 0.
+  the same distribution drawn in another order). The floor above bounds
+  every draw; parsing requires it to be > 0. Draws whose sustainable
+  catch at 15 m is not above 9.90 kg/ha/yr are rejected and drawn again
+  (Step 8i.5, counted in the output; none of the 1,000 default draws).
   Carbon is not counted twice: the chain uses the production that is not
   buried, gaia.carbon values the buried part. The report shows the chain
   and the matte's carbon on the meadow's line (the carbon as an

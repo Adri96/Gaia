@@ -143,6 +143,39 @@ name (``market_price``) and its document path is the anchor's, so a
 sampled price would be drawn once for every chain. ``with_project_depth``
 never touches it.
 
+The observed catch conditions the chain (Step 8i.5, the owner's decision).
+A case may declare the catch observed on its resource, a quantity, once,
+at the top level,
+
+    "observed_catches": {"<name>": {"value"*, "unit"* ("kg/ha/yr"),
+      "label"*, "source"*, "status"*, "distribution" ("fixed"), "note"}}
+
+(``parse_observed_catches``; for Posidonia the 8.91 kg/ha/yr of
+Campagne et al. 2015, whose euros are that quantity × the market-price
+anchor, the service-ledger entries' ``priced_catch``). A production function
+whose food web that catch comes from gives
+
+    "catch_floor": {"observed_catch"*: "<name>",
+      "commercial_share"*: a parameter in (0, 1), fixed: the largest share
+        of the food web's sustainable catch the observed (commercial) catch
+        can be, "note"}
+
+A meadow fished for q kg/ha/yr proves its food web supports at least that
+much, and the observed catch is never the whole of it, so its sustainable
+catch at the REGIONAL depth (the depth the observation is a mean over)
+exceeds q / commercial_share (``catch_floor_kg``): link combinations below
+that floor are inconsistent with the observation. The Monte Carlo rejects
+such draws and draws again (``CatchFloorRejection``; the number rejected is
+reported), and the lowest value of the chain (``net_range``) is searched
+over the same conditioned space: with the observed catch netted out at the
+same price (net_of = q × price), the regional net value is then at least
+q × price × (1 / commercial_share − 1) > 0. At a project depth, where the
+netted catch scales with NPP(project) / NPP(regional) = s, the net value is
+gross_reg · (s + (1 − s)·φ) − s · booked, φ being the share of the food
+web's carbon from the producers that do not depend on depth (the roots);
+``net_range`` bounds it below at each depth shape by the floor and the
+extreme φ (a lower bound of the conditioned minimum, so a conservative one).
+
 Uncertainty (Step 8f.3): each link has its own distribution for the Monte
 Carlo (gaia.uncertainty), which samples the links one by one and recomputes
 the chain, the gross and the net value in every draw: "triangular" (the
@@ -569,27 +602,111 @@ def net_range(spec: Dict[str, Any], booked: float = 0.0) -> Tuple[float, float]:
     of the chain at its least or most favourable end at once and, with a
     depth model, the depth function's shape searched over a grid of its
     decline rate and depth limit (``DEPTH_GRID`` points each, with the
-    ends). With ``booked`` = 0 it is the gross range."""
+    ends). With ``booked`` = 0 it is the gross range. With a
+    ``catch_floor`` (Step 8i.5) the lowest value is searched over the space
+    conditioned on the observed catch (``_conditioned_low``, a lower bound
+    of it at each depth shape).
+
+    Raises:
+        ValueError: When no link combination reaches the catch floor."""
     lows, highs = _ends(spec, False), _ends(spec, True)
     depth = spec.get("depth")
+    floored = spec.get("catch_floor") is not None
     if depth is None:
-        return gross_value(lows) - booked, gross_value(highs) - booked
+        if floored:
+            _check_floor_reachable(spec, highs)
+        low = gross_value(lows) - booked
+        if floored:
+            low = max(low, _conditioned_low(spec, lows, highs, 1.0, booked))
+        return low, gross_value(highs) - booked
     lowest, highest = math.inf, -math.inf
+    reachable = not floored
     for k, z_max, z_site in _shape_grid(spec):
-        for values, keep in ((lows, min), (highs, max)):
-            v = dict(values, **{DEPTH_PREFIX + "decline_rate": k, DEPTH_PREFIX + "depth_limit": z_max})
-            if z_site is not None:
-                v[DEPTH_PREFIX + SITE_LIMIT] = z_site
-            v = _with_depth_npp(spec, v)
-            scale = 1.0
-            if depth["project"] is not None and booked:
-                scale = npp_over(depth, v, "project") / npp_over(depth, v, "regional")
-            net = gross_value(v) - scale * booked
-            if keep is min:
-                lowest = min(lowest, net)
-            else:
-                highest = max(highest, net)
+        shape = {DEPTH_PREFIX + "decline_rate": k, DEPTH_PREFIX + "depth_limit": z_max}
+        if z_site is not None:
+            shape[DEPTH_PREFIX + SITE_LIMIT] = z_site
+        lo, hi = dict(lows, **shape), dict(highs, **shape)
+        scale = 1.0
+        if depth["project"] is not None:
+            scale = npp_over(depth, lo, "project") / npp_over(depth, lo, "regional")
+        low = gross_value(_with_depth_npp(spec, lo)) - scale * booked
+        if floored:
+            reachable = reachable or regional_catch(spec, hi) > catch_floor_kg(spec)  # type: ignore[operator]
+            low = max(low, _conditioned_low(spec, lo, hi, scale, booked))
+        lowest = min(lowest, low)
+        highest = max(highest, gross_value(_with_depth_npp(spec, hi)) - scale * booked)
+    if not reachable:
+        _check_floor_reachable(spec, highs)
     return lowest, highest
+
+
+def catch_floor_kg(spec: Dict[str, Any]) -> Optional[float]:
+    """The least sustainable catch (kg/ha/yr) the chain may produce at the
+    regional depth (Step 8i.5): the observed catch / the largest share of
+    it that is commercial; None without a ``catch_floor``."""
+    floor = spec.get("catch_floor")
+    return None if floor is None else floor["kg"]
+
+
+def regional_catch(spec: Dict[str, Any], values: Optional[Dict[str, float]] = None) -> float:
+    """The chain's sustainable catch (kg/ha/yr) at the regional depth (or
+    without a depth model, the chain's own), at ``values`` (the central
+    values by default): the quantity the observed catch conditions."""
+    values = central(spec) if values is None else values
+    return chain(_with_depth_npp(spec, values, "regional"))[-2][1]
+
+
+class CatchFloorRejection(ValueError):
+    """A Monte Carlo draw whose chain produces no more, at the regional
+    depth, than the observed catch allows (Step 8i.5): inconsistent with the
+    observation, so it is rejected and drawn again (and counted)."""
+
+
+def check_catch_floor(spec: Dict[str, Any], values: Optional[Dict[str, float]] = None, who: str = "") -> None:
+    """Raise ``CatchFloorRejection`` when the chain's regional sustainable
+    catch at ``values`` is at or below its ``catch_floor_kg``."""
+    floor = catch_floor_kg(spec)
+    if floor is None:
+        return
+    kg = regional_catch(spec, values)
+    if not kg > floor:
+        raise CatchFloorRejection(
+            f"{who or 'the chain'}: a sustainable catch of {kg:.6g} kg/ha/yr at the regional depth, not above "
+            f"{floor:.6g} (the observed catch / its largest commercial share): inconsistent with the observed "
+            f"catch (Step 8i.5)")
+
+
+def _web_parts(spec: Dict[str, Any], values: Dict[str, float]) -> Tuple[float, float]:
+    """(carbon entering the food web from the main producer at the regional
+    depth, from the other producers), g C/m²/yr."""
+    prods = producer_carbon(_with_depth_npp(spec, values, "regional"))
+    return prods[0][1] * prods[0][2], sum(c * share for _, c, share in prods[1:])
+
+
+def _conditioned_low(spec: Dict[str, Any], lows: Dict[str, float], highs: Dict[str, float],
+                     scale: float, booked: float) -> float:
+    """A lower bound of the net value over the links' ranges conditioned on
+    the regional sustainable catch exceeding the floor (Step 8i.5), at one
+    depth shape (``lows`` and ``highs`` share it): gross_reg ≥ B = floor ×
+    price, net = gross_reg · (s + (1 − s)·φ) − s · booked (module
+    docstring), φ at its least favourable end."""
+    floor = catch_floor_kg(spec)
+    assert floor is not None
+    bound = floor * lows["first_sale_price"]
+    main_lo, other_lo = _web_parts(spec, lows)
+    main_hi, other_hi = _web_parts(spec, highs)
+    phi = other_lo / (main_hi + other_lo) if scale <= 1.0 else other_hi / (main_lo + other_hi)
+    return bound * (scale + (1.0 - scale) * phi) - scale * booked
+
+
+def _check_floor_reachable(spec: Dict[str, Any], highs: Dict[str, float]) -> None:
+    floor = catch_floor_kg(spec)
+    if floor is not None and not regional_catch(spec, highs) > floor:
+        raise ValueError(
+            f"catch_floor: with every link at its most favourable end the chain's sustainable catch at the "
+            f"regional depth, {regional_catch(spec, highs):.6g} kg/ha/yr, does not exceed the floor, "
+            f"{floor:.6g} (the observed catch / its largest commercial share): the chain cannot support the "
+            f"observed catch; fix the model or the ranges")
 
 
 def gross_range(spec: Dict[str, Any]) -> Tuple[float, float]:
@@ -628,6 +745,62 @@ def parse_market_prices(raw: Any, path: str = "$.market_prices") -> Dict[str, Di
     return out
 
 
+OBSERVED_CATCH_UNIT = "kg/ha/yr"
+
+
+def parse_observed_catches(raw: Any, path: str = "$.observed_catches") -> Dict[str, Dict[str, Any]]:
+    """Validate a case's ``observed_catches`` block (Step 8i.4, 8i.5; see
+    the module docstring): {name: quantity}, each a sourced parameter in
+    kg/ha/yr (value > 0, unit, label, source, status), fixed (not
+    sampled), with an optional free-text ``note``. Returns the quantities
+    (without the note).
+
+    Raises:
+        ValueError: Naming the JSON path of the first problem.
+    """
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError(f"{path}: an object of named observed catches, at least one")
+    out: Dict[str, Dict[str, Any]] = {}
+    for name, quantity in raw.items():
+        qpath = f"{path}.{name}"
+        if not isinstance(name, str) or not _MARKET_PRICE_NAME.match(name):
+            raise ValueError(f"{qpath}: an observed catch's name is lower-case letters, digits and _")
+        if not isinstance(quantity, dict):
+            raise ValueError(f"{qpath}: expected an object")
+        if not isinstance(quantity.get("note", ""), str):
+            raise ValueError(f"{qpath}.note: a string")
+        body = {k: v for k, v in quantity.items() if k != "note"}
+        parsed = _parse_parameters({name: body}, (name,), path)[name]
+        if parsed["unit"] != OBSERVED_CATCH_UNIT:
+            raise ValueError(f"{qpath}.unit: {OBSERVED_CATCH_UNIT!r}, got {parsed['unit']!r}")
+        if parsed["distribution"] != "fixed":
+            raise ValueError(f"{qpath}.distribution: an observed quantity is fixed, not sampled")
+        out[name] = parsed
+    return out
+
+
+def _parse_catch_floor(raw: Any, path: str, observed: Optional[Dict[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    """A production function's ``catch_floor`` (Step 8i.5; module docstring)."""
+    if not isinstance(raw, dict) or set(raw) - {"observed_catch", "commercial_share", "note"}:
+        raise ValueError(f"{path}: expected an object with observed_catch, commercial_share and an optional note")
+    name = raw.get("observed_catch")
+    if not isinstance(name, str) or not observed or name not in observed:
+        raise ValueError(f"{path}.observed_catch: unknown observed catch {name!r} (declare it in $.observed_catches)")
+    share = _parse_parameters({"commercial_share": raw.get("commercial_share")}, ("commercial_share",),
+                              path)["commercial_share"]
+    if not share["value"] < 1.0:
+        raise ValueError(f"{path}.commercial_share.value: a share in (0, 1) (the observed catch is never the whole "
+                         f"of what the food web supports), got {share['value']}")
+    if share["distribution"] != "fixed":
+        raise ValueError(f"{path}.commercial_share: fixed, not sampled")
+    if not isinstance(raw.get("note", ""), str):
+        raise ValueError(f"{path}.note: a string")
+    observed_kg = observed[name]["value"]
+    return {"observed_catch": name, "observed_kg": observed_kg, "commercial_share": share,
+            "kg": observed_kg / share["value"], "unit": OBSERVED_CATCH_UNIT,
+            "source": observed[name]["source"], "note": raw.get("note", "")}
+
+
 def _is_price_reference(p: Any) -> bool:
     return isinstance(p, dict) and set(p) == {"market_price"}
 
@@ -642,7 +815,8 @@ def parameter_path(spec: Dict[str, Any], name: str, entry_path: str) -> str:
 
 
 def parse_production_function(raw: Any, path: str,
-                              market_prices: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+                              market_prices: Optional[Dict[str, Dict[str, Any]]] = None,
+                              observed_catches: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Validate a ledger entry's ``production_function`` block (see the
     module docstring); returns it with numbers as floats, the parameters
     flat ({name: parameter}, additional producers' as "<name>.<parameter>",
@@ -651,14 +825,17 @@ def parse_production_function(raw: Any, path: str,
     absolute) and the depth model (``depth``, or None). ``market_prices``:
     the case's anchors (``parse_market_prices``; Step 8h.4), which a price
     parameter references as {"market_price": "<name>"}; when given, a price
-    typed into the chain is rejected.
+    typed into the chain is rejected. ``observed_catches``: the case's
+    observed catches (``parse_observed_catches``; Step 8i.5), which a
+    ``catch_floor`` references.
 
     Raises:
         ValueError: Naming the JSON path of the first problem.
     """
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: expected an object")
-    unknown = set(raw) - {"model", "producer", "parameters", "producers", "depth_production", "comparison"}
+    unknown = set(raw) - {"model", "producer", "parameters", "producers", "depth_production", "comparison",
+                          "catch_floor"}
     if unknown:
         raise ValueError(f"{path}: unknown key {sorted(unknown)[0]!r}")
     if raw.get("model") != MODEL:
@@ -770,7 +947,9 @@ def parse_production_function(raw: Any, path: str,
         params = dict([(derived_output, params.pop(derived_output))] + list(params.items()))
     spec: Dict[str, Any] = {"model": MODEL, "producer": producer, "parameters": params,
                             "producers": producers, "paths": paths, "comparison": None,
-                            "depth": depth}
+                            "depth": depth, "catch_floor": None}
+    if "catch_floor" in raw:
+        spec["catch_floor"] = _parse_catch_floor(raw["catch_floor"], f"{path}.catch_floor", observed_catches)
     if "comparison" in raw:
         spec["comparison"] = _parse_comparison(raw["comparison"], f"{path}.comparison")
     return spec
@@ -1172,6 +1351,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
     ledger = doc.get("service_ledger", [])
     booked = {e["service"]: e["value"] for e in ledger}
     prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
+    observed = parse_observed_catches(doc["observed_catches"]) if doc.get("observed_catches") is not None else None
     found = False
     for i, entry in enumerate(ledger):
         raw = entry.get("production_function")
@@ -1179,7 +1359,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
             continue
         found = True
         path = f"$.service_ledger[{i}].production_function"
-        old = parse_production_function(raw, path, prices)
+        old = parse_production_function(raw, path, prices, observed)
         depth = old["depth"]
         if depth_limit is None:
             site = site_depth_limit(old["parameters"][DEPTH_PREFIX + "depth_limit"], depth["margin"]["value"],
@@ -1189,7 +1369,7 @@ def with_project_depth(document: Dict[str, Any], from_m: float, to_m: float,
                                           float(to_m), limit_source)
         raw["depth_production"]["project_depth"] = {"from_m": float(from_m), "to_m": float(to_m), "source": source,
                                                     "depth_limit": site}
-        new = parse_production_function(raw, path, prices)
+        new = parse_production_function(raw, path, prices, observed)
         counted = sum(booked[s] for s in entry.get("net_of", []))
         gross = gross_value(central(new))
         net = gross - net_of_scale(new) * counted
@@ -1336,7 +1516,25 @@ def production_block(spec: Dict[str, Any], gross: float, counted: float, net: fl
         "net_of": list(net_of),
         "already_counted_eur_per_ha_yr": counted,
         "net_eur_per_ha_yr": net,
+        "catch_floor": catch_floor_block(spec),
         "comparison": spec["comparison"],
+    }
+
+
+def catch_floor_block(spec: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """The JSON form of a production function's ``catch_floor`` (Step
+    8i.5; None without one): the observed catch, the largest commercial
+    share, the floor and the chain's central regional catch."""
+    floor = spec.get("catch_floor")
+    if floor is None:
+        return None
+    return {
+        "observed_catch": floor["observed_catch"],
+        "observed_kg_per_ha_yr": floor["observed_kg"],
+        "commercial_share": dict(floor["commercial_share"], range=None),
+        "floor_kg_per_ha_yr": floor["kg"],
+        "regional_catch_kg_per_ha_yr": regional_catch(spec),
+        "note": floor["note"],
     }
 
 

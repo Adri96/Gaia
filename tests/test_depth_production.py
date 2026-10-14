@@ -125,6 +125,7 @@ def test_a_case_file_supplies_the_hyperparameters_of_another_producer():
     raw = copy.deepcopy(load_case("posidonia").document)
     pf = next(e for e in raw["service_ledger"] if "production_function" in e)["production_function"]
     pf = copy.deepcopy(pf)
+    pf.pop("catch_floor", None)       # another producer: no observed catch (Step 8i.5)
     del pf["parameters"]["carbon_fraction"]
     depth = pf["depth_production"]
     depth["output"] = "npp_carbon"
@@ -391,11 +392,15 @@ def test_hyperparameters_are_sampled_links_reproducibly():
 
 def test_random_depths_and_draws_never_reach_zero():
     """A seeded property test: random project depths, then hyperparameters
-    and links drawn anywhere in their ranges, never bring the meadow to €0."""
+    and links drawn anywhere in their ranges, never bring the meadow to €0.
+    A draw whose chain produces no more than the observed catch allows at
+    15 m is rejected (Step 8i.5), never valued."""
+    from gaia.production import CatchFloorRejection, catch_floor_kg, regional_catch
     from gaia.uncertainty import _rederive_production, _set_at_path, production_entries
 
     rng = random.Random(8)
     case = load_case("posidonia")
+    accepted = 0
     for _ in range(30):
         a = rng.uniform(0.0, 50.0)
         b = rng.choice([a, rng.uniform(a, 50.0)])
@@ -410,10 +415,26 @@ def test_random_depths_and_draws_never_reach_zero():
                     low = max(low, p.get("truncated_below") or low)
                     _set_at_path(doc, f"$.service_ledger[{e.index}].production_function.{spec['paths'][name]}",
                                  rng.choice([low, high, rng.uniform(low, high)]))
-        produced = _rederive_production(doc, entries)
+        try:
+            produced = _rederive_production(doc, entries)
+        except CatchFloorRejection:
+            drawn = _drawn_meadow_chain(doc)
+            assert regional_catch(drawn) <= catch_floor_kg(drawn)  # type: ignore[operator]
+            continue
+        accepted += 1
         assert all(net > 0.0 for _, net in produced.values())
         case_from_dict(doc)
         assert not math.isnan(sum(n for _, n in produced.values()))
+    assert accepted >= 20
+
+
+def _drawn_meadow_chain(doc):
+    """The meadow's production function as drawn in ``doc`` (parsed alone)."""
+    from gaia.production import parse_market_prices, parse_observed_catches, parse_production_function
+
+    food = next(e for e in doc["service_ledger"] if e.get("net_of"))
+    return parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]),
+                                     parse_observed_catches(doc["observed_catches"]))
 
 
 # ── Step 8g.8: the €35 net_of scales with depth (the owner's answer 1) ───────

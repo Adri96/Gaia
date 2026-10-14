@@ -172,9 +172,9 @@
         {
           "confidence": "low",
           "name": "agent[Posidonia Meadow].annual_value_per_ha",
-          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1, 8g.2, 8g.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 312.49 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 81.1% not buried (shoots only, Step 8g.4); of its roots, 6.95 g C/m2/yr, 4% not buried: 868 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 277.49 EUR/ha/yr. The leaf epiphytes' food (52.33 EUR/ha/yr since Step 8h.1; 82.20 before) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once (3.83-1,525.48 EUR/ha/yr), divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 118 / 254 / 528 EUR/ha/yr, 1,000 draws, seed 20261012).",
+          "note": "Service ledger (Step 8e.6, 8f.1, 8f.2, 8g.1, 8g.2, 8g.4; docs/POSIDONIA_LITERATURE_REVIEW.md \u00a72b): the meadow's own value on EVERY hectare, whatever the diving: the food its primary production supports, 312.49 EUR/ha/yr gross (net primary production of the plant from its depth function at the regional mean depth, 15 m: 318 g DW = 107 g C/m2/yr, 81.1% not buried (shoots only, Step 8g.4); of its roots, 6.95 g C/m2/yr, 4% not buried: 868 kg C/ha/yr into the food web \u2192 14.3% transfer per trophic level (Western Mediterranean food-web models) to trophic level 3.1 \u2192 x9 wet weight \u2192 46.5% sustainable catch \u2192 EUR 5.11/kg), net of the 35 EUR/ha/yr of commercial catch already booked to Fish Populations and Marine Invertebrates: 277.49 EUR/ha/yr. The leaf epiphytes' food (52.33 EUR/ha/yr since Step 8h.1; 82.20 before) is the Epiphytes & Algae agent's since Step 8g.2. Weight x value = that net service. No site share or --dive-intensity scales it, so the meadow never falls to EUR 0 (PROJECT_DEFINITION.md, Core Valuation Principles); --depth-m sets the depth (Step 8g.1). Range: the chain at every link's least and most favourable end at once, the lowest searched over the links conditioned on the observed catch (Step 8i.5: the chain's sustainable catch at 15 m above 8.91 / 0.9 kg/ha/yr; 3.83 before), 15.59-1,525.48 EUR/ha/yr, divided by the weight: the hard bounds of any draw. The Monte Carlo does not sample this value as one aggregate: it samples each link of the production function, and the three hyperparameters of the depth function, from their own distributions and recomputes the chain in every draw (Step 8f.3; net P5 / P50 / P95 118 / 254 / 528 EUR/ha/yr, 1,000 draws, seed 20261012).",
           "range": [
-            34.85445543853452,
+            141.87442974517282,
             13881.880718908227
           ],
           "source": "Service ledger, production function (Step 8e.6): Pergent et al. (1994), doi:10.3354/meps106139; Duarte (1990), doi:10.3354/meps067201; Mateo & Romero (1997), doi:10.3354/meps151043; Coll et al. (2008), doi:10.1371/journal.pone.0003881; Francour (1997), doi:10.1111/j.1439-0485.1997.tb00434.x with FishBase; Pauly & Christensen (1995), doi:10.1038/374255a0; Zhou et al. (2012), doi:10.1139/f2012-060; Generalitat de Catalunya fisheries statistics (dataset ge3m-4jgm); roots: Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029; transfer efficiency: S\u00e1nchez-Zulueta et al. (2023), doi:10.3389/fmars.2023.1166674; depth function (Step 8g.1): Pergent et al. (1994), doi:10.3354/meps106139, Mateo & Romero (1997), doi:10.3354/meps151043, and Cebri\u00e1n et al. (1997), doi:10.3354/meps155029 (production by depth), Gobert et al. (2009), doi:10.1016/j.marpolbul.2009.06.012, and Generalitat de Catalunya (2004) (depth limits, mean depth); see production_function",
@@ -1056,6 +1056,7 @@
     "production_functions": {
       "Epiphytes & Algae": {
         "already_counted_eur_per_ha_yr": 0.0,
+        "catch_floor": null,
         "chain": [
           {
             "step": "net primary production, carbon",
@@ -1319,6 +1320,23 @@
       },
       "Posidonia Meadow": {
         "already_counted_eur_per_ha_yr": 35.0,
+        "catch_floor": {
+          "commercial_share": {
+            "distribution": "fixed",
+            "distribution_basis": "A conditioning margin, not an uncertain quantity of the valuation: not sampled (like depth_limit_margin, Step 8g.7)",
+            "label": "largest share of the meadow food web's sustainable catch that the observed commercial catch can be",
+            "range": null,
+            "source": "Inferred (Step 8i.5; no source giving the commercial share of what a P. oceanica food web yields could be found): the observed catch is 16 species sold at one auction, so it leaves out the recreational, unreported and unsold catch of the same food web and every other consumer species. Coll et al. (2014), Fisheries Research 154:179-194, doi:10.1016/j.fishres.2014.01.013 (abstract, read in the copy published by Oceana; the publisher's page refused the request): in the Spanish Mediterranean and Gulf of Cadiz unreported landings and discards were on average 43% of total removals between the 1950s and 2010, and by the late 2000s recreational fishing was the largest unreported sector (~36% of unreported landings). That is a ratio of removals, discards included, not of what is eaten, so it is not used as the share; it shows the commercial share is well below 1. Value: 0.9, a minimal margin (the observed catch at most 90% of what the food web yields), far less than that 43% gap",
+            "status": "inferred",
+            "unit": "fraction",
+            "value": 0.9
+          },
+          "floor_kg_per_ha_yr": 9.90084904890195,
+          "note": "Step 8i.5 (the owner's decision): the chain's sustainable catch at the regional depth (15 m) must exceed the observed catch / 0.9 = 9.90 kg/ha/yr. The Monte Carlo rejects draws below it and draws again (the number is reported); parsing searches the chain's lowest value over the same conditioned space. The meadow's regional net value is then at least the floor's value (9.90 kg/ha/yr at the chain's price) less the commercial catch netted out, above EUR 0.",
+          "observed_catch": "campagne_2015_sete_2010",
+          "observed_kg_per_ha_yr": 8.910764144011756,
+          "regional_catch_kg_per_ha_yr": 61.15649547757428
+        },
         "chain": [
           {
             "step": "net primary production, plant",
@@ -1579,7 +1597,7 @@
         },
         "gross_eur_per_ha_yr": 312.49275506563924,
         "gross_range_eur_per_ha_yr": [
-          38.8301599383005,
+          50.59059667529372,
           1560.4813976822227
         ],
         "model": "trophic_transfer",

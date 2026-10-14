@@ -41,7 +41,14 @@ their booked values) and the agent's value (its documented value + the
 change of the net value / its documented weight). Parsing guarantees that
 the chain's lowest value exceeds what it is net of, so no draw can bring
 the agent to €0; a draw that did would stop the run (``InvariantError``),
-never be clipped or redrawn. A link from the food web to the catch that two
+never be clipped or redrawn. A chain conditioned on the catch observed on
+its resource (Step 8i.5, ``catch_floor``, gaia.production) must produce
+more, at the regional depth, than that catch / its largest commercial
+share: a draw that does not is inconsistent with the observation and is
+rejected and drawn again (rejection sampling from the same seeded
+generator, so reproducible; the number rejected is reported). That
+rejection comes first, so the InvariantError still guards every accepted
+draw. A link from the food web to the catch that two
 production functions of the case document identically (Posidonia: the
 meadow's and the epiphytes', Step 8g.2) is one quantity of one food web: it
 is drawn once and both chains take that draw (``Sampled.same_as``). The draws of each production function are
@@ -404,18 +411,32 @@ def _rederive_production(doc: Dict[str, Any], entries: Sequence[_ProductionEntry
     {agent: (gross, net)}.
 
     Raises:
+        CatchFloorRejection: A chain whose sustainable catch at the regional
+            depth is not above its catch floor (Step 8i.5; a ValueError).
         InvariantError: A net value <= 0 (an agent at €0).
     """
-    from gaia.production import central, gross_value, net_value, parse_market_prices, parse_production_function
+    from gaia.production import (
+        central,
+        check_catch_floor,
+        gross_value,
+        net_value,
+        parse_market_prices,
+        parse_observed_catches,
+        parse_production_function,
+    )
 
     ledger = doc["service_ledger"]
     prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
+    observed = parse_observed_catches(doc["observed_catches"]) if doc.get("observed_catches") is not None else None
     booked = {e["service"]: e["value"] for e in ledger}
     out: Dict[str, Tuple[float, float]] = {}
     for e in entries:
         entry = ledger[e.index]
         spec = parse_production_function(entry["production_function"], f"$.service_ledger[{e.index}].production_function",
-                                         prices)
+                                         prices, observed)
+        # Step 8i.5: a draw below the observed catch is inconsistent with
+        # the observation (CatchFloorRejection: rejected, drawn again)
+        check_catch_floor(spec, who=e.agent)
         gross = gross_value(central(spec))
         net = net_value(spec, gross, sum(booked[s] for s in entry.get("net_of", [])))
         if not net > 0.0:
@@ -540,6 +561,9 @@ class UncertaintyResult:
             (Step 8f.3): "service", "links" (the names sampled), "base"
             {"gross", "net"}, "gross" and "net" {"p5", "p50", "p95",
             "mean", "min", "max"} in €/ha/yr, "draws_at_or_below_zero".
+        catch_floor_rejections: Draws rejected because a chain produced no
+            more than its observed catch allows (Step 8i.5; rejection
+            sampling, drawn again; not counted in ``redraws``).
     """
 
     draws: int
@@ -552,6 +576,7 @@ class UncertaintyResult:
     normative: List[Dict[str, Any]] = field(default_factory=list)
     not_sampled: Dict[str, List[str]] = field(default_factory=dict)
     production: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    catch_floor_rejections: int = 0
 
 
 _DERIVED = "derived in each draw from its production function, whose links are sampled one by one"
@@ -680,10 +705,13 @@ def run_uncertainty(
         produced = _rederive_production(doc, entries) if entries else {}
         return case_from_dict(doc, origin=case.origin), produced
 
+    from gaia.production import CatchFloorRejection
+
     rng = random.Random(seed)
     samples: Dict[str, List[float]] = {h: [] for h, _ in HEADLINES}
     produced_draws: Dict[str, List[Tuple[float, float]]] = {e.agent: [] for e in entries}
     redraws = 0
+    floor_rejections = 0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", CalibrationWarning)
         base = evaluate(case)
@@ -692,6 +720,15 @@ def run_uncertainty(
             try:
                 drawn, produced = build_case(values)
                 row = evaluate(drawn)
+            except CatchFloorRejection:
+                # Step 8i.5: conditioned on the observed catch (rejection sampling)
+                floor_rejections += 1
+                if floor_rejections > 10 * draws:
+                    raise ValueError(
+                        f"uncertainty: {floor_rejections} draws below the observed catch; the chain's "
+                        f"ranges are inconsistent with the observation"
+                    ) from None
+                continue
             except ValueError:
                 redraws += 1
                 if redraws > 10 * draws:
@@ -753,7 +790,7 @@ def run_uncertainty(
         draws=draws, seed=seed, redraws=redraws, base=base, summary=summary,
         sampled=sampled, tornado=rows, normative=norm_rows,
         not_sampled=_not_sampled(params, sampled, case.param_paths, derived),
-        production=production,
+        production=production, catch_floor_rejections=floor_rejections,
     )
 
 
@@ -792,7 +829,8 @@ METHOD: str = (
     "documented value as mode unless stated; a value derived from a "
     "production function is not sampled as one aggregate: each link of the "
     "chain is sampled from its own range and distribution and every draw "
-    "recomputes the chain and the net value (Step 8f.3); normative choices (discounting, "
+    "recomputes the chain and the net value (Step 8f.3), draws below a chain's "
+    "observed catch rejected (Step 8i.5); normative choices (discounting, "
     "carbon price) are sensitivities, not sampled; model-wide constants are "
     "not varied. P5/P50/P95 of the draws; tornado: one parameter at a time at "
     "its own P5 and P95, the others at their documented values. Replaces the "
@@ -810,6 +848,7 @@ def uncertainty_to_dict(u: Optional[UncertaintyResult], top: int = 15) -> Option
         "draws": u.draws,
         "seed": u.seed,
         "redraws_rejected_by_validation": u.redraws,
+        "draws_rejected_below_observed_catch": u.catch_floor_rejections,
         "headlines": {
             key: {
                 "unit": units[key],
@@ -866,7 +905,7 @@ def format_uncertainty(u: Optional[UncertaintyResult], top: int = 10) -> str:
         "",
         "  ── Uncertainty (Monte Carlo, Step 8.4) ─" + "─" * 23,
         f"  {u.draws:,} draws, seed {u.seed}, {sum(1 for s in u.sampled if not s.same_as)} parameters sampled"
-        f" ({u.redraws} redraws rejected by validation)",
+        f" ({u.redraws} redraws rejected by validation, {u.catch_floor_rejections} below the observed catch)",
         f"  {'':<28} {'P5':>11} {'P50':>11} {'P95':>11} {'base':>11}",
     ]
     for key, label in labels.items():

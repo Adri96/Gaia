@@ -15,7 +15,15 @@ import pytest
 from gaia.cases import load_case
 from gaia.cli import main
 from gaia.ecosystem_io import case_from_dict
-from gaia.production import central, gross_range, gross_value, parse_market_prices, parse_production_function
+from gaia.production import (
+    CatchFloorRejection,
+    central,
+    gross_range,
+    gross_value,
+    parse_market_prices,
+    parse_observed_catches,
+    parse_production_function,
+)
 from gaia.uncertainty import (
     InvariantError,
     Sampled,
@@ -155,7 +163,19 @@ def test_no_draw_is_at_or_below_zero(mc):
 def test_parse_rejects_a_chain_that_could_reach_zero():
     doc = copy.deepcopy(load_case("posidonia").document)
     _food(doc)["production_function"]["parameters"]["transfer_efficiency"]["range"] = [0.03, 0.218]
+    del _food(doc)["production_function"]["catch_floor"]      # unconditioned (Step 8i.5)
     with pytest.raises(ValueError, match="could bring the agent to €0.*Core Valuation Principles"):
+        case_from_dict(doc)
+    # conditioned on an observed catch too small to keep the net value above €0
+    doc = copy.deepcopy(load_case("posidonia").document)
+    _food(doc)["production_function"]["parameters"]["transfer_efficiency"]["range"] = [0.03, 0.218]
+    doc["observed_catches"]["campagne_2015_sete_2010"]["value"] = 1.0
+    with pytest.raises(ValueError, match="could bring the agent to €0.*Core Valuation Principles"):
+        case_from_dict(doc)
+    # a floor no link combination reaches
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["observed_catches"]["campagne_2015_sete_2010"]["value"] = 500.0
+    with pytest.raises(ValueError, match="cannot support the observed catch"):
         case_from_dict(doc)
 
 
@@ -168,6 +188,13 @@ def test_a_draw_at_zero_stops_the_run_and_is_never_redrawn():
     doc = copy.deepcopy(case.document)
     pf = _food(doc)["production_function"]
     pf["depth_production"]["parameters"]["npp_at_reference_depth"].update(value=1.0, range=[0.5, 792.3])
+    # Step 8i.5: such a draw lies below the observed catch, so it is rejected
+    # (a ValueError, drawn again) before it is valued
+    with pytest.raises(CatchFloorRejection, match="observed catch"):
+        _rederive_production(copy.deepcopy(doc), entries)
+    assert issubclass(CatchFloorRejection, ValueError)
+    # without the conditioning, the same draw stops the run
+    del pf["catch_floor"]
     with pytest.raises(InvariantError, match="Core Valuation Principles"):
         _rederive_production(doc, entries)
 
@@ -196,7 +223,8 @@ def test_generic_without_net_of():
     food["value"] = gross
     meadow = next(a for a in doc["agents"] if a["name"] == MEADOW)
     weight = meadow["dependency_weight"]
-    spec = parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]))
+    spec = parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]),
+                                     parse_observed_catches(doc["observed_catches"]))
     low, high = gross_range(spec)
     meadow["annual_value_per_ha"]["value"] = gross / weight
     meadow["annual_value_per_ha"]["range"] = [low / weight, high / weight]
