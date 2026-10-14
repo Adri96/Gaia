@@ -164,3 +164,46 @@ def test_check_catch_floor():
     assert gross_value(values) < catch_floor_kg(spec) * values["first_sale_price"]  # type: ignore[operator]
     with pytest.raises(CatchFloorRejection, match="inconsistent with the observed catch"):
         check_catch_floor(spec, values)
+
+
+# ── Step 8i.4: the catch priced at the anchor, every agent > €0 ──────────────
+
+PRICE = 41_056_589 / 8_034_993
+CATCH_EUR = OBSERVED_KG * PRICE
+DEPTHS = [((z, z), None) for z in (0.5, 5.0, 15.0, 30.0, 35.0, 40.0, 43.0, 50.0)] + [
+    ((0.0, 44.0), None), ((30.0, 40.0), None), ((5.0, 15.0), None),
+    ((10.0, 10.0), (15.0, 15.0)), ((12.0, 12.0), (13.0, 17.0)), ((43.0, 43.0), (44.0, 44.0)),
+    ((0.5, 0.5), (1.0, 1.0)), ((30.0, 30.0), (35.0, 35.0))]
+
+
+def test_the_fisheries_euros_are_the_observed_kg_at_the_anchor():
+    case = load_case("posidonia")
+    fisheries = [e for e in case.service_ledger if e["priced_catch"] is not None]
+    assert {e["agent"] for e in fisheries} == {"Fish Populations", "Marine Invertebrates"}
+    assert sum(e["value"] for e in fisheries) == pytest.approx(CATCH_EUR, rel=1e-12)
+    assert all(e["value"] == pytest.approx(OBSERVED_KG * PRICE * e["share"], rel=1e-12) for e in fisheries)
+    meadow = _meadow(case)
+    # net_of equals the fisheries total at 15 m (the regional base) ...
+    assert meadow["gross"] - meadow["value"] == pytest.approx(CATCH_EUR, rel=1e-12)
+    # ... so the point-estimate total is the meadow's gross: only the split moves
+    assert meadow["value"] + sum(e["value"] for e in fisheries) == pytest.approx(meadow["gross"], rel=1e-12)
+    # and the meadow's regional lowest value is 1/0.9 - 1 of the catch
+    assert net_range(meadow["production_function"], CATCH_EUR)[0] == pytest.approx(CATCH_EUR / 9, rel=1e-9)
+
+
+@pytest.mark.parametrize("depth", DEPTHS)
+def test_every_agent_is_positive_at_every_depth_and_in_every_draw(depth):
+    (a, b), limit = depth
+    at = load_case("posidonia").with_project_depth(a, b, depth_limit=limit)
+    meadow = _meadow(at)
+    booked = sum(e["value"] for e in at.service_ledger if e["service"] in meadow["net_of"])
+    assert booked == pytest.approx(CATCH_EUR, rel=1e-12)
+    assert net_range(meadow["production_function"], booked)[0] > 0.0
+    assert all(e["value"] > 0.0 for e in at.service_ledger)
+    for kwargs in (dict(site_intensity="none"), dict(site_share=0.0), {}):
+        eco = at.build_ecosystem(**kwargs)
+        assert all(x.dependency_weight * x.annual_value(1.0) > 0.0 for x in eco.agents), kwargs
+    u = run_uncertainty(at, 10, draws=30, seed=7, tornado=False, normative=False,
+                        build_kwargs=dict(site_intensity="none"))
+    assert all(block["draws_at_or_below_zero"] == 0 and block["net"]["min"] > 0.0
+               for block in u.production.values())

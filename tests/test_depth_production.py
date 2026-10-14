@@ -34,6 +34,9 @@ from gaia.production import (
 
 ROOT = Path(__file__).resolve().parent.parent
 MEADOW = "Posidonia Meadow"
+# Step 8i.4: the commercial catch netted out, Campagne et al.'s 8.91 kg/ha/yr at the
+# white-fish anchor (EUR 45.53; 35 at Sète prices before)
+COMMERCIAL_CATCH = 242_551 / 27_220 * 41_056_589 / 8_034_993
 
 
 def _meadow_entry(case):
@@ -167,8 +170,8 @@ def test_project_depth_values_the_meadow_at_that_depth(depth):
     assert central(spec)["npp_dry_weight"] == pytest.approx(mean_depth_npp(*depth, p, k, z_max, z_ref), rel=1e-12)
     scale = net_of_scale(spec)
     assert scale == pytest.approx(central(spec)["npp_dry_weight"] / mean_depth_npp(15.0, 15.0, p, k, z_max, z_ref))
-    assert entry["value"] == pytest.approx(entry["gross"] - 35.0 * scale, rel=1e-12)
-    low, _ = net_range(spec, 35.0)
+    assert entry["value"] == pytest.approx(entry["gross"] - COMMERCIAL_CATCH * scale, rel=1e-12)
+    low, _ = net_range(spec, COMMERCIAL_CATCH)
     assert entry["value"] > low > 0.0
     weight = next(a.weight for a in at.agents if a.name == MEADOW)
     eco = at.build_ecosystem(site_intensity="none")
@@ -179,10 +182,11 @@ def test_project_depth_values_the_meadow_at_that_depth(depth):
 
 
 def test_the_regional_run_subtracts_exactly_the_booked_catch():
-    """Owner's decision (PR #10, question 3): the fixed €35, no coupling."""
+    """Owner's decision (PR #10, question 3): the fixed booked catch (€35,
+    €45.53 since Step 8i.4), no coupling."""
     entry = _meadow_entry(load_case("posidonia"))
     assert net_of_scale(entry["production_function"]) == 1.0
-    assert entry["gross"] - entry["value"] == pytest.approx(35.0, rel=1e-12)
+    assert entry["gross"] - entry["value"] == pytest.approx(COMMERCIAL_CATCH, rel=1e-12)
 
 
 @pytest.mark.parametrize("bad", [(-1.0, -1.0), (-5.0, 10.0), (20.0, 10.0), (float("nan"), 10.0),
@@ -228,7 +232,7 @@ def test_every_depth_is_valued_with_every_agent_positive(depth):
         eco = at.build_ecosystem(**kwargs)
         assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents), (depth, kwargs)
     entry = _meadow_entry(at)
-    assert net_range(entry["production_function"], 35.0)[0] > 0.0
+    assert net_range(entry["production_function"], COMMERCIAL_CATCH)[0] > 0.0
     assert at.ledger_check() == []
     u = run_uncertainty(at, 10, draws=40, seed=3, tornado=False, normative=False,
                         build_kwargs=dict(area_ha=50.0, site_intensity="none"))
@@ -460,7 +464,7 @@ def test_the_scaled_net_of_is_the_same_rule_in_the_point_estimate_and_every_draw
     p, k, z_max, z_ref = _hyper(load_case("posidonia"))
     site = central(spec)["depth.site_depth_limit"]
     expected = mean_depth_npp(*depth, p, k, z_max, z_ref, site) / depth_npp(15.0, p, k, z_max, z_ref)
-    assert entry["gross"] - entry["value"] == pytest.approx(35.0 * expected, rel=1e-12)
+    assert entry["gross"] - entry["value"] == pytest.approx(COMMERCIAL_CATCH * expected, rel=1e-12)
     entries = production_entries(at)
     sampled = production_sampled(at, entries)
     by_name = {s.name: s for s in sampled}
@@ -478,17 +482,17 @@ def test_the_scaled_net_of_is_the_same_rule_in_the_point_estimate_and_every_draw
             15.0, v["depth.npp_at_reference_depth"], v["depth.decline_rate"], v["depth.depth_limit"], z_ref)
         assert net_of_scale(d_spec) == pytest.approx(scale, rel=1e-12)
         gross, net = produced[MEADOW]
-        assert gross - net == pytest.approx(35.0 * scale, rel=1e-9) and net > 0.0
+        assert gross - net == pytest.approx(COMMERCIAL_CATCH * scale, rel=1e-9) and net > 0.0
         scales.append(scale)
     assert max(scales) > min(scales)   # recomputed in each draw, not a fixed factor
 
 
-def test_the_regional_run_and_the_base_depth_subtract_exactly_35():
+def test_the_regional_run_and_the_base_depth_subtract_exactly_the_booked_catch():
     """The owner's answers 1 and 2: scaled from the 15 m base; at 15 m, and
     in the regional run, exactly the booked €35."""
     for case in (load_case("posidonia"), load_case("posidonia").with_project_depth(15.0, 15.0)):
         entry = _meadow_entry(case)
-        assert entry["gross"] - entry["value"] == pytest.approx(35.0, rel=1e-12)
+        assert entry["gross"] - entry["value"] == pytest.approx(COMMERCIAL_CATCH, rel=1e-12)
 
 
 # ── Step 8g.9: the epiphytes' production follows depth, the roots' does not ──
@@ -607,7 +611,7 @@ def test_every_depth_above_a_given_limit_is_valued(limit, depth):
     for entry in at.service_ledger:
         if entry["production_function"] is not None:
             assert entry["value"] > 0.0
-            booked = 35.0 if entry["net_of"] else 0.0
+            booked = COMMERCIAL_CATCH if entry["net_of"] else 0.0
             assert net_range(entry["production_function"], booked)[0] > 0.0
     eco = at.build_ecosystem(site_intensity="none")
     assert all(a.dependency_weight * a.annual_value(1.0) > 0.0 for a in eco.agents)
@@ -760,10 +764,11 @@ def test_an_implied_site_limit_beyond_the_documented_range_warns(depth):
 
 def test_the_implied_limit_warning_does_not_change_the_value():
     """The warning only reports: the values at 43 m are those documented
-    since Step 8g.7/8h.1 (meadow €6.00, epiphytes €0.95/ha/yr), > €0."""
+    since Step 8g.7/8h.1 (epiphytes €0.95/ha/yr; the meadow €6.00 net of
+    the former €35, €5.81 net of the €45.53 since Step 8i.4), > €0."""
     at = load_case("posidonia").with_project_depth(43.0, 43.0)
     values = {e["agent"]: e["value"] for e in at.service_ledger if e["production_function"] is not None}
-    assert values[MEADOW] == pytest.approx(6.00, abs=0.005)
+    assert values[MEADOW] == pytest.approx(5.81, abs=0.005)
     assert values["Epiphytes & Algae"] == pytest.approx(0.95, abs=0.005)
 
 

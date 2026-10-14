@@ -84,7 +84,10 @@ and owned by one agent: {service*, agent*, value* (€/ha/yr at full
 damage), section* ("provisioning" | "regulation and maintenance" |
 "cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
 split_of, share, share_source, site_restricted, gross, net_of,
-production_function}. A site-restricted entry ("site_restricted": true)
+production_function, priced_catch}. A priced catch (Step 8i.4,
+{"observed_catch": "<name>", "market_price": "<name>"}) derives the value
+from a quantity: observed catch (kg/ha/yr, ``observed_catches``) × market
+price (€/kg, ``market_prices``) × share; parsing checks the value. A site-restricted entry ("site_restricted": true)
 books the value per hectare near the sites, like the agent's
 site_value_per_ha (a run multiplies both by the agent's site_share); the
 other entries book the value on every hectare, like annual_value_per_ha.
@@ -1681,7 +1684,7 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set,
     obj = _object(
         raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
         ("transfer", "note", "split_of", "share", "share_source", "site_restricted",
-         "gross", "net_of", "production_function"),
+         "gross", "net_of", "production_function", "priced_catch"),
     )
     agent = _str(obj["agent"], _key(path, "agent"))
     if agent not in agents:
@@ -1749,7 +1752,37 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set,
         out["split_of"] = _str(obj["split_of"], _key(path, "split_of"))
         out["share"] = float(share)
         out["share_source"] = _str(obj.get("share_source", ""), _key(path, "share_source"))
+    out["priced_catch"] = None
+    if "priced_catch" in obj:
+        out["priced_catch"] = _parse_priced_catch(obj["priced_catch"], _key(path, "priced_catch"), out,
+                                                  market_prices, observed)
     return out
+
+
+def _parse_priced_catch(raw: Any, path: str, entry: Dict[str, Any],
+                        market_prices: Optional[Dict[str, Dict[str, Any]]],
+                        observed: Optional[Dict[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    """A ledger entry's ``priced_catch`` (Step 8i.4): its value is an
+    observed catch (``$.observed_catches``, kg/ha/yr) × a market-price
+    anchor (``$.market_prices``, €/kg) × its share (``split_of``), so the €
+    are derived from the quantity, not typed; parsing checks the value."""
+    obj = _object(raw, path, ("observed_catch", "market_price"))
+    name = _str(obj["observed_catch"], _key(path, "observed_catch"))
+    if not observed or name not in observed:
+        raise ValueError(f"{_key(path, 'observed_catch')}: unknown observed catch {name!r} "
+                         f"(declare it in $.observed_catches)")
+    anchor = _str(obj["market_price"], _key(path, "market_price"))
+    if not market_prices or anchor not in market_prices:
+        raise ValueError(f"{_key(path, 'market_price')}: unknown market price {anchor!r} (declare it in $.market_prices)")
+    share = entry["share"] if entry["share"] is not None else 1.0
+    kg, price = observed[name]["value"], market_prices[anchor]["value"]
+    expected = kg * price * share
+    if not math.isclose(entry["value"], expected, rel_tol=1e-9):
+        raise ValueError(
+            f"{_key(path.rsplit('.', 1)[0], 'value')}: must be the observed catch × its market price × its share = "
+            f"{kg:.6g} kg/ha/yr × €{price:.6g}/kg × {share:g} = {expected:.6g}, got {entry['value']:.6g}"
+        )
+    return {"observed_catch": name, "market_price": anchor, "kg_per_ha_yr": kg * share, "price": price}
 
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:

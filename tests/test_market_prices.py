@@ -144,7 +144,7 @@ def test_the_price_is_fixed_in_every_monte_carlo_draw():
     assert all(b["draws_at_or_below_zero"] == 0 for b in u.production.values())
 
 
-# ── Steps 8i.2 / 8i.3: one anchor; the fisheries values' Sète price basis ────
+# ── Steps 8i.2 / 8i.4: one anchor, which prices the observed catch too ──────
 
 FISHERIES = ("Fish Populations", "Marine Invertebrates")
 FISH_SERVICE = "Commercial fisheries: meadow-associated fish"
@@ -161,45 +161,51 @@ def test_the_white_fish_price_is_the_one_anchor():
     assert "8i.2" in doc["market_prices"][ANCHOR]["note"]
 
 
-def test_the_sete_price_basis_is_flagged_in_the_case_file():
-    """Step 8i.3: Campagne et al. give the quantity (242,551 kg over 27,220
-    ha) but no price per species; the values stay at Sète prices and the
-    mismatch with the Catalan anchor is flagged on both fisheries entries
-    and agents."""
+def test_the_observed_catch_is_priced_at_the_anchor():
+    """Step 8i.4 (the owner's decision): Campagne et al.'s catch, 242,551 kg
+    over 27,220 ha (§3.2.4), is valued at the single anchor, the white-fish
+    price (no per-group prices), split 14/16 fish and 2/16 invertebrates.
+    The € are derived (priced_catch: quantity × anchor × share) and parsing
+    checks them; the Step 8i.3 flag is gone."""
     case = load_case("posidonia")
     doc = case.document
-    entries = {e["agent"]: e for e in doc["service_ledger"] if e["agent"] in FISHERIES}
-    agents = {a["name"]: a for a in doc["agents"] if a["name"] in FISHERIES}
-    for name in FISHERIES:
-        for note in (entries[name]["note"], agents[name]["annual_value_per_ha"]["note"]):
-            assert "PRICE BASIS FLAGGED (Step 8i.3" in note and "Sète" in note and "242,551 kg" in note
-    ledger = {e["service"]: e["value"] for e in case.service_ledger}
-    assert ledger[FISH_SERVICE] + ledger[INVERTEBRATE_SERVICE] == pytest.approx(35.0, rel=1e-12)
-
-
-def test_catalan_repricing_would_bring_the_meadow_to_zero_and_is_rejected():
-    """Why Step 8i.3 did not re-price: Campagne et al.'s 242,551 kg over
-    27,220 ha (§3.2.4) at the Catalan 2014 first-sale prices by group
-    (ge3m-4jgm: white fish, cephalopods, other invertebrates; kg split by
-    species count, 14/16, 1/16, 1/16) exceed the meadow chain's lowest gross
-    value, so the meadow net of them could reach €0: parsing rejects it
-    (the validation is not weakened)."""
     kg_ha = 242_551 / 27_220
     white = 41_056_589 / 8_034_993
-    cephalopods = 13_650_607 / 2_709_845
-    other_invertebrates = 337_578 / 14_211
-    fish = kg_ha * 14 / 16 * white
-    invertebrates = kg_ha / 16 * (cephalopods + other_invertebrates)
-    assert (round(fish, 2), round(invertebrates, 2)) == (39.84, 16.03)
+    ledger = {e["service"]: e for e in case.service_ledger}
+    for service, share in ((FISH_SERVICE, 14 / 16), (INVERTEBRATE_SERVICE, 2 / 16)):
+        entry = ledger[service]
+        assert entry["value"] == pytest.approx(kg_ha * white * share, rel=1e-12)
+        assert entry["priced_catch"]["market_price"] == ANCHOR and entry["share"] == pytest.approx(share)
+    total = ledger[FISH_SERVICE]["value"] + ledger[INVERTEBRATE_SERVICE]["value"]
+    assert total == pytest.approx(kg_ha * white, rel=1e-12) and round(total, 2) == 45.53
+    assert (round(ledger[FISH_SERVICE]["value"], 3), round(ledger[INVERTEBRATE_SERVICE]["value"], 3)) == (39.840, 5.691)
+    # the meadow is net of exactly that total at the regional depth (15 m)
+    meadow = next(e for e in case.service_ledger if e["net_of"])
+    assert meadow["gross"] - meadow["value"] == pytest.approx(total, rel=1e-12)
+    for name in FISHERIES:
+        entry = next(e for e in doc["service_ledger"] if e["agent"] == name)
+        agent = next(a for a in doc["agents"] if a["name"] == name)
+        for note in (entry["note"], agent["annual_value_per_ha"]["note"]):
+            assert "Step 8i.4" in note and "PRICE BASIS FLAGGED" not in note
+    # a typed value off the derived one is rejected
+    bad = copy.deepcopy(doc)
+    next(e for e in bad["service_ledger"] if e["service"] == FISH_SERVICE)["value"] = 30.625
+    with pytest.raises(ValueError, match="observed catch × its market price × its share"):
+        case_from_dict(bad)
+    bad = copy.deepcopy(doc)
+    next(e for e in bad["service_ledger"] if e["service"] == FISH_SERVICE)["priced_catch"]["market_price"] = "sete"
+    with pytest.raises(ValueError, match="unknown market price"):
+        case_from_dict(bad)
+
+
+def test_without_the_conditioning_the_anchor_priced_catch_would_be_rejected():
+    """Why Step 8i.5 comes with 8i.4: every link at its least favourable end
+    at once gives EUR 38.83 gross, below the EUR 45.53 netted out; that
+    corner (7.6 kg/ha/yr at 15 m) is below the observed catch, so it is
+    ruled out by the conditioning. Without it parsing rejects the case
+    (the validation is not weakened)."""
     doc = copy.deepcopy(load_case("posidonia").document)
-    assert doc["market_prices"][ANCHOR]["value"] == pytest.approx(white, rel=1e-12)
-    for entry in doc["service_ledger"]:
-        if entry["service"] == FISH_SERVICE:
-            entry["value"] = fish
-        elif entry["service"] == INVERTEBRATE_SERVICE:
-            entry["value"] = invertebrates
-    meadow = next(e for e in doc["service_ledger"] if e.get("net_of"))
-    meadow["value"] = meadow["gross"] - fish - invertebrates
+    del next(e for e in doc["service_ledger"] if e.get("net_of"))["production_function"]["catch_floor"]
     with pytest.raises(ValueError, match="could bring the agent to €0"):
         case_from_dict(doc)
 

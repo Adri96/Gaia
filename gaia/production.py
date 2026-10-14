@@ -114,7 +114,8 @@ the regional z_max.
 
 Net of what is already counted, at a project depth (Step 8g.1). The
 services an entry is net of (for Posidonia, the commercial catch of
-Campagne et al. 2015, €35/ha/yr) are regional values per hectare of the
+Campagne et al. 2015, 8.91 kg/ha/yr at the anchor price, €45.53/ha/yr
+since Step 8i.4) are regional values per hectare of the
 reference resource, i.e. at the regional depth. At a project depth the part
 of them the hectare's own production supports scales with that production:
 the entry subtracts ``net_of_scale`` × their booked values, where the scale

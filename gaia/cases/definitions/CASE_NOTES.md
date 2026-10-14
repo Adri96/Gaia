@@ -315,13 +315,16 @@ value = gross − their values). € 2014-2017/ha/yr:
 - Coastal Protection: protection from coastal erosion 188 (Campagne et
   al. 2015).
 - Water Quality: water purification 60 (Campagne et al. 2015).
-- Fish Populations and Marine Invertebrates: Campagne et al.'s fisheries
-  contribution (35) split by species count, 14/16 fish (30.625) and 2/16
-  invertebrates, sea urchin and cuttlefish (4.375). Their price basis is
-  flagged (Step 8i.3): 2010 Sète auction prices (€3.69/kg implied), not
-  the Catalan first-sale prices of the meadow's chain; at Catalan prices
-  the catch would be €55.88/ha/yr, above the meadow chain's lowest gross
-  value (€38.83), so it is not re-priced (the meadow would reach €0).
+- Fish Populations and Marine Invertebrates: Campagne et al.'s observed
+  catch, 242,551 kg over 27,220 ha = 8.91 kg/ha/yr ($.observed_catches),
+  priced at the single anchor, €5.11/kg (Step 8i.4, the owner's
+  decision): €45.53, split by species count, 14/16 fish (39.84) and 2/16
+  invertebrates, sea urchin and cuttlefish (5.69). Derived (priced_catch:
+  quantity × anchor × share), parsing checks it. Before Step 8i.4 their
+  €35 at 2010 Sète auction prices (30.625 + 4.375), flagged in Step 8i.3
+  because re-pricing brought the meadow's worst case to €0; Step 8i.5
+  conditions the meadow's chain on the observed catch, which rules that
+  case out.
 - Human Communities and Epiphytes & Algae: the bioindicator use (1.5)
   split by the PREI index's weights (Gobert et al. 2009), 3/3.5 to Human
   Communities and 0.5/3.5, the epiphyte metric, to Epiphytes (0.214);
@@ -374,8 +377,9 @@ value = gross − their values). € 2014-2017/ha/yr:
     × €5.11/kg, Catalan white-fish first-sale price 2014  = €312.49 gross
       (one market-price anchor, $.market_prices, for this chain and
       the epiphytes'; depth never changes it, Step 8h.4)
-    − 35.00, the commercial catch booked to Fish          = €277.49 net
-      Populations and Marine Invertebrates (net_of)
+    − 45.53, the commercial catch booked to Fish          = €266.96 net
+      Populations and Marine Invertebrates (net_of;
+      8.91 kg/ha/yr at €5.11, Step 8i.4; 35 → 277.49 before)
   Of the gross, the plant gives €311.49, the roots €1.00. Range over the
   links' ends (and the depth function's shape over its ranges):
   €3.83–1,525.48 net (€38.83–1,560.48 gross): the lowest value still
@@ -383,7 +387,8 @@ value = gross − their values). € 2014-2017/ha/yr:
   rebalancing of net_of. Since Step 8i.5 the lowest is taken over the
   links conditioned on the observed catch (catch_floor: the chain's
   sustainable catch at 15 m must exceed Campagne et al.'s 8.91 kg/ha/yr
-  / 0.9, an inferred margin, = 9.90 kg): €15.59 net (€50.59 gross). Before Step 8g.4 the share was 74% (€285.39
+  / 0.9, an inferred margin, = 9.90 kg): €50.59 gross, €5.06 net of
+  the €45.53 (€15.59 net of the former €35). Before Step 8g.4 the share was 74% (€285.39
   gross, €250.39 net). Before Step 8g.2 the epiphytes' €82.20 were in
   this chain (€367.59 gross, €332.59 net). Before Step 8g.1 the plant's NPP was a fixed 476 g DW/m²/yr (the Ischia mid-range;
   €509.48 gross, €474.48 net). Before Step 8f.2 roots and epiphytes were left out
@@ -425,8 +430,9 @@ value = gross − their values). € 2014-2017/ha/yr:
   negative depth is rejected. `--depth-limit-m` (Step 8g.10) gives the
   site's own limit (one depth, or a range sampled uniformly, truncated
   below the meadow); it replaces the regional one at the site, and a
-  depth at or below it is rejected. At a project depth the €35 netted out scales with the
-  plant's NPP there / NPP at 15 m (exactly €35 in the regional run),
+  depth at or below it is rejected. At a project depth the catch netted out (€45.53
+  since Step 8i.4, €35 before) scales with the
+  plant's NPP there / NPP at 15 m (exactly €45.53 in the regional run),
   recomputed in every Monte Carlo draw; decided by the owner (Step 8g.8,
   review of #11, question 1), with the 15 m base and the 40 m (30–44)
   depth limit (questions 2 and 3).
@@ -436,12 +442,13 @@ value = gross − their values). € 2014-2017/ha/yr:
   triangular for its decline rate and depth limit and for the
   shares, the transfer efficiency and the trophic level, uniform for the
   roots; the carbon contents, ×9 and the price fixed) and every draw
-  recomputes gross − net_of (the €35 at its booked value, not coupled to
+  recomputes gross − net_of (the €45.53 at its booked value, not coupled to
   the sampled fisheries values: decided by the owner, Step 8g.3; the
   transfer efficiency's range, 12.2–21.8%, also kept as decided); the
   meadow's agent value is derived, not
   sampled as one aggregate. Net €/ha/yr, 1,000 draws, seed 20261012:
-  P5 118, P50 254, P95 528 (base 277, lowest draw 47); the epiphytes'
+  P5 107, P50 243, P95 517 (base 267, lowest draw 37; 118 / 254 / 528,
+  base 277, net of the former €35); the epiphytes'
   chain P5 33, P50 71, P95 158 (base 82; 32 / 72 / 151 before Step 8g.9,
   the same distribution drawn in another order). The floor above bounds
   every draw; parsing requires it to be > 0. Draws whose sustainable
@@ -478,7 +485,7 @@ value = gross − their values). € 2014-2017/ha/yr:
     high   60,000 / 10.75 = 5,581     €193,730      Medes Islands (press report of
            the park's study) over Natura 2000 ES5120016's meadow
   'none' zeroes the diving service, never an agent: the meadow keeps its
-  own €277.49/ha/yr on every hectare (above), and every other agent keeps
+  own €266.96/ha/yr on every hectare (above), and every other agent keeps
   its value. (Before Step 8e.6 the diving service was the meadow's only
   entry and 'none' left it at €0; the owner rejected that.)
 - Coralligenous & Red Coral: diving on the coralligenous, €60 per dive
