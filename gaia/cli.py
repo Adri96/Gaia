@@ -317,6 +317,9 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
     deepest = (limit.get("range") or [limit["value"], limit["value"]])[1]
     beyond = (f". Beyond {deepest:g} m, the deepest limit documented, the value is an extrapolation: "
               f"still computed (> €0), with a warning")
+    # Step 8i.1: a depth whose implied site limit (+ the margin) passes it
+    implied = (f"{beyond}; also from {deepest - margin:g} m down (exclusive), whose implied site limit "
+               f"(+ {margin:g} m) passes it")
     parser.add_argument(
         "--depth-m",
         dest="depth_m",
@@ -330,7 +333,7 @@ def add_depth_argument(parser: argparse.ArgumentParser, case) -> None:
             f"about {table} {unit}. Default: {block['depth_label']}. Any depth is valued: production "
             f"reaches zero at the depth limit ({limit['value']:g} m{span}), and a meadow that lives at "
             f"the depth given proves its site's limit lies deeper, so the limit is taken at least "
-            f"{margin:g} m below the deepest depth given (never valued at €0){beyond}"
+            f"{margin:g} m below the deepest depth given (never valued at €0){implied}"
         ).replace("%", "%%"),
     )
     parser.add_argument(

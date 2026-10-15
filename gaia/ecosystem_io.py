@@ -84,7 +84,10 @@ and owned by one agent: {service*, agent*, value* (€/ha/yr at full
 damage), section* ("provisioning" | "regulation and maintenance" |
 "cultural"), kind* ("use" | "non-use"), method*, source*, transfer, note,
 split_of, share, share_source, site_restricted, gross, net_of,
-production_function}. A site-restricted entry ("site_restricted": true)
+production_function, priced_catch}. A priced catch (Step 8i.4,
+{"observed_catch": "<name>", "market_price": "<name>"}) derives the value
+from a quantity: observed catch (kg/ha/yr, ``observed_catches``) × market
+price (€/kg, ``market_prices``) × share; parsing checks the value. A site-restricted entry ("site_restricted": true)
 books the value per hectare near the sites, like the agent's
 site_value_per_ha (a run multiplies both by the agent's site_share); the
 other entries book the value on every hectare, like annual_value_per_ha.
@@ -103,10 +106,16 @@ distribution, distribution_basis, range, note}}); a chain's price
 one price anchors every chain and no depth or site input changes it
 (gaia.production, ``parse_market_prices``); with the block declared, a
 price typed into a chain is rejected.
+Observed catches (Step 8i.5): the top-level ``observed_catches`` block
+names quantities observed on the resource ({name: {value*, unit*
+("kg/ha/yr"), label*, source*, status*, distribution ("fixed"), note}});
+a production function's ``catch_floor`` references one, conditioning the
+chain on producing more than it (gaia.production).
 Parsing rejects a service listed twice, an
 unknown agent, a value <= 0, a net value that is not gross − the services
 it is net of, a chain that does not give its gross, a chain whose lowest
-value (every link at its least favourable end, Step 8f.3) does not exceed
+value (every link at its least favourable end, Step 8f.3; in the space
+conditioned on its observed catch, Step 8i.5) does not exceed
 what it is net of, and an agent with no entry that applies on every
 hectare. ``Case.ledger_check()`` lists the
 agents whose weight × annual_value_per_ha (and weight ×
@@ -258,7 +267,7 @@ _TOP_LEVEL = (
     "gaia_schema", "name", "description", "calibration_regime", "damage_model", "resource",
     "provenance_defaults", "agent_defaults", "damage_curves", "agents",
     "interactions", "carbon", "resilience", "substrate", "discount", "pricing",
-    "restoration", "recovery", "succession", "service_ledger", "market_prices", "run",
+    "restoration", "recovery", "succession", "service_ledger", "market_prices", "observed_catches", "run",
 )
 
 _DAMAGE_FACTORIES: Dict[str, Tuple[Callable[..., Any], Tuple[str, ...]]] = {
@@ -1263,6 +1272,15 @@ class Case:
             lines.append(f"    Gross range over the links' ranges: €{low:,.0f}–{high:,.0f}/ha/yr (every link at")
             lines.append("    its least or most favourable end at once). The Monte Carlo (--uncertainty)")
             lines.append("    samples each link on its own and recomputes the chain in every draw.")
+            floor = block.get("catch_floor")
+            if floor is not None:
+                lines.extend(textwrap.wrap(
+                    f"Conditioned on the observed catch (Step 8i.5): the chain's sustainable catch at the "
+                    f"regional depth, {floor['regional_catch_kg_per_ha_yr']:,.2f} kg/ha/yr, must exceed "
+                    f"{floor['floor_kg_per_ha_yr']:,.2f} kg/ha/yr (the observed {floor['observed_kg_per_ha_yr']:,.2f} "
+                    f"/ its largest commercial share, {floor['commercial_share']['value']:g}); the range above "
+                    f"and every Monte Carlo draw are taken in that conditioned space.",
+                    width=74, initial_indent="    ", subsequent_indent="    "))
             unverified = [p["label"] for p in block["parameters"].values() if p["status"] != "verified"]
             if unverified:
                 lines.extend(textwrap.wrap(
@@ -1402,8 +1420,12 @@ def case_from_dict(data: Any, origin: str = "<dict>") -> Case:
     from gaia.production import parse_market_prices
 
     market_prices = parse_market_prices(doc["market_prices"]) if doc.get("market_prices") is not None else None
+    # Step 8i.5: the catches observed on the resource (quantities)
+    from gaia.production import parse_observed_catches
+
+    observed = parse_observed_catches(doc["observed_catches"]) if doc.get("observed_catches") is not None else None
     ledger = tuple(
-        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names), market_prices)
+        _parse_ledger_entry(e, f"$.service_ledger[{i}]", set(names), market_prices, observed)
         for i, e in enumerate(_list(doc.get("service_ledger", []), "$.service_ledger"))
     )
     seen: Dict[str, int] = {}
@@ -1656,12 +1678,13 @@ _LEDGER_KINDS = ("use", "non-use")
 
 
 def _parse_ledger_entry(raw: Any, path: str, agents: set,
-                        market_prices: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+                        market_prices: Optional[Dict[str, Dict[str, Any]]] = None,
+                        observed: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     """One service_ledger entry: a final service, its owner and its value."""
     obj = _object(
         raw, path, ("service", "agent", "value", "section", "kind", "method", "source"),
         ("transfer", "note", "split_of", "share", "share_source", "site_restricted",
-         "gross", "net_of", "production_function"),
+         "gross", "net_of", "production_function", "priced_catch"),
     )
     agent = _str(obj["agent"], _key(path, "agent"))
     if agent not in agents:
@@ -1710,7 +1733,8 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set,
     if "production_function" in obj:
         from gaia.production import gross_value, central, parse_production_function
 
-        spec = parse_production_function(obj["production_function"], _key(path, "production_function"), market_prices)
+        spec = parse_production_function(obj["production_function"], _key(path, "production_function"), market_prices,
+                                         observed)
         result = gross_value(central(spec))
         stated = out["gross"] if out["gross"] is not None else out["value"]
         if not math.isclose(result, stated, rel_tol=1e-9):
@@ -1728,7 +1752,37 @@ def _parse_ledger_entry(raw: Any, path: str, agents: set,
         out["split_of"] = _str(obj["split_of"], _key(path, "split_of"))
         out["share"] = float(share)
         out["share_source"] = _str(obj.get("share_source", ""), _key(path, "share_source"))
+    out["priced_catch"] = None
+    if "priced_catch" in obj:
+        out["priced_catch"] = _parse_priced_catch(obj["priced_catch"], _key(path, "priced_catch"), out,
+                                                  market_prices, observed)
     return out
+
+
+def _parse_priced_catch(raw: Any, path: str, entry: Dict[str, Any],
+                        market_prices: Optional[Dict[str, Dict[str, Any]]],
+                        observed: Optional[Dict[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    """A ledger entry's ``priced_catch`` (Step 8i.4): its value is an
+    observed catch (``$.observed_catches``, kg/ha/yr) × a market-price
+    anchor (``$.market_prices``, €/kg) × its share (``split_of``), so the €
+    are derived from the quantity, not typed; parsing checks the value."""
+    obj = _object(raw, path, ("observed_catch", "market_price"))
+    name = _str(obj["observed_catch"], _key(path, "observed_catch"))
+    if not observed or name not in observed:
+        raise ValueError(f"{_key(path, 'observed_catch')}: unknown observed catch {name!r} "
+                         f"(declare it in $.observed_catches)")
+    anchor = _str(obj["market_price"], _key(path, "market_price"))
+    if not market_prices or anchor not in market_prices:
+        raise ValueError(f"{_key(path, 'market_price')}: unknown market price {anchor!r} (declare it in $.market_prices)")
+    share = entry["share"] if entry["share"] is not None else 1.0
+    kg, price = observed[name]["value"], market_prices[anchor]["value"]
+    expected = kg * price * share
+    if not math.isclose(entry["value"], expected, rel_tol=1e-9):
+        raise ValueError(
+            f"{_key(path.rsplit('.', 1)[0], 'value')}: must be the observed catch × its market price × its share = "
+            f"{kg:.6g} kg/ha/yr × €{price:.6g}/kg × {share:g} = {expected:.6g}, got {entry['value']:.6g}"
+        )
+    return {"observed_catch": name, "market_price": anchor, "kg_per_ha_yr": kg * share, "price": price}
 
 
 def _parse_benchmark(raw: Any, path: str) -> Dict[str, Any]:

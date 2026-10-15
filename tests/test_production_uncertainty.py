@@ -15,7 +15,15 @@ import pytest
 from gaia.cases import load_case
 from gaia.cli import main
 from gaia.ecosystem_io import case_from_dict
-from gaia.production import central, gross_range, gross_value, parse_market_prices, parse_production_function
+from gaia.production import (
+    CatchFloorRejection,
+    central,
+    gross_range,
+    gross_value,
+    parse_market_prices,
+    parse_observed_catches,
+    parse_production_function,
+)
 from gaia.uncertainty import (
     InvariantError,
     Sampled,
@@ -28,6 +36,8 @@ from gaia.uncertainty import (
 )
 
 MEADOW = "Posidonia Meadow"
+# Step 8i.4: Campagne et al.'s 8.91 kg/ha/yr at the white-fish anchor (35 at Sète prices before)
+COMMERCIAL_CATCH = 242_551 / 27_220 * 41_056_589 / 8_034_993
 LINKS = {
     "food_web_share": "triangular",
     "transfer_efficiency": "triangular",
@@ -124,13 +134,13 @@ def test_each_draw_recomputes_gross_minus_net_of():
     _set_at_path(doc, f"$.service_ledger[{entry.index}].production_function.producers[0].parameters.npp_dry_weight", 20.0)
     produced = _rederive_production(doc, entries)
     gross = gross_value(dict(base, transfer_efficiency=0.2, **{"roots.npp_dry_weight": 20.0}))
-    assert produced[MEADOW] == pytest.approx((gross, gross - 35.0), rel=1e-12)
+    assert produced[MEADOW] == pytest.approx((gross, gross - COMMERCIAL_CATCH), rel=1e-12)
     food = _food(doc)
-    assert (food["gross"], food["value"]) == pytest.approx((gross, gross - 35.0), rel=1e-12)
+    assert (food["gross"], food["value"]) == pytest.approx((gross, gross - COMMERCIAL_CATCH), rel=1e-12)
     meadow = case_from_dict(doc).build_ecosystem().agents[entry.agent_index]
-    assert meadow.dependency_weight * meadow.annual_value_per_ha == pytest.approx(gross - 35.0, rel=1e-9)
+    assert meadow.dependency_weight * meadow.annual_value_per_ha == pytest.approx(gross - COMMERCIAL_CATCH, rel=1e-9)
     # the services it is net of keep their booked values
-    assert sum(e["value"] for e in doc["service_ledger"] if e["service"] in food["net_of"]) == pytest.approx(35.0)
+    assert sum(e["value"] for e in doc["service_ledger"] if e["service"] in food["net_of"]) == pytest.approx(COMMERCIAL_CATCH)
 
 
 def test_draws_are_reproducible(mc):
@@ -143,9 +153,10 @@ def test_draws_are_reproducible(mc):
 def test_no_draw_is_at_or_below_zero(mc):
     block = mc.production[MEADOW]
     assert block["draws_at_or_below_zero"] == 0
-    # the provable floor: every link at its least favourable end at once
+    # the provable floor: the chain's lowest value over the links' ranges,
+    # conditioned on the observed catch (Step 8i.5)
     spec = load_case("posidonia").service_ledger[production_entries(load_case("posidonia"))[0].index]["production_function"]
-    floor = gross_range(spec)[0] - 35.0
+    floor = gross_range(spec)[0] - COMMERCIAL_CATCH
     assert floor > 0.0 and block["net"]["min"] >= floor
     assert block["net"]["p5"] < block["base"]["net"] < block["net"]["p95"]
     # the per-link sampling no longer reaches the corner: P5 is far above it
@@ -155,7 +166,21 @@ def test_no_draw_is_at_or_below_zero(mc):
 def test_parse_rejects_a_chain_that_could_reach_zero():
     doc = copy.deepcopy(load_case("posidonia").document)
     _food(doc)["production_function"]["parameters"]["transfer_efficiency"]["range"] = [0.03, 0.218]
+    del _food(doc)["production_function"]["catch_floor"]      # unconditioned (Step 8i.5)
     with pytest.raises(ValueError, match="could bring the agent to €0.*Core Valuation Principles"):
+        case_from_dict(doc)
+    # conditioned on an observed catch too small to keep the net value above €0
+    doc = copy.deepcopy(load_case("posidonia").document)
+    _food(doc)["production_function"]["parameters"]["transfer_efficiency"]["range"] = [0.03, 0.218]
+    doc["observed_catches"]["tiny"] = dict(doc["observed_catches"]["campagne_2015_sete_2010"], value=1.0)
+    _food(doc)["production_function"]["catch_floor"]["observed_catch"] = "tiny"
+    with pytest.raises(ValueError, match="could bring the agent to €0.*Core Valuation Principles"):
+        case_from_dict(doc)
+    # a floor no link combination reaches
+    doc = copy.deepcopy(load_case("posidonia").document)
+    doc["observed_catches"]["huge"] = dict(doc["observed_catches"]["campagne_2015_sete_2010"], value=500.0)
+    _food(doc)["production_function"]["catch_floor"]["observed_catch"] = "huge"
+    with pytest.raises(ValueError, match="cannot support the observed catch"):
         case_from_dict(doc)
 
 
@@ -168,6 +193,13 @@ def test_a_draw_at_zero_stops_the_run_and_is_never_redrawn():
     doc = copy.deepcopy(case.document)
     pf = _food(doc)["production_function"]
     pf["depth_production"]["parameters"]["npp_at_reference_depth"].update(value=1.0, range=[0.5, 792.3])
+    # Step 8i.5: such a draw lies below the observed catch, so it is rejected
+    # (a ValueError, drawn again) before it is valued
+    with pytest.raises(CatchFloorRejection, match="observed catch"):
+        _rederive_production(copy.deepcopy(doc), entries)
+    assert issubclass(CatchFloorRejection, ValueError)
+    # without the conditioning, the same draw stops the run
+    del pf["catch_floor"]
     with pytest.raises(InvariantError, match="Core Valuation Principles"):
         _rederive_production(doc, entries)
 
@@ -196,7 +228,8 @@ def test_generic_without_net_of():
     food["value"] = gross
     meadow = next(a for a in doc["agents"] if a["name"] == MEADOW)
     weight = meadow["dependency_weight"]
-    spec = parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]))
+    spec = parse_production_function(food["production_function"], "pf", parse_market_prices(doc["market_prices"]),
+                                     parse_observed_catches(doc["observed_catches"]))
     low, high = gross_range(spec)
     meadow["annual_value_per_ha"]["value"] = gross / weight
     meadow["annual_value_per_ha"]["range"] = [low / weight, high / weight]

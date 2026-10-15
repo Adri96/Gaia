@@ -36,7 +36,11 @@ REVENUE_PER_HA = 2_500.0    # One-time revenue per hectare destroyed
 # Step 8g.4: the plant's shoot-only share not buried, 81.1% (74% before);
 # Step 8h.1: the epiphytes' production anchored at its measured depth, 10 m,
 # and taken at 15 m on the plant's curve (82.20 before, the 10 m figure at 15 m)
-MEADOW_FOOD_NET = 277.49275506563924
+# Step 8i.4: net of Campagne et al.'s observed catch (242,551 kg over
+# 27,220 ha, 8.91 kg/ha/yr) at the Catalan white-fish anchor (EUR 5.11/kg):
+# EUR 45.53, 35 at Sète prices before (277.49 net)
+COMMERCIAL_CATCH = 242_551 / 27_220 * 41_056_589 / 8_034_993
+MEADOW_FOOD_NET = 266.9612180578749
 EPIPHYTE_FOOD = 52.331919974541826
 LEDGER_TOTAL = 1148.4882536323626    # €/ha/yr of the reference meadow
 
@@ -59,9 +63,10 @@ def test_posidonia_values_are_the_sourced_final_services():
     per_ha = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
     assert per_ha["Coastal Protection"] == pytest.approx(188.0, rel=1e-12)
     assert per_ha["Water Quality"] == pytest.approx(60.0, rel=1e-12)
-    # Campagne et al.'s fisheries (35) split 14/16 fish, 2/16 invertebrates
-    assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(35.0, rel=1e-12)
-    assert per_ha["Marine Invertebrates"] == pytest.approx(35.0 * 2 / 16, rel=1e-12)
+    # Campagne et al.'s catch at the anchor (45.53, Step 8i.4) split 14/16
+    # fish, 2/16 invertebrates
+    assert per_ha["Fish Populations"] + per_ha["Marine Invertebrates"] == pytest.approx(COMMERCIAL_CATCH, rel=1e-12)
+    assert per_ha["Marine Invertebrates"] == pytest.approx(COMMERCIAL_CATCH * 2 / 16, rel=1e-12)
     # bioindicator (1.5) + knowledge (0.33), the PREI epiphyte share moved
     assert per_ha["Human Communities"] + per_ha["Epiphytes & Algae"] == pytest.approx(1.83 + EPIPHYTE_FOOD, rel=1e-12)
     assert per_ha["Epiphytes & Algae"] == pytest.approx(1.5 * 0.5 / 3.5 + EPIPHYTE_FOOD, rel=1e-12)
@@ -552,12 +557,13 @@ def test_service_ledger_rejects_double_counting():
     with pytest.raises(ValueError, match="counted once"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
-    whole = dict(doc["service_ledger"][0], service="Commercial fisheries contribution (35 EUR/ha/yr)")
+    whole = dict(doc["service_ledger"][0], service=doc["service_ledger"][2]["split_of"])
     doc["service_ledger"].append(whole)
     with pytest.raises(ValueError, match="counted whole"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
     doc["service_ledger"][2]["share"] = 0.95
+    del doc["service_ledger"][2]["priced_catch"]      # else its priced catch (Step 8i.4) fails first
     with pytest.raises(ValueError, match="add up to"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
@@ -1020,12 +1026,14 @@ def test_meadow_food_value_is_the_primary_production_chain():
     counted = {e["service"]: e["value"] for e in case.service_ledger if e["service"] in entry["net_of"]}
     assert set(counted) == {e["service"] for e in case.service_ledger
                             if e["agent"] in ("Fish Populations", "Marine Invertebrates")}
-    assert sum(counted.values()) == pytest.approx(35.0, rel=1e-12)
-    assert entry["value"] == pytest.approx(gross - 35.0, rel=1e-12) == pytest.approx(MEADOW_FOOD_NET, rel=1e-12)
+    assert sum(counted.values()) == pytest.approx(COMMERCIAL_CATCH, rel=1e-12)
+    assert entry["value"] == pytest.approx(gross - COMMERCIAL_CATCH, rel=1e-12) == pytest.approx(MEADOW_FOOD_NET,
+                                                                                                rel=1e-12)
     # the fish and invertebrate agents keep their own entries (> 0)
     eco = case.build_ecosystem(site_intensity="none")
     per_ha = {a.name: a.dependency_weight * a.annual_value(1.0) for a in eco.agents}
-    assert per_ha["Fish Populations"] == pytest.approx(30.625) and per_ha["Marine Invertebrates"] == pytest.approx(4.375)
+    assert per_ha["Fish Populations"] == pytest.approx(COMMERCIAL_CATCH * 14 / 16)
+    assert per_ha["Marine Invertebrates"] == pytest.approx(COMMERCIAL_CATCH * 2 / 16)
     # every link is sourced and says whether it was read at the source
     params = entry["production_function"]["parameters"]
     assert {p["status"] for p in params.values()} <= {"verified", "derived", "secondary", "inferred"}
@@ -1108,12 +1116,13 @@ def test_epiphyte_production_is_not_counted_twice():
     assert all(p["name"] != "epiphytes" for p in meadow["production_function"]["producers"])
     # the former single chain (Step 8g.1): 367.59 gross, 332.59 net, with the
     # epiphytes' 82.20 (52.33 since Step 8h.1, anchored at their measured depth)
-    assert meadow["gross"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + 35.0 + EPIPHYTE_FOOD, rel=1e-12)
+    assert meadow["gross"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + COMMERCIAL_CATCH + EPIPHYTE_FOOD,
+                                                                             rel=1e-12)
     assert meadow["value"] + epiphytes["value"] == pytest.approx(MEADOW_FOOD_NET + EPIPHYTE_FOOD, rel=1e-12)
     # every other provisioning entry is commercial catch, netted out once
     others = {e["service"] for e in food} - {e["service"] for e in chains}
     assert others == set(meadow["net_of"]) and not epiphytes["net_of"]
-    assert net_range(meadow["production_function"], 35.0)[0] > 0.0
+    assert net_range(meadow["production_function"], COMMERCIAL_CATCH)[0] > 0.0
 
 
 def test_meadow_range_is_the_chain_at_its_ends():
@@ -1127,8 +1136,8 @@ def test_meadow_range_is_the_chain_at_its_ends():
     weight = next(a.weight for a in case.agents if a.name == "Posidonia Meadow")
     param = {p.name: p for p in case.buckets["agent_values"]}["agent[Posidonia Meadow].annual_value_per_ha"]
     lo, hi = param.bounds
-    assert lo == pytest.approx((low - 35.0) / weight, rel=1e-12) and lo > 0.0
-    assert hi == pytest.approx((high - 35.0) / weight, rel=1e-12)
+    assert lo == pytest.approx((low - COMMERCIAL_CATCH) / weight, rel=1e-12) and lo > 0.0
+    assert hi == pytest.approx((high - COMMERCIAL_CATCH) / weight, rel=1e-12)
 
 
 def test_ledger_enforces_the_subtraction():
@@ -1141,7 +1150,7 @@ def test_ledger_enforces_the_subtraction():
         return next(e for e in doc["service_ledger"] if "net_of" in e)
 
     doc = copy.deepcopy(load_case("posidonia").document)
-    food(doc)["value"] += 35.0          # the commercial catch counted twice
+    food(doc)["value"] += COMMERCIAL_CATCH          # the commercial catch counted twice
     with pytest.raises(ValueError, match="must be gross − the services it is net of"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
@@ -1155,6 +1164,10 @@ def test_ledger_enforces_the_subtraction():
     doc = copy.deepcopy(load_case("posidonia").document)
     # the chain's price is the case's market-price anchor (Step 8h.4)
     doc["market_prices"]["white_fish_first_sale_catalonia_2014"]["value"] = 9.0
+    with pytest.raises(ValueError, match="observed catch × its market price"):
+        case_from_dict(doc)          # Step 8i.4: the fisheries entries price their catch at it too
+    for e in doc["service_ledger"][2:4]:
+        e["value"] = 242_551 / 27_220 * 9.0 * e["share"]
     with pytest.raises(ValueError, match="the chain gives"):
         case_from_dict(doc)
     doc = copy.deepcopy(load_case("posidonia").document)
@@ -1202,7 +1215,7 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     flat = " ".join(meadow_line.split())
     assert "NPP 107 g C/m²/yr (318 g dry weight) at 15 m (the regional mean depth)" in flat
     assert "+ roots 6.95 = 114 g C/m²/yr" in flat and "epiphytes" not in flat
-    assert "€312/ha/yr" in flat and "= €277/ha/yr" in flat
+    assert "€312/ha/yr" in flat and "= €267/ha/yr" in flat
     # Step 8g.2: the epiphytes' own chain, on their own line
     epi_line = " ".join(text[text.index("Epiphytes & Algae:"):text.index("Marine Invertebrates:")].split())
     assert "Primary production → food: NPP 14.5 g C/m²/yr at 15 m" in epi_line and "= €52.3/ha/yr" in epi_line
@@ -1215,7 +1228,7 @@ def test_productivity_is_visible_in_text_and_json(capsys):
     out = json.loads(capsys.readouterr().out)
     block = out["production_functions"]["Posidonia Meadow"]
     assert block["net_eur_per_ha_yr"] == pytest.approx(MEADOW_FOOD_NET)
-    assert block["already_counted_eur_per_ha_yr"] == pytest.approx(35.0)
+    assert block["already_counted_eur_per_ha_yr"] == pytest.approx(COMMERCIAL_CATCH)
     assert [s["unit"] for s in block["chain"]][-1] == "€/ha/yr"
     rows = {r["ecosystem"]: r for r in block["comparison"]["rows"]}
     assert rows["Coral reefs"]["low"] == 1720.0 and "doi:10.5194/bg-2-1-2005" in rows["Coral reefs"]["source"]
